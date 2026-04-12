@@ -1,0 +1,145 @@
+[
+  {
+    "id": 1,
+    "title": "Signature Lemon Herb Roast Chicken",
+    "description": "A perfectly roasted whole chicken with crispy golden skin, infused with fresh rosemary, thyme, and zesty lemon.",
+    "image": "recipe_chicken_1.png",
+    "category": "Dinner",
+    "prepTime": "20 mins",
+    "cookTime": "1h 15 mins",
+    "difficulty": "Intermediate",
+    "featured": true
+  },
+  {
+    "id": 2,
+    "title": "Creamy Garlic Parmesan Pasta",
+    "description": "Al dente fettuccine tossed in a rich, velvety garlic parmesan sauce with fresh parsley.",
+    "image": "recipe_pasta_2.png",
+    "category": "Lunch",
+    "prepTime": "10 mins",
+    "cookTime": "15 mins",
+    "difficulty": "Easy",
+    "featured": true
+  },
+  {
+    "id": 3,
+    "title": "Garden Fresh Heirloom Tomato Tart",
+    "description": "A flaky puff pastry base topped with savory goat cheese, caramelized onions, and multi-colored heirloom tomatoes.",
+    "image": "recipe_tart_3.png",
+    "category": "Appetizer",
+    "prepTime": "30 mins",
+    "cookTime": "25 mins",
+    "difficulty": "Intermediate",
+    "featured": false
+  },
+  {
+    "id": 4,
+    "title": "Spiced Moroccan Chickpea Stew",
+    "description": "A hearty, aromatic stew with chickpeas, sweet potatoes, and a blend of North African spices.",
+    "image": "recipe_stew_4.png",
+    "category": "Vegan",
+    "prepTime": "15 mins",
+    "cookTime": "45 mins",
+    "difficulty": "Easy",
+    "featured": true
+  },
+  {
+    "id": 5,
+    "title": "Classic New York Cheesecake",
+    "description": "Rich, dense, and creamy cheesecake with a buttery graham cracker crust and a fresh berry compote.",
+    "image": "recipe_cheesecake_5.png",
+    "category": "Dessert",
+    "prepTime": "40 mins",
+    "cookTime": "1h 30 mins",
+    "difficulty": "Advanced",
+    "featured": true
+  },
+  {
+    "id": 6,
+    "title": "Truffle Infused Mushroom Risotto",
+    "description": "Luxurious Arborio rice slow-cooked with assorted wild mushrooms and finished with truffle oil.",
+    "image": "recipe_risotto_6.png",
+    "category": "Dinner",
+    "prepTime": "15 mins",
+    "cookTime": "35 mins",
+    "difficulty": "Intermediate",
+    "featured": false
+  },
+  {
+    "id": 7,
+    "title": "Mediterranean Grilled Seabass",
+    "description": "Whole seabass grilled with lemon slices, olives, and capers, served with charred asparagus.",
+    "image": "recipe_fish_7.png",
+    "category": "Dinner",
+    "prepTime": "20 mins",
+    "cookTime": "20 mins",
+    "difficulty": "Intermediate",
+    "featured": true
+  },
+  {
+    "id": 8,
+    "title": "Avocado & Poached Egg Sourdough",
+    "description": "The breakfast classic with a spicy chili flake twist and honey balsamic glaze.",
+    "image": "recipe_breakfast_8.png",
+    "category": "Breakfast",
+    "prepTime": "10 mins",
+    "cookTime": "10 mins",
+    "difficulty": "Easy",
+    "featured": false
+  },
+  {
+    "id": 9,
+    "title": "Slow-Cooked Beef Bourguignon",
+    "description": "Tender beef chunks simmered for hours in red wine with pearl onions, carrots, and bacon.",
+    "image": "recipe_beef_9.png",
+    "category": "Dinner",
+    "prepTime": "30 mins",
+    "cookTime": "4h 00 mins",
+    "difficulty": "Advanced",
+    "featured": true
+  },
+  {
+    "id": 10,
+    "title": "Zesty Thai Green Curry",
+    "description": "A vibrant and spicy coconut-based curry with bamboo shoots, chicken, and fresh basil.",
+    "image": "recipe_thai_10.png",
+    "category": "Dinner",
+    "prepTime": "20 mins",
+    "cookTime": "20 mins",
+    "difficulty": "Intermediate",
+    "featured": false
+  },
+  {
+    "id": 11,
+    "title": "Handmade Spinach & Ricotta Ravioli",
+    "description": "Delicate pasta pockets filled with fresh spinach and creamy ricotta, served in a sage butter sauce.",
+    "image": "recipe_pasta_11.png",
+    "category": "Lunch",
+    "prepTime": "1h 30 mins",
+    "cookTime": "10 mins",
+    "difficulty": "Advanced",
+    "featured": true
+  },
+  {
+    "id": 12,
+    "title": "Smoked Salmon & Caper Bagel",
+    "description": "Toasted everything bagel spread with cream cheese, topped with premium smoked salmon and red onion.",
+    "image": "recipe_bagel_12.png",
+    "category": "Breakfast",
+    "prepTime": "5 mins",
+    "cookTime": "5 mins",
+    "difficulty": "Easy",
+    "featured": false
+  },
+  {
+    "id": 13,
+    "title": "Decadent Valrhona Chocolate Fondant",
+    "description": "Warm chocolate cake with a molten center, served with Madagascan vanilla bean ice cream.",
+    "image": "recipe_chocolate_13.png",
+    "category": "Dessert",
+    "prepTime": "20 mins",
+    "cookTime": "12 mins",
+    "difficulty": "Intermediate",
+    "featured": true
+  }
+]
