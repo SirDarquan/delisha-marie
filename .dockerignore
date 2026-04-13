@@ -7,5 +7,9 @@ Dockerfile
 .dockerignore
 npm-debug.log
 
+# Playwright
+test-results
+playwright-report
+
 # Important: We must NOT ignore angular.json, tsconfig.json, or package files 
 # because the Angular CLI needs them to run 'ng build' inside the container.
