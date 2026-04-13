@@ -1,50 +1,52 @@
 name: Deploy to Cloud Run
 
 on:
-  push:
-    branches: [ "main" ]
+  workflow_run:
+    workflows: ["Delisha-Marie CI"]
+    branches: [main]
+    types: [completed]
+
+env:
+  PROJECT_ID: 'delisha-marie'
+  REGION: 'northamerica-south1'
+  SERVICE_NAME: 'delisha-marie'
+  REPOSITORY_NAME: 'delisha-marie'
 
 jobs:
   deploy:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     permissions:
       contents: 'read'
       id-token: 'write'
 
     steps:
-    - uses: actions/checkout@v4
-
-    - name: Use Node.js 24.x
-      uses: actions/setup-node@v4
-      with:
-        node-version: 24.x
-        cache: 'npm'
-
-    - run: npm ci
-    - run: npm run build
+    - name: Checkout
+      uses: actions/checkout@v4
 
     - id: 'auth'
       name: 'Authenticate to Google Cloud'
       uses: 'google-github-actions/auth@v2'
       with:
-        credentials_json: '${{ secrets.GCP_SA_KEY }}'
+        workload_identity_provider: 'projects/644709001057/locations/global/workloadIdentityPools/github-pool/providers/github-provider'
+        service_account: 'github-deployer@delisha-marie.iam.gserviceaccount.com'
 
     - name: 'Set up Cloud SDK'
       uses: 'google-github-actions/setup-gcloud@v2'
 
-    - name: 'Configure Docker for Artifact Registry'
+    - name: 'Configure Docker Auth'
       run: |
-        gcloud auth configure-docker northamerica-south1-docker.pkg.dev
+        gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev
 
-    - name: 'Build and Push Docker Image'
+    - name: 'Build and Push Container'
       run: |
-        docker build -t northamerica-south1-docker.pkg.dev/delisha-marie/delisha-marie/delisha-marie-app:${{ github.sha }} .
-        docker push northamerica-south1-docker.pkg.dev/delisha-marie/delisha-marie/delisha-marie-app:${{ github.sha }}
+        IMAGE_URL="${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY_NAME }}/${{ env.SERVICE_NAME }}:${{ github.sha }}"
+        docker build -t "$IMAGE_URL" .
+        docker push "$IMAGE_URL"
 
     - name: 'Deploy to Cloud Run'
       uses: 'google-github-actions/deploy-cloudrun@v2'
       with:
-        service: 'delisha-marie'
-        image: 'northamerica-south1-docker.pkg.dev/delisha-marie/delisha-marie/delisha-marie-app:${{ github.sha }}'
-        region: 'northamerica-south1'
+        service: '${{ env.SERVICE_NAME }}'
+        image: '${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY_NAME }}/${{ env.SERVICE_NAME }}:${{ github.sha }}'
+        region: '${{ env.REGION }}'
