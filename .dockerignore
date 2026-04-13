@@ -16,7 +16,6 @@ tsconfig.app.json
 tsconfig.spec.json
 angular.json
 karma.conf.js
-package-lock.json
 public
 projects/delisha-marie/src/assets
 # We only need package.json, package-lock.json and the source code during the build stage.
