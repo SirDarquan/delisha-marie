@@ -1,7 +1,7 @@
 @use '@angular/material' as mat;
 
 // Tailwind CSS v4 import
-@import "tailwindcss";
+@use "tailwindcss";
 
 // Custom Material 3 theme colors
 // We override the system variables directly for exact HEX control as requested
