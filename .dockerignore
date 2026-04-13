@@ -1,0 +1,22 @@
+node_modules
+dist
+.git
+.gitignore
+.github
+Dockerfile
+.dockerignore
+npm-debug.log
+README.md
+LICENSE
+.editorconfig
+.eslintignore
+.eslintrc.json
+tsconfig.json
+tsconfig.app.json
+tsconfig.spec.json
+angular.json
+karma.conf.js
+public
+projects/delisha-marie/src/assets
+# We only need package.json, package-lock.json and the source code during the build stage.
+# However, the Dockerfile copies everything. To be safe, we exclude things we know we don't need in the final run.
