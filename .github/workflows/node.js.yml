@@ -38,9 +38,14 @@ jobs:
       with:
         node-version: 24.x
         cache: 'npm'
+    - name: Cache node modules
+      uses: actions/cache@v3
+      with:
+        path: ~/.npm
+        key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-node-
     - run: npm ci
-    - name: Install Playwright Browsers
-      run: npx playwright install --with-deps
     - name: Run E2E tests
       run: npm run e2e
 
@@ -54,5 +59,12 @@ jobs:
       with:
         node-version: 24.x
         cache: 'npm'
+    - name: Cache node modules
+      uses: actions/cache@v3
+      with:
+        path: ~/.npm
+        key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-node-
     - run: npm ci
     - run: npm run build --if-present
