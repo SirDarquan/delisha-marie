@@ -5,6 +5,7 @@ on:
     workflows: ["Delisha-Marie CI"]
     branches: [main]
     types: [completed]
+  workflow_dispatch: # Enable manual triggers
 
 env:
   PROJECT_ID: 'delisha-marie'
