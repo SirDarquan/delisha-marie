@@ -40,6 +40,12 @@ import { ThemeService } from '../../services/theme.service';
           About
         </a>
         <a
+            routerLink="/recipe-index"
+          routerLinkActive="!text-[var(--mat-sys-primary)]"
+          class="hover:text-[var(--mat-sys-primary)] transition-colors duration-300">
+          Recipe
+        </a>
+        <a
           mat-button
           routerLink="/contact"
           routerLinkActive="!text-[var(--mat-sys-primary)]"

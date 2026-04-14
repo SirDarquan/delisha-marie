@@ -6,10 +6,16 @@ test.describe('Delisha Marie Functional flows', () => {
     await page.goto('/');
   });
 
-  test('should navigate to the About page', async ({ page }) => {
+  test('should navigate to About and Recipe pages', async ({ page }) => {
+    await page.goto('/');
     await page.getByRole('link', { name: 'About' }).click();
-    await expect(page).toHaveURL(/\/about/);
-    await expect(page.locator('h1')).toBeVisible();
+    await expect(page).toHaveURL(/.*about/);
+    await expect(page.getByRole('heading', { name: /About/i })).toBeVisible();
+
+    await page.getByRole('link', { name: 'Recipe' }).click();
+    await expect(page).toHaveURL(/.*recipe-index/);
+    await expect(page.getByRole('heading', { name: /Recipe Index/i })).toBeVisible();
+    await expect(page.locator('mat-card')).toHaveCount(6);
   });
 
   test('should navigate to the Contact page', async ({ page }) => {
