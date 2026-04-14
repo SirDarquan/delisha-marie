@@ -43,6 +43,6 @@ describe('Header', () => {
     fixture.detectChanges();
     const compiled = fixture.nativeElement as HTMLElement;
     const links = compiled.querySelectorAll('a');
-    expect(links.length).toBeGreaterThanOrEqual(2); // About, Contact
+    expect(links.length).toBeGreaterThanOrEqual(3); // About, Recipe, Contact
   });
 });

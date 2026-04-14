@@ -59,6 +59,11 @@ export const routes: Routes = [
     },
   },
   {
+    path: 'recipe-index',
+    loadComponent: () => import('./pages/recipe-index/recipe-index').then((m) => m.RecipeIndex),
+    title: 'Recipe Index',
+  },
+  {
     path: 'contact',
     loadComponent: () => import('./pages/contact/contact').then((m) => m.Contact),
     title: 'Contact',

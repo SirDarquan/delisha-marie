@@ -1,5 +1,6 @@
 import { Component, inject, ChangeDetectionStrategy, ViewEncapsulation } from '@angular/core';
 import { CommonModule, NgOptimizedImage } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import { RecipeService } from '../../services/recipe.service';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
@@ -15,6 +16,7 @@ import { MatChipsModule } from '@angular/material/chips';
     MatIconModule,
     MatChipsModule,
     NgOptimizedImage,
+    RouterLink,
   ],
   template: `
     <div class="space-y-16">
@@ -39,12 +41,12 @@ import { MatChipsModule } from '@angular/material/chips';
               Join me in my culinary journey as we explore simple yet elegant recipes that bring
               people together.
             </p>
-            <button
+            <a
               mat-flat-button
-              color="primary"
-              class="!h-14 !px-10 !rounded-full !text-lg font-bold shadow-lg shadow-red-500/20">
+              routerLink="/recipe-index"
+              class="!flex !items-center !justify-center !h-14 !px-10 !rounded-full !text-lg font-bold shadow-lg shadow-red-500/20">
               Browse Latest Recipes
-            </button>
+            </a>
           </div>
         </div>
       </section>

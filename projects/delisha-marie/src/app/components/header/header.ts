@@ -34,6 +34,13 @@ import { ThemeService } from '../../services/theme.service';
       <div class="hidden md:flex items-center gap-6">
         <a
           mat-button
+          routerLink="/recipe-index"
+          routerLinkActive="!text-[var(--mat-sys-primary)]"
+          class="text-lg font-medium">
+          Recipes
+        </a>
+        <a
+          mat-button
           routerLink="/about"
           routerLinkActive="!text-[var(--mat-sys-primary)]"
           class="text-lg font-medium">
