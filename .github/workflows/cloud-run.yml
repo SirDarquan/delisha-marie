@@ -5,6 +5,9 @@ on:
     workflows: ["Delisha-Marie CI"]
     branches: [main]
     types: [completed]
+  schedule:
+    - cron: '30 10 * * *' # Daily at 10:30 UTC (5:30 AM EST)
+  workflow_dispatch: # Enable manual triggers
 
 env:
   PROJECT_ID: 'delisha-marie'
