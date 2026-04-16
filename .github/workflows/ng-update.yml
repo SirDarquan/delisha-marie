@@ -1,7 +1,7 @@
 name: "Update Angular Action"
 on: # when the action should run. Can also be a CRON or in response to external events. see https://git.io/JeBz1
   schedule:
-    - cron: '30 5 * * 2,4'
+    - cron: '5 * * * 2,4'
 
 jobs:
   ngxUptodate:
@@ -11,4 +11,4 @@ jobs:
         uses: fast-facts/ng-update@v1
         with:
           base-branch: main
-          repo-token: ${ secrets.GITHUB_TOKEN }
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
