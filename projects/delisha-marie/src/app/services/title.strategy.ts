@@ -11,11 +11,11 @@ export class TemplatePageTitleStrategy extends TitleStrategy {
   private readonly titleService = inject(Title);
 
   override updateTitle(routerState: RouterStateSnapshot) {
-    const title = this.buildTitle(routerState);
-    if (title !== undefined) {
-      this.titleService.setTitle(`${title} | Delisha Marie`);
-    } else {
-      this.titleService.setTitle('Delisha Marie | Food Blog');
+    let title = this.buildTitle(routerState);
+    if (title === undefined) {
+      title = 'From my table to yours';
     }
+
+    this.titleService.setTitle(`${title} | Delisha Marie`);
   }
 }
