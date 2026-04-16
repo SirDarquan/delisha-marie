@@ -1,14 +1,13 @@
 import { TestBed } from '@angular/core/testing';
 import { Contact } from './contact';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
-import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { describe, it, expect, beforeEach } from 'vitest';
 
 describe('Contact', () => {
   beforeEach(async () => {
     TestBed.resetTestingModule();
     await TestBed.configureTestingModule({
-      imports: [Contact, MatSnackBarModule, NoopAnimationsModule],
+      imports: [Contact, MatSnackBarModule],
     }).compileComponents();
   });
 

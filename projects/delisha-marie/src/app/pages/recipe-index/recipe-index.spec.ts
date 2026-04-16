@@ -1,6 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { RecipeIndex } from './recipe-index';
-import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
 describe('RecipeIndex', () => {
   let component: RecipeIndex;
@@ -8,7 +7,7 @@ describe('RecipeIndex', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [RecipeIndex, NoopAnimationsModule],
+      imports: [RecipeIndex],
     }).compileComponents();
 
     fixture = TestBed.createComponent(RecipeIndex);
