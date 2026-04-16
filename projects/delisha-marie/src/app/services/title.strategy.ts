@@ -12,7 +12,7 @@ export class TemplatePageTitleStrategy extends TitleStrategy {
 
   override updateTitle(routerState: RouterStateSnapshot) {
     let title = this.buildTitle(routerState);
-    if (title === undefined) {
+    if (title === undefined || title === '') {
       title = 'From my table to yours';
     }
 

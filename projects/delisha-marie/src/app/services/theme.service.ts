@@ -1,7 +1,6 @@
-import { Injectable, signal, effect, inject, PLATFORM_ID } from '@angular/core';
-import { isPlatformBrowser } from '@angular/common';
+import { DOCUMENT, isPlatformBrowser } from '@angular/common';
+import { effect, inject, Injectable, PLATFORM_ID, signal } from '@angular/core';
 import { WINDOW } from './global-tokens';
-import { DOCUMENT } from '@angular/common';
 
 @Injectable({
   providedIn: 'root',

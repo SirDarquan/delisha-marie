@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { ThemeService } from './theme.service';
 import { PLATFORM_ID } from '@angular/core';
+import { WINDOW } from './global-tokens';
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 
 describe('ThemeService', () => {
@@ -67,5 +68,54 @@ describe('ThemeService', () => {
     // Re-inject service to trigger constructor logic
     const newService = TestBed.runInInjectionContext(() => new ThemeService());
     expect(newService.isDark()).toBe(true);
+  });
+
+  it('should load initial theme from system preference if localStorage is empty', () => {
+    // Mock matchMedia to return dark mode
+    Object.defineProperty(window, 'matchMedia', {
+      writable: true,
+      value: vi.fn().mockImplementation((query) => ({
+        matches: true,
+        media: query,
+        onchange: null,
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+      })),
+    });
+
+    const newService = TestBed.runInInjectionContext(() => new ThemeService());
+    expect(newService.isDark()).toBe(true);
+  });
+
+  describe('Non-browser platform', () => {
+    beforeEach(() => {
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({
+        providers: [
+          ThemeService,
+          { provide: PLATFORM_ID, useValue: 'server' },
+          { provide: WINDOW, useValue: {} },
+        ],
+      });
+    });
+
+    it('should return false for initial theme when not on browser platform', () => {
+      const serverService = TestBed.inject(ThemeService);
+      expect(serverService.isDark()).toBe(false);
+    });
+
+    it('should not sync with localStorage or document class when not on browser platform', () => {
+      const spySetItem = vi.spyOn(Storage.prototype, 'setItem');
+      const serverService = TestBed.inject(ThemeService);
+
+      serverService.toggle();
+      TestBed.flushEffects();
+
+      expect(spySetItem).not.toHaveBeenCalled();
+      expect(document.documentElement.classList.contains('dark-theme')).toBe(false);
+    });
   });
 });
