@@ -5,7 +5,7 @@ import { isPlatformBrowser } from '@angular/common';
   providedIn: 'root',
 })
 export class ThemeService {
-  private platformId = inject(PLATFORM_ID);
+  readonly platformId = inject(PLATFORM_ID);
 
   // Signal to track the current theme
   readonly isDark = signal<boolean>(this.getInitialTheme());

@@ -21,11 +21,7 @@ export const seoResolver: ResolveFn<Partial<SeoContent>> = (route, state) => {
     url: url,
     siteName: 'Delisha Marie',
     keywords: data.keywords,
-    image: data.image
-      ? data.image.startsWith('http')
-        ? data.image
-        : `${origin}${data.image}`
-      : '',
+    image: data.image ? `${origin}${data.image}` : '',
     imageWidth: data.imageWidth,
     imageHeight: data.imageHeight,
     type: data.type || 'website',
@@ -49,7 +45,7 @@ export const seoResolver: ResolveFn<Partial<SeoContent>> = (route, state) => {
  */
 function resolveDynamicOrigin<T>(target: T, origin: string): T {
   if (typeof target === 'string') {
-    return target.replace(/{{origin}}/g, origin) as T;
+    return target.replaceAll('{{origin}}', origin) as T;
   }
 
   if (Array.isArray(target)) {
