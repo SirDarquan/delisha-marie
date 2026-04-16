@@ -27,6 +27,6 @@ describe('TemplatePageTitleStrategy', () => {
     const mockSnapshot = {} as RouterStateSnapshot;
     vi.spyOn(strategy, 'buildTitle').mockReturnValue(undefined);
     strategy.updateTitle(mockSnapshot);
-    expect(titleService.setTitle).toHaveBeenCalledWith('Delisha Marie | Food Blog');
+    expect(titleService.setTitle).toHaveBeenCalledWith('From my table to yours | Delisha Marie');
   });
 });
