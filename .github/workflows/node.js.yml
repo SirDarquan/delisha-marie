@@ -28,7 +28,7 @@ jobs:
         key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
         restore-keys: |
           ${{ runner.os }}-node-
-    - run: npm ci
+    - run: npm ci --ignore-scripts
     - run: npm test -- --coverage-reporters=lcov
     - uses: actions/checkout@v6
       with:
@@ -54,7 +54,7 @@ jobs:
         key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
         restore-keys: |
           ${{ runner.os }}-node-
-    - run: npm ci
+    - run: npm ci --ignore-scripts
     - name: Install Playwright Browsers
       run: npx playwright install --with-deps
     - name: Run E2E tests
@@ -77,5 +77,5 @@ jobs:
         key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
         restore-keys: |
           ${{ runner.os }}-node-
-    - run: npm ci
+    - run: npm ci --ignore-scripts
     - run: npm run build --if-present
