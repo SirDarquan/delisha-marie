@@ -45,7 +45,7 @@ export const seoResolver: ResolveFn<Partial<SeoContent>> = (route, state) => {
  */
 function resolveDynamicOrigin<T>(target: T, origin: string): T {
   if (typeof target === 'string') {
-    return target.replaceAll(/{{origin}}/g, origin) as T;
+    return target.replaceAll('{{origin}}', origin) as T;
   }
 
   if (Array.isArray(target)) {
