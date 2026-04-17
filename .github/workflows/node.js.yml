@@ -34,6 +34,15 @@ jobs:
           ${{ runner.os }}-node-
     - run: npm ci --ignore-scripts
     - run: npm test -- --coverage
+    - name: Debug LCOV Paths
+      run: |
+        if [ -f coverage/delisha-marie/lcov.info ]; then
+          echo "LCOV file found. Printing first 20 lines:"
+          head -n 20 coverage/delisha-marie/lcov.info
+        else
+          echo "LCOV file NOT found at coverage/delisha-marie/lcov.info"
+          find . -name "lcov.info"
+        fi
     - name: SonarQube Scan
       uses: SonarSource/sonarqube-scan-action@v7
       with:
