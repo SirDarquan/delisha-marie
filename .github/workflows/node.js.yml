@@ -18,6 +18,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v6
+      with:
+        fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
     - name: Use Node.js 24.x
       uses: actions/setup-node@v6
       with:
@@ -32,9 +34,6 @@ jobs:
           ${{ runner.os }}-node-
     - run: npm ci --ignore-scripts
     - run: npm test -- --coverage
-    - uses: actions/checkout@v6
-      with:
-        fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
     - name: SonarQube Scan
       uses: SonarSource/sonarqube-scan-action@v7
     # Check the Quality Gate status.
