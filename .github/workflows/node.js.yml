@@ -13,9 +13,13 @@ on:
 
 jobs:
   unit-tests:
+    env:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v6
+      with:
+        fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
     - name: Use Node.js 24.x
       uses: actions/setup-node@v6
       with:
@@ -29,14 +33,18 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-node-
     - run: npm ci --ignore-scripts
-    - run: npm test -- --coverage --coverage-reporters 'lcov'
-    - uses: actions/checkout@v6
-      with:
-        fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
+    - run: npm test -- --coverage
     - name: SonarQube Scan
-      uses: SonarSource/sonarqube-scan-action@v6
-      env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      uses: SonarSource/sonarqube-scan-action@v7
+      with:
+        args: >
+          -Dsonar.verbose=true
+    # Check the Quality Gate status.
+    - name: SonarQube Quality Gate check
+      id: sonarqube-quality-gate-check
+      uses: SonarSource/sonarqube-quality-gate-action@v1.2.0
+      with:
+        pollingTimeoutSec: 600
 
   e2e-tests:
     runs-on: ubuntu-latest
