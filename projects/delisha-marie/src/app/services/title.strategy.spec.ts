@@ -1,3 +1,4 @@
+import { ClassProvider, Type } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { RouterStateSnapshot, TitleStrategy } from '@angular/router';
 import { Title } from '@angular/platform-browser';
@@ -63,8 +64,8 @@ describe('TemplatePageTitleStrategy', () => {
   });
 
   it('should have a provider helper that returns the correct provider configuration', () => {
-    const provider = provideTitleStrategy(TemplatePageTitleStrategy) as any;
+    const provider = provideTitleStrategy(TemplatePageTitleStrategy) as ClassProvider;
     expect(provider.provide).toBe(TitleStrategy);
-    expect(provider.useClass).toBe(TemplatePageTitleStrategy);
+    expect(provider.useClass).toBe(TemplatePageTitleStrategy as Type<TemplatePageTitleStrategy>);
   });
 });
