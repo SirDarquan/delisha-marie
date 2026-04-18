@@ -94,7 +94,8 @@
               "projects/delisha-marie/**/*.ts",
               "projects/delisha-marie/**/*.html"
             ],
-            "eslintConfig": "projects/delisha-marie/eslint.config.js"
+            "eslintConfig": "projects/delisha-marie/eslint.config.js",
+            "fix": true
           }
         }
       }
