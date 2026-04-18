@@ -33,9 +33,12 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-node-
     - run: npm ci --ignore-scripts
-    - run: npm test -- --coverage --coverage-reporters 'lcov'
+    - run: npm test -- --coverage
     - name: SonarQube Scan
-      uses: SonarSource/sonarqube-scan-action@v6
+      uses: SonarSource/sonarqube-scan-action@v7
+      with:
+        args: >
+          -Dsonar.verbose=true
     # Check the Quality Gate status.
     - name: SonarQube Quality Gate check
       id: sonarqube-quality-gate-check
