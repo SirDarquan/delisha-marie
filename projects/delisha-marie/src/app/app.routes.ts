@@ -62,6 +62,16 @@ export const routes: Routes = [
     path: 'recipe-index',
     loadComponent: () => import('./pages/recipe-index/recipe-index').then((m) => m.RecipeIndex),
     title: 'Recipe Index',
+    resolve: { seo: seoResolver },
+    data: {
+      description:
+        'Explore Delisha Marie’s recipe index for handcrafted, seasonal recipes. Simple, elegant dishes for elevated home cooking.',
+      keywords: ['recipe index', 'food categories', 'delisha marie masterlist'],
+      breadcrumbs: [
+        { name: 'Home', item: '{{origin}}' },
+        { name: 'Recipe Index', item: '{{origin}}/recipe-index' },
+      ],
+    },
   },
   {
     path: 'contact',
