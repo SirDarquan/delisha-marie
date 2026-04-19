@@ -25,18 +25,16 @@ describe('RecipeIndexService', () => {
     expect(service).toBeTruthy();
   });
 
-  it('should fetch categories and map them correctly', () => {
+  it('should fetch the full recipe index data correctly', () => {
     const mockResponse: RecipeIndexResponse = {
-      featuredCategories: [
-        { name: 'Appetizers', image: '/app.png', url: '/recipes/appetizers' },
-        { name: 'Desserts', image: '/dess.png', url: '/recipes/desserts' },
-      ],
+      featuredCategories: [{ name: 'Appetizers', image: '/app.png', url: '/recipes/appetizers' }],
+      cookingMethods: [{ name: 'Baked', image: '/baked.png', url: '/methods/baked' }],
     };
 
-    service.getFeaturedCategories().subscribe((categories) => {
-      expect(categories.length).toBe(2);
-      expect(categories[0].name).toBe('Appetizers');
-      expect(categories).toEqual(mockResponse.featuredCategories);
+    service.getData().subscribe((data) => {
+      expect(data).toEqual(mockResponse);
+      expect(data.featuredCategories.length).toBe(1);
+      expect(data.cookingMethods.length).toBe(1);
     });
 
     const req = httpMock.expectOne('/api/recipe-index');
@@ -44,13 +42,15 @@ describe('RecipeIndexService', () => {
     req.flush(mockResponse);
   });
 
-  it('should handle empty categories response', () => {
+  it('should handle empty response properties', () => {
     const mockResponse: RecipeIndexResponse = {
       featuredCategories: [],
+      cookingMethods: [],
     };
 
-    service.getFeaturedCategories().subscribe((categories) => {
-      expect(categories.length).toBe(0);
+    service.getData().subscribe((data) => {
+      expect(data.featuredCategories.length).toBe(0);
+      expect(data.cookingMethods.length).toBe(0);
     });
 
     const req = httpMock.expectOne('/api/recipe-index');
