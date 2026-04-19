@@ -8,5 +8,13 @@
     { "name": "Soups", "image": "/images/categories/soups.png", "url": "/recipes/soups" },
     { "name": "Breads", "image": "/images/categories/breads.png", "url": "/recipes/breads" },
     { "name": "Desserts", "image": "/images/categories/desserts.png", "url": "/recipes/desserts" }
+  ],
+  "cookingMethods": [
+    { "name": "Air Fryer", "image": "/images/methods/air_fryer_method_thumbnail_1776629671787.png", "url": "/methods/air-fryer" },
+    { "name": "Baked", "image": "/images/methods/baked_method_thumbnail_1776629688560.png", "url": "/methods/baked" },
+    { "name": "Grilled", "image": "/images/methods/grilled_method_thumbnail_1776629706366.png", "url": "/methods/grilled" },
+    { "name": "Instant Pot", "image": "/images/methods/instant_pot_method_thumbnail_1776629722888.png", "url": "/methods/instant-pot" },
+    { "name": "Slow Cooker", "image": "/images/methods/slow_cooker_method_thumbnail_1776629741366.png", "url": "/methods/slow-cooker" },
+    { "name": "Stovetop", "image": "/images/methods/stovetop_method_thumbnail_1776629756710.png", "url": "/methods/stovetop" }
   ]
 }
