@@ -4,6 +4,7 @@ import {
   ViewEncapsulation,
   signal,
   inject,
+  computed,
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { MatCardModule } from '@angular/material/card';
@@ -43,7 +44,7 @@ import { RecipeIndexService } from '../../services/recipe-index.service';
       </div>
 
       <!-- Categories and Search Component -->
-      <dm-recipe-index-category-images [categories]="categories() || []" />
+      <dm-recipe-index-category-images [categories]="categories()" />
 
       <!-- Standard Width Container for Content -->
       <div class="into-the-box">
@@ -117,7 +118,8 @@ import { RecipeIndexService } from '../../services/recipe-index.service';
 export class RecipeIndex {
   private readonly service = inject(RecipeIndexService);
 
-  readonly categories = toSignal(this.service.getFeaturedCategories());
+  private readonly _categories = toSignal(this.service.getFeaturedCategories());
+  readonly categories = computed(() => this._categories() || []);
 
   readonly breadcrumbItems = signal<BreadcrumbItem[]>([
     { label: 'Home', url: '/' },
