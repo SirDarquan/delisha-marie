@@ -22,6 +22,10 @@ describe('RecipeIndex', () => {
       { name: 'Breads', image: 'test.png', url: '/test' },
       { name: 'Desserts', image: 'test.png', url: '/test' },
     ];
+    const mockMethods = [
+      { name: 'Air Fryer', image: 'test.png', url: '/methods/air-fryer' },
+      { name: 'Baked', image: 'test.png', url: '/methods/baked' },
+    ];
 
     await TestBed.configureTestingModule({
       imports: [RecipeIndex],
@@ -32,7 +36,11 @@ describe('RecipeIndex', () => {
         {
           provide: RecipeIndexService,
           useValue: {
-            getFeaturedCategories: () => of(mockCategories),
+            getData: () =>
+              of({
+                featuredCategories: mockCategories,
+                cookingMethods: mockMethods,
+              }),
           },
         },
       ],
@@ -59,6 +67,13 @@ describe('RecipeIndex', () => {
     const categories = compiled.querySelectorAll('nav[aria-label="Recipe categories"] a');
     expect(categories.length).toBe(8);
     expect(categories[0].getAttribute('aria-label')).toContain('Browse Appetizers');
+  });
+
+  it('should render 2 cooking methods with ARIA labels', () => {
+    const compiled = fixture.nativeElement as HTMLElement;
+    const methods = compiled.querySelectorAll('nav[aria-label="Cooking methods"] a');
+    expect(methods.length).toBe(2);
+    expect(methods[0].getAttribute('aria-label')).toContain('Recipes using Air Fryer method');
   });
 
   it('should render the breadcrumbs with correct items', () => {
