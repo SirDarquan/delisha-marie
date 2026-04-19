@@ -7,7 +7,7 @@ import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { ThemeService } from '../../services/theme.service';
 
 @Component({
-  selector: 'app-header',
+  selector: 'dm-header',
   imports: [
     RouterLink,
     RouterLinkActive,

@@ -1,7 +1,7 @@
 import { Component, ChangeDetectionStrategy, ViewEncapsulation } from '@angular/core';
 
 @Component({
-  selector: 'app-footer',
+  selector: 'dm-footer',
   template: `
     <footer
       class="py-12 px-4 border-t border-[var(--mat-sys-outline-variant)] mt-16 bg-[var(--mat-sys-surface-container)]">

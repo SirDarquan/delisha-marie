@@ -12,9 +12,13 @@ interface Category {
 }
 
 @Component({
-  selector: 'app-recipe-index',
-  standalone: true,
-  imports: [RouterLink, MatCardModule, MatButtonModule, MatIconModule, MatChipsModule],
+  selector: 'dm-recipe-index',
+  imports: [
+    MatCardModule,
+    MatButtonModule,
+    MatIconModule,
+    MatChipsModule,
+  ],
   template: `
     <main class="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8" aria-labelledby="index-title">
       <!-- Breadcrumb -->
