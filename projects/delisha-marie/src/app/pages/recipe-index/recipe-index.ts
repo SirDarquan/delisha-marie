@@ -115,7 +115,7 @@ import { RecipeIndexService } from '../../services/recipe-index.service';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RecipeIndex {
-  private service = inject(RecipeIndexService);
+  private readonly service = inject(RecipeIndexService);
 
   readonly categories = toSignal(this.service.getFeaturedCategories());
 

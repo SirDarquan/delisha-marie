@@ -7,7 +7,7 @@ import { RecipeIndexResponse, Category } from '../models/category';
   providedIn: 'root',
 })
 export class RecipeIndexService {
-  private http = inject(HttpClient);
+  private readonly http = inject(HttpClient);
 
   getFeaturedCategories(): Observable<Category[]> {
     return this.http
