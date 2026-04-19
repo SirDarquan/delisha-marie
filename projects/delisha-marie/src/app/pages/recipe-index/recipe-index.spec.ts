@@ -61,11 +61,34 @@ describe('RecipeIndex', () => {
     expect(categories[0].getAttribute('aria-label')).toContain('Browse Appetizers');
   });
 
-  it('should render the placeholders grid with accessibility roles', () => {
+  it('should render the breadcrumbs with correct items', () => {
     const compiled = fixture.nativeElement as HTMLElement;
-    const list = compiled.querySelector('[role="list"]');
-    const items = compiled.querySelectorAll('[role="listitem"]');
-    expect(list).toBeTruthy();
-    expect(items.length).toBe(6);
+    const breadcrumbs = compiled.querySelector('dml-breadcrumbs');
+    expect(breadcrumbs).toBeTruthy();
+    expect(breadcrumbs?.textContent).toContain('Home');
+    expect(breadcrumbs?.textContent).toContain('Recipe Index');
+  });
+
+  it('should render the newsletter section with correct titles', () => {
+    const compiled = fixture.nativeElement as HTMLElement;
+    const newsletter = compiled.querySelector('footer');
+    expect(newsletter).toBeTruthy();
+    expect(newsletter?.querySelector('h2')?.textContent).toContain('Never miss a beat!');
+    expect(newsletter?.querySelector('button')?.textContent).toContain(
+      'Join the Studio Newsletter',
+    );
+  });
+
+  it('should render section headers correctly', () => {
+    const compiled = fixture.nativeElement as HTMLElement;
+    const latestHeading = compiled.querySelector('#latest-title');
+    expect(latestHeading?.textContent?.trim()).toBe('Latest');
+  });
+
+  it('should display "Coming Soon" badges on latest recipe cards', () => {
+    const compiled = fixture.nativeElement as HTMLElement;
+    const badges = compiled.querySelectorAll('mat-chip');
+    expect(badges.length).toBe(6);
+    expect(badges[0].textContent?.trim()).toBe('Coming Soon');
   });
 });
