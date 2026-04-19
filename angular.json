@@ -17,7 +17,7 @@
       },
       "root": "projects/delisha-marie",
       "sourceRoot": "projects/delisha-marie/src",
-      "prefix": "app",
+      "prefix": "dm",
       "architect": {
         "build": {
           "builder": "@angular/build:application",

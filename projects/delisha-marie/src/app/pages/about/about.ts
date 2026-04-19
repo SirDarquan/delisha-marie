@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 
 @Component({
-  selector: 'app-about',
+  selector: 'dm-about',
   imports: [CommonModule, MatCardModule],
   template: `
     <div class="max-w-4xl mx-auto space-y-16 py-12">

@@ -1,7 +1,7 @@
 import { Component, ChangeDetectionStrategy, ViewEncapsulation } from '@angular/core';
 
 @Component({
-  selector: 'app-footer',
+  selector: 'dm-footer',
   template: `
     <footer
       class="py-12 px-4 border-t border-[var(--mat-sys-outline-variant)] mt-16 bg-[var(--mat-sys-surface-container)]">
@@ -9,13 +9,13 @@ import { Component, ChangeDetectionStrategy, ViewEncapsulation } from '@angular/
         class="container mx-auto max-w-7xl flex flex-col md:flex-row justify-between items-center gap-8">
         <div class="flex flex-col items-center md:items-start gap-2">
           <div class="flex items-center gap-2">
-            <span class="text-xl font-black tracking-tighter text-[var(--mat-sys-primary)]"
-              >DELISHA</span
-            >
+            <span class="text-xl font-black tracking-tighter text-[var(--mat-sys-primary)]">
+              DELISHA
+            </span>
             <span
-              class="text-xl font-light tracking-widest text-[var(--mat-sys-tertiary)] uppercase"
-              >MARIE</span
-            >
+              class="text-xl font-light tracking-widest text-[var(--mat-sys-tertiary)] uppercase">
+              MARIE
+            </span>
           </div>
           <p class="text-[var(--mat-sys-on-surface-variant)] text-sm italic">
             Inspired by taste, created with love.

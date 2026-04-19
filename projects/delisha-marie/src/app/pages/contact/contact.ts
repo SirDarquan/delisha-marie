@@ -14,7 +14,7 @@ import { MatCard } from '@angular/material/card';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 
 @Component({
-  selector: 'app-contact',
+  selector: 'dm-contact',
   imports: [
     FormRoot,
     FormField,

@@ -8,7 +8,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatChipsModule } from '@angular/material/chips';
 
 @Component({
-  selector: 'app-home',
+  selector: 'dm-home',
   imports: [
     CommonModule,
     MatCardModule,
