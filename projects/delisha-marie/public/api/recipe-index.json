@@ -1,0 +1,12 @@
+{
+  "featuredCategories": [
+    { "name": "Appetizers", "image": "/images/categories/appetizers.png", "url": "/recipes/appetizers" },
+    { "name": "Breakfast", "image": "/images/categories/breakfast.png", "url": "/recipes/breakfast" },
+    { "name": "Main Dishes", "image": "/images/categories/main-dishes.png", "url": "/recipes/main-dishes" },
+    { "name": "Sides", "image": "/images/categories/sides.png", "url": "/recipes/sides" },
+    { "name": "Salads", "image": "/images/categories/salads.png", "url": "/recipes/salads" },
+    { "name": "Soups", "image": "/images/categories/soups.png", "url": "/recipes/soups" },
+    { "name": "Breads", "image": "/images/categories/breads.png", "url": "/recipes/breads" },
+    { "name": "Desserts", "image": "/images/categories/desserts.png", "url": "/recipes/desserts" }
+  ]
+}
