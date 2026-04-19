@@ -6,4 +6,5 @@ export interface Category {
 
 export interface RecipeIndexResponse {
   featuredCategories: Category[];
+  cookingMethods: Category[];
 }

@@ -13,6 +13,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatChipsModule } from '@angular/material/chips';
 import { Breadcrumbs, BreadcrumbItem } from '../../components/breadcrumbs/breadcrumbs';
 import { RecipeIndexCategoryImages } from './recipe-index-category-images';
+import { RecipeIndexMethodImages } from './recipe-index-method-images';
 import { RecipeIndexService } from '../../services/recipe-index.service';
 
 @Component({
@@ -24,6 +25,7 @@ import { RecipeIndexService } from '../../services/recipe-index.service';
     MatChipsModule,
     Breadcrumbs,
     RecipeIndexCategoryImages,
+    RecipeIndexMethodImages,
   ],
   template: `
     <main class="py-12" aria-labelledby="index-title">
@@ -45,6 +47,9 @@ import { RecipeIndexService } from '../../services/recipe-index.service';
 
       <!-- Categories and Search Component -->
       <dm-recipe-index-category-images [categories]="categories()" />
+
+      <!-- Cooking Methods Component -->
+      <dm-recipe-index-method-images [methods]="methods()" />
 
       <!-- Standard Width Container for Content -->
       <div class="into-the-box">
@@ -118,8 +123,9 @@ import { RecipeIndexService } from '../../services/recipe-index.service';
 export class RecipeIndex {
   private readonly service = inject(RecipeIndexService);
 
-  private readonly _categories = toSignal(this.service.getFeaturedCategories());
-  readonly categories = computed(() => this._categories() || []);
+  private readonly _data = toSignal(this.service.getData());
+  readonly categories = computed(() => this._data()?.featuredCategories || []);
+  readonly methods = computed(() => this._data()?.cookingMethods || []);
 
   readonly breadcrumbItems = signal<BreadcrumbItem[]>([
     { label: 'Home', url: '/' },
