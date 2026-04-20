@@ -108,4 +108,19 @@ describe('RecipeIndex', () => {
     expect(compiled.querySelector('#category-list-title')).toBeTruthy();
     expect(compiled.querySelector('#methods-list-title')).toBeTruthy();
   });
+
+  it('should correctly transform categories into "The Best" recipes with recursive URLs', () => {
+    const bestRecipes = component.bestRecipes();
+    expect(bestRecipes[0].name).toBe('The Best Air Fryer');
+    expect(bestRecipes[0].url).toBe('/the-best-recipes/the-best-air-fryer');
+    
+    // Test recursive structure if mock had children
+    const mockWithChildren = [
+      { name: 'Main', url: '/m', children: [{ name: 'Pasta', url: '/p' }] }
+    ];
+    // @ts-ignore - access private for testing
+    const transformed = component.transformToBest(mockWithChildren);
+    expect(transformed[0].children?.[0].name).toBe('The Best Pasta');
+    expect(transformed[0].children?.[0].url).toBe('/the-best-recipes/the-best-main/the-best-pasta');
+  });
 });

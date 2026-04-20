@@ -11,10 +11,10 @@ export function slugify(text: string): string {
     .toString()
     .toLowerCase()
     .trim()
-    .replace(/'s/g, 's')            // Handle possessives: Valentine's -> valentines
-    .replace(/[^a-z0-9 -]/g, '')    // Remove special characters
-    .replace(/\s+/g, '-')           // Replace spaces with -
-    .replace(/-+/g, '-');           // Remove duplicate hyphens
+    .replaceAll("'s", 's')            // Handle possessives: Valentine's -> valentines
+    .replaceAll(/[^a-z0-9 -]/g, '')    // Remove special characters
+    .replaceAll(/\s+/g, '-')           // Replace spaces with -
+    .replaceAll(/-+/g, '-');           // Remove duplicate hyphens
 }
 
 /**
