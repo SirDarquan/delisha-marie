@@ -93,5 +93,11 @@ export const routes: Routes = [
       },
     },
   },
+  {
+    path: 'tag/:id',
+    loadComponent: () => import('./pages/tag/tag').then((m) => m.Tag),
+    title: 'Tag Archive',
+    resolve: { seo: seoResolver },
+  },
   { path: '**', redirectTo: '' },
 ];
