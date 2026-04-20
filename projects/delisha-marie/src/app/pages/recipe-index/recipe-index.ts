@@ -15,6 +15,9 @@ import { Breadcrumbs, BreadcrumbItem } from '../../components/breadcrumbs/breadc
 import { RecipeIndexCategoryImages } from './recipe-index-category-images';
 import { RecipeIndexMethodImages } from './recipe-index-method-images';
 import { RecipeIndexService } from '../../services/recipe-index.service';
+import { RecipeIndexLinkList } from "./recipe-index-link-list";
+import { Category } from '../../models/category';
+import { slugify } from '../../utils/slug';
 
 @Component({
   selector: 'dm-recipe-index',
@@ -26,15 +29,13 @@ import { RecipeIndexService } from '../../services/recipe-index.service';
     Breadcrumbs,
     RecipeIndexCategoryImages,
     RecipeIndexMethodImages,
-  ],
+    RecipeIndexLinkList
+],
   template: `
     <main class="py-12" aria-labelledby="index-title">
-      <!-- Standard Width Container for Header -->
       <div class="into-the-box">
-        <!-- Breadcrumb Component -->
         <dml-breadcrumbs [items]="breadcrumbItems()" class="block mb-8" />
 
-        <!-- High-Impact Text Header -->
         <header class="mb-16 pt-8">
           <h1
             id="index-title"
@@ -45,76 +46,60 @@ import { RecipeIndexService } from '../../services/recipe-index.service';
         </header>
       </div>
 
-      <!-- Categories and Search Component -->
-      <dm-recipe-index-category-images [categories]="categories()" />
+      <!-- Featured Image Sections -->
+      <dm-recipe-index-category-images [categories]="featuredCategories()" />
+      <dm-recipe-index-method-images [methods]="featuredMethods()" />
 
-      <!-- Cooking Methods Component -->
-      <dm-recipe-index-method-images [methods]="methods()" />
+      <!-- Full Link Index Sections -->
+      <section class="space-y-4">
+        <dm-recipe-index-link-list
+          [items]="categoriesList()"
+          titlePrefix="Recipes By"
+          titleHighlight="Category"
+          titleId="category-list-title" />
 
-      <!-- Standard Width Container for Content -->
-      <div class="into-the-box">
-        <!-- Latest Recipes Segment -->
-        <section class="space-y-12" aria-labelledby="latest-title">
-          <div
-            class="flex items-center justify-between border-b-2 border-[var(--mat-sys-outline-variant)] pb-4">
-            <h2 id="latest-title" class="text-3xl font-bold tracking-tight">Latest</h2>
-            <button mat-button class="hover:bg-[var(--mat-sys-primary-container)]">
-              Explore All <mat-icon>arrow_right_alt</mat-icon>
-            </button>
-          </div>
+        <dm-recipe-index-link-list
+          [items]="methodsList()"
+          titlePrefix="Recipes By"
+          titleHighlight="Method"
+          titleId="methods-list-title" />
 
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" role="list">
-            @for (item of [1, 2, 3, 4, 5, 6]; track item) {
-              <mat-card
-                role="listitem"
-                class="!rounded-2xl overflow-hidden border border-[var(--mat-sys-outline-variant)] hover:shadow-lg transition-all duration-300 shadow-none">
-                <div
-                  class="aspect-video bg-[var(--mat-sys-surface-container-high)] flex items-center justify-center relative">
-                  <mat-icon class="text-6xl text-[var(--mat-sys-outline)] opacity-20"
-                    >restaurant</mat-icon
-                  >
-                  <div class="absolute top-4 right-4">
-                    <mat-chip-set>
-                      <mat-chip class="!bg-[var(--mat-sys-primary)] !text-white !font-bold"
-                        >Coming Soon</mat-chip
-                      >
-                    </mat-chip-set>
-                  </div>
-                </div>
-                <mat-card-content class="!p-6 space-y-4">
-                  <div
-                    class="h-6 w-3/4 bg-[var(--mat-sys-surface-container-highest)] rounded animate-pulse"></div>
-                  <div
-                    class="h-4 w-full bg-[var(--mat-sys-surface-container-highest)] rounded animate-pulse opacity-40"></div>
-                  <div
-                    class="flex items-center gap-4 pt-4 text-[var(--mat-sys-on-surface-variant)] text-xs font-semibold">
-                    <span class="flex items-center gap-1"
-                      ><mat-icon class="!text-base">timer</mat-icon> -- min</span
-                    >
-                    <span class="flex items-center gap-1"
-                      ><mat-icon class="!text-base">person</mat-icon> Serves --</span
-                    >
-                  </div>
-                </mat-card-content>
-              </mat-card>
-            }
-          </div>
-        </section>
+        <dm-recipe-index-link-list
+          [items]="holidays()"
+          titlePrefix="Recipes By"
+          titleHighlight="Holiday"
+          titleId="holidays-title" />
 
+        <dm-recipe-index-link-list
+          [items]="specialDiets()"
+          titlePrefix="Special"
+          titleHighlight="Diets"
+          titleId="diets-title" />
+
+        <dm-recipe-index-link-list
+          [items]="bestRecipes()"
+          titlePrefix="The Best"
+          titleHighlight="Recipes"
+          titleId="best-recipes-title" />
+      </section>
         <!-- Newsletter CTA -->
         <footer
-          class="mt-24 p-12 bg-[var(--mat-sys-primary-container)] text-[var(--mat-sys-on-primary-container)] rounded-[2rem] text-center space-y-6">
-          <h2 class="text-3xl font-bold">Never miss a beat!</h2>
-          <p class="text-lg max-w-xl mx-auto opacity-90">
+          class="mt-24 mb-12 p-16 bg-[var(--mat-sys-on-surface)] text-[var(--mat-sys-surface)] rounded-[3rem] text-center space-y-8 relative overflow-hidden group/footer">
+          <div class="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -mr-32 -mt-32 blur-3xl group-hover/footer:bg-white/10 transition-colors duration-500"></div>
+          
+          <h2 class="text-4xl md:text-5xl font-black tracking-tight relative z-10">Never miss a beat!</h2>
+          <p class="text-xl max-w-2xl mx-auto opacity-70 font-medium relative z-10">
             Subscribe to get new updates and cooking tips delivered straight to your inbox.
           </p>
-          <button
-            mat-flat-button
-            class="!bg-[var(--mat-sys-primary)] !text-white !p-6 !rounded-xl !font-bold">
-            Join the Studio Newsletter
-          </button>
+          <div class="pt-4 relative z-10">
+            <button
+              mat-flat-button
+              class="!bg-[var(--mat-sys-primary)] !text-white !px-12 !py-8 !text-lg !rounded-2xl !font-bold shadow-2xl hover:scale-105 transition-transform">
+              Join the Studio Newsletter
+            </button>
+          </div>
         </footer>
-      </div>
+      <!-- </div> -->
     </main>
   `,
   encapsulation: ViewEncapsulation.None,
@@ -124,8 +109,33 @@ export class RecipeIndex {
   private readonly service = inject(RecipeIndexService);
 
   private readonly _data = toSignal(this.service.getData());
-  readonly categories = computed(() => this._data()?.featuredCategories || []);
-  readonly methods = computed(() => this._data()?.cookingMethods || []);
+  
+  readonly featuredCategories = computed(() => this._data()?.featuredCategories || []);
+  readonly featuredMethods = computed(() => this._data()?.cookingMethods || []);
+  readonly categoriesList = computed(() => this._data()?.categoriesList || []);
+  readonly methodsList = computed(() => this._data()?.methodsList || []);
+  readonly holidays = computed(() => this._data()?.holidays || []);
+  readonly specialDiets = computed(() => this._data()?.specialDiets || []);
+  
+  readonly bestRecipes = computed(() => {
+    const categories = this._data()?.categoriesList || [];
+    return this.transformToBest(categories);
+  });
+
+  private transformToBest(categories: Category[], theBest?: string): Category[] {
+    return categories.map(cat => {
+      const bestName = `The Best ${cat.name}`;
+      // Generate clean URL following the strategy: /the-best-recipes/the-best-{slug}
+      const bestUrl = theBest ? `${theBest}/the-best-${slugify(cat.name)}` : `/the-best-recipes/the-best-${slugify(cat.name)}`;
+      
+      return {
+        ...cat,
+        name: bestName,
+        url: bestUrl,
+        children: cat.children ? this.transformToBest(cat.children, bestUrl) : undefined
+      };
+    });
+  }
 
   readonly breadcrumbItems = signal<BreadcrumbItem[]>([
     { label: 'Home', url: '/' },

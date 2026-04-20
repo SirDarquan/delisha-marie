@@ -1,10 +1,20 @@
 export interface Category {
   name: string;
-  image: string;
   url: string;
+  children?: Category[];
+}
+
+export interface FullCategory extends Category {
+  image: string;
 }
 
 export interface RecipeIndexResponse {
-  featuredCategories: Category[];
-  cookingMethods: Category[];
+  featuredCategories: FullCategory[];
+  cookingMethods: FullCategory[];
+  holidays: Category[];
+  specialDiets: Category[];
+  bestRecipes: Category[];
+  // Full lists for the link-only sections
+  categoriesList: Category[];
+  methodsList: Category[];
 }

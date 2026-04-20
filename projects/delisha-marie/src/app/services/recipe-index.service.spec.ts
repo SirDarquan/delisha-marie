@@ -27,8 +27,17 @@ describe('RecipeIndexService', () => {
 
   it('should fetch the full recipe index data correctly', () => {
     const mockResponse: RecipeIndexResponse = {
-      featuredCategories: [{ name: 'Appetizers', image: '/app.png', url: '/recipes/appetizers' }],
-      cookingMethods: [{ name: 'Baked', image: '/baked.png', url: '/methods/baked' }],
+      featuredCategories: [
+        { name: 'Appetizers', image: '/img.png', url: '/app' }
+      ],
+      cookingMethods: [
+        { name: 'Air Fryer', image: '/img.png', url: '/air' }
+      ],
+      holidays: [],
+      specialDiets: [],
+      bestRecipes: [],
+      categoriesList: [],
+      methodsList: []
     };
 
     service.getData().subscribe((data) => {
@@ -46,6 +55,11 @@ describe('RecipeIndexService', () => {
     const mockResponse: RecipeIndexResponse = {
       featuredCategories: [],
       cookingMethods: [],
+      holidays: [],
+      specialDiets: [],
+      bestRecipes: [],
+      categoriesList: [],
+      methodsList: []
     };
 
     service.getData().subscribe((data) => {

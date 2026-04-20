@@ -6,13 +6,14 @@ import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { describe, it, expect, beforeEach } from 'vitest';
 import { RecipeIndexService } from '../../services/recipe-index.service';
 import { of } from 'rxjs';
+import { FullCategory } from '../../models/category';
 
 describe('RecipeIndex', () => {
   let component: RecipeIndex;
   let fixture: ComponentFixture<RecipeIndex>;
 
   beforeEach(async () => {
-    const mockCategories = [
+    const mockCategories: FullCategory[] = [
       { name: 'Appetizers', image: 'test.png', url: '/test' },
       { name: 'Breakfast', image: 'test.png', url: '/test' },
       { name: 'Main Dishes', image: 'test.png', url: '/test' },
@@ -22,7 +23,7 @@ describe('RecipeIndex', () => {
       { name: 'Breads', image: 'test.png', url: '/test' },
       { name: 'Desserts', image: 'test.png', url: '/test' },
     ];
-    const mockMethods = [
+    const mockMethods: FullCategory[] = [
       { name: 'Air Fryer', image: 'test.png', url: '/methods/air-fryer' },
       { name: 'Baked', image: 'test.png', url: '/methods/baked' },
     ];
@@ -40,6 +41,11 @@ describe('RecipeIndex', () => {
               of({
                 featuredCategories: mockCategories,
                 cookingMethods: mockMethods,
+                holidays: mockMethods,
+                specialDiets: mockMethods,
+                bestRecipes: mockMethods,
+                categoriesList: mockMethods,
+                methodsList: mockMethods,
               }),
           },
         },
@@ -62,18 +68,21 @@ describe('RecipeIndex', () => {
     expect(h1?.classList.contains('mat-headline-medium')).toBe(true);
   });
 
-  it('should render 8 category navigation links with ARIA labels', () => {
+  it('should render the category images component', () => {
     const compiled = fixture.nativeElement as HTMLElement;
-    const categories = compiled.querySelectorAll('nav[aria-label="Recipe categories"] a');
-    expect(categories.length).toBe(8);
-    expect(categories[0].getAttribute('aria-label')).toContain('Browse Appetizers');
+    expect(compiled.querySelector('dm-recipe-index-category-images')).toBeTruthy();
   });
 
-  it('should render 2 cooking methods with ARIA labels', () => {
+  it('should render the method images component', () => {
     const compiled = fixture.nativeElement as HTMLElement;
-    const methods = compiled.querySelectorAll('nav[aria-label="Cooking methods"] a');
-    expect(methods.length).toBe(2);
-    expect(methods[0].getAttribute('aria-label')).toContain('Recipes using Air Fryer method');
+    expect(compiled.querySelector('dm-recipe-index-method-images')).toBeTruthy();
+  });
+
+  it('should render other discovery sections', () => {
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.querySelector('#holidays-title')).toBeTruthy();
+    expect(compiled.querySelector('#diets-title')).toBeTruthy();
+    expect(compiled.querySelector('#best-recipes-title')).toBeTruthy();
   });
 
   it('should render the breadcrumbs with correct items', () => {
@@ -94,16 +103,24 @@ describe('RecipeIndex', () => {
     );
   });
 
-  it('should render section headers correctly', () => {
+  it('should render section headers correctly via link list components', () => {
     const compiled = fixture.nativeElement as HTMLElement;
-    const latestHeading = compiled.querySelector('#latest-title');
-    expect(latestHeading?.textContent?.trim()).toBe('Latest');
+    expect(compiled.querySelector('#category-list-title')).toBeTruthy();
+    expect(compiled.querySelector('#methods-list-title')).toBeTruthy();
   });
 
-  it('should display "Coming Soon" badges on latest recipe cards', () => {
-    const compiled = fixture.nativeElement as HTMLElement;
-    const badges = compiled.querySelectorAll('mat-chip');
-    expect(badges.length).toBe(6);
-    expect(badges[0].textContent?.trim()).toBe('Coming Soon');
+  it('should correctly transform categories into "The Best" recipes with recursive URLs', () => {
+    const bestRecipes = component.bestRecipes();
+    expect(bestRecipes[0].name).toBe('The Best Air Fryer');
+    expect(bestRecipes[0].url).toBe('/the-best-recipes/the-best-air-fryer');
+    
+    // Test recursive structure if mock had children
+    const mockWithChildren = [
+      { name: 'Main', url: '/m', children: [{ name: 'Pasta', url: '/p' }] }
+    ];
+    // @ts-ignore - access private for testing
+    const transformed = component.transformToBest(mockWithChildren);
+    expect(transformed[0].children?.[0].name).toBe('The Best Pasta');
+    expect(transformed[0].children?.[0].url).toBe('/the-best-recipes/the-best-main/the-best-pasta');
   });
 });
