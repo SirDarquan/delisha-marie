@@ -11,10 +11,10 @@ export function slugify(text: string): string {
     .toString()
     .toLowerCase()
     .trim()
-    .replaceAll("'s", 's')            // Handle possessives: Valentine's -> valentines
-    .replaceAll(/[^a-z0-9 -]/g, '')    // Remove special characters
-    .replaceAll(/\s+/g, '-')           // Replace spaces with -
-    .replaceAll(/-+/g, '-');           // Remove duplicate hyphens
+    .replaceAll("'s", 's') // Handle possessives: Valentine's -> valentines
+    .replaceAll(/[^a-z0-9 -]/g, '') // Remove special characters
+    .replaceAll(/\s+/g, '-') // Replace spaces with -
+    .replaceAll(/-+/g, '-'); // Remove duplicate hyphens
 }
 
 /**
@@ -24,7 +24,7 @@ export function slugify(text: string): string {
 export function deslugify(slug: string): string {
   return slug
     .split('-')
-    .map(word => {
+    .map((word) => {
       // Special cases for common words that shouldn't be capitalized
       const lowercaseWords = ['and', 'or', 'the', 'of', 'in', 'with', 'for'];
       if (lowercaseWords.includes(word.toLowerCase())) {

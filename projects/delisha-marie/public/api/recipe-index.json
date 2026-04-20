@@ -73,5 +73,52 @@
     { "name": "Vegetarian", "url": "/special-diets/vegetarian" },
     { "name": "Keto", "url": "/special-diets/keto" },
     { "name": "Paleo", "url": "/special-diets/paleo" }
+  ],
+  "ingredients": [
+    {
+      "name": "Apple",
+      "url": "/tag/apple",
+      "count": 48,
+      "children": [
+        { "name": "Apple Cider", "url": "/tag/apple-cider", "count": 6 },
+        { "name": "Apple Cider Vinegar", "url": "/tag/apple-cider-vinegar", "count": 40 },
+        { "name": "Apple Jelly", "url": "/tag/apple-jelly", "count": 2 }
+      ]
+    },
+    { "name": "Apricot", "url": "/tag/apricot", "count": 5 },
+    {
+      "name": "Baking Soda",
+      "url": "/tag/baking-soda",
+      "count": 12,
+      "children": [
+        { "name": "Baking Powder", "url": "/tag/baking-powder", "count": 8 },
+        { "name": "Cornstarch", "url": "/tag/cornstarch", "count": 4 }
+      ]
+    },
+    { "name": "Banana", "url": "/tag/banana", "count": 15 },
+    { "name": "Beef", "url": "/tag/beef", "count": 22 },
+    { "name": "Blueberry", "url": "/tag/blueberry", "count": 10 },
+    { "name": "Broccoli", "url": "/tag/broccoli", "count": 8 },
+    { "name": "Cabbage", "url": "/tag/cabbage", "count": 4 },
+    { "name": "Carrot", "url": "/tag/carrot", "count": 12 },
+    { "name": "Chicken", "url": "/tag/chicken", "count": 45 },
+    { "name": "Chocolate", "url": "/tag/chocolate", "count": 30 },
+    { "name": "Cinnamon", "url": "/tag/cinnamon", "count": 18 },
+    { "name": "Egg", "url": "/tag/egg", "count": 25 },
+    { "name": "Flour", "url": "/tag/flour", "count": 40 },
+    { "name": "Garlic", "url": "/tag/garlic", "count": 35 },
+    { "name": "Ginger", "url": "/tag/ginger", "count": 12 },
+    { "name": "Honey", "url": "/tag/honey", "count": 20 },
+    { "name": "Lemon", "url": "/tag/lemon", "count": 18 },
+    { "name": "Milk", "url": "/tag/milk", "count": 15 },
+    { "name": "Onion", "url": "/tag/onion", "count": 32 },
+    { "name": "Pasta", "url": "/tag/pasta", "count": 28 },
+    { "name": "Potato", "url": "/tag/potato", "count": 20 },
+    { "name": "Rice", "url": "/tag/rice", "count": 14 },
+    { "name": "Sugar", "url": "/tag/sugar", "count": 35 },
+    { "name": "Tomato", "url": "/tag/tomato", "count": 22 },
+    { "name": "Vanilla", "url": "/tag/vanilla", "count": 12 },
+    { "name": "Yogurt", "url": "/tag/yogurt", "count": 8 },
+    { "name": "Zucchini", "url": "/tag/zucchini", "count": 10 }
   ]
 }

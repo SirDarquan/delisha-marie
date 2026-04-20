@@ -1,4 +1,10 @@
-import { Component, ChangeDetectionStrategy, ViewEncapsulation, input, computed } from '@angular/core';
+import {
+  Component,
+  ChangeDetectionStrategy,
+  ViewEncapsulation,
+  input,
+  computed,
+} from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Category } from '../../models/category';
 
@@ -12,7 +18,8 @@ import { Category } from '../../models/category';
           <h2
             [id]="titleId()"
             class="text-4xl font-extrabold tracking-tight text-[var(--mat-sys-on-surface)]">
-            {{ titlePrefix() }} <span class="text-[var(--mat-sys-primary)]">{{ titleHighlight() }}</span>
+            {{ titlePrefix() }}
+            <span class="text-[var(--mat-sys-primary)]">{{ titleHighlight() }}</span>
           </h2>
           <div class="h-1 w-16 bg-[var(--mat-sys-primary)] mt-4 rounded-full"></div>
         </header>
