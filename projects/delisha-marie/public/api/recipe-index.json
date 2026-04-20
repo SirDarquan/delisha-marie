@@ -10,11 +10,68 @@
     { "name": "Desserts", "image": "/images/categories/desserts.png", "url": "/recipes/desserts" }
   ],
   "cookingMethods": [
-    { "name": "Air Fryer", "image": "/images/methods/air_fryer_method_thumbnail_1776629671787.png", "url": "/methods/air-fryer" },
-    { "name": "Baked", "image": "/images/methods/baked_method_thumbnail_1776629688560.png", "url": "/methods/baked" },
-    { "name": "Grilled", "image": "/images/methods/grilled_method_thumbnail_1776629706366.png", "url": "/methods/grilled" },
-    { "name": "Instant Pot", "image": "/images/methods/instant_pot_method_thumbnail_1776629722888.png", "url": "/methods/instant-pot" },
-    { "name": "Slow Cooker", "image": "/images/methods/slow_cooker_method_thumbnail_1776629741366.png", "url": "/methods/slow-cooker" },
-    { "name": "Stovetop", "image": "/images/methods/stovetop_method_thumbnail_1776629756710.png", "url": "/methods/stovetop" }
+    { "name": "Air Fryer", "image": "/images/methods/air-fryer.png", "url": "/methods/air-fryer" },
+    { "name": "Baked", "image": "/images/methods/baked.png", "url": "/methods/baked" },
+    { "name": "Grilled", "image": "/images/methods/grilled.png", "url": "/methods/grilled" },
+    { "name": "Instant Pot", "image": "/images/methods/instant-pot.png", "url": "/methods/instant-pot" },
+    { "name": "Slow Cooker", "image": "/images/methods/slow-cooker.png", "url": "/methods/slow-cooker" },
+    { "name": "Stovetop", "image": "/images/methods/stovetop.png", "url": "/methods/stovetop" }
+  ],
+  "categoriesList": [
+    {
+      "name": "Appetizers",
+      "url": "/recipes/appetizers",
+      "children": [
+        { "name": "Dips", "url": "/recipes/appetizers/dips" },
+        { "name": "Salsa", "url": "/recipes/appetizers/salsa" },
+        { "name": "Wings", "url": "/recipes/appetizers/wings" }
+      ]
+    },
+    {
+      "name": "Breakfast",
+      "url": "/recipes/breakfast",
+      "children": [
+        { "name": "Eggs", "url": "/recipes/breakfast/eggs" },
+        { "name": "Pancakes", "url": "/recipes/breakfast/pancakes" },
+        { "name": "Smoothies", "url": "/recipes/breakfast/smoothies" }
+      ]
+    },
+    {
+      "name": "Main Dishes",
+      "url": "/recipes/main-dishes",
+      "children": [
+        { "name": "Beef", "url": "/recipes/main-dishes/beef" },
+        { "name": "Chicken", "url": "/recipes/main-dishes/chicken" },
+        { "name": "Pasta", "url": "/recipes/main-dishes/pasta" },
+        { "name": "Pork", "url": "/recipes/main-dishes/pork" },
+        { "name": "Seafood", "url": "/recipes/main-dishes/seafood" }
+      ]
+    },
+    { "name": "Sides", "url": "/recipes/sides" },
+    { "name": "Salads", "url": "/recipes/salads" },
+    { "name": "Soups", "url": "/recipes/soups" }
+  ],
+  "methodsList": [
+    { "name": "Air Fryer", "url": "/methods/air-fryer" },
+    { "name": "Baked", "url": "/methods/baked" },
+    { "name": "Grilled", "url": "/methods/grilled" },
+    { "name": "Instant Pot", "url": "/methods/instant-pot" },
+    { "name": "Slow Cooker", "url": "/methods/slow-cooker" },
+    { "name": "Stovetop", "url": "/methods/stovetop" },
+    { "name": "No-Bake", "url": "/methods/no-bake" }
+  ],
+  "holidays": [
+    { "name": "Christmas", "url": "/holiday/christmas" },
+    { "name": "Easter", "url": "/holiday/easter" },
+    { "name": "Halloween", "url": "/holiday/halloween" },
+    { "name": "Independence Day", "url": "/holiday/independence-day" },
+    { "name": "Thanksgiving", "url": "/holiday/thanksgiving" }
+  ],
+  "specialDiets": [
+    { "name": "Gluten Free", "url": "/special-diets/gluten-free" },
+    { "name": "Vegan", "url": "/special-diets/vegan" },
+    { "name": "Vegetarian", "url": "/special-diets/vegetarian" },
+    { "name": "Keto", "url": "/special-diets/keto" },
+    { "name": "Paleo", "url": "/special-diets/paleo" }
   ]
 }

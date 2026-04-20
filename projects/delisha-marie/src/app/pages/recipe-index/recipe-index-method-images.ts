@@ -9,13 +9,13 @@ import { FullCategory } from '../../models/category';
   template: `
     <section class="mb-20" aria-labelledby="methods-title">
       <div class="into-the-box">
-        <header class="mb-10 text-center">
+        <header class="mb-10 text-left">
           <h2
             id="methods-title"
             class="text-4xl font-extrabold tracking-tight text-[var(--mat-sys-on-surface)]">
             Cooking <span class="text-[var(--mat-sys-primary)]">Methods</span>
           </h2>
-          <div class="h-1 w-16 bg-[var(--mat-sys-primary)] mx-auto mt-4 rounded-full"></div>
+          <div class="h-1 w-16 bg-[var(--mat-sys-primary)] mt-4 rounded-full"></div>
         </header>
 
         <nav aria-label="Cooking methods">
@@ -33,10 +33,6 @@ import { FullCategory } from '../../models/category';
                     fill
                     class="object-cover group-hover:scale-110 transition-transform duration-700"
                     sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw" />
-                  <div
-                    class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-6">
-                    <span class="text-white font-bold text-lg">View Recipes</span>
-                  </div>
                 </div>
                 <div class="py-6 text-center w-full">
                   <span
