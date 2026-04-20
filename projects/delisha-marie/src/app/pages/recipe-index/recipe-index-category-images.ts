@@ -5,7 +5,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { RouterLink } from '@angular/router';
-import { Category } from '../../models/category';
+import { FullCategory } from '../../models/category';
 
 @Component({
   selector: 'dm-recipe-index-category-images',
@@ -81,6 +81,6 @@ import { Category } from '../../models/category';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RecipeIndexCategoryImages {
-  readonly categories = input.required<Category[]>();
+  readonly categories = input.required<FullCategory[]>();
   readonly searchControl = new FormControl('');
 }

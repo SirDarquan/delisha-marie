@@ -15,6 +15,7 @@ import { Breadcrumbs, BreadcrumbItem } from '../../components/breadcrumbs/breadc
 import { RecipeIndexCategoryImages } from './recipe-index-category-images';
 import { RecipeIndexMethodImages } from './recipe-index-method-images';
 import { RecipeIndexService } from '../../services/recipe-index.service';
+import { Category } from '../../models/category';
 
 @Component({
   selector: 'dm-recipe-index',
@@ -45,11 +46,9 @@ import { RecipeIndexService } from '../../services/recipe-index.service';
         </header>
       </div>
 
-      <!-- Categories and Search Component -->
-      <dm-recipe-index-category-images [categories]="categories()" />
-
-      <!-- Cooking Methods Component -->
-      <dm-recipe-index-method-images [methods]="methods()" />
+      <!-- Featured Image Sections -->
+      <dm-recipe-index-category-images [categories]="featuredCategories()" />
+      <dm-recipe-index-method-images [methods]="featuredMethods()" />
 
       <!-- Standard Width Container for Content -->
       <div class="into-the-box">
@@ -124,8 +123,9 @@ export class RecipeIndex {
   private readonly service = inject(RecipeIndexService);
 
   private readonly _data = toSignal(this.service.getData());
-  readonly categories = computed(() => this._data()?.featuredCategories || []);
-  readonly methods = computed(() => this._data()?.cookingMethods || []);
+  
+  readonly featuredCategories = computed(() => this._data()?.featuredCategories || []);
+  readonly featuredMethods = computed(() => this._data()?.cookingMethods || []);
 
   readonly breadcrumbItems = signal<BreadcrumbItem[]>([
     { label: 'Home', url: '/' },

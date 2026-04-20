@@ -1,13 +1,13 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { RecipeIndexMethodImages } from './recipe-index-method-images';
 import { provideRouter } from '@angular/router';
-import { describe, it, expect, beforeEach } from 'vitest';
+import { FullCategory } from '../../models/category';
 
 describe('RecipeIndexMethodImages', () => {
   let component: RecipeIndexMethodImages;
   let fixture: ComponentFixture<RecipeIndexMethodImages>;
 
-  const mockMethods = [
+  const mockMethods: FullCategory[] = [
     { name: 'Air Fryer', image: '/air.png', url: '/methods/air-fryer' },
     { name: 'Baked', image: '/baked.png', url: '/methods/baked' },
   ];

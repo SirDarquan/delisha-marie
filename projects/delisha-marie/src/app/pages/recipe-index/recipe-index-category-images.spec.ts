@@ -1,15 +1,14 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { RecipeIndexCategoryImages } from './recipe-index-category-images';
 import { provideRouter } from '@angular/router';
-import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { describe, it, expect, beforeEach } from 'vitest';
-import { Category } from '../../models/category';
+import { FullCategory } from '../../models/category';
 
 describe('RecipeIndexCategoryImages', () => {
   let component: RecipeIndexCategoryImages;
   let fixture: ComponentFixture<RecipeIndexCategoryImages>;
 
-  const mockCategories: Category[] = [
+  const mockCategories: FullCategory[] = [
     { name: 'Appetizers', image: '/test1.png', url: '/recipes/appetizers' },
     { name: 'Desserts', image: '/test2.png', url: '/recipes/desserts' },
   ];
@@ -17,7 +16,7 @@ describe('RecipeIndexCategoryImages', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [RecipeIndexCategoryImages],
-      providers: [provideRouter([]), provideAnimationsAsync()],
+      providers: [provideRouter([])],
     }).compileComponents();
 
     fixture = TestBed.createComponent(RecipeIndexCategoryImages);

@@ -1,7 +1,7 @@
 import { Component, ChangeDetectionStrategy, ViewEncapsulation, input } from '@angular/core';
 import { NgOptimizedImage } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { Category } from '../../models/category';
+import { FullCategory } from '../../models/category';
 
 @Component({
   selector: 'dm-recipe-index-method-images',
@@ -62,5 +62,5 @@ import { Category } from '../../models/category';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RecipeIndexMethodImages {
-  readonly methods = input.required<Category[]>();
+  readonly methods = input.required<FullCategory[]>();
 }
