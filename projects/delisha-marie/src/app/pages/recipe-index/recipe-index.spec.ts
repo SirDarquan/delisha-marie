@@ -24,7 +24,12 @@ describe('RecipeIndex', () => {
       { name: 'Desserts', image: 'test.png', url: '/test' },
     ];
     const mockMethods: FullCategory[] = [
-      { name: 'Air Fryer', image: 'test.png', url: '/methods/air-fryer' },
+      {
+        name: 'Air Fryer',
+        image: 'test.png',
+        url: '/methods/air-fryer',
+        children: [{ name: 'Chicken', url: '/methods/air-fryer/chicken' }],
+      },
       { name: 'Baked', image: 'test.png', url: '/methods/baked' },
     ];
 
@@ -46,6 +51,7 @@ describe('RecipeIndex', () => {
                 bestRecipes: mockMethods,
                 categoriesList: mockMethods,
                 methodsList: mockMethods,
+                ingredients: [],
               }),
           },
         },
@@ -113,14 +119,11 @@ describe('RecipeIndex', () => {
     const bestRecipes = component.bestRecipes();
     expect(bestRecipes[0].name).toBe('The Best Air Fryer');
     expect(bestRecipes[0].url).toBe('/the-best-recipes/the-best-air-fryer');
-    
-    // Test recursive structure if mock had children
-    const mockWithChildren = [
-      { name: 'Main', url: '/m', children: [{ name: 'Pasta', url: '/p' }] }
-    ];
-    // @ts-ignore - access private for testing
-    const transformed = component.transformToBest(mockWithChildren);
-    expect(transformed[0].children?.[0].name).toBe('The Best Pasta');
-    expect(transformed[0].children?.[0].url).toBe('/the-best-recipes/the-best-main/the-best-pasta');
+
+    // Verify recursion via public signal
+    expect(bestRecipes[0].children?.[0].name).toBe('The Best Chicken');
+    expect(bestRecipes[0].children?.[0].url).toBe(
+      '/the-best-recipes/the-best-air-fryer/the-best-chicken',
+    );
   });
 });

@@ -12,30 +12,30 @@ describe('RecipeIndexLinkList', () => {
     {
       name: 'Zebra Cakes',
       url: '/recipes/zebra',
-      children: [{ name: 'Icing', url: '/recipes/zebra/icing' }]
+      children: [{ name: 'Icing', url: '/recipes/zebra/icing' }],
     },
     {
       name: 'Apple Pie',
       url: '/recipes/apple',
-      children: []
-    }
+      children: [],
+    },
   ];
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [RecipeIndexLinkList],
-      providers: [provideRouter([])]
+      providers: [provideRouter([])],
     }).compileComponents();
 
     fixture = TestBed.createComponent(RecipeIndexLinkList);
     component = fixture.componentInstance;
-    
+
     // Set required inputs
     fixture.componentRef.setInput('items', mockItems);
     fixture.componentRef.setInput('titlePrefix', 'Test');
     fixture.componentRef.setInput('titleHighlight', 'Links');
     fixture.componentRef.setInput('titleId', 'test-title-id');
-    
+
     fixture.detectChanges();
   });
 

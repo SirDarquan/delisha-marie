@@ -16,7 +16,7 @@ describe('Slug Utility', () => {
     });
 
     it('should remove special characters', () => {
-      expect(slugify('St. Patrick\'s Day!')).toBe('st-patricks-day');
+      expect(slugify("St. Patrick's Day!")).toBe('st-patricks-day');
     });
 
     it('should trim and handle multiple spaces/hyphens', () => {
