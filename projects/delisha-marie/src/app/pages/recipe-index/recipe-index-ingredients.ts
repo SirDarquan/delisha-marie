@@ -121,7 +121,7 @@ export class RecipeIndexIngredients {
     });
 
     return Object.keys(groups)
-      .sort()
+      .sort((a, b) => a.localeCompare(b))
       .map((letter) => ({
         letter,
         items: groups[letter],
