@@ -28,11 +28,11 @@ export const appConfig: ApplicationConfig = {
       withFetch(),
       withInterceptors([
         (req, next) => {
-          if (req.url === '/api/recipes') {
+          if (req.url.includes('/api/recipes')) {
             const mockUrl = '/api/recipes.json';
             return next(req.clone({ url: mockUrl }));
           }
-          if (req.url === '/api/recipe-index') {
+          if (req.url.includes('/api/recipe-index')) {
             const mockUrl = '/api/recipe-index.json';
             return next(req.clone({ url: mockUrl }));
           }

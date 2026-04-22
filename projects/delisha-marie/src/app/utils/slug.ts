@@ -22,13 +22,25 @@ export function slugify(text: string): string {
  * Example: "independence-day" -> "Independence Day"
  */
 export function deslugify(slug: string): string {
+  const specialCases: Record<string, string> = {
+    valentines: "Valentine's",
+    patricks: "Patrick's",
+    st: 'St.',
+  };
+
   return slug
     .split('-')
     .map((word) => {
+      const lower = word.toLowerCase();
+      // Check special cases first
+      if (specialCases[lower]) {
+        return specialCases[lower];
+      }
+
       // Special cases for common words that shouldn't be capitalized
       const lowercaseWords = ['and', 'or', 'the', 'of', 'in', 'with', 'for'];
-      if (lowercaseWords.includes(word.toLowerCase())) {
-        return word.toLowerCase();
+      if (lowercaseWords.includes(lower)) {
+        return lower;
       }
       return word.charAt(0).toUpperCase() + word.slice(1);
     })

@@ -5,7 +5,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { describe, it, expect, beforeEach } from 'vitest';
 import { RecipeIndexService } from '../../services/recipe-index.service';
-import { of } from 'rxjs';
+
 import { FullCategory } from '../../models/category';
 
 describe('RecipeIndex', () => {
@@ -43,7 +43,7 @@ describe('RecipeIndex', () => {
           provide: RecipeIndexService,
           useValue: {
             getData: () =>
-              of({
+              Promise.resolve({
                 featuredCategories: mockCategories,
                 cookingMethods: mockMethods,
                 holidays: mockMethods,
@@ -115,7 +115,9 @@ describe('RecipeIndex', () => {
     expect(compiled.querySelector('#methods-list-title')).toBeTruthy();
   });
 
-  it('should correctly transform categories into "The Best" recipes with recursive URLs', () => {
+  it('should correctly transform categories into "The Best" recipes with recursive URLs', async () => {
+    await fixture.whenStable();
+    fixture.detectChanges();
     const bestRecipes = component.bestRecipes();
     expect(bestRecipes[0].name).toBe('The Best Air Fryer');
     expect(bestRecipes[0].url).toBe('/the-best-recipes/the-best-air-fryer');
