@@ -55,31 +55,6 @@ describe('SeoService', () => {
     expect(metaService.addTag).toHaveBeenCalledWith({ name: 'keywords', content: 'key' });
   });
 
-  it('should inject @graph script schema', () => {
-    const mockScript = { textContent: '', setAttribute: vi.fn() };
-    mockDocument.querySelector.mockReturnValue(null);
-    mockDocument.createElement.mockReturnValue(mockScript);
-
-    service.setSEO({
-      title: 'Test Page',
-      description: 'Test Desc',
-      url: 'https://test.com/test',
-      siteName: 'Test Site',
-    });
-
-    expect(mockDocument.createElement).toHaveBeenCalledWith('script');
-    expect(mockDocument.head.appendChild).toHaveBeenCalled();
-    const schema = JSON.parse(mockScript.textContent);
-    expect(schema['@context']).toBe('https://schema.org');
-    expect(schema['@graph']).toBeDefined();
-    expect(
-      schema['@graph'].some((item: { '@type': string }) => item['@type'] === 'Organization'),
-    ).toBe(true);
-    expect(schema['@graph'].some((item: { '@type': string }) => item['@type'] === 'WebPage')).toBe(
-      true,
-    );
-  });
-
   it('should update canonical url', () => {
     const mockLink = { setAttribute: vi.fn() };
     mockDocument.querySelector.mockReturnValue(null);

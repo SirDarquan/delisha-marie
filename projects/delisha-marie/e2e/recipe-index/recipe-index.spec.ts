@@ -13,11 +13,11 @@ test.describe('Recipe Index Page', () => {
     // Wait for ingredients to load (fetched via API)
     const jumpLinkA = page.locator('a[href="/recipe-index#A"]');
     await expect(jumpLinkA).toBeVisible();
-    
+
     await jumpLinkA.click();
     // Check if the scroll moved or just if the hash is updated
     await expect(page).toHaveURL(/#A$/);
-    
+
     const sectionA = page.locator('#A');
     await expect(sectionA).toBeVisible();
   });
@@ -26,7 +26,7 @@ test.describe('Recipe Index Page', () => {
     const backToTop = page.locator('a[href="/recipe-index#recipe-by-ingredients"]').first();
     await expect(backToTop).toBeVisible();
     await expect(backToTop).toContainText(/back to top/i);
-    
+
     await backToTop.click();
     await expect(page).toHaveURL(/#recipe-by-ingredients$/);
   });

@@ -5,8 +5,8 @@ import {
   signal,
   inject,
   computed,
+  resource,
 } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -115,7 +115,12 @@ import { slugify } from '../../utils/slug';
 export class RecipeIndex {
   private readonly service = inject(RecipeIndexService);
 
-  private readonly _data = toSignal(this.service.getData());
+  // Using resource() to fetch the Promise-based index data reactively.
+  private readonly _indexResource = resource({
+    loader: () => this.service.getData(),
+  });
+
+  private readonly _data = computed(() => this._indexResource.value());
 
   readonly featuredCategories = computed(() => this._data()?.featuredCategories || []);
   readonly featuredMethods = computed(() => this._data()?.cookingMethods || []);

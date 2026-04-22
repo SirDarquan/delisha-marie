@@ -12,7 +12,7 @@ test.describe('Home Page', () => {
   test('should have essential navigation links', async ({ page }) => {
     const contactLinks = page.locator('text=Contact');
     await expect(contactLinks.first()).toBeVisible();
-    
+
     const recipeLinks = page.getByRole('link', { name: 'Recipes', exact: true });
     await expect(recipeLinks.first()).toBeVisible();
   });

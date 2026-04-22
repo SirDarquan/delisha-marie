@@ -61,11 +61,11 @@
     { "name": "No-Bake", "url": "/methods/no-bake" }
   ],
   "holidays": [
-    { "name": "Christmas", "url": "/holiday/christmas" },
-    { "name": "Easter", "url": "/holiday/easter" },
-    { "name": "Halloween", "url": "/holiday/halloween" },
-    { "name": "Independence Day", "url": "/holiday/independence-day" },
-    { "name": "Thanksgiving", "url": "/holiday/thanksgiving" }
+    { "name": "Christmas", "url": "/holidays/christmas" },
+    { "name": "Easter", "url": "/holidays/easter" },
+    { "name": "Halloween", "url": "/holidays/halloween" },
+    { "name": "Independence Day", "url": "/holidays/independence-day" },
+    { "name": "Thanksgiving", "url": "/holidays/thanksgiving" }
   ],
   "specialDiets": [
     { "name": "Gluten Free", "url": "/special-diets/gluten-free" },

@@ -27,8 +27,6 @@ export const seoResolver: ResolveFn<Partial<SeoContent>> = (route, state) => {
     type: data.type || 'website',
     twitterCard: data.twitterCard || 'summary_large_image',
     content: data.content || 'index,follow',
-    schema: data.schema,
-    breadcrumbs: data.breadcrumbs,
   };
 
   // Recursively resolve dynamic origin placeholders

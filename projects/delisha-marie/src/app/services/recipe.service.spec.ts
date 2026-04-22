@@ -21,13 +21,16 @@ describe('RecipeService', () => {
     httpMock.verify();
   });
 
-  it('should be created', () => {
+  it('should be created', async () => {
+    expect(service).toBeTruthy();
+    // Read the signal to trigger the resource loader
+    service.recipes();
+    TestBed.flushEffects();
     const req = httpMock.expectOne('/api/recipes');
     req.flush([]);
-    expect(service).toBeTruthy();
   });
 
-  it('should fetch recipes', () => {
+  it('should fetch recipes', async () => {
     const mockRecipes = [
       {
         id: 1,
@@ -41,11 +44,16 @@ describe('RecipeService', () => {
       },
     ];
 
-    // Subscribing to recipes() signal since toSignal(httpClient.get) is used
-    // Actually, recipes() is a signal, so we just check its value after the request
+    // Trigger loader
+    service.recipes();
+    TestBed.flushEffects();
+
     const req = httpMock.expectOne('/api/recipes');
     expect(req.request.method).toBe('GET');
     req.flush(mockRecipes);
+
+    // Wait for the Promise from the mock response to resolve and update the resource
+    await new Promise((resolve) => setTimeout(resolve, 0));
 
     expect(service.recipes()).toEqual(mockRecipes);
   });

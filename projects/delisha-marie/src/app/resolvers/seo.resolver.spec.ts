@@ -28,7 +28,6 @@ describe('seoResolver', () => {
     const route = {
       data: {
         description: 'Test Description',
-        breadcrumbs: [{ name: 'Home', item: '{{origin}}' }],
       },
       title: 'Test',
     } as unknown as ActivatedRouteSnapshot;
@@ -43,7 +42,6 @@ describe('seoResolver', () => {
         title: 'Test | Delisha Marie',
         description: 'Test Description',
         url: 'http://localhost:4200/test',
-        breadcrumbs: [{ name: 'Home', item: 'http://localhost:4200' }],
       }),
     );
   });

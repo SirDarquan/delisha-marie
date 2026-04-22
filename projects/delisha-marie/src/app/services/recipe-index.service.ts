@@ -1,15 +1,17 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
 import { RecipeIndexResponse } from '../models/category';
+import { Api } from './api';
 
 @Injectable({
   providedIn: 'root',
 })
 export class RecipeIndexService {
-  private readonly http = inject(HttpClient);
+  private readonly api = inject(Api);
 
-  getData(): Observable<RecipeIndexResponse> {
-    return this.http.get<RecipeIndexResponse>('/api/recipe-index');
+  /**
+   * Returns a Promise of the recipe index data.
+   */
+  getData(): Promise<RecipeIndexResponse> {
+    return this.api.get<RecipeIndexResponse>('/api/recipe-index');
   }
 }

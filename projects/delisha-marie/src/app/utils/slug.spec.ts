@@ -37,6 +37,14 @@ describe('Slug Utility', () => {
     it('should handle single words', () => {
       expect(deslugify('soup')).toBe('Soup');
     });
+
+    it('should handle words with s at the end', () => {
+      expect(deslugify('valentines-day')).toBe("Valentine's Day");
+    });
+
+    it('should handle words with perion in it', () => {
+      expect(deslugify('st-patricks-day')).toBe("St. Patrick's Day");
+    });
   });
 
   describe('generateUrl', () => {

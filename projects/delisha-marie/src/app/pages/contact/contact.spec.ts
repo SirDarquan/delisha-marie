@@ -8,6 +8,7 @@ describe('Contact', () => {
     TestBed.resetTestingModule();
     await TestBed.configureTestingModule({
       imports: [Contact, MatSnackBarModule],
+      providers: [],
     }).compileComponents();
   });
 

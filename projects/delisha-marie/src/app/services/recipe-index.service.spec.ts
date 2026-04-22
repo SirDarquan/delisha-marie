@@ -25,7 +25,7 @@ describe('RecipeIndexService', () => {
     expect(service).toBeTruthy();
   });
 
-  it('should fetch the full recipe index data correctly', () => {
+  it('should fetch the full recipe index data correctly', async () => {
     const mockResponse: RecipeIndexResponse = {
       featuredCategories: [{ name: 'Appetizers', image: '/img.png', url: '/app' }],
       cookingMethods: [{ name: 'Air Fryer', image: '/img.png', url: '/air' }],
@@ -37,18 +37,19 @@ describe('RecipeIndexService', () => {
       ingredients: [],
     };
 
-    service.getData().subscribe((data) => {
-      expect(data).toEqual(mockResponse);
-      expect(data.featuredCategories.length).toBe(1);
-      expect(data.cookingMethods.length).toBe(1);
-    });
+    const promise = service.getData();
 
     const req = httpMock.expectOne('/api/recipe-index');
     expect(req.request.method).toBe('GET');
     req.flush(mockResponse);
+
+    const data = await promise;
+    expect(data).toEqual(mockResponse);
+    expect(data.featuredCategories.length).toBe(1);
+    expect(data.cookingMethods.length).toBe(1);
   });
 
-  it('should handle empty response properties', () => {
+  it('should handle empty response properties', async () => {
     const mockResponse: RecipeIndexResponse = {
       featuredCategories: [],
       cookingMethods: [],
@@ -60,12 +61,13 @@ describe('RecipeIndexService', () => {
       ingredients: [],
     };
 
-    service.getData().subscribe((data) => {
-      expect(data.featuredCategories.length).toBe(0);
-      expect(data.cookingMethods.length).toBe(0);
-    });
+    const promise = service.getData();
 
     const req = httpMock.expectOne('/api/recipe-index');
     req.flush(mockResponse);
+
+    const data = await promise;
+    expect(data.featuredCategories.length).toBe(0);
+    expect(data.cookingMethods.length).toBe(0);
   });
 });
