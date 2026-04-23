@@ -93,6 +93,7 @@ describe('RecipeList', () => {
     fixture = TestBed.createComponent(RecipeList);
     component = fixture.componentInstance;
     fixture.detectChanges();
+    await fixture.whenStable();
   });
 
   it('should create', () => {
@@ -224,5 +225,149 @@ describe('RecipeList', () => {
     fixture.detectChanges();
     await fixture.whenStable();
     expect(component.subCategories().length).toBe(0);
+  });
+
+  it('should handle missing data gracefully in subCategories', async () => {
+    recipeIndexServiceMock.getData.mockResolvedValueOnce(null);
+    fixture = TestBed.createComponent(RecipeList);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    Object.defineProperty(router, 'url', { value: '/recipes' });
+    paramsSubject.next({});
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(component.subCategories().length).toBe(0);
+  });
+
+  it('should return full list if no categorySlug in subCategories', async () => {
+    Object.defineProperty(router, 'url', { value: '/recipes' });
+    paramsSubject.next({});
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(component.subCategories().length).toBeGreaterThan(0);
+  });
+
+  it('should return methods list for Methods rootType', async () => {
+    recipeIndexServiceMock.getData.mockResolvedValueOnce({
+      methodsList: [
+        {
+          name: 'Baking',
+          url: '/methods/baking',
+          children: [{ name: 'Bread', url: '/methods/baking/bread' }],
+        },
+      ],
+      categoriesList: [],
+      holidays: [],
+      specialDiets: [],
+      bestRecipes: [],
+      ingredients: [],
+    });
+    // need to recreate component to catch the new mock value for resource
+    fixture = TestBed.createComponent(RecipeList);
+    component = fixture.componentInstance;
+    Object.defineProperty(router, 'url', { value: '/methods' });
+    paramsSubject.next({ category: 'baking' });
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(component.subCategories().length).toBe(1);
+    expect(component.subCategories()[0].name).toBe('Bread');
+  });
+
+  it('should return holidays list for Holidays rootType', async () => {
+    recipeIndexServiceMock.getData.mockResolvedValueOnce({
+      holidays: [
+        {
+          name: 'Christmas',
+          url: '/holidays/christmas',
+          children: [{ name: 'Dinner', url: '/holidays/christmas/dinner' }],
+        },
+      ],
+      methodsList: [],
+      categoriesList: [],
+      specialDiets: [],
+      bestRecipes: [],
+      ingredients: [],
+    });
+    fixture = TestBed.createComponent(RecipeList);
+    component = fixture.componentInstance;
+    Object.defineProperty(router, 'url', { value: '/holiday' });
+    paramsSubject.next({ category: 'christmas' });
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(component.subCategories().length).toBe(1);
+  });
+
+  it('should return special diets list for Special Diets rootType', async () => {
+    recipeIndexServiceMock.getData.mockResolvedValueOnce({
+      specialDiets: [
+        {
+          name: 'Vegan',
+          url: '/special-diets/vegan',
+          children: [{ name: 'Desserts', url: '/special-diets/vegan/desserts' }],
+        },
+      ],
+      holidays: [],
+      methodsList: [],
+      categoriesList: [],
+      bestRecipes: [],
+      ingredients: [],
+    });
+    fixture = TestBed.createComponent(RecipeList);
+    component = fixture.componentInstance;
+    Object.defineProperty(router, 'url', { value: '/special-diets' });
+    paramsSubject.next({ category: 'vegan' });
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(component.subCategories().length).toBe(1);
+  });
+
+  it('should return best recipes list for The Best Recipes rootType', async () => {
+    recipeIndexServiceMock.getData.mockResolvedValueOnce({
+      bestRecipes: [
+        {
+          name: 'Top 10',
+          url: '/the-best-recipes/top-10',
+          children: [{ name: 'Cakes', url: '/the-best-recipes/top-10/cakes' }],
+        },
+      ],
+      specialDiets: [],
+      holidays: [],
+      methodsList: [],
+      categoriesList: [],
+      ingredients: [],
+    });
+    fixture = TestBed.createComponent(RecipeList);
+    component = fixture.componentInstance;
+    Object.defineProperty(router, 'url', { value: '/the-best-recipes' });
+    paramsSubject.next({ category: 'top-10' });
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(component.subCategories().length).toBe(1);
+  });
+
+  it('should return ingredients list for Tags rootType', async () => {
+    recipeIndexServiceMock.getData.mockResolvedValueOnce({
+      ingredients: [
+        {
+          name: 'Chicken',
+          url: '/tag/chicken',
+          children: [{ name: 'Breast', url: '/tag/chicken/breast' }],
+        },
+      ],
+      bestRecipes: [],
+      specialDiets: [],
+      holidays: [],
+      methodsList: [],
+      categoriesList: [],
+    });
+    fixture = TestBed.createComponent(RecipeList);
+    component = fixture.componentInstance;
+    Object.defineProperty(router, 'url', { value: '/tag' });
+    paramsSubject.next({ category: 'chicken' });
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(component.subCategories().length).toBe(1);
   });
 });

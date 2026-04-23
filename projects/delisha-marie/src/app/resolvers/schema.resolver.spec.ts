@@ -159,6 +159,11 @@ describe('schemaResolver', () => {
     it('should return specific schemas for specific pages', () => {
       const pages = [
         { url: '/recipes', type: 'CollectionPage' },
+        { url: '/method/baking', type: 'CollectionPage' },
+        { url: '/holidays/christmas', type: 'CollectionPage' },
+        { url: '/special-diets/vegan', type: 'CollectionPage' },
+        { url: '/tag/chicken', type: 'CollectionPage' },
+        { url: '/the-best-recipes', type: 'CollectionPage' },
         { url: '/about', type: 'AboutPage' },
         { url: '/contact', type: 'ContactPage' },
       ];
@@ -179,6 +184,24 @@ describe('schemaResolver', () => {
         const hasSpecificSchema = result.some((s) => s['@type'] === page.type);
         expect(hasSpecificSchema).toBe(true);
       }
+    });
+
+    it('should reuse existing script tag if one is present', () => {
+      const existingScript = { setAttribute: vi.fn() };
+      mockDocument.querySelector = vi.fn().mockReturnValue(existingScript);
+
+      const route = {
+        data: { description: 'desc' },
+        paramMap: { get: () => '' },
+      } as unknown as ActivatedRouteSnapshot;
+      const state = { url: '/some-page' } as RouterStateSnapshot;
+
+      TestBed.runInInjectionContext(() => schemaResolver(route, state));
+
+      // Should not create a new one
+      expect(mockDocument.createElement).not.toHaveBeenCalled();
+      // Should modify the existing one
+      expect((existingScript as unknown as HTMLScriptElement).textContent).toContain('@context');
     });
   });
 });
