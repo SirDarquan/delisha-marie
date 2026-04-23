@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
-import { RecipeService } from './recipe.service';
+import { RecipeService, Recipe } from './recipe.service';
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 
 describe('RecipeService', () => {
@@ -56,5 +56,27 @@ describe('RecipeService', () => {
     await new Promise((resolve) => setTimeout(resolve, 0));
 
     expect(service.recipes()).toEqual(mockRecipes);
+  });
+
+  it('should fetch paginated recipes via getRecipes', async () => {
+    const mockAllRecipes = [
+      { id: 1, title: 'R1' } as unknown as Recipe,
+      { id: 2, title: 'R2' } as unknown as Recipe,
+      { id: 3, title: 'R3' } as unknown as Recipe,
+    ];
+
+    const promise = service.getRecipes(2, 2, 'baking', 'cakes', 'chocolate');
+
+    const req = httpMock.expectOne(
+      '/api/recipes?page=2&pageSize=2&method=baking&category=cakes&subcategory=chocolate',
+    );
+    expect(req.request.method).toBe('GET');
+    req.flush(mockAllRecipes);
+
+    const result = await promise;
+    expect(result.total).toBe(3);
+    // Since page=2, pageSize=2, start=2. Slice from 2 to 4 -> [R3]
+    expect(result.items.length).toBe(1);
+    expect(result.items[0].id).toBe(3);
   });
 });
