@@ -121,6 +121,30 @@ describe('RecipeList', () => {
     fixture.detectChanges();
     await fixture.whenStable();
     expect(component.rootType()).toBe('Special Diets');
+
+    Object.defineProperty(router, 'url', { value: '/holiday' });
+    paramsSubject.next({});
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(component.rootType()).toBe('Holidays');
+
+    Object.defineProperty(router, 'url', { value: '/methods' });
+    paramsSubject.next({});
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(component.rootType()).toBe('Methods');
+
+    Object.defineProperty(router, 'url', { value: '/tag' });
+    paramsSubject.next({});
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(component.rootType()).toBe('Tags');
+
+    Object.defineProperty(router, 'url', { value: '/unknown-path' });
+    paramsSubject.next({});
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(component.rootType()).toBe('Recipes');
   });
 
   it('should compute displayTitle correctly when no category or subcategory', async () => {
@@ -131,6 +155,19 @@ describe('RecipeList', () => {
     expect(component.displayTitle()).toBe('Recipes');
   });
 
+  it('should compute displayTitle correctly with category and subcategory', async () => {
+    Object.defineProperty(router, 'url', { value: '/recipes' });
+    paramsSubject.next({ category: 'desserts' });
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(component.displayTitle()).toBe('Desserts');
+
+    paramsSubject.next({ category: 'desserts', subcategory: 'cakes' });
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(component.displayTitle()).toBe('Cakes');
+  });
+
   it('should compute base breadcrumbs', async () => {
     Object.defineProperty(router, 'url', { value: '/recipes' });
     paramsSubject.next({});
@@ -139,6 +176,18 @@ describe('RecipeList', () => {
     const breadcrumbs = component.breadcrumbItems();
     expect(breadcrumbs[0].label).toBe('Home');
     expect(breadcrumbs[1].label).toBe('Recipes');
+  });
+
+  it('should compute breadcrumbs with category and subcategory', async () => {
+    Object.defineProperty(router, 'url', { value: '/recipes/desserts/cakes' });
+    paramsSubject.next({ category: 'desserts', subcategory: 'cakes' });
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const breadcrumbs = component.breadcrumbItems();
+    expect(breadcrumbs.length).toBe(4);
+    expect(breadcrumbs[1].label).toBe('Recipes'); // from segment
+    expect(breadcrumbs[2].label).toBe('Desserts');
+    expect(breadcrumbs[3].label).toBe('Cakes');
   });
 
   it('should navigate on page change and scroll to top', async () => {
@@ -159,5 +208,21 @@ describe('RecipeList', () => {
     fixture.detectChanges();
     await fixture.whenStable();
     expect(component.basePath()).toBe('/recipes/desserts');
+  });
+
+  it('should return subcategories properly depending on rootType', async () => {
+    Object.defineProperty(router, 'url', { value: '/recipes' });
+    paramsSubject.next({ category: 'desserts' });
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const subcats = component.subCategories();
+    expect(subcats.length).toBe(1);
+    expect(subcats[0].name).toBe('Cakes');
+
+    // Subcategory should return empty array
+    paramsSubject.next({ category: 'desserts', subcategory: 'cakes' });
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(component.subCategories().length).toBe(0);
   });
 });

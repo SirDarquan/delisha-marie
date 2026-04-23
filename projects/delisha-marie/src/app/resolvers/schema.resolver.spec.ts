@@ -91,31 +91,48 @@ describe('schemaResolver', () => {
       expect((result['itemListElement'] as Record<string, unknown>[])[0]['name']).toBe('Home');
     });
 
-    it('getRecipeBreadcrumbs', () => {
+    it('getRecipeBreadcrumbs - should generate trails for all attributes', () => {
       const recipe: Recipe = {
         id: 1,
         title: 'Title',
         description: '',
         image: '',
-        category: '',
+        category: 'Desserts',
         prepTime: '',
         cookTime: '',
         difficulty: '',
         featured: false,
         slug: 'title',
         method: 'Air Fryer',
+        specialDiets: ['Vegan'],
+        holidays: ['Christmas'],
       };
       const result = getRecipeBreadcrumbs(recipe);
-      // It should generate Method trail because method is present
-      expect(result.length).toBeGreaterThan(0);
-      expect(result[0].label).toBe('Method');
+
+      const labels = result.map((b) => b.label);
+      expect(labels).toContain('Method');
+      expect(labels).toContain('Air Fryer');
+      expect(labels).toContain('Special Diets');
+      expect(labels).toContain('Vegan');
+      expect(labels).toContain('Holidays');
+      expect(labels).toContain('Christmas');
     });
 
-    it('getBaseBreadcrumbs', () => {
+    it('getBaseBreadcrumbs - basic path', () => {
       const result = getBaseBreadcrumbs('/recipes/desserts');
       expect(result.length).toBe(3);
       expect(result[0].label).toBe('Home');
       expect(result[1].label).toBe('Recipes');
+      expect(result[2].label).toBe('Desserts');
+    });
+
+    it('getBaseBreadcrumbs - empty or undefined', () => {
+      let result = getBaseBreadcrumbs('');
+      expect(result.length).toBe(1);
+      expect(result[0].label).toBe('Home');
+
+      result = getBaseBreadcrumbs();
+      expect(result.length).toBe(1);
     });
   });
 
@@ -136,6 +153,32 @@ describe('schemaResolver', () => {
       expect(Array.isArray(result)).toBe(true);
       expect(result.length).toBe(4); // Org, WebSite, WebPage, Breadcrumb
       expect(mockDocument.createElement).toHaveBeenCalledWith('script');
+      expect(result.some((s) => s['@type'] === 'WebPage')).toBe(true);
+    });
+
+    it('should return specific schemas for specific pages', () => {
+      const pages = [
+        { url: '/recipes', type: 'CollectionPage' },
+        { url: '/about', type: 'AboutPage' },
+        { url: '/contact', type: 'ContactPage' },
+      ];
+
+      for (const page of pages) {
+        const route = {
+          data: { description: 'desc' },
+          paramMap: { get: () => '' },
+        } as unknown as ActivatedRouteSnapshot;
+
+        const state = { url: page.url } as RouterStateSnapshot;
+
+        const result = TestBed.runInInjectionContext(() => schemaResolver(route, state)) as Record<
+          string,
+          unknown
+        >[];
+
+        const hasSpecificSchema = result.some((s) => s['@type'] === page.type);
+        expect(hasSpecificSchema).toBe(true);
+      }
     });
   });
 });
