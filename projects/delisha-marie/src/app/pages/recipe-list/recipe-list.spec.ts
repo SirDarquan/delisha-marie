@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { RecipeList } from './recipe-list';
-import { provideRouter, Router, ActivatedRoute, NavigationEnd, Event } from '@angular/router';
+import { provideRouter, Router, ActivatedRoute } from '@angular/router';
 import { RecipeService, Recipe } from '../../services/recipe.service';
 import { RecipeIndexService } from '../../services/recipe-index.service';
 import { WINDOW } from '../../services/global-tokens';
@@ -12,8 +12,7 @@ describe('RecipeList', () => {
   let fixture: ComponentFixture<RecipeList>;
   let router: Router;
   let windowMock: { scrollTo: Mock };
-
-  const routerEventsSubject = new Subject<Event>();
+  let paramsSubject: Subject<any>;
 
   const mockRecipes: Recipe[] = [
     {
@@ -67,6 +66,7 @@ describe('RecipeList', () => {
 
   beforeEach(async () => {
     windowMock = { scrollTo: vi.fn() };
+    paramsSubject = new Subject<any>();
 
     await TestBed.configureTestingModule({
       imports: [RecipeList],
@@ -78,7 +78,7 @@ describe('RecipeList', () => {
         {
           provide: ActivatedRoute,
           useValue: {
-            params: new Subject(),
+            params: paramsSubject,
           },
         },
       ],
@@ -86,8 +86,7 @@ describe('RecipeList', () => {
 
     router = TestBed.inject(Router);
 
-    // Mock router events and url
-    Object.defineProperty(router, 'events', { value: routerEventsSubject.asObservable() });
+    // Mock url
     Object.defineProperty(router, 'url', { value: '/recipes', writable: true });
     vi.spyOn(router, 'navigateByUrl').mockResolvedValue(true);
 
@@ -101,7 +100,7 @@ describe('RecipeList', () => {
   });
 
   it('should load recipes and calculate total pages correctly', async () => {
-    routerEventsSubject.next(new NavigationEnd(1, '/recipes', '/recipes'));
+    paramsSubject.next({});
     fixture.detectChanges();
     await fixture.whenStable();
 
@@ -112,13 +111,13 @@ describe('RecipeList', () => {
 
   it('should compute rootType correctly', async () => {
     Object.defineProperty(router, 'url', { value: '/the-best-recipes' });
-    routerEventsSubject.next(new NavigationEnd(1, '/the-best-recipes', '/the-best-recipes'));
+    paramsSubject.next({});
     fixture.detectChanges();
     await fixture.whenStable();
     expect(component.rootType()).toBe('The Best Recipes');
 
     Object.defineProperty(router, 'url', { value: '/special-diets' });
-    routerEventsSubject.next(new NavigationEnd(2, '/special-diets', '/special-diets'));
+    paramsSubject.next({});
     fixture.detectChanges();
     await fixture.whenStable();
     expect(component.rootType()).toBe('Special Diets');
@@ -126,7 +125,7 @@ describe('RecipeList', () => {
 
   it('should compute displayTitle correctly when no category or subcategory', async () => {
     Object.defineProperty(router, 'url', { value: '/recipes' });
-    routerEventsSubject.next(new NavigationEnd(1, '/recipes', '/recipes'));
+    paramsSubject.next({});
     fixture.detectChanges();
     await fixture.whenStable();
     expect(component.displayTitle()).toBe('Recipes');
@@ -134,7 +133,7 @@ describe('RecipeList', () => {
 
   it('should compute base breadcrumbs', async () => {
     Object.defineProperty(router, 'url', { value: '/recipes' });
-    routerEventsSubject.next(new NavigationEnd(1, '/recipes', '/recipes'));
+    paramsSubject.next({});
     fixture.detectChanges();
     await fixture.whenStable();
     const breadcrumbs = component.breadcrumbItems();
@@ -144,7 +143,7 @@ describe('RecipeList', () => {
 
   it('should navigate on page change and scroll to top', async () => {
     Object.defineProperty(router, 'url', { value: '/recipes' });
-    routerEventsSubject.next(new NavigationEnd(1, '/recipes', '/recipes'));
+    paramsSubject.next({});
     fixture.detectChanges();
     await fixture.whenStable();
 
@@ -156,9 +155,7 @@ describe('RecipeList', () => {
 
   it('should return correct base path', async () => {
     Object.defineProperty(router, 'url', { value: '/recipes/desserts/page/2' });
-    routerEventsSubject.next(
-      new NavigationEnd(1, '/recipes/desserts/page/2', '/recipes/desserts/page/2'),
-    );
+    paramsSubject.next({});
     fixture.detectChanges();
     await fixture.whenStable();
     expect(component.basePath()).toBe('/recipes/desserts');
