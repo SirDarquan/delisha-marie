@@ -6,9 +6,12 @@ import {
   computed,
   resource,
 } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { CommonModule, NgOptimizedImage } from '@angular/common';
+import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { MatChipsModule } from '@angular/material/chips';
 import { Breadcrumbs, BreadcrumbItem } from '../../components/breadcrumbs/breadcrumbs';
 import { RefineBy, RefineByItem } from '../../components/refine-by/refine-by';
 import { RecipeService } from '../../services/recipe.service';
@@ -20,7 +23,18 @@ import { deslugify } from '../../utils/slug';
 
 @Component({
   selector: 'dm-recipe-list',
-  imports: [MatButtonModule, MatIconModule, Breadcrumbs, RefineBy, NgxPaginationModule],
+  imports: [
+    CommonModule,
+    MatCardModule,
+    MatButtonModule,
+    MatIconModule,
+    MatChipsModule,
+    NgOptimizedImage,
+    Breadcrumbs,
+    RefineBy,
+    NgxPaginationModule,
+    RouterLink,
+  ],
   template: `
     <div class="into-the-box pt-12 pb-4">
       <!-- Dynamic Breadcrumbs -->
@@ -46,25 +60,31 @@ import { deslugify } from '../../utils/slug';
               : { itemsPerPage: pageSize, currentPage: currentPage(), totalItems: totalItems() };
           track recipe.id
         ) {
-          <article
-            class="bg-[var(--mat-sys-surface-container)] rounded-[2.5rem] overflow-hidden shadow-sm hover:shadow-xl transition-all duration-500 group border border-[var(--mat-sys-outline-variant)]">
-            <div class="aspect-[4/3] overflow-hidden relative">
-              <img
-                [src]="recipe.image"
-                [alt]="recipe.title"
-                class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
-              <div
-                class="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-            </div>
-            <div class="p-6 space-y-3">
-              <h3 class="text-xl font-bold leading-tight line-clamp-2">
-                {{ recipe.title }}
-              </h3>
-              <p class="text-sm text-[var(--mat-sys-on-surface-variant)] line-clamp-3 font-medium">
-                {{ recipe.description }}
-              </p>
-            </div>
-          </article>
+          <a [routerLink]="recipe.slug" class="block no-underline text-inherit">
+            <mat-card
+              class="!bg-[var(--mat-sys-surface-container)] !rounded-[2.5rem] overflow-hidden shadow-sm hover:shadow-xl transition-all duration-500 group border border-[var(--mat-sys-outline-variant)]">
+              <div class="aspect-[4/3] overflow-hidden relative">
+                <img
+                  [ngSrc]="recipe.image"
+                  width="400"
+                  height="300"
+                  [alt]="recipe.title"
+                  class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                <div
+                  class="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              </div>
+              <mat-card-content class="!p-6 space-y-3">
+                <h3
+                  class="text-xl font-bold leading-tight line-clamp-2 group-hover:text-[var(--mat-sys-primary)] transition-colors">
+                  {{ recipe.title }}
+                </h3>
+                <p
+                  class="text-sm text-[var(--mat-sys-on-surface-variant)] line-clamp-3 font-medium">
+                  {{ recipe.description }}
+                </p>
+              </mat-card-content>
+            </mat-card>
+          </a>
         } @empty {
           <div class="col-span-full py-20 text-center space-y-4">
             <mat-icon class="text-6xl h-auto w-auto opacity-20">restaurant_menu</mat-icon>
