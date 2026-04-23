@@ -12,7 +12,7 @@ describe('RecipeList', () => {
   let fixture: ComponentFixture<RecipeList>;
   let router: Router;
   let windowMock: { scrollTo: Mock };
-  let paramsSubject: Subject<any>;
+  let paramsSubject: Subject<Record<string, string>>;
 
   const mockRecipes: Recipe[] = [
     {
@@ -66,7 +66,7 @@ describe('RecipeList', () => {
 
   beforeEach(async () => {
     windowMock = { scrollTo: vi.fn() };
-    paramsSubject = new Subject<any>();
+    paramsSubject = new Subject<Record<string, string>>();
 
     await TestBed.configureTestingModule({
       imports: [RecipeList],

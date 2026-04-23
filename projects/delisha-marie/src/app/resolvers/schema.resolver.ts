@@ -43,8 +43,8 @@ export const schemaResolver: ResolveFn<Record<string, unknown>[]> = (route, stat
       '1024',
       '1024',
     ),
+    generateWebSiteSchema(origin, siteName),
   );
-  schema.push(generateWebSiteSchema(origin, siteName));
 
   if (
     state.url.includes('/recipes') ||
@@ -76,7 +76,7 @@ export const schemaResolver: ResolveFn<Record<string, unknown>[]> = (route, stat
   }
 
   const breadcrumbs = getBaseBreadcrumbs(path);
-  schema.push(generateBreadcrumbSchema(breadcrumbs, origin, ''));
+  schema.push(generateBreadcrumbSchema(breadcrumbs, origin, path));
 
   if (schema) {
     const schemaObj = {
@@ -127,9 +127,9 @@ export const generateOrganizationSchema = (
       '@id': `${url}#/schema/logo/image`,
     },
     sameAs: [
-      'http://www.facebook.com/delishamarie-',
-      'https://x.com/delishamarie-',
-      'http://www.instagram.com/delishamarie-',
+      'https://www.facebook.com/delisha-marie/',
+      'https://x.com/delisha-marie',
+      'https://www.instagram.com/delisha-marie/',
     ],
   };
 };
@@ -323,21 +323,17 @@ export const generateBreadcrumbSchema = (
   baseUrl: string,
   slug: string,
 ): SchemaObject => {
-  const origin = baseUrl.endsWith('/')
-    ? baseUrl.slice(0, -1).replace('/recipe', '').replace('/recipes', '')
-    : baseUrl.replace('/recipe', '').replace('/recipes', '');
-
   const items = breadcrumbs;
 
   return {
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
-    '@id': `${origin}${slug ? '/recipe/' + slug : ''}#breadcrumb`,
+    '@id': `${baseUrl}${slug}#breadcrumb`,
     itemListElement: items.map((b, index) => ({
       '@type': 'ListItem',
       position: index + 1,
       name: b.label,
-      item: b.url ? (b.url.startsWith('http') ? b.url : origin + b.url) : undefined,
+      item: b.url ? baseUrl + b.url : undefined,
     })),
   };
 };
@@ -415,8 +411,8 @@ export const getRecipeBreadcrumbs = (recipe: Recipe): Breadcrumb[] => {
   if (recipe.method) {
     const slug = recipe.method
       .toLowerCase()
-      .replace(/ /g, '-')
-      .replace(/[^a-z0-9-]/g, '');
+      .replaceAll(' ', '-')
+      .replaceAll(/[^a-z0-9-]/g, '');
     generateTrail(false, [
       { label: 'Method', url: '/method' },
       { label: recipe.method, url: `/method/${slug}` },
@@ -429,8 +425,8 @@ export const getRecipeBreadcrumbs = (recipe: Recipe): Breadcrumb[] => {
     specialDiets.forEach((diet: string) => {
       const slug = diet
         .toLowerCase()
-        .replace(/ /g, '-')
-        .replace(/[^a-z0-9-]/g, '');
+        .replaceAll(' ', '-')
+        .replaceAll(/[^a-z0-9-]/g, '');
       generateTrail(false, [
         { label: 'Special Diets', url: '/special-diets' },
         { label: diet, url: `/special-diets/${slug}` },
@@ -444,8 +440,8 @@ export const getRecipeBreadcrumbs = (recipe: Recipe): Breadcrumb[] => {
     holidays.forEach((holiday: string) => {
       const slug = holiday
         .toLowerCase()
-        .replace(/ /g, '-')
-        .replace(/[^a-z0-9-]/g, '');
+        .replaceAll(' ', '-')
+        .replaceAll(/[^a-z0-9-]/g, '');
       generateTrail(false, [
         { label: 'Holidays', url: '/holidays' },
         { label: holiday, url: `/holidays/${slug}` },

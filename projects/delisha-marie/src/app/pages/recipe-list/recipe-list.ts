@@ -156,7 +156,7 @@ export class RecipeList {
 
   readonly currentPage = computed(() => {
     const p = this._params()?.['page'];
-    return p ? parseInt(p, 10) : 1;
+    return p ? Number.parseInt(p, 10) : 1;
   });
 
   readonly categorySlug = computed(() => this._params()?.['category']);
@@ -165,12 +165,12 @@ export class RecipeList {
   // Reactive data fetching trigger
   private readonly _dataTrigger = computed(() => {
     const url = this.router.url;
-    const segments = url.split('/').filter((s) => !!s);
+    const segments = url.split('/').find((s) => !!s);
     return {
       page: this.currentPage(),
       cat: this.categorySlug(),
       sub: this.subCategorySlug(),
-      method: segments[0] || 'recipes',
+      method: segments || 'recipes',
     };
   });
 
@@ -193,8 +193,8 @@ export class RecipeList {
     this._params();
 
     const url = this.router.url;
-    const segments = url.split('/').filter((s) => !!s);
-    const root = segments[0];
+    const segments = url.split('/').find((s) => !!s);
+    const root = segments;
 
     if (root === 'the-best-recipes') return 'The Best Recipes';
     if (root === 'special-diets') return 'Special Diets';
@@ -259,8 +259,8 @@ export class RecipeList {
     const sub = this.subCategorySlug();
 
     const url = this.router.url;
-    const segments = url.split('/').filter((s) => !!s);
-    const rootUrl = '/' + segments[0];
+    const segments = url.split('/').find((s) => !!s);
+    const rootUrl = '/' + segments;
     items.push({
       label: root,
       url: sub || cat ? rootUrl : undefined,
