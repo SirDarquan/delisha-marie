@@ -50,147 +50,33 @@ export const routes: Routes = [
     },
   },
   // Top-level Collection Routes
-  {
-    path: 'recipes',
-    loadComponent: () => import('./pages/recipe-list/recipe-list').then((m) => m.RecipeList),
-    resolve: { seo: seoResolver, schema: schemaResolver },
-  },
-  {
-    path: 'recipes/page/:page',
-    loadComponent: () => import('./pages/recipe-list/recipe-list').then((m) => m.RecipeList),
-    resolve: { seo: seoResolver, schema: schemaResolver },
-  },
-  {
-    path: 'methods',
-    loadComponent: () => import('./pages/recipe-list/recipe-list').then((m) => m.RecipeList),
-    resolve: { seo: seoResolver, schema: schemaResolver },
-  },
-  {
-    path: 'methods/page/:page',
-    loadComponent: () => import('./pages/recipe-list/recipe-list').then((m) => m.RecipeList),
-    resolve: { seo: seoResolver, schema: schemaResolver },
-  },
-  {
-    path: 'holidays',
-    loadComponent: () => import('./pages/recipe-list/recipe-list').then((m) => m.RecipeList),
-    resolve: { seo: seoResolver, schema: schemaResolver },
-  },
-  {
-    path: 'holidays/page/:page',
-    loadComponent: () => import('./pages/recipe-list/recipe-list').then((m) => m.RecipeList),
-    resolve: { seo: seoResolver, schema: schemaResolver },
-  },
-  {
-    path: 'special-diets',
-    loadComponent: () => import('./pages/recipe-list/recipe-list').then((m) => m.RecipeList),
-    resolve: { seo: seoResolver, schema: schemaResolver },
-  },
-  {
-    path: 'special-diets/page/:page',
-    loadComponent: () => import('./pages/recipe-list/recipe-list').then((m) => m.RecipeList),
-    resolve: { seo: seoResolver, schema: schemaResolver },
-  },
-  {
-    path: 'the-best-recipes',
-    loadComponent: () => import('./pages/recipe-list/recipe-list').then((m) => m.RecipeList),
-    resolve: { seo: seoResolver, schema: schemaResolver },
-  },
-  {
-    path: 'the-best-recipes/page/:page',
-    loadComponent: () => import('./pages/recipe-list/recipe-list').then((m) => m.RecipeList),
-    resolve: { seo: seoResolver, schema: schemaResolver },
-  },
-
-  // Recipe Collection Routes
-  {
-    path: 'recipes/:category',
-    loadComponent: () => import('./pages/recipe-list/recipe-list').then((m) => m.RecipeList),
-    resolve: { seo: seoResolver, schema: schemaResolver },
-  },
-  {
-    path: 'recipes/:category/page/:page',
-    loadComponent: () => import('./pages/recipe-list/recipe-list').then((m) => m.RecipeList),
-    resolve: { seo: seoResolver, schema: schemaResolver },
-  },
-  {
-    path: 'recipes/:category/:subcategory',
-    loadComponent: () => import('./pages/recipe-list/recipe-list').then((m) => m.RecipeList),
-    resolve: { seo: seoResolver, schema: schemaResolver },
-  },
-  {
-    path: 'recipes/:category/:subcategory/page/:page',
-    loadComponent: () => import('./pages/recipe-list/recipe-list').then((m) => m.RecipeList),
-    resolve: { seo: seoResolver, schema: schemaResolver },
-  },
-  {
-    path: 'methods/:category',
-    loadComponent: () => import('./pages/recipe-list/recipe-list').then((m) => m.RecipeList),
-    resolve: { seo: seoResolver, schema: schemaResolver },
-  },
-  {
-    path: 'methods/:category/page/:page',
-    loadComponent: () => import('./pages/recipe-list/recipe-list').then((m) => m.RecipeList),
-    resolve: { seo: seoResolver, schema: schemaResolver },
-  },
-  {
-    path: 'holidays/:category',
-    loadComponent: () => import('./pages/recipe-list/recipe-list').then((m) => m.RecipeList),
-    resolve: { seo: seoResolver, schema: schemaResolver },
-  },
-  {
-    path: 'holidays/:category/page/:page',
-    loadComponent: () => import('./pages/recipe-list/recipe-list').then((m) => m.RecipeList),
-    resolve: { seo: seoResolver, schema: schemaResolver },
-  },
-  {
-    path: 'special-diets/:category',
-    loadComponent: () => import('./pages/recipe-list/recipe-list').then((m) => m.RecipeList),
-    resolve: { seo: seoResolver, schema: schemaResolver },
-  },
-  {
-    path: 'special-diets/:category/page/:page',
-    loadComponent: () => import('./pages/recipe-list/recipe-list').then((m) => m.RecipeList),
-    resolve: { seo: seoResolver, schema: schemaResolver },
-  },
-  {
-    path: 'the-best-recipes/:category',
-    loadComponent: () => import('./pages/recipe-list/recipe-list').then((m) => m.RecipeList),
-    resolve: { seo: seoResolver, schema: schemaResolver },
-  },
-  {
-    path: 'the-best-recipes/:category/page/:page',
-    loadComponent: () => import('./pages/recipe-list/recipe-list').then((m) => m.RecipeList),
-    resolve: { seo: seoResolver, schema: schemaResolver },
-  },
-  {
-    path: 'the-best-recipes/:category/:subcategory',
-    loadComponent: () => import('./pages/recipe-list/recipe-list').then((m) => m.RecipeList),
-    resolve: { seo: seoResolver, schema: schemaResolver },
-  },
-  {
-    path: 'the-best-recipes/:category/:subcategory/page/:page',
-    loadComponent: () => import('./pages/recipe-list/recipe-list').then((m) => m.RecipeList),
-    resolve: { seo: seoResolver, schema: schemaResolver },
-  },
-  {
-    path: 'tag/:category',
-    loadComponent: () => import('./pages/recipe-list/recipe-list').then((m) => m.RecipeList),
-    resolve: { seo: seoResolver, schema: schemaResolver },
-  },
-  {
-    path: 'tag/:category/page/:page',
-    loadComponent: () => import('./pages/recipe-list/recipe-list').then((m) => m.RecipeList),
-    resolve: { seo: seoResolver, schema: schemaResolver },
-  },
-  {
-    path: 'tag/:category/:subcategory',
-    loadComponent: () => import('./pages/recipe-list/recipe-list').then((m) => m.RecipeList),
-    resolve: { seo: seoResolver, schema: schemaResolver },
-  },
-  {
-    path: 'tag/:category/:subcategory/page/:page',
-    loadComponent: () => import('./pages/recipe-list/recipe-list').then((m) => m.RecipeList),
-    resolve: { seo: seoResolver, schema: schemaResolver },
-  },
+  ...[
+    'recipes',
+    'methods',
+    'holidays',
+    'special-diets',
+    'the-best-recipes',
+    // Recipe Collection Routes
+    'recipes/:category',
+    'recipes/:category/:subcategory',
+    'methods/:category',
+    'holidays/:category',
+    'special-diets/:category',
+    'the-best-recipes/:category',
+    'the-best-recipes/:category/:subcategory',
+    'tag/:category',
+    'tag/:category/:subcategory',
+  ].flatMap((path) => [
+    {
+      path,
+      loadComponent: () => import('./pages/recipe-list/recipe-list').then((m) => m.RecipeList),
+      resolve: { seo: seoResolver, schema: schemaResolver },
+    },
+    {
+      path: `${path}/page/:page`,
+      loadComponent: () => import('./pages/recipe-list/recipe-list').then((m) => m.RecipeList),
+      resolve: { seo: seoResolver, schema: schemaResolver },
+    },
+  ]),
   { path: '**', redirectTo: '' },
 ];
