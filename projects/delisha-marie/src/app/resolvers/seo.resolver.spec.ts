@@ -59,6 +59,52 @@ describe('Seo Resolvers', () => {
         }),
       );
     });
+
+    it('should handle root path correctly', () => {
+      const route = { data: {}, title: 'Home' } as unknown as ActivatedRouteSnapshot;
+      const state = { url: '/' } as RouterStateSnapshot;
+
+      TestBed.runInInjectionContext(() => {
+        seoResolver(route, state);
+      });
+
+      expect(seoService.setSEO).toHaveBeenCalledWith(
+        expect.objectContaining({ url: 'http://localhost:4200' }),
+      );
+    });
+
+    it('should handle missing image correctly', () => {
+      const route = { data: { image: undefined }, title: 'No Image' } as unknown as ActivatedRouteSnapshot;
+      const state = { url: '/no-image' } as RouterStateSnapshot;
+
+      TestBed.runInInjectionContext(() => {
+        seoResolver(route, state);
+      });
+
+      expect(seoService.setSEO).toHaveBeenCalledWith(
+        expect.objectContaining({ image: '' }),
+      );
+    });
+
+    it('should resolve origin in arrays', () => {
+      const route = {
+        data: {
+          keywords: ['key1', '{{origin}}/key2'],
+        },
+        title: 'Array Test',
+      } as unknown as ActivatedRouteSnapshot;
+      const state = { url: '/array' } as RouterStateSnapshot;
+
+      TestBed.runInInjectionContext(() => {
+        seoResolver(route, state);
+      });
+
+      expect(seoService.setSEO).toHaveBeenCalledWith(
+        expect.objectContaining({
+          keywords: ['key1', 'http://localhost:4200/key2'],
+        }),
+      );
+    });
   });
 
   describe('seoRecipeListResolver', () => {
@@ -91,6 +137,23 @@ describe('Seo Resolvers', () => {
           url: 'http://localhost:4200/recipes/test-cat',
         }),
       );
+    });
+
+    it('should handle missing parameters and routeConfig', () => {
+      const route = {
+        paramMap: { get: vi.fn().mockReturnValue(null) },
+        routeConfig: {}, // No path
+      } as unknown as ActivatedRouteSnapshot;
+      const state = { url: '/recipes' } as RouterStateSnapshot;
+
+      TestBed.runInInjectionContext(() => {
+        seoRecipeListResolver(route, state);
+      });
+
+      expect(recipeListService.getInfo).toHaveBeenCalledWith(expect.objectContaining({
+        category: undefined,
+        url: ''
+      }));
     });
   });
 });

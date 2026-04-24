@@ -62,4 +62,19 @@ describe('recipeListTitleResolver', () => {
       page: undefined,
     });
   });
+
+  it('should handle missing routeConfig path', () => {
+    const route = {
+      paramMap: { get: vi.fn().mockReturnValue(null) },
+      routeConfig: {}, // No path
+    } as unknown as ActivatedRouteSnapshot;
+
+    TestBed.runInInjectionContext(() => {
+      recipeListTitleResolver(route, {} as any);
+    });
+
+    expect(recipeListService.getTitle).toHaveBeenCalledWith(
+      expect.objectContaining({ url: '' })
+    );
+  });
 });

@@ -298,7 +298,7 @@ export class RecipeList {
 
     const page = this.currentPage();
     if (page > 1) {
-      const lastItem = items[items.length - 1];
+      const lastItem = items.at(-1);
       if (lastItem) {
         lastItem.url = this.basePath();
       }

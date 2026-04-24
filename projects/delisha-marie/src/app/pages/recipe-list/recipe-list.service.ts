@@ -30,18 +30,18 @@ export class RecipeListService {
     subCategory?: string;
     page?: string;
   }): string {
-    let title = variables.url.replace(/-/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
+    let title = variables.url.replaceAll('-', ' ').replaceAll(/\b\w/g, (l) => l.toUpperCase());
     if (variables.category) {
-      title = `${variables.category.replace(/-/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase())}`;
+      title = `${variables.category.replaceAll('-', ' ').replaceAll(/\b\w/g, (l) => l.toUpperCase())}`;
     }
     if (variables.subCategory) {
       const subTitle = variables.subCategory
-        .replace(/-/g, ' ')
-        .replace(/\b\w/g, (l) => l.toUpperCase());
+        .replaceAll('-', ' ')
+        .replaceAll(/\b\w/g, (l) => l.toUpperCase());
       title = variables.category ? `${subTitle} ${title}` : subTitle;
     }
 
-    if (variables.page && parseInt(variables.page) > 1) {
+    if (variables.page && Number.parseInt(variables.page) > 1) {
       title += ` - Page ${variables.page}`;
     }
 

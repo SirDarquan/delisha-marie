@@ -51,6 +51,14 @@ describe('RecipeListService', () => {
       expect(title).toBe('Slow Cooker');
     });
 
+    it('should return subcategory alone when category is not provided', () => {
+      const title = service.getTitle({
+        url: 'recipes',
+        subCategory: 'chicken',
+      });
+      expect(title).toBe('Chicken');
+    });
+
     it('should return "Recipe List" as fallback', () => {
       const title = service.getTitle({ url: '' });
       expect(title).toBe('Recipe List');

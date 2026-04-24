@@ -475,9 +475,7 @@ export const getBaseBreadcrumbs = (currentCrumbs?: string): Breadcrumb[] => {
     }, '');
 
   if (crumbs !== currentCrumbs) {
-    {
-      deslugify(currentCrumbs);
-    }
+    deslugify(currentCrumbs);
   }
   return items;
 };
