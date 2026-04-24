@@ -1,7 +1,8 @@
 import { Routes } from '@angular/router';
 import { Home } from './pages/home/home';
-import { seoResolver } from './resolvers/seo.resolver';
+import { seoRecipeListResolver, seoResolver } from './resolvers/seo.resolver';
 import { schemaResolver } from './resolvers/schema.resolver';
+import { recipeListTitleResolver } from './resolvers/title.resolver';
 
 export const routes: Routes = [
   {
@@ -69,13 +70,15 @@ export const routes: Routes = [
   ].flatMap((path) => [
     {
       path,
+      title: recipeListTitleResolver,
       loadComponent: () => import('./pages/recipe-list/recipe-list').then((m) => m.RecipeList),
-      resolve: { seo: seoResolver, schema: schemaResolver },
+      resolve: { seo: seoRecipeListResolver, schema: schemaResolver },
     },
     {
       path: `${path}/page/:page`,
+      title: recipeListTitleResolver,
       loadComponent: () => import('./pages/recipe-list/recipe-list').then((m) => m.RecipeList),
-      resolve: { seo: seoResolver, schema: schemaResolver },
+      resolve: { seo: seoRecipeListResolver, schema: schemaResolver },
     },
   ]),
   { path: '**', redirectTo: '' },

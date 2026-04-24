@@ -4,7 +4,7 @@ import { provideRouter } from '@angular/router';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { describe, it, expect, beforeEach } from 'vitest';
-import { RecipeIndexService } from '../../services/recipe-index.service';
+import { RecipeIndexService } from './recipe-index.service';
 
 import { FullCategory } from '../../models/category';
 

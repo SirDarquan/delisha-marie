@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
-import { RecipeIndexResponse } from '../models/category';
-import { Api } from './api';
+import { RecipeIndexResponse } from '../../models/category';
+import { Api } from '../../services/api';
 
 @Injectable({
   providedIn: 'root',

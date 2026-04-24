@@ -13,7 +13,7 @@ export class SeoService {
     const formattedTitle = config.title || 'From my kitchen to yours | Delisha Marie ';
 
     // 1. Browser Title
-    this.title.setTitle(formattedTitle);
+    // this.title.setTitle(formattedTitle);
 
     // 2. Canonical URL
     this.updateCanonicalUrl(config.url);

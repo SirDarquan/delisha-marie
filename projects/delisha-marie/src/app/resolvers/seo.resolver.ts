@@ -3,6 +3,7 @@ import { ResolveFn } from '@angular/router';
 import { SeoContent } from '../models/seo-content';
 import { SeoService } from '../services/seo.service';
 import { DOCUMENT } from '@angular/common';
+import { RecipeListService } from '../pages/recipe-list/recipe-list.service';
 
 export const seoResolver: ResolveFn<Partial<SeoContent>> = (route, state) => {
   const seoService = inject(SeoService);
@@ -14,12 +15,13 @@ export const seoResolver: ResolveFn<Partial<SeoContent>> = (route, state) => {
   // Construct perfect canonical URL
   const path = state.url.split('?')[0].split('#')[0];
   const url = `${origin}${path === '/' ? '' : path}`;
+  const siteName = 'Delisha Marie';
 
   const seoConfig: SeoContent = {
-    title: `${route.title} | Delisha Marie`,
+    title: `${route.title} | ${siteName}`,
     description: data.description || '',
     url: url,
-    siteName: 'Delisha Marie',
+    siteName: siteName,
     keywords: data.keywords,
     image: data.image ? `${origin}${data.image}` : '',
     imageWidth: data.imageWidth,
@@ -60,3 +62,24 @@ function resolveDynamicOrigin<T>(target: T, origin: string): T {
 
   return target;
 }
+
+export const seoRecipeListResolver: ResolveFn<SeoContent> = (route, state) => {
+  const seoService = inject(SeoService);
+  const recipeListService = inject(RecipeListService);
+  const document = inject(DOCUMENT);
+  const origin = document.location.origin;
+  const path = state.url.split('?')[0].split('#')[0];
+  const siteName = "Delisha Marie's Kitchen";
+  const category = route.paramMap.get('category') || undefined;
+  const subCategory = route.paramMap.get('subcategory') || undefined;
+  const url = route.routeConfig?.path?.split('/')[0] || '';
+
+  const recipeList = recipeListService.getInfo({ url, category, subCategory });
+  const urls = `${origin}${path}`;
+  const resolvedSeo = { ...resolveDynamicOrigin(recipeList, origin), url: urls, siteName };
+
+  // Trigger earliest possible SEO update
+  seoService.setSEO(resolvedSeo);
+
+  return resolvedSeo;
+};

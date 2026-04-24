@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { RecipeList } from './recipe-list';
 import { provideRouter, Router, ActivatedRoute } from '@angular/router';
 import { RecipeService, Recipe } from '../../services/recipe.service';
-import { RecipeIndexService } from '../../services/recipe-index.service';
+import { RecipeIndexService } from '../recipe-index/recipe-index.service';
 import { WINDOW } from '../../services/global-tokens';
 import { describe, it, expect, beforeEach, vi, Mock } from 'vitest';
 import { Subject } from 'rxjs';
