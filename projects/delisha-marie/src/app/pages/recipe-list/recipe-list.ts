@@ -15,7 +15,7 @@ import { MatChipsModule } from '@angular/material/chips';
 import { Breadcrumbs, BreadcrumbItem } from '../../components/breadcrumbs/breadcrumbs';
 import { RefineBy, RefineByItem } from '../../components/refine-by/refine-by';
 import { RecipeService } from '../../services/recipe.service';
-import { RecipeIndexService } from '../../services/recipe-index.service';
+import { RecipeIndexService } from '../recipe-index/recipe-index.service';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NgxPaginationModule } from 'ngx-pagination';
 import { WINDOW } from '../../services/global-tokens';
@@ -294,6 +294,15 @@ export class RecipeList {
 
     if (sub) {
       items.push({ label: this.unslugify(sub) });
+    }
+
+    const page = this.currentPage();
+    if (page > 1) {
+      const lastItem = items[items.length - 1];
+      if (lastItem) {
+        lastItem.url = this.basePath();
+      }
+      items.push({ label: `Page ${page}` });
     }
 
     return items;
