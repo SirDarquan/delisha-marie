@@ -129,7 +129,7 @@ export const generateOrganizationSchema = (
     sameAs: [
       'https://www.facebook.com/delisha-marie/',
       'https://x.com/delisha-marie',
-      'https://www.instagram.com/delisha-marie/',
+      'https://www.instagram.com/delishamarie_/',
     ],
   };
 };
@@ -185,7 +185,7 @@ export const generateCollectionPageSchema = (
       '@id': `${url.split('/').slice(0, 3).join('/')}/#website`,
     },
     about: {
-      '@id': `{ url }#organization`,
+      '@id': `${url}#organization`,
     },
     breadcrumb: {
       '@id': `${url}#breadcrumb`,
@@ -466,6 +466,7 @@ export const getBaseBreadcrumbs = (currentCrumbs?: string): Breadcrumb[] => {
   }
 
   const crumbs = currentCrumbs
+    .split('/page/')[0]
     .split('/')
     .filter((c) => c !== '')
     .reduce((acc, crumb) => {
@@ -474,7 +475,7 @@ export const getBaseBreadcrumbs = (currentCrumbs?: string): Breadcrumb[] => {
     }, '');
 
   if (crumbs !== currentCrumbs) {
-    items.push({ label: deslugify(currentCrumbs), url: currentCrumbs });
+    { label: deslugify(currentCrumbs) };
   }
   return items;
 };
