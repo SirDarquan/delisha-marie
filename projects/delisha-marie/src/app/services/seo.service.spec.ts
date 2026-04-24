@@ -44,6 +44,7 @@ describe('SeoService', () => {
       url: 'https://test.com/page',
       siteName: 'Site',
       keywords: ['key'],
+      image: 'https://test.com/img.jpg',
     });
 
     expect(metaService.addTag).toHaveBeenCalledWith({ property: 'og:title', content: 'Title' });

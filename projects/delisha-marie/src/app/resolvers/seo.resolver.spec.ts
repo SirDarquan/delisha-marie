@@ -1,12 +1,14 @@
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
-import { seoResolver } from './seo.resolver';
+import { seoResolver, seoRecipeListResolver } from './seo.resolver';
 import { SeoService } from '../services/seo.service';
 import { DOCUMENT } from '@angular/common';
+import { RecipeListService } from '../pages/recipe-list/recipe-list.service';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
-describe('seoResolver', () => {
+describe('Seo Resolvers', () => {
   let seoService: SeoService;
+  let recipeListService: RecipeListService;
   let mockDocument: { location: { origin: string; href: string } };
 
   beforeEach(() => {
@@ -17,32 +19,78 @@ describe('seoResolver', () => {
     TestBed.configureTestingModule({
       providers: [
         { provide: SeoService, useValue: { setSEO: vi.fn() } },
+        {
+          provide: RecipeListService,
+          useValue: {
+            getInfo: vi.fn().mockReturnValue({
+              title: 'Dynamic Title',
+              description: 'Dynamic Desc',
+              image: '/img.jpg',
+            }),
+          },
+        },
         { provide: DOCUMENT, useValue: mockDocument },
       ],
     });
 
     seoService = TestBed.inject(SeoService);
+    recipeListService = TestBed.inject(RecipeListService);
   });
 
-  it('should call seoService.setSEO with resolved data and placeholders', () => {
-    const route = {
-      data: {
-        description: 'Test Description',
-      },
-      title: 'Test',
-    } as unknown as ActivatedRouteSnapshot;
-    const state = { url: '/test' } as RouterStateSnapshot;
+  describe('seoResolver', () => {
+    it('should call seoService.setSEO with resolved data and placeholders', () => {
+      const route = {
+        data: {
+          description: 'Test Description',
+        },
+        title: 'Test',
+      } as unknown as ActivatedRouteSnapshot;
+      const state = { url: '/test' } as RouterStateSnapshot;
 
-    TestBed.runInInjectionContext(() => {
-      seoResolver(route, state);
+      TestBed.runInInjectionContext(() => {
+        seoResolver(route, state);
+      });
+
+      expect(seoService.setSEO).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: 'Test | Delisha Marie',
+          description: 'Test Description',
+          url: 'http://localhost:4200/test',
+        }),
+      );
     });
+  });
 
-    expect(seoService.setSEO).toHaveBeenCalledWith(
-      expect.objectContaining({
-        title: 'Test | Delisha Marie',
-        description: 'Test Description',
-        url: 'http://localhost:4200/test',
-      }),
-    );
+  describe('seoRecipeListResolver', () => {
+    it('should call recipeListService.getInfo and update SEO', () => {
+      const route = {
+        paramMap: {
+          get: vi.fn().mockImplementation((key) => {
+            if (key === 'category') return 'test-cat';
+            return null;
+          }),
+        },
+        routeConfig: { path: 'recipes/:category' },
+      } as unknown as ActivatedRouteSnapshot;
+      const state = { url: '/recipes/test-cat' } as RouterStateSnapshot;
+
+      TestBed.runInInjectionContext(() => {
+        seoRecipeListResolver(route, state);
+      });
+
+      expect(recipeListService.getInfo).toHaveBeenCalledWith(
+        expect.objectContaining({
+          category: 'test-cat',
+          url: 'recipes',
+        }),
+      );
+      expect(seoService.setSEO).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: 'Dynamic Title',
+          siteName: "Delisha Marie's Kitchen",
+          url: 'http://localhost:4200/recipes/test-cat',
+        }),
+      );
+    });
   });
 });
