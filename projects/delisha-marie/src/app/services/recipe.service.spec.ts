@@ -82,9 +82,7 @@ describe('RecipeService', () => {
 
   describe('getRecipeBySlug', () => {
     it('should find a recipe by slug', async () => {
-      const mockAllRecipes = [
-        { id: 1, slug: 'test-recipe', title: 'Test' } as unknown as Recipe,
-      ];
+      const mockAllRecipes = [{ id: 1, slug: 'test-recipe', title: 'Test' } as unknown as Recipe];
 
       const promise = service.getRecipeBySlug('test-recipe');
 

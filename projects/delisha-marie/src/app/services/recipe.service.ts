@@ -104,10 +104,10 @@ export class RecipeService {
       const all = await this.api.get<Recipe[]>('/api/recipes');
       const clean = (s: string) => s.replace(/^\/?recipe\//, '').replace(/^\//, '');
       const normalizedSearch = clean(slug);
-      
+
       const found = all.find((r) => clean(r.slug) === normalizedSearch) || null;
       return found;
-    } catch (e) {
+    } catch {
       return null;
     }
   }

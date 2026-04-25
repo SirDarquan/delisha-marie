@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
 import { seoResolver, seoRecipeListResolver, seoRecipeResolver } from './seo.resolver';
 import { SeoService } from '../services/seo.service';
+import { SeoContent } from '../models/seo-content';
 import { DOCUMENT } from '@angular/common';
 import { RecipeListService } from '../pages/recipe-list/recipe-list.service';
 import { RecipeService, Recipe } from '../services/recipe.service';
@@ -60,7 +61,7 @@ describe('Seo Resolvers', () => {
 
       expect(seoService.setSEO).toHaveBeenCalledWith(
         expect.objectContaining({
-          title: 'Test | Delisha Marie\'s Kitchen',
+          title: "Test | Delisha Marie's Kitchen",
           description: 'Test Description',
           url: 'http://localhost:4200/test',
         }),
@@ -81,16 +82,17 @@ describe('Seo Resolvers', () => {
     });
 
     it('should handle missing image correctly', () => {
-      const route = { data: { image: undefined }, title: 'No Image' } as unknown as ActivatedRouteSnapshot;
+      const route = {
+        data: { image: undefined },
+        title: 'No Image',
+      } as unknown as ActivatedRouteSnapshot;
       const state = { url: '/no-image' } as RouterStateSnapshot;
 
       TestBed.runInInjectionContext(() => {
         seoResolver(route, state);
       });
 
-      expect(seoService.setSEO).toHaveBeenCalledWith(
-        expect.objectContaining({ image: '' }),
-      );
+      expect(seoService.setSEO).toHaveBeenCalledWith(expect.objectContaining({ image: '' }));
     });
 
     it('should resolve origin in arrays', () => {
@@ -157,10 +159,12 @@ describe('Seo Resolvers', () => {
         seoRecipeListResolver(route, state);
       });
 
-      expect(recipeListService.getInfo).toHaveBeenCalledWith(expect.objectContaining({
-        category: undefined,
-        url: ''
-      }));
+      expect(recipeListService.getInfo).toHaveBeenCalledWith(
+        expect.objectContaining({
+          category: undefined,
+          url: '',
+        }),
+      );
     });
   });
 
@@ -186,17 +190,17 @@ describe('Seo Resolvers', () => {
       } as unknown as ActivatedRouteSnapshot;
       const state = { url: '/recipe/test-slug' } as RouterStateSnapshot;
 
-      const result = await TestBed.runInInjectionContext(() => {
+      await TestBed.runInInjectionContext(() => {
         return seoRecipeResolver(route, state);
       });
 
       expect(recipeService.getRecipeBySlug).toHaveBeenCalledWith('test-slug');
       expect(seoService.setSEO).toHaveBeenCalledWith(
         expect.objectContaining({
-          title: 'Title | Delisha Marie\'s Kitchen',
+          title: "Title | Delisha Marie's Kitchen",
           description: 'Desc',
           image: 'http://localhost:4200/img.jpg',
-        })
+        }),
       );
     });
 
@@ -206,10 +210,10 @@ describe('Seo Resolvers', () => {
       } as unknown as ActivatedRouteSnapshot;
 
       const result = await TestBed.runInInjectionContext(() => {
-        return seoRecipeResolver(route, { url: '/recipe/unknown' } as any);
+        return seoRecipeResolver(route, { url: '/recipe/unknown' } as RouterStateSnapshot);
       });
 
-      expect((result as any).content).toBe('noindex,nofollow');
+      expect((result as SeoContent).content).toBe('noindex,nofollow');
     });
 
     it('should return 404 SEO if recipe not found', async () => {
@@ -220,10 +224,10 @@ describe('Seo Resolvers', () => {
       } as unknown as ActivatedRouteSnapshot;
 
       const result = await TestBed.runInInjectionContext(() => {
-        return seoRecipeResolver(route, { url: '/recipe/unknown' } as any);
+        return seoRecipeResolver(route, { url: '/recipe/unknown' } as RouterStateSnapshot);
       });
 
-      expect((result as any).content).toBe('noindex,nofollow');
+      expect((result as SeoContent).content).toBe('noindex,nofollow');
     });
   });
 });

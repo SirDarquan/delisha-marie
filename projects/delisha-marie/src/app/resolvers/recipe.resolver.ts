@@ -21,6 +21,8 @@ export const recipeListTitleResolver: ResolveFn<string> = (route) => {
 export const recipeTitleResolver: ResolveFn<string> = (route) => {
   const slug = route.paramMap.get('slug');
   if (!slug) return 'Recipe';
-  
-  return inject(RecipeService).getRecipeBySlug(slug).then(r => r?.title || 'Recipe');
+
+  return inject(RecipeService)
+    .getRecipeBySlug(slug)
+    .then((r) => r?.title || 'Recipe');
 };

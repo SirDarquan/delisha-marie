@@ -156,9 +156,10 @@ describe('schemaResolver', () => {
 
       const state = { url: '/some-page' } as RouterStateSnapshot;
 
-      const result = (TestBed.runInInjectionContext(() =>
-        schemaResolver(route, state),
-      ) as unknown) as any[];
+      const result = TestBed.runInInjectionContext(() => schemaResolver(route, state)) as Record<
+        string,
+        unknown
+      >[];
 
       expect(Array.isArray(result)).toBe(true);
       expect(result.length).toBe(4); // Org, WebSite, WebPage, Breadcrumb
@@ -241,7 +242,9 @@ describe('schemaResolver', () => {
       } as unknown as ActivatedRouteSnapshot;
       const state = { url: '/recipe/recipe' } as RouterStateSnapshot;
 
-      const result = (await TestBed.runInInjectionContext(() => schemaRecipeResolver(route, state))) as any[];
+      const result = (await TestBed.runInInjectionContext(() =>
+        schemaRecipeResolver(route, state),
+      )) as Record<string, unknown>[];
 
       expect(recipeService.getRecipeBySlug).toHaveBeenCalledWith('recipe');
       expect(result.length).toBe(8); // Org, Person, WebSite, Image, WebPage, Article, Recipe, Breadcrumb
@@ -254,7 +257,9 @@ describe('schemaResolver', () => {
         queryParamMap: { get: () => null },
       } as unknown as ActivatedRouteSnapshot;
 
-      const result = await TestBed.runInInjectionContext(() => schemaRecipeResolver(route, {} as any));
+      const result = await TestBed.runInInjectionContext(() =>
+        schemaRecipeResolver(route, {} as RouterStateSnapshot),
+      );
       expect(result).toEqual([]);
     });
 
@@ -265,7 +270,9 @@ describe('schemaResolver', () => {
         queryParamMap: { get: () => null },
       } as unknown as ActivatedRouteSnapshot;
 
-      const result = await TestBed.runInInjectionContext(() => schemaRecipeResolver(route, {} as any));
+      const result = await TestBed.runInInjectionContext(() =>
+        schemaRecipeResolver(route, {} as RouterStateSnapshot),
+      );
       expect(result).toEqual([]);
     });
   });

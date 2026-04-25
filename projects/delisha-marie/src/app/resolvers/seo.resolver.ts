@@ -129,7 +129,7 @@ export const seoRecipeResolver: ResolveFn<SeoContent> = async (route, state) => 
     content: 'index,follow',
   };
 
-  const resolvedSeo =  resolveDynamicOrigin(seoConfig, origin);
+  const resolvedSeo = resolveDynamicOrigin(seoConfig, origin);
 
   // Trigger earliest possible SEO update
   seoService.setSEO(resolvedSeo);

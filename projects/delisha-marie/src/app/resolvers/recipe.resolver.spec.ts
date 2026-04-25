@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { ActivatedRouteSnapshot } from '@angular/router';
+import { ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
 import { recipeListTitleResolver, recipeResolver, recipeTitleResolver } from './recipe.resolver';
 import { Recipe, RecipeService } from '../services/recipe.service';
 import { RecipeListService } from '../pages/recipe-list/recipe-list.service';
@@ -18,7 +18,9 @@ describe('Recipe Resolvers', () => {
         },
         {
           provide: RecipeService,
-          useValue: { getRecipeBySlug: vi.fn().mockResolvedValue({ title: 'Mock Recipe' } as Recipe) },
+          useValue: {
+            getRecipeBySlug: vi.fn().mockResolvedValue({ title: 'Mock Recipe' } as Recipe),
+          },
         },
       ],
     });
@@ -41,7 +43,7 @@ describe('Recipe Resolvers', () => {
       } as unknown as ActivatedRouteSnapshot;
 
       const result = TestBed.runInInjectionContext(() => {
-        return recipeListTitleResolver(route, {} as any);
+        return recipeListTitleResolver(route, {} as RouterStateSnapshot);
       });
 
       expect(recipeListService.getTitle).toHaveBeenCalledWith({
@@ -61,7 +63,7 @@ describe('Recipe Resolvers', () => {
       } as unknown as ActivatedRouteSnapshot;
 
       const result = await TestBed.runInInjectionContext(() => {
-        return recipeResolver(route, {} as any);
+        return recipeResolver(route, {} as RouterStateSnapshot);
       });
 
       expect(recipeService.getRecipeBySlug).toHaveBeenCalledWith('test-slug');
@@ -74,7 +76,7 @@ describe('Recipe Resolvers', () => {
       } as unknown as ActivatedRouteSnapshot;
 
       const result = await TestBed.runInInjectionContext(() => {
-        return recipeResolver(route, {} as any);
+        return recipeResolver(route, {} as RouterStateSnapshot);
       });
 
       expect(result).toBeNull();
@@ -88,7 +90,7 @@ describe('Recipe Resolvers', () => {
       } as unknown as ActivatedRouteSnapshot;
 
       const result = await TestBed.runInInjectionContext(() => {
-        return recipeTitleResolver(route, {} as any);
+        return recipeTitleResolver(route, {} as RouterStateSnapshot);
       });
 
       expect(result).toBe('Mock Recipe');
@@ -100,7 +102,7 @@ describe('Recipe Resolvers', () => {
       } as unknown as ActivatedRouteSnapshot;
 
       const result = await TestBed.runInInjectionContext(() => {
-        return recipeTitleResolver(route, {} as any);
+        return recipeTitleResolver(route, {} as RouterStateSnapshot);
       });
 
       expect(result).toBe('Recipe');

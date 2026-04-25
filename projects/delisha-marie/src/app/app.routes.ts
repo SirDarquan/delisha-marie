@@ -2,7 +2,11 @@ import { Routes } from '@angular/router';
 import { Home } from './pages/home/home';
 import { seoRecipeListResolver, seoRecipeResolver, seoResolver } from './resolvers/seo.resolver';
 import { schemaRecipeResolver, schemaResolver } from './resolvers/schema.resolver';
-import { recipeResolver, recipeListTitleResolver, recipeTitleResolver } from './resolvers/recipe.resolver';
+import {
+  recipeResolver,
+  recipeListTitleResolver,
+  recipeTitleResolver,
+} from './resolvers/recipe.resolver';
 
 export const routes: Routes = [
   {
