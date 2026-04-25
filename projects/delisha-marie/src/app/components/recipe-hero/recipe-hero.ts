@@ -1,0 +1,66 @@
+import { Component, input, ChangeDetectionStrategy } from '@angular/core';
+import { CommonModule, NgOptimizedImage } from '@angular/common';
+import { Recipe } from '../../services/recipe.service';
+import { MatIconModule } from '@angular/material/icon';
+
+@Component({
+  selector: 'dml-recipe-hero',
+  imports: [CommonModule, NgOptimizedImage, MatIconModule],
+  template: `
+    <div class="hero-container mb-20">
+      <div
+        class="relative aspect-[16/9] rounded-[3rem] overflow-hidden shadow-2xl group cursor-default">
+        <!-- Image -->
+        <img
+          [ngSrc]="recipe().image"
+          fill
+          priority
+          [alt]="recipe().title"
+          class="object-cover transition-transform duration-[2000ms] group-hover:scale-105" />
+
+        <!-- Overlay Gradient -->
+        <div
+          class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+
+        <!-- Meta Info (Floating Badge) -->
+        <div class="absolute top-8 left-8 flex items-center gap-2 z-10">
+          @if (recipe().theBest) {
+            <span
+              class="bg-[var(--mat-sys-primary)] text-white text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest flex items-center gap-1 shadow-lg shadow-primary/20">
+              <mat-icon class="!text-[12px] !w-auto !h-auto">stars</mat-icon>
+              The Best
+            </span>
+          }
+          <span
+            class="bg-white/20 backdrop-blur-md text-white text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest border border-white/20">
+            {{ recipe().course }} • {{ recipe().cuisine }}
+          </span>
+        </div>
+
+        <!-- Title Overlay -->
+        <div class="absolute bottom-8 left-8 right-8 md:bottom-12 md:left-12 md:right-12 z-10">
+          <div class="group/title inline-block">
+            <h1
+              class="text-3xl md:text-5xl font-bold tracking-tight text-white leading-[0.9] transition-colors duration-500 group-hover/title:text-[var(--mat-sys-primary)]">
+              {{ recipe().title }}
+            </h1>
+            <div
+              class="h-1.5 w-24 md:w-32 bg-[var(--mat-sys-primary)] mt-4 rounded-full transition-all duration-500 group-hover/title:w-full"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Description below image -->
+      <div class="mt-10 text-center max-w-4xl mx-auto px-4">
+        <p
+          class="text-2xl md:text-3xl text-[var(--mat-sys-on-surface-variant)] italic font-serif leading-relaxed opacity-90">
+          "{{ recipe().description }}"
+        </p>
+      </div>
+    </div>
+  `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+export class RecipeHero {
+  recipe = input.required<Recipe>();
+}
