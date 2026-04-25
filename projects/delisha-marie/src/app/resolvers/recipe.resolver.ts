@@ -1,0 +1,26 @@
+import { inject } from '@angular/core';
+import { ResolveFn } from '@angular/router';
+import { Recipe, RecipeService } from '../services/recipe.service';
+import { RecipeListService } from '../pages/recipe-list/recipe-list.service';
+
+export const recipeResolver: ResolveFn<Recipe | null> = (route) => {
+  const slug = route.paramMap.get('slug');
+  if (!slug) return null;
+  return inject(RecipeService).getRecipeBySlug(slug);
+};
+
+export const recipeListTitleResolver: ResolveFn<string> = (route) => {
+  const category = route.paramMap.get('category') || undefined;
+  const subCategory = route.paramMap.get('subcategory') || undefined;
+  const page = route.paramMap.get('page') || undefined;
+  const url = route.routeConfig?.path?.split('/')[0] || '';
+
+  return inject(RecipeListService).getTitle({ url, category, subCategory, page });
+};
+
+export const recipeTitleResolver: ResolveFn<string> = (route) => {
+  const slug = route.paramMap.get('slug');
+  if (!slug) return 'Recipe';
+  
+  return inject(RecipeService).getRecipeBySlug(slug).then(r => r?.title || 'Recipe');
+};

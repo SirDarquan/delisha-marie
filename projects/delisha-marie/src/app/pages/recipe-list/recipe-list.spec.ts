@@ -24,9 +24,11 @@ describe('RecipeList', () => {
       prepTime: '10m',
       cookTime: '20m',
       difficulty: 'Easy',
-      featured: false,
+      theBest: false,
       slug: 'recipe-1',
       method: 'Baking',
+      totalTime: '30m',
+      author: 'Delisha Marie',
     },
     {
       id: 2,
@@ -37,9 +39,11 @@ describe('RecipeList', () => {
       prepTime: '10m',
       cookTime: '20m',
       difficulty: 'Easy',
-      featured: false,
+      theBest: false,
       slug: 'recipe-2',
       method: 'Baking',
+      totalTime: '30m',
+      author: 'Delisha Marie',
     },
   ];
 
