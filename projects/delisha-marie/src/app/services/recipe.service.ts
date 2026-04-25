@@ -1,21 +1,83 @@
 import { Injectable, inject, resource, computed } from '@angular/core';
 import { Api } from './api';
 
+export interface Breadcrumb {
+  label: string;
+  url?: string;
+}
+
+export interface BreadcrumbGroup {
+  main?: boolean;
+  items: Breadcrumb[];
+}
+
+export interface Nutrition {
+  calories: string;
+  carbohydrates: string;
+  protein: string;
+  fat: string;
+  saturatedFat: string;
+  cholesterol: string;
+  sodium: string;
+  fiber: string;
+  sugar: string;
+  servingSize: string;
+}
+
+export interface Comment {
+  id: string;
+  parentId?: string;
+  recipeId: string;
+  author: string;
+  email: string;
+  content: string;
+  rating?: number;
+  website?: string;
+  createdAt: string;
+}
+
 export interface Recipe {
-  id: number;
+  id: string | number;
   title: string;
+  slug: string;
   description: string;
+  content?: string;
+  ingredients?: string[];
+  instructions?: string[];
   image: string;
-  category: string;
+  imageWidth?: string;
+  imageHeight?: string;
+  imageType?: string;
+  theBest?: boolean;
   prepTime: string;
   cookTime: string;
   difficulty: string;
-  featured: boolean;
-  slug: string;
-  theBest?: boolean;
+  totalTime: string;
+  servings?: string;
+  yield?: string;
+  author: string;
+  createdAt?: string;
+  updatedAt?: string;
+  rating?: number;
+  ratingCount?: number;
+  reviewCount?: number;
+  comments?: Comment[];
+  notes?: string[];
+  equipment?: string[];
+  nutrition?: Nutrition;
+  cuisine?: string;
+  course?: string;
   method?: string;
+  category: string;
+  subcategory?: string;
+  linkedIngredients?: { name: string; slug: string; text: string; measure?: string }[];
+  breadcrumbs?: BreadcrumbGroup[];
+  keywords?: string[];
   specialDiets?: string[];
   holidays?: string[];
+  status?: 'draft' | 'scheduled' | 'published';
+  likes?: number;
+  preview_token?: string;
 }
 
 @Injectable({
@@ -33,6 +95,22 @@ export class RecipeService {
   });
 
   readonly recipes = computed(() => this._recipesResource.value() || []);
+
+  /**
+   * Fetches a single recipe by its slug.
+   */
+  async getRecipeBySlug(slug: string): Promise<Recipe | null> {
+    try {
+      const all = await this.api.get<Recipe[]>('/api/recipes');
+      const clean = (s: string) => s.replace(/^\/?recipe\//, '').replace(/^\//, '');
+      const normalizedSearch = clean(slug);
+      
+      const found = all.find((r) => clean(r.slug) === normalizedSearch) || null;
+      return found;
+    } catch (e) {
+      return null;
+    }
+  }
 
   /**
    * Fetches a paginated slice of recipes.
