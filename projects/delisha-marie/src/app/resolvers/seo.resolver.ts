@@ -4,6 +4,7 @@ import { SeoContent } from '../models/seo-content';
 import { SeoService } from '../services/seo.service';
 import { DOCUMENT } from '@angular/common';
 import { RecipeListService } from '../pages/recipe-list/recipe-list.service';
+import { RecipeService } from '../services/recipe.service';
 
 export const seoResolver: ResolveFn<Partial<SeoContent>> = (route, state) => {
   const seoService = inject(SeoService);
@@ -15,7 +16,7 @@ export const seoResolver: ResolveFn<Partial<SeoContent>> = (route, state) => {
   // Construct perfect canonical URL
   const path = state.url.split('?')[0].split('#')[0];
   const url = `${origin}${path === '/' ? '' : path}`;
-  const siteName = 'Delisha Marie';
+  const siteName = "Delisha Marie's Kitchen";
 
   const seoConfig: SeoContent = {
     title: `${route.title} | ${siteName}`,
@@ -77,6 +78,58 @@ export const seoRecipeListResolver: ResolveFn<SeoContent> = (route, state) => {
   const recipeList = recipeListService.getInfo({ url, category, subCategory });
   const urls = `${origin}${path}`;
   const resolvedSeo = { ...resolveDynamicOrigin(recipeList, origin), url: urls, siteName };
+
+  // Trigger earliest possible SEO update
+  seoService.setSEO(resolvedSeo);
+
+  return resolvedSeo;
+};
+export const seoRecipeResolver: ResolveFn<SeoContent> = async (route, state) => {
+  const seoService = inject(SeoService);
+  const recipeService = inject(RecipeService);
+  const document = inject(DOCUMENT);
+  const origin = document.location.origin;
+  const path = state.url.split('?')[0].split('#')[0];
+  const siteName = "Delisha Marie's Kitchen";
+  const slug = route.paramMap.get('slug') || undefined;
+
+  const seoConfig404: SeoContent = {
+    title: `Not Found | ${siteName}`,
+    description: '',
+    url: '',
+    siteName: siteName,
+    keywords: [],
+    image: '',
+    type: 'website',
+    twitterCard: 'summary_large_image',
+    content: 'noindex,nofollow',
+  };
+
+  if (!slug) {
+    return seoConfig404;
+  }
+  const recipe = await recipeService.getRecipeBySlug(slug);
+
+  if (!recipe) {
+    return seoConfig404;
+  }
+  const urls = `${origin}${path}`;
+
+  const seoConfig: SeoContent = {
+    title: `${recipe.title} | ${siteName}`,
+    description: recipe.description || '',
+    url: urls,
+    siteName: siteName,
+    keywords: recipe.keywords,
+    image: recipe.image ? `${origin}${recipe.image}` : '',
+    imageWidth: recipe.imageWidth,
+    imageHeight: recipe.imageHeight,
+    type: 'website',
+    twitterCard: 'summary_large_image',
+    content: 'index,follow',
+  };
+
+  const resolvedSeo =  resolveDynamicOrigin(seoConfig, origin);
 
   // Trigger earliest possible SEO update
   seoService.setSEO(resolvedSeo);
