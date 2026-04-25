@@ -9,7 +9,40 @@
     "cookTime": "1h 15 mins",
     "difficulty": "Intermediate",
     "featured": true,
-    "slug": "/recipe/signature-lemon-herb-roast-chicken"
+    "slug": "/recipe/signature-lemon-herb-roast-chicken",
+    "course": "Main Course",
+    "cuisine": "American",
+    "yield": "4 servings",
+    "totalTime": "1h 35 mins",
+    "author": "Delisha Marie",
+    "ingredients": [
+      "1 whole chicken (about 4 lbs)",
+      "2 tablespoons olive oil",
+      "1 large lemon, halved",
+      "4 sprigs fresh rosemary",
+      "4 sprigs fresh thyme",
+      "6 cloves garlic, smashed",
+      "Salt and freshly ground black pepper to taste"
+    ],
+    "instructions": [
+      "Preheat your oven to 425°F (220°C).",
+      "Rinse the chicken and pat it completely dry with paper towels.",
+      "Stuff the cavity with the lemon halves, rosemary, thyme, and garlic.",
+      "Rub the entire outside of the chicken with olive oil and season generously with salt and pepper.",
+      "Place the chicken breast-side up in a roasting pan.",
+      "Roast for 1 hour and 15 minutes, or until the internal temperature reaches 165°F (74°C).",
+      "Let the chicken rest for 15 minutes before carving."
+    ],
+    "nutrition": {
+      "calories": "450",
+      "protein": "35g",
+      "fat": "30g",
+      "carbohydrates": "2g",
+      "fiber": "0g",
+      "sugar": "1g",
+      "sodium": "450mg"
+    },
+    "keywords": ["roast chicken", "lemon herb", "dinner", "healthy"]
   },
   {
     "id": 2,
@@ -102,10 +135,55 @@
     "image": "/images/recipes/recipe_beef_9.png",
     "category": "Dinner",
     "prepTime": "30 mins",
-    "cookTime": "4h 00 mins",
+    "cookTime": "3h 40 min",
     "difficulty": "Advanced",
     "featured": true,
-    "slug": "/recipe/slow-cooked-beef-bourguignon"
+    "slug": "/recipe/slow-cooked-beef-bourguignon",
+    "course": "Main Course",
+    "cuisine": "French",
+    "yield": "6 servings",
+    "totalTime": "3h 40 min",
+    "author": "Delisha Marie",
+    "ingredients": [
+      "3 lbs Chuck Roast (cut into 2-inch pieces)",
+      "6 oz Thick-cut Bacon (diced)",
+      "1 bottle Burgundy Pinot Noir or dry red wine",
+      "2 cups Beef Stock",
+      "1 lb Pearl Onions (peeled)",
+      "1 lb Cremini Mushrooms (quartered)",
+      "3 large Carrots (sliced thickly)",
+      "1 large Yellow Onion (chopped)",
+      "4 cloves Garlic (minced)",
+      "2 tbsp Tomato Paste",
+      "3 tbsp All-Purpose Flour",
+      "2 tbsp Olive Oil",
+      "3 tbsp Unsalted Butter",
+      "1 Bouquet Garni (parsley, thyme, bay leaf)",
+      "Fresh Parsley (chopped, to garnish)"
+    ],
+    "instructions": [
+      "Preheat the oven to 325°F (160°C). Dry the beef chunks completely with paper towels.",
+      "In a large Dutch oven, cook the bacon over medium heat until crisp. Remove bacon and set aside, leaving the fat in the pot.",
+      "Sear the beef chunks in batches in the hot bacon fat until deeply browned on all sides. Remove and set aside.",
+      "Add chopped onions, carrots, and garlic to the pot. Sauté until softened, then stir in the tomato paste and flour, cooking for 2 minutes.",
+      "Pour in the wine to deglaze, scraping up all the browned bits. Add the beef stock, browned beef, bacon, and bouquet garni.",
+      "Bring to a simmer, cover tightly, and transfer to the oven for 2.5 to 3 hours, until the beef is incredibly tender.",
+      "While the stew cooks, brown the mushrooms in butter. In a separate pan, braise the pearl onions in a little stock until glazed.",
+      "Remove the pot from the oven. Skim excess fat off the top. Gently fold in the mushrooms and glazed pearl onions.",
+      "Simmer on the stove for 5 minutes to meld flavors. Garnish with fresh parsley and serve with mashed potatoes."
+    ],
+    "nutrition": {
+      "calories": "680",
+      "carbohydrates": "22g",
+      "protein": "55g",
+      "fat": "32g",
+      "saturatedFat": "14g",
+      "cholesterol": "150mg",
+      "sodium": "920mg",
+      "fiber": "4g",
+      "sugar": "8g"
+    },
+    "keywords": ["beef", "bourguignon", "stew", "french", "red wine", "slow cooked"]
   },
   {
     "id": 10,
