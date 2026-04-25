@@ -34,12 +34,12 @@ describe('RecipeDetail', () => {
       sodium: '100mg',
       fiber: '2g',
       sugar: '10g',
-      servingSize: '1 slice'
+      servingSize: '1 slice',
     },
     notes: ['Special note'],
     course: 'Main Course',
     cuisine: 'American',
-    theBest: true
+    theBest: true,
   };
 
   beforeEach(async () => {
@@ -49,9 +49,9 @@ describe('RecipeDetail', () => {
         provideRouter([]),
         {
           provide: NgOptimizedImage,
-          useValue: {} // Mock NgOptimizedImage if needed, but it usually works with provideRouter
-        }
-      ]
+          useValue: {}, // Mock NgOptimizedImage if needed, but it usually works with provideRouter
+        },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(RecipeDetail);
@@ -110,7 +110,11 @@ describe('RecipeDetail', () => {
   });
 
   it('should show serves from yields or servings', () => {
-    fixture.componentRef.setInput('recipe', { ...mockRecipe, yield: '4 people', servings: undefined });
+    fixture.componentRef.setInput('recipe', {
+      ...mockRecipe,
+      yield: '4 people',
+      servings: undefined,
+    });
     fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain('4 people');
 
