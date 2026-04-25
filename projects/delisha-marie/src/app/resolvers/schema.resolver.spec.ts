@@ -3,6 +3,7 @@ import { DOCUMENT } from '@angular/common';
 import { RouterStateSnapshot, ActivatedRouteSnapshot } from '@angular/router';
 import {
   schemaResolver,
+  schemaRecipeResolver,
   generateOrganizationSchema,
   generateWebSiteSchema,
   generateCollectionPageSchema,
@@ -15,7 +16,7 @@ import {
   getBaseBreadcrumbs,
 } from './schema.resolver';
 import { describe, it, expect, beforeEach, vi, Mock } from 'vitest';
-import { Recipe } from '../services/recipe.service';
+import { Recipe, RecipeService } from '../services/recipe.service';
 
 describe('schemaResolver', () => {
   let mockDocument: {
@@ -24,6 +25,7 @@ describe('schemaResolver', () => {
     head: { appendChild: Mock };
     querySelector: Mock;
   };
+  let recipeService: RecipeService;
 
   beforeEach(() => {
     mockDocument = {
@@ -34,8 +36,15 @@ describe('schemaResolver', () => {
     };
 
     TestBed.configureTestingModule({
-      providers: [{ provide: DOCUMENT, useValue: mockDocument }],
+      providers: [
+        { provide: DOCUMENT, useValue: mockDocument },
+        {
+          provide: RecipeService,
+          useValue: { getRecipeBySlug: vi.fn().mockResolvedValue(null) },
+        },
+      ],
     });
+    recipeService = TestBed.inject(RecipeService);
   });
 
   describe('Utility Functions', () => {
@@ -101,11 +110,13 @@ describe('schemaResolver', () => {
         prepTime: '',
         cookTime: '',
         difficulty: '',
-        featured: false,
+        theBest: false,
         slug: 'title',
         method: 'Air Fryer',
         specialDiets: ['Vegan'],
         holidays: ['Christmas'],
+        author: 'Delisha Marie',
+        totalTime: '',
       };
       const result = getRecipeBreadcrumbs(recipe);
 
@@ -145,10 +156,9 @@ describe('schemaResolver', () => {
 
       const state = { url: '/some-page' } as RouterStateSnapshot;
 
-      const result = TestBed.runInInjectionContext(() => schemaResolver(route, state)) as Record<
-        string,
-        unknown
-      >[];
+      const result = (TestBed.runInInjectionContext(() =>
+        schemaResolver(route, state),
+      ) as unknown) as any[];
 
       expect(Array.isArray(result)).toBe(true);
       expect(result.length).toBe(4); // Org, WebSite, WebPage, Breadcrumb
@@ -159,7 +169,7 @@ describe('schemaResolver', () => {
     it('should return specific schemas for specific pages', () => {
       const pages = [
         { url: '/recipes', type: 'CollectionPage' },
-        { url: '/method/baking', type: 'CollectionPage' },
+        { url: '/methods/baking', type: 'CollectionPage' },
         { url: '/holidays/christmas', type: 'CollectionPage' },
         { url: '/special-diets/vegan', type: 'CollectionPage' },
         { url: '/tag/chicken', type: 'CollectionPage' },
@@ -202,6 +212,61 @@ describe('schemaResolver', () => {
       expect(mockDocument.createElement).not.toHaveBeenCalled();
       // Should modify the existing one
       expect((existingScript as unknown as HTMLScriptElement).textContent).toContain('@context');
+    });
+  });
+
+  describe('schemaRecipeResolver', () => {
+    it('should return recipe schema array', async () => {
+      const mockRecipe: Recipe = {
+        id: 1,
+        title: 'Recipe',
+        slug: 'recipe',
+        description: 'Desc',
+        image: '/img.jpg',
+        category: 'Cat',
+        prepTime: '10m',
+        cookTime: '10m',
+        totalTime: '20m',
+        difficulty: 'Easy',
+        author: 'Author',
+        ingredients: ['Ing1'],
+        instructions: ['Step1'],
+      };
+
+      vi.mocked(recipeService.getRecipeBySlug).mockResolvedValue(mockRecipe);
+
+      const route = {
+        paramMap: { get: () => 'recipe' },
+        queryParamMap: { get: () => null },
+      } as unknown as ActivatedRouteSnapshot;
+      const state = { url: '/recipe/recipe' } as RouterStateSnapshot;
+
+      const result = (await TestBed.runInInjectionContext(() => schemaRecipeResolver(route, state))) as any[];
+
+      expect(recipeService.getRecipeBySlug).toHaveBeenCalledWith('recipe');
+      expect(result.length).toBe(8); // Org, Person, WebSite, Image, WebPage, Article, Recipe, Breadcrumb
+      expect(result.some((s) => s['@type'] === 'Recipe')).toBe(true);
+    });
+
+    it('should return empty array if slug missing', async () => {
+      const route = {
+        paramMap: { get: () => null },
+        queryParamMap: { get: () => null },
+      } as unknown as ActivatedRouteSnapshot;
+
+      const result = await TestBed.runInInjectionContext(() => schemaRecipeResolver(route, {} as any));
+      expect(result).toEqual([]);
+    });
+
+    it('should return empty array if recipe not found', async () => {
+      vi.mocked(recipeService.getRecipeBySlug).mockResolvedValue(null);
+      const route = {
+        paramMap: { get: () => 'unknown' },
+        queryParamMap: { get: () => null },
+      } as unknown as ActivatedRouteSnapshot;
+
+      const result = await TestBed.runInInjectionContext(() => schemaRecipeResolver(route, {} as any));
+      expect(result).toEqual([]);
     });
   });
 });
