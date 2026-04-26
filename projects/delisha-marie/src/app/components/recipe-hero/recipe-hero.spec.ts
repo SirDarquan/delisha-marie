@@ -71,22 +71,8 @@ describe('RecipeHero', () => {
     expect(descElement.textContent).toContain(mockRecipe.description);
   });
 
-  it('should show "The Best" badge if theBest is true', () => {
-    const badge = fixture.nativeElement.querySelector('span.bg-\\[var\\(--mat-sys-primary\\)\\]');
-    expect(badge).toBeTruthy();
-    expect(badge.textContent).toContain('The Best');
-  });
-
-  it('should hide "The Best" badge if theBest is false', () => {
-    fixture.componentRef.setInput('recipe', { ...mockRecipe, theBest: false });
-    fixture.detectChanges();
-    const badge = fixture.nativeElement.querySelector('span.bg-\\[var\\(--mat-sys-primary\\)\\]');
-    expect(badge).toBeFalsy();
-  });
-
-  it('should display course and cuisine', () => {
-    const meta = fixture.nativeElement.querySelector('span.bg-white\\/20');
-    expect(meta.textContent).toContain(mockRecipe.course);
-    expect(meta.textContent).toContain(mockRecipe.cuisine);
+  it('should display the description', () => {
+    const descElement = fixture.nativeElement.querySelector('.hero-container p');
+    expect(descElement.textContent).toContain(mockRecipe.description);
   });
 });

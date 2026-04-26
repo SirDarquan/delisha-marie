@@ -1,4 +1,4 @@
-import { Component, input, ChangeDetectionStrategy } from '@angular/core';
+import { Component, input, ChangeDetectionStrategy, ViewEncapsulation } from '@angular/core';
 import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { Recipe } from '../../services/recipe.service';
 import { MatIconModule } from '@angular/material/icon';
@@ -22,21 +22,6 @@ import { MatIconModule } from '@angular/material/icon';
         <div
           class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
 
-        <!-- Meta Info (Floating Badge) -->
-        <div class="absolute top-8 left-8 flex items-center gap-2 z-10">
-          @if (recipe().theBest) {
-            <span
-              class="bg-[var(--mat-sys-primary)] text-white text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest flex items-center gap-1 shadow-lg shadow-primary/20">
-              <mat-icon class="text-[12px] w-auto h-auto">stars</mat-icon>
-              The Best
-            </span>
-          }
-          <span
-            class="bg-white/20 backdrop-blur-md text-white text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest border border-white/20">
-            {{ recipe().course }} • {{ recipe().cuisine }}
-          </span>
-        </div>
-
         <!-- Title Overlay -->
         <div class="absolute bottom-8 left-8 right-8 md:bottom-12 md:left-12 md:right-12 z-10">
           <div class="group/title inline-block">
@@ -57,6 +42,7 @@ import { MatIconModule } from '@angular/material/icon';
       </div>
     </div>
   `,
+  encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RecipeHero {
