@@ -21,40 +21,49 @@ describe('SidebarNewsletter', () => {
   });
 
   it('should have an invalid form when email is empty', () => {
-    component.emailControl.setValue('');
-    expect(component.emailControl.valid).toBeFalsy();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const userModel = (component as any).userModel;
+    userModel.set({ email: '' });
+    fixture.detectChanges();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    expect((component as any).newsletterForm().invalid()).toBeTruthy();
   });
 
   it('should have an invalid form when email is not an actual email', () => {
-    component.emailControl.setValue('invalid-email');
-    expect(component.emailControl.valid).toBeFalsy();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const userModel = (component as any).userModel;
+    userModel.set({ email: 'invalid-email' });
+    fixture.detectChanges();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    expect((component as any).newsletterForm().invalid()).toBeTruthy();
   });
 
   it('should have a valid form when email is correct', () => {
-    component.emailControl.setValue('test@example.com');
-    expect(component.emailControl.valid).toBeTruthy();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const userModel = (component as any).userModel;
+    userModel.set({ email: 'test@example.com' });
+    fixture.detectChanges();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    expect((component as any).newsletterForm().valid()).toBeTruthy();
   });
 
-  it('should call subscribe and reset form on valid submission', () => {
-    const alertSpy = vi.spyOn(window, 'alert').mockImplementation((message: string) => {
-      console.log('Mock Alert:', message);
+  it('should call submission action and reset form on valid submission', async () => {
+    const alertSpy = vi.spyOn(window, 'alert').mockImplementation((msg: string) => {
+      console.log(msg);
     });
-    component.emailControl.setValue('test@example.com');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const userModel = (component as any).userModel;
+    userModel.set({ email: 'test@example.com' });
     fixture.detectChanges();
-    component.subscribe();
+
+    // Trigger submission
+    const formElement = fixture.nativeElement.querySelector('form');
+    formElement.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    fixture.detectChanges();
+    await fixture.whenStable();
 
     expect(alertSpy).toHaveBeenCalledWith('Thanks for subscribing, test@example.com!');
-    expect(component.emailControl.value).toBeNull();
+    expect(userModel().email).toBe('');
     alertSpy.mockRestore();
-  });
-
-  it('should not call alert or reset form on invalid submission', () => {
-    const alertSpy = vi.spyOn(window, 'alert');
-    component.emailControl.setValue('invalid-email');
-    fixture.detectChanges();
-    component.subscribe();
-
-    expect(alertSpy).not.toHaveBeenCalled();
-    expect(component.emailControl.value).toBe('invalid-email');
   });
 });

@@ -8,10 +8,11 @@ import { SidebarNewsletter } from './sidebar-newsletter';
   selector: 'dml-sidebar',
   imports: [CommonModule, AuthorBio, SidebarSearch, SidebarNewsletter],
   template: `
-    <div class="flex flex-col gap-8">
+    <div class="flex flex-col gap-8 h-full">
       <dm-author-bio />
       <dm-sidebar-search />
       <dm-sidebar-newsletter />
+      <ng-content />
     </div>
   `,
   styles: [

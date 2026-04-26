@@ -19,7 +19,7 @@ import { Router } from '@angular/router';
   ],
   template: `
     <section
-      class="bg-[var(--mat-sys-surface-container-high)] rounded-[2.5rem] p-8 shadow-sm"
+      class="bg-[var(--mat-sys-surface-container-highest)] text-[var(--mat-sys-on-surface)] rounded-[2.5rem] p-8 shadow-sm"
       aria-labelledby="search-title">
       <h3 id="search-title" class="text-xl font-black mb-6 flex items-center gap-2">
         <mat-icon class="scale-90">search</mat-icon>
@@ -51,9 +51,13 @@ import { Router } from '@angular/router';
         display: block;
       }
       dm-sidebar-search .search-field .mat-mdc-text-field-wrapper {
-        background: white;
+        background: var(--mat-sys-surface-container);
+        border-radius: 2rem;
         padding-top: 0;
         padding-bottom: 0;
+      }
+      dm-sidebar-search .search-field input {
+        color: var(--mat-sys-on-surface);
       }
       dm-sidebar-search .search-field .mdc-notched-outline {
         display: none;

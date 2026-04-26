@@ -14,7 +14,7 @@ import { MatButtonModule } from '@angular/material/button';
           ngSrc="/assets/delisha_marie_profile.png"
           fill
           alt="Delisha Marie"
-          class="rounded-full object-cover border-4 border-white shadow-xl" />
+          class="rounded-full object-cover border-4 border-[var(--mat-sys-outline-variant)] shadow-xl" />
       </div>
       <h3 id="author-title" class="text-2xl font-black mb-3">Hi, I'm Delisha!</h3>
       <p class="text-[var(--mat-sys-on-surface-variant)] font-medium leading-relaxed mb-6">

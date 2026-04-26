@@ -1,16 +1,16 @@
-import { Component, ChangeDetectionStrategy, ViewEncapsulation } from '@angular/core';
+import { Component, ChangeDetectionStrategy, ViewEncapsulation, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
-import { ReactiveFormsModule, FormControl, Validators } from '@angular/forms';
+import { FormRoot, FormField, form, required, email } from '@angular/forms/signals';
 
 @Component({
   selector: 'dm-sidebar-newsletter',
-  imports: [CommonModule, MatButtonModule, MatInputModule, MatFormFieldModule, ReactiveFormsModule],
+  imports: [CommonModule, MatButtonModule, MatInputModule, MatFormFieldModule, FormRoot, FormField],
   template: `
     <section
-      class="bg-[var(--mat-sys-on-surface)] text-[var(--mat-sys-surface)] rounded-[2.5rem] p-8 shadow-xl relative overflow-hidden group"
+      class="bg-[var(--mat-sys-surface-container-highest)] text-[var(--mat-sys-on-surface)] rounded-[2.5rem] p-8 shadow-sm relative overflow-hidden group"
       aria-labelledby="newsletter-title">
       <div
         class="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-16 -mt-16 blur-2xl group-hover:bg-white/10 transition-colors"></div>
@@ -20,22 +20,25 @@ import { ReactiveFormsModule, FormControl, Validators } from '@angular/forms';
         Join 50,000+ home cooks. Get my latest recipes and kitchen secrets once a week.
       </p>
 
-      <div class="space-y-4 relative z-10">
+      <form [formRoot]="newsletterForm" class="space-y-4 relative z-10">
         <mat-form-field appearance="outline" class="w-full newsletter-field">
           <input
             matInput
-            [formControl]="emailControl"
+            [formField]="newsletterForm.email"
             placeholder="Your email address"
             aria-label="Email address" />
+          @for (error of newsletterForm.email().errors(); track error) {
+            <mat-error>{{ error.message }}</mat-error>
+          }
         </mat-form-field>
         <button
           mat-flat-button
-          [disabled]="emailControl.invalid"
-          (click)="subscribe()"
-          class="w-full h-12 rounded-full bg-[var(--mat-sys-primary)] text-white font-bold shadow-lg shadow-primary/20">
+          type="submit"
+          [disabled]="newsletterForm().invalid()"
+          class="w-full h-12 rounded-full !bg-[var(--mat-sys-primary)] !text-[var(--mat-sys-on-primary)] font-bold shadow-lg shadow-primary/20">
           Subscribe Now
         </button>
-      </div>
+      </form>
       <p class="text-[10px] text-center opacity-40 mt-6 uppercase tracking-widest font-black">
         No spam, just goodness.
       </p>
@@ -47,14 +50,24 @@ import { ReactiveFormsModule, FormControl, Validators } from '@angular/forms';
         display: block;
       }
       dm-sidebar-newsletter .newsletter-field .mat-mdc-text-field-wrapper {
-        background: rgba(255, 255, 255, 0.1);
+        background: var(--mat-sys-surface-container);
         border-radius: 1.5rem;
       }
       dm-sidebar-newsletter .newsletter-field .mdc-notched-outline {
         display: none;
       }
       dm-sidebar-newsletter .newsletter-field input {
-        color: white;
+        color: var(--mat-sys-on-surface) !important;
+      }
+      dm-sidebar-newsletter .newsletter-field .mat-mdc-form-field-flex {
+        padding-top: 0;
+        padding-bottom: 0;
+        height: 3.5rem;
+        display: flex;
+        align-items: center;
+      }
+      dm-sidebar-newsletter .newsletter-field .mat-mdc-form-field-subscript-wrapper {
+        padding: 0 1rem;
       }
     `,
   ],
@@ -62,12 +75,23 @@ import { ReactiveFormsModule, FormControl, Validators } from '@angular/forms';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SidebarNewsletter {
-  readonly emailControl = new FormControl('', [Validators.required, Validators.email]);
+  protected readonly userModel = signal({
+    email: '',
+  });
 
-  subscribe() {
-    if (this.emailControl.valid) {
-      alert(`Thanks for subscribing, ${this.emailControl.value}!`);
-      this.emailControl.reset();
-    }
-  }
+  protected readonly newsletterForm = form(
+    this.userModel,
+    (fields) => {
+      required(fields.email, { message: 'Email is required' });
+      email(fields.email, { message: 'Email is invalid' });
+    },
+    {
+      submission: {
+        action: async (f) => {
+          alert(`Thanks for subscribing, ${f().value().email}!`);
+          this.userModel.set({ email: '' });
+        },
+      },
+    },
+  );
 }
