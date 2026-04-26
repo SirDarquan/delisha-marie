@@ -80,6 +80,15 @@ describe('RecipeService', () => {
     expect(result.items[0].id).toBe(3);
   });
 
+  it('should handle getRecipes with minimal parameters', async () => {
+    const promise = service.getRecipes(1, 10, 'baking');
+    const req = httpMock.expectOne(
+      '/api/recipes?page=1&pageSize=10&method=baking&category=&subcategory=',
+    );
+    req.flush([]);
+    await promise;
+  });
+
   describe('getRecipeBySlug', () => {
     it('should find a recipe by slug', async () => {
       const mockAllRecipes = [{ id: 1, slug: 'test-recipe', title: 'Test' } as unknown as Recipe];
