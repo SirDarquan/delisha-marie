@@ -80,7 +80,7 @@ import { WINDOW } from '../../services/global-tokens';
       <button
         mat-flat-button
         class="w-full h-12 rounded-full font-bold shadow-lg shadow-primary/20"
-        (click)="scrollToRecipe()">
+        (click)="scrollToElement('recipe-card')">
         Jump to Recipe
       </button>
     </div>
@@ -99,8 +99,8 @@ export class SidebarQuickView {
   private window = inject(WINDOW);
   recipe = input.required<Recipe>();
 
-  scrollToRecipe() {
-    const element = this.window.document.getElementById('recipe-card');
+  scrollToElement(elementId: string) {
+    const element = this.window.document.getElementById(elementId);
     element?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 }

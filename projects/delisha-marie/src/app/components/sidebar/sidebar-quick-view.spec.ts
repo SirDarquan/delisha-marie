@@ -69,7 +69,7 @@ describe('SidebarQuickView', () => {
     const mockElement = { scrollIntoView: vi.fn() };
     mockWindow.document.getElementById.mockReturnValue(mockElement);
 
-    component.scrollToRecipe();
+    component.scrollToElement('recipe-card');
 
     expect(mockWindow.document.getElementById).toHaveBeenCalledWith('recipe-card');
     expect(mockElement.scrollIntoView).toHaveBeenCalledWith({
@@ -80,6 +80,6 @@ describe('SidebarQuickView', () => {
 
   it('should not throw error if recipe-card element is not found', () => {
     mockWindow.document.getElementById.mockReturnValue(null);
-    expect(() => component.scrollToRecipe()).not.toThrow();
+    expect(() => component.scrollToElement('recipe-card')).not.toThrow();
   });
 });

@@ -18,10 +18,6 @@ import { MatIconModule } from '@angular/material/icon';
           [alt]="recipe().title"
           class="object-cover transition-transform duration-[2000ms] group-hover:scale-105" />
 
-        <!-- Overlay Gradient -->
-        <div
-          class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
-
         <!-- Title Overlay -->
         <div class="absolute bottom-8 left-8 right-8 md:bottom-12 md:left-12 md:right-12 z-10">
           <div class="group/title inline-block">
