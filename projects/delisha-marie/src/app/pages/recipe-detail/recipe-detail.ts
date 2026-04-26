@@ -8,14 +8,14 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Breadcrumbs, BreadcrumbItem } from '../../components/breadcrumbs/breadcrumbs';
-import { RecipeHero } from '../../components/recipe-hero/recipe-hero';
+import { RecipeHero } from './recipe-hero';
 import { Recipe, RecipeService } from '../../services/recipe.service';
 import { slugify } from '../../utils/slug';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { Sidebar } from '../../components/sidebar/sidebar';
 import { SidebarQuickView } from '../../components/sidebar/sidebar-quick-view';
-import { RecipeCard } from '../../components/recipe-card/recipe-card';
+import { RecipeCard } from './recipe-card';
 import { RecipeNavigation } from './recipe-navigation';
 
 @Component({
