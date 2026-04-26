@@ -158,4 +158,12 @@ describe('RecipeDetail', () => {
     fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain('6');
   });
+
+  it('should render the sidebar and projected quick view', () => {
+    fixture.componentRef.setInput('recipe', mockRecipe);
+    fixture.detectChanges();
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.querySelector('dml-sidebar')).toBeTruthy();
+    expect(compiled.querySelector('dm-sidebar-quick-view')).toBeTruthy();
+  });
 });

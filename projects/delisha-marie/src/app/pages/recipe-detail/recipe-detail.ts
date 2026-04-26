@@ -13,10 +13,19 @@ import { slugify } from '../../utils/slug';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { Sidebar } from '../../components/sidebar/sidebar';
+import { SidebarQuickView } from '../../components/sidebar/sidebar-quick-view';
 
 @Component({
   selector: 'dm-recipe-detail',
-  imports: [CommonModule, Breadcrumbs, RecipeHero, MatIconModule, MatButtonModule, Sidebar],
+  imports: [
+    CommonModule,
+    Breadcrumbs,
+    RecipeHero,
+    MatIconModule,
+    MatButtonModule,
+    Sidebar,
+    SidebarQuickView,
+  ],
   template: `
     <div class="into-the-box pt-12 pb-20">
       <!-- Breadcrumbs -->
@@ -79,7 +88,9 @@ import { Sidebar } from '../../components/sidebar/sidebar';
                 <div class="grid grid-cols-1 md:grid-cols-12 gap-12">
                   <!-- Ingredients -->
                   <div class="md:col-span-5 lg:col-span-4">
-                    <div class="bg-[var(--mat-sys-surface-container)] p-8 rounded-[2.5rem]">
+                    <div
+                      id="recipe-card"
+                      class="bg-[var(--mat-sys-surface-container)] p-8 rounded-[2.5rem]">
                       <h2 class="text-2xl font-black mb-8 flex items-center gap-3">
                         <mat-icon class="text-[var(--mat-sys-primary)]">shopping_basket</mat-icon>
                         Ingredients
@@ -188,7 +199,11 @@ import { Sidebar } from '../../components/sidebar/sidebar';
 
               <!-- Sidebar -->
               <aside class="w-full lg:w-[350px] shrink-0">
-                <dml-sidebar />
+                <dml-sidebar>
+                  <div class="sticky top-24">
+                    <dm-sidebar-quick-view [recipe]="r" />
+                  </div>
+                </dml-sidebar>
               </aside>
             </div>
           </div>
