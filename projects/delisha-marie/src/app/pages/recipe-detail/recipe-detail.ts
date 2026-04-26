@@ -4,17 +4,19 @@ import {
   computed,
   input,
   ViewEncapsulation,
+  inject,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Breadcrumbs, BreadcrumbItem } from '../../components/breadcrumbs/breadcrumbs';
 import { RecipeHero } from '../../components/recipe-hero/recipe-hero';
-import { Recipe } from '../../services/recipe.service';
+import { Recipe, RecipeService } from '../../services/recipe.service';
 import { slugify } from '../../utils/slug';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { Sidebar } from '../../components/sidebar/sidebar';
 import { SidebarQuickView } from '../../components/sidebar/sidebar-quick-view';
 import { RecipeCard } from '../../components/recipe-card/recipe-card';
+import { RecipeNavigation } from './recipe-navigation';
 
 @Component({
   selector: 'dm-recipe-detail',
@@ -27,6 +29,7 @@ import { RecipeCard } from '../../components/recipe-card/recipe-card';
     Sidebar,
     SidebarQuickView,
     RecipeCard,
+    RecipeNavigation,
   ],
   template: `
     <div class="into-the-box pt-12 pb-12">
@@ -54,6 +57,9 @@ import { RecipeCard } from '../../components/recipe-card/recipe-card';
 
                 <!-- Premium Recipe Card -->
                 <dml-recipe-card [recipe]="r" />
+
+                <!-- Recipe Navigation -->
+                <dml-recipe-navigation [previous]="navigation().prev" [next]="navigation().next" />
               </div>
 
               <!-- Sidebar -->
@@ -138,5 +144,24 @@ export class RecipeDetail {
     items.push({ label: r.title });
 
     return items;
+  });
+
+  private readonly recipeService = inject(RecipeService);
+  readonly allRecipes = this.recipeService.recipes;
+
+  readonly navigation = computed(() => {
+    const r = this.recipe();
+    const all = this.allRecipes();
+    if (!r || all.length === 0) return { prev: null, next: null, index: -1 };
+
+    const index = all.findIndex((x) => x.slug === r.slug);
+    if (index === -1) return { prev: null, next: null, index: -1 };
+
+    return {
+      prev: index > 0 ? { title: all[index - 1].title, slug: all[index - 1].slug } : null,
+      next:
+        index < all.length - 1 ? { title: all[index + 1].title, slug: all[index + 1].slug } : null,
+      index,
+    };
   });
 }
