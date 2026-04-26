@@ -27,7 +27,7 @@ import { MatIconModule } from '@angular/material/icon';
           @if (recipe().theBest) {
             <span
               class="bg-[var(--mat-sys-primary)] text-white text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest flex items-center gap-1 shadow-lg shadow-primary/20">
-              <mat-icon class="!text-[12px] !w-auto !h-auto">stars</mat-icon>
+              <mat-icon class="text-[12px] w-auto h-auto">stars</mat-icon>
               The Best
             </span>
           }
@@ -44,8 +44,6 @@ import { MatIconModule } from '@angular/material/icon';
               class="text-3xl md:text-5xl font-bold tracking-tight text-white leading-[0.9] transition-colors duration-500 group-hover/title:text-[var(--mat-sys-primary)]">
               {{ recipe().title }}
             </h1>
-            <div
-              class="h-1.5 w-24 md:w-32 bg-[var(--mat-sys-primary)] mt-4 rounded-full transition-all duration-500 group-hover/title:w-full"></div>
           </div>
         </div>
       </div>
