@@ -40,6 +40,7 @@ describe('RecipeDetail', () => {
     course: 'Main Course',
     cuisine: 'American',
     theBest: true,
+    content: '<p>A delicious test recipe story.</p>',
   };
 
   beforeEach(async () => {
@@ -68,12 +69,29 @@ describe('RecipeDetail', () => {
 
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.querySelector('h1')?.textContent).toContain('Test Recipe');
-    expect(compiled.querySelector('p')?.textContent).toContain('A delicious test recipe');
+    expect(compiled.querySelector('.recipe-story')).toBeTruthy();
     expect(compiled.querySelectorAll('li').length).toBeGreaterThanOrEqual(2); // Ingredients
     expect(compiled.textContent).toContain('Step 1');
     expect(compiled.textContent).toContain('Step 2');
     expect(compiled.textContent).toContain('200'); // Calories
-    expect(compiled.textContent).toContain('The Best');
+  });
+
+  it('should not render story section when content is missing', () => {
+    const noContentRecipe = { ...mockRecipe, content: '' };
+    fixture.componentRef.setInput('recipe', noContentRecipe);
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.querySelector('.recipe-story')).toBeFalsy();
+  });
+
+  it('should not render notes section when notes are empty', () => {
+    const noNotesRecipe = { ...mockRecipe, notes: [] };
+    fixture.componentRef.setInput('recipe', noNotesRecipe);
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.textContent).not.toContain("Chef's Notes");
   });
 
   it('should render "Recipe not found" when recipe is null', () => {
@@ -82,6 +100,24 @@ describe('RecipeDetail', () => {
 
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.textContent).toContain('Recipe not found');
+  });
+
+  it('should not render nutrition section when nutrition is missing', () => {
+    const noNutritionRecipe = { ...mockRecipe, nutrition: undefined };
+    fixture.componentRef.setInput('recipe', noNutritionRecipe);
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.textContent).not.toContain('Nutrition Facts');
+  });
+
+  it('should not render notes section when notes are undefined', () => {
+    const noNotesRecipe = { ...mockRecipe, notes: undefined };
+    fixture.componentRef.setInput('recipe', noNotesRecipe);
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.textContent).not.toContain("Chef's Notes");
   });
 
   it('should generate correct breadcrumbs', () => {

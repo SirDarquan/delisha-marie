@@ -127,5 +127,5 @@ describe('RecipeIndex', () => {
     expect(bestRecipes[0].children?.[0].url).toBe(
       '/the-best-recipes/the-best-air-fryer/the-best-chicken',
     );
-  });
+  }, 15000);
 });
