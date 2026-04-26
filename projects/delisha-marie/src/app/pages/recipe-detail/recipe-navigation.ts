@@ -41,11 +41,11 @@ export interface NavRecipe {
           </div>
 
           <!-- Next Link -->
-          <div class="next-container md:text-right">
+          <div class="next-container text-right">
             @if (next(); as n) {
               <a [routerLink]="n.slug" class="group block no-underline">
                 <div
-                  class="flex items-center md:flex-row-reverse gap-2 mb-2 opacity-40 group-hover:opacity-100 group-hover:text-[var(--mat-sys-primary)] transition-all">
+                  class="flex flex-row-reverse items-center gap-2 mb-2 opacity-40 group-hover:opacity-100 group-hover:text-[var(--mat-sys-primary)] transition-all">
                   <mat-icon class="text-xl">arrow_forward</mat-icon>
                   <span class="text-[10px] font-black uppercase tracking-widest">Next Recipe</span>
                 </div>
