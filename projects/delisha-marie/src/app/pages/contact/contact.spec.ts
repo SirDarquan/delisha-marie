@@ -2,13 +2,14 @@ import { TestBed } from '@angular/core/testing';
 import { Contact } from './contact';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { describe, it, expect, beforeEach } from 'vitest';
+import { provideRouter } from '@angular/router';
 
 describe('Contact', () => {
   beforeEach(async () => {
     TestBed.resetTestingModule();
     await TestBed.configureTestingModule({
       imports: [Contact, MatSnackBarModule],
-      providers: [],
+      providers: [provideRouter([])],
     }).compileComponents();
   });
 
@@ -34,5 +35,32 @@ describe('Contact', () => {
     const compiled = fixture.nativeElement as HTMLElement;
     const submitBtn = compiled.querySelector('button[type="submit"]') as HTMLButtonElement;
     expect(submitBtn.disabled).toBe(true);
+  });
+
+  it('should enable submit button when form is valid', () => {
+    const fixture = TestBed.createComponent(Contact);
+    fixture.detectChanges();
+    const component = fixture.componentInstance;
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const userModel = (component as any).userModel;
+    userModel.set({
+      name: 'Test',
+      email: 'test@example.com',
+      subject: 'Hello',
+      message: 'This is a test message',
+    });
+
+    fixture.detectChanges();
+    const compiled = fixture.nativeElement as HTMLElement;
+    const submitBtn = compiled.querySelector('button[type="submit"]') as HTMLButtonElement;
+    expect(submitBtn.disabled).toBe(false);
+  });
+
+  it('should render the sidebar', () => {
+    const fixture = TestBed.createComponent(Contact);
+    fixture.detectChanges();
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.querySelector('dml-sidebar')).toBeTruthy();
   });
 });
