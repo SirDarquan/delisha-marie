@@ -134,4 +134,31 @@ export class RecipeService {
       };
     });
   }
+
+  /**
+   * Fetches all comments for a specific recipe.
+   */
+  getComments(recipeId: string | number): Promise<Comment[]> {
+    return this.api.get<Comment[]>('/api/comments').then((all) => {
+      const id = String(recipeId);
+      return all.filter((c) => String(c.recipeId) === id);
+    });
+  }
+
+  /**
+   * Adds a new comment to a recipe.
+   * Mock implementation for development.
+   */
+  async addComment(comment: Omit<Comment, 'id' | 'createdAt'>): Promise<Comment> {
+    // Simulate API latency
+    await new Promise((resolve) => setTimeout(resolve, 800));
+
+    const newComment: Comment = {
+      ...comment,
+      id: `c${Date.now()}`,
+      createdAt: new Date().toISOString(),
+    };
+
+    return newComment;
+  }
 }

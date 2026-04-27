@@ -1,4 +1,12 @@
-import { Component, input, output, ChangeDetectionStrategy, signal, computed, ViewEncapsulation } from '@angular/core';
+import {
+  Component,
+  input,
+  output,
+  ChangeDetectionStrategy,
+  signal,
+  computed,
+  ViewEncapsulation,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 

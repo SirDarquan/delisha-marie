@@ -138,4 +138,43 @@ describe('RecipeService', () => {
       expect(result).toBeNull();
     });
   });
+  describe('comments', () => {
+    it('should fetch comments for a recipe', async () => {
+      const mockComments = [
+        { id: 'c1', recipeId: '1', author: 'A' },
+        { id: 'c2', recipeId: '2', author: 'B' },
+      ];
+
+      const promise = service.getComments('1');
+
+      const req = httpMock.expectOne('/api/comments');
+      req.flush(mockComments);
+
+      const result = await promise;
+      expect(result.length).toBe(1);
+      expect(result[0].id).toBe('c1');
+    });
+
+    it('should add a comment with simulated latency', async () => {
+      vi.useFakeTimers();
+      const newCommentData = {
+        recipeId: '1',
+        author: 'Tester',
+        email: 'test@example.com',
+        content: 'Nice!',
+      };
+
+      const promise = service.addComment(newCommentData);
+
+      // Fast forward time
+      vi.advanceTimersByTime(800);
+
+      const result = await promise;
+      expect(result.author).toBe('Tester');
+      expect(result.id).toBeDefined();
+      expect(result.createdAt).toBeDefined();
+
+      vi.useRealTimers();
+    });
+  });
 });
