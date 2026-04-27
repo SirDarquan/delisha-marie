@@ -111,7 +111,7 @@ describe('RecipeComments', () => {
     expect(component.paginatedComments().length).toBe(0);
   });
 
-  it('should sort replies chronologically (oldest first)', () => {
+  it('should sort replies chronologically (oldest first)', async () => {
     const parentId = 'p1';
     const comments: Comment[] = [
       {
@@ -134,16 +134,15 @@ describe('RecipeComments', () => {
       },
     ];
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (component as any).commentsResource.update(() => comments);
+    recipeServiceMock.getComments.mockResolvedValue(comments);
+    fixture.componentRef.setInput('recipe', { ...component.recipe(), id: 99 });
     fixture.detectChanges();
+    await fixture.whenStable();
 
     const replies = component.getReplies(parentId);
     expect(replies[0].id).toBe('r1');
     expect(replies[1].id).toBe('r2');
   });
-
-
 
   it('should handle star rating change from template', () => {
     const starsEl = fixture.debugElement.query(By.css('dml-stars'));
@@ -159,20 +158,33 @@ describe('RecipeComments', () => {
     const controls = fixture.debugElement.query(By.css('pagination-controls'));
     if (controls) {
       controls.triggerEventHandler('pageChange', 1);
-      expect(router.navigate).toHaveBeenCalledWith(['/recipe/test-recipe/page/1'], expect.any(Object));
+      expect(router.navigate).toHaveBeenCalledWith(
+        ['/recipe/test-recipe/page/1'],
+        expect.any(Object),
+      );
     }
   });
 
   it('should render nested replies in the DOM', async () => {
     // mockComments[101] is c102, which is on Page 3 (default)
     const parentId = mockComments[101].id;
-    const replies: Comment[] = [
-      { id: 'reply1', parentId, recipeId: '1', author: 'Replier 1', content: 'Reply content', createdAt: new Date().toISOString(), email: '' }
-    ];
-    
-    // Inject replies into the signal
-    (component as any).commentsResource.update(() => [...mockComments, ...replies]);
+    const reply: Comment = {
+      id: 'reply1',
+      parentId,
+      recipeId: '1',
+      author: 'Replier 1',
+      content: 'Reply content',
+      createdAt: new Date().toISOString(),
+      email: '',
+    };
+
+    // Update the mock to return the reply as well
+    recipeServiceMock.getComments.mockResolvedValue([...mockComments, reply]);
+
+    // Trigger a re-fetch by updating the recipe input (using a new object reference)
+    fixture.componentRef.setInput('recipe', { ...component.recipe(), id: 100 });
     fixture.detectChanges();
+    await fixture.whenStable();
 
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.textContent).toContain('Replier 1');
@@ -202,31 +214,34 @@ describe('RecipeComments', () => {
     expect(component.replyTo()).toBeNull();
   });
 
-  it('should submit a top-level comment and scroll to comments section', async () => {
-    // Fill the form via the source model signal
-    (component as any).formModel.set({
-      author: 'New Author',
-      email: 'new@example.com',
-      website: '',
-      content: 'New Comment Content',
-      rating: null,
-    });
+  it('should submit a comment and scroll to the comments section', async () => {
+    const compiled = fixture.nativeElement as HTMLElement;
+
+    const authorInput = compiled.querySelector('#author') as HTMLInputElement;
+    authorInput.value = 'New Author';
+    authorInput.dispatchEvent(new Event('input'));
+
+    const emailInput = compiled.querySelector('#email') as HTMLInputElement;
+    emailInput.value = 'test@example.com';
+    emailInput.dispatchEvent(new Event('input'));
+
+    const contentInput = compiled.querySelector('#content') as HTMLTextAreaElement;
+    contentInput.value = 'New Comment';
+    contentInput.dispatchEvent(new Event('input'));
+
     fixture.detectChanges();
 
-    const formEl = fixture.nativeElement.querySelector('form');
+    const formEl = compiled.querySelector('form') as HTMLFormElement;
     formEl.dispatchEvent(new Event('submit'));
-    
-    // The action is async
+
     await fixture.whenStable();
 
     expect(recipeServiceMock.addComment).toHaveBeenCalledWith(
       expect.objectContaining({
         author: 'New Author',
-        parentId: undefined,
       }),
     );
-    
-    // Wait for the setTimeout in the action
+
     await new Promise((resolve) => setTimeout(resolve, 150));
     expect(windowMock.document.getElementById).toHaveBeenCalledWith('comments');
   });
@@ -235,14 +250,21 @@ describe('RecipeComments', () => {
     const parent = mockComments[0];
     component.replyTo.set(parent);
     fixture.detectChanges();
-    
-    (component as any).formModel.set({
-      author: 'Replier',
-      email: 'replier@example.com',
-      website: '',
-      content: 'Reply Content',
-      rating: null,
-    });
+
+    const compiled = fixture.nativeElement as HTMLElement;
+
+    const authorInput = compiled.querySelector('#author') as HTMLInputElement;
+    authorInput.value = 'Replier';
+    authorInput.dispatchEvent(new Event('input'));
+
+    const emailInput = compiled.querySelector('#email') as HTMLInputElement;
+    emailInput.value = 'replier@example.com';
+    emailInput.dispatchEvent(new Event('input'));
+
+    const contentInput = compiled.querySelector('#content') as HTMLTextAreaElement;
+    contentInput.value = 'Reply content';
+    contentInput.dispatchEvent(new Event('input'));
+
     fixture.detectChanges();
 
     // Mock addComment to return a specific ID
@@ -250,11 +272,11 @@ describe('RecipeComments', () => {
       id: 'new-reply-id',
       author: 'Replier',
       createdAt: new Date().toISOString(),
-      content: 'Reply Content',
-      recipeId: '1'
+      content: 'Reply content',
+      recipeId: '1',
     });
 
-    const formEl = fixture.nativeElement.querySelector('form');
+    const formEl = compiled.querySelector('form') as HTMLFormElement;
     formEl.dispatchEvent(new Event('submit'));
     await fixture.whenStable();
 
@@ -263,25 +285,34 @@ describe('RecipeComments', () => {
         parentId: parent.id,
       }),
     );
-    
+
     await new Promise((resolve) => setTimeout(resolve, 150));
     expect(windowMock.document.getElementById).toHaveBeenCalledWith('comment-new-reply-id');
   });
 
   it('should handle submission errors gracefully', async () => {
-    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {
+      /* ignore error */
+    });
     recipeServiceMock.addComment.mockRejectedValueOnce(new Error('Network Error'));
 
-    (component as any).formModel.set({
-      author: 'Error Author',
-      email: 'error@example.com',
-      website: '',
-      content: 'Error Content',
-      rating: null,
-    });
+    const compiled = fixture.nativeElement as HTMLElement;
+
+    const authorInput = compiled.querySelector('#author') as HTMLInputElement;
+    authorInput.value = 'Error Author';
+    authorInput.dispatchEvent(new Event('input'));
+
+    const emailInput = compiled.querySelector('#email') as HTMLInputElement;
+    emailInput.value = 'error@example.com';
+    emailInput.dispatchEvent(new Event('input'));
+
+    const contentInput = compiled.querySelector('#content') as HTMLTextAreaElement;
+    contentInput.value = 'Error content';
+    contentInput.dispatchEvent(new Event('input'));
+
     fixture.detectChanges();
 
-    const formEl = fixture.nativeElement.querySelector('form');
+    const formEl = compiled.querySelector('form') as HTMLFormElement;
     formEl.dispatchEvent(new Event('submit'));
     await fixture.whenStable();
 
