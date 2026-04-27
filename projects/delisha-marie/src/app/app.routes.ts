@@ -94,5 +94,15 @@ export const routes: Routes = [
       schema: schemaRecipeResolver,
     },
   },
+  {
+    path: 'recipe/:slug/page/:page',
+    title: recipeTitleResolver,
+    loadComponent: () => import('./pages/recipe-detail/recipe-detail').then((m) => m.RecipeDetail),
+    resolve: {
+      recipe: recipeResolver,
+      seo: seoRecipeResolver,
+      schema: schemaRecipeResolver,
+    },
+  },
   { path: '**', redirectTo: '' },
 ];

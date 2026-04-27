@@ -17,6 +17,7 @@ import { Sidebar } from '../../components/sidebar/sidebar';
 import { SidebarQuickView } from '../../components/sidebar/sidebar-quick-view';
 import { RecipeCard } from './recipe-card';
 import { RecipeNavigation } from './recipe-navigation';
+import { RecipeComments } from '../../components/recipe-comments/recipe-comments';
 
 @Component({
   selector: 'dm-recipe-detail',
@@ -30,6 +31,7 @@ import { RecipeNavigation } from './recipe-navigation';
     SidebarQuickView,
     RecipeCard,
     RecipeNavigation,
+    RecipeComments,
   ],
   template: `
     <div class="into-the-box pt-12 pb-12">
@@ -60,6 +62,9 @@ import { RecipeNavigation } from './recipe-navigation';
 
                 <!-- Recipe Navigation -->
                 <dml-recipe-navigation [previous]="navigation().prev" [next]="navigation().next" />
+
+                <!-- Comments Section -->
+                <dml-recipe-comments [recipe]="r" [page]="page()" />
               </div>
 
               <!-- Sidebar -->
@@ -112,6 +117,8 @@ import { RecipeNavigation } from './recipe-navigation';
 export class RecipeDetail {
   // Input from resolver
   recipe = input<Recipe | null>(null);
+  slug = input<string>();
+  page = input<string>();
 
   readonly breadcrumbItems = computed((): BreadcrumbItem[] => {
     const r = this.recipe();
