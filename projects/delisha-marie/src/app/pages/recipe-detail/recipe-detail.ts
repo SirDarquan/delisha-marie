@@ -17,7 +17,8 @@ import { Sidebar } from '../../components/sidebar/sidebar';
 import { SidebarQuickView } from '../../components/sidebar/sidebar-quick-view';
 import { RecipeCard } from './recipe-card';
 import { RecipeNavigation } from './recipe-navigation';
-import { RecipeComments } from '../../components/recipe-comments/recipe-comments';
+import { RecipeComments } from './recipe-comments';
+import { RecipeMeta } from './recipe-meta';
 
 @Component({
   selector: 'dm-recipe-detail',
@@ -32,6 +33,7 @@ import { RecipeComments } from '../../components/recipe-comments/recipe-comments
     RecipeCard,
     RecipeNavigation,
     RecipeComments,
+    RecipeMeta,
   ],
   template: `
     <div class="into-the-box pt-12 pb-12">
@@ -39,6 +41,8 @@ import { RecipeComments } from '../../components/recipe-comments/recipe-comments
       <dml-breadcrumbs [items]="breadcrumbItems()" class="block mb-8" />
 
       @if (recipe(); as r) {
+        <dml-recipe-meta [recipe]="r" class="block mb-8" />
+
         <article class="w-full">
           <!-- Hero Section -->
           <dml-recipe-hero [recipe]="r" />
