@@ -678,19 +678,19 @@ const convertToIso8601Duration = (duration: string): string => {
   let totalMinutes = 0;
   let found = false;
 
-  const daysMatch = lower.match(/(\d+)\s{0,1}(day)/);
+  const daysMatch = /(\d+)\s?(day)/.exec(lower);
   if (daysMatch) {
     totalMinutes += Number.parseInt(daysMatch[1], 10) * 24 * 60;
     found = true;
   }
 
-  const hoursMatch = lower.match(/(\d+)\s{0,1}(hour|hrs|hr|h(?!o))/);
+  const hoursMatch = /(\d+)\s?(hour|hrs|hr|h(?!o))/.exec(lower);
   if (hoursMatch) {
     totalMinutes += Number.parseInt(hoursMatch[1], 10) * 60;
     found = true;
   }
 
-  const minsMatch = lower.match(/(\d+)\s{0,1}(min|mins)/);
+  const minsMatch = /(\d+)\s?(min|mins)/.exec(lower);
   if (minsMatch) {
     totalMinutes += Number.parseInt(minsMatch[1], 10);
     found = true;

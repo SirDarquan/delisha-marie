@@ -225,9 +225,9 @@ describe('schemaResolver', () => {
         description: 'Desc',
         image: '/img.jpg',
         category: 'Cat',
-        prepTime: '10m',
-        cookTime: '10m',
-        totalTime: '20m',
+        prepTime: '1 day',
+        cookTime: '2 hours 30 mins',
+        totalTime: '1 day 2 hours 30 mins',
         difficulty: 'Easy',
         author: 'Author',
         ingredients: ['Ing1'],
@@ -248,7 +248,11 @@ describe('schemaResolver', () => {
 
       expect(recipeService.getRecipeBySlug).toHaveBeenCalledWith('recipe');
       expect(result.length).toBe(8); // Org, Person, WebSite, Image, WebPage, Article, Recipe, Breadcrumb
-      expect(result.some((s) => s['@type'] === 'Recipe')).toBe(true);
+      const recipeSchema = result.find((s) => s['@type'] === 'Recipe') as Record<string, string>;
+      expect(recipeSchema).toBeDefined();
+      expect(recipeSchema['prepTime']).toBe('PT1440M');
+      expect(recipeSchema['cookTime']).toBe('PT150M');
+      expect(recipeSchema['totalTime']).toBe('PT1590M');
     });
 
     it('should return empty array if slug missing', async () => {

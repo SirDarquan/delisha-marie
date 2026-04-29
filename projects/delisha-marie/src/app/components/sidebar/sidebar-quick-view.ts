@@ -96,7 +96,7 @@ import { WINDOW } from '../../services/global-tokens';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SidebarQuickView {
-  private window = inject(WINDOW);
+  private readonly window = inject(WINDOW);
   recipe = input.required<Recipe>();
 
   scrollToElement(elementId: string) {

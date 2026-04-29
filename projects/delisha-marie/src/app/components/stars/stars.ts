@@ -77,11 +77,11 @@ export class Stars {
   interactive = input<boolean>(false);
   ratingChange = output<number>();
 
-  protected readonly stars = Array(5).fill(0);
+  protected readonly stars = new Array(5).fill(0);
   protected hoverRating = signal<number | null>(null);
 
   protected displayRating = computed(() => {
-    return this.hoverRating() !== null ? this.hoverRating()! : this.rating();
+    return this.hoverRating() ? this.hoverRating()! : this.rating();
   });
 
   protected getStarIcon(starIndex: number): string {
