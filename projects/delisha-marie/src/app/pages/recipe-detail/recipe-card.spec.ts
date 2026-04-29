@@ -72,15 +72,54 @@ describe('RecipeCard', () => {
     expect(link?.textContent).toContain('Delisha Marie');
   });
 
-  it('should render recipe title', () => {
+  it('should render recipe title in header', () => {
     const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('h2')?.textContent).toContain('Test Recipe');
+    expect(compiled.querySelector('.recipe-card-title')?.textContent).toContain('Test Recipe');
+  });
+
+  it('should render correct yield/servings', () => {
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.querySelector('.recipe-card-servings')?.textContent).toContain('1 portion');
+  });
+
+  it('should render prep, cook, and total times', () => {
+    const compiled = fixture.nativeElement as HTMLElement;
+    const times = Array.from(compiled.querySelectorAll('.recipe-card-time'));
+    expect(times[0].textContent).toContain('10 min');
+    expect(times[1].textContent).toContain('20 min');
+    expect(times[2].textContent).toContain('30 min');
+  });
+
+  it('should render italic lowercase labels for metrics', () => {
+    const compiled = fixture.nativeElement as HTMLElement;
+    const label = compiled.querySelector('.recipe-card-details-label');
+    expect(label?.classList.contains('italic')).toBe(true);
+    expect(label?.classList.contains('lowercase')).toBe(true);
+  });
+
+  it('should render "Be the first!" link when no rating', () => {
+    fixture.componentRef.setInput('recipe', {
+      ...mockRecipe,
+      rating: 0,
+      slug: '/recipe/test-recipe',
+    });
+    fixture.detectChanges();
+    const compiled = fixture.nativeElement as HTMLElement;
+    const link = compiled.querySelector('a');
+    expect(link?.textContent).toContain('Be the first!');
+    expect(link?.getAttribute('href')).toContain('#respond');
+  });
+
+  it('should render stars and count when rating exists', () => {
+    fixture.componentRef.setInput('recipe', { ...mockRecipe, rating: 4.5, ratingCount: 12 });
+    fixture.detectChanges();
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.querySelector('dml-stars')).toBeTruthy();
+    expect(compiled.querySelector('.rating-text')?.textContent).toContain('(12)');
   });
 
   it('should render all ingredients', () => {
     const compiled = fixture.nativeElement as HTMLElement;
-    // Equipment + Ingredients + Notes? No, sections are separate.
-    // Ingredients section ul
     const ingredientsSection = Array.from(compiled.querySelectorAll('section')).find((s) =>
       s.textContent?.includes('Ingredients'),
     );
@@ -93,7 +132,7 @@ describe('RecipeCard', () => {
     const instructionsSection = Array.from(compiled.querySelectorAll('section')).find((s) =>
       s.textContent?.includes('Instructions'),
     );
-    const steps = instructionsSection?.querySelectorAll('div.flex.gap-6');
+    const steps = instructionsSection?.querySelectorAll('.pt-2 p');
     expect(steps?.length).toBe(2);
   });
 
