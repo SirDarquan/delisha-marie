@@ -30,8 +30,8 @@ import { MatIconModule } from '@angular/material/icon';
           (click)="handleRating($index + 1)">
           <mat-icon
             class="star-icon text-2xl transition-all duration-300 select-none"
-            [class.active]="displayRating() >= $index + 1"
-            [class.inactive]="displayRating() < $index + 1"
+            [class.active]="displayRating() >= $index + 0.5"
+            [class.inactive]="displayRating() < $index + 0.5"
             [class.hovering]="
               interactive() && hoverRating() !== null && hoverRating()! >= $index + 1
             ">
@@ -56,7 +56,7 @@ import { MatIconModule } from '@angular/material/icon';
         border-radius: 4px;
       }
       .star-icon {
-        color: var(--mat-sys-outline-variant);
+        color: var(--mat-sys-primary);
         pointer-events: none;
       }
       .star-icon.active {
@@ -87,7 +87,7 @@ export class Stars {
   protected getStarIcon(starIndex: number): string {
     const r = this.displayRating();
     if (r >= starIndex) return 'star';
-    if (r >= starIndex - 0.5) return 'star_half';
+    if (r >= starIndex - 0.55) return 'star_half';
     return 'star_outline';
   }
 

@@ -95,4 +95,12 @@ describe('Stars', () => {
     expect(component['getStarIcon'](4)).toBe('star_half');
     expect(component['getStarIcon'](5)).toBe('star_outline');
   });
+
+  it('should treat half stars as active', () => {
+    fixture.componentRef.setInput('rating', 3.5);
+    fixture.detectChanges();
+
+    const activeStars = fixture.debugElement.queryAll(By.css('.star-icon.active'));
+    expect(activeStars.length).toBe(4); // 1, 2, 3 (full) + 4 (half)
+  });
 });
