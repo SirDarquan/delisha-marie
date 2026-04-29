@@ -671,21 +671,33 @@ export const generateRecipeSchema = (recipe: Recipe, url: string): SchemaObject 
   };
 };
 
-export const convertToIso8601Duration = (duration: string): string => {
+const convertToIso8601Duration = (duration: string): string => {
   if (!duration) return '';
   const lower = duration.toLowerCase();
-  const match = lower.match(/(\d+)\s*(min|hour|hr|day)/);
-  if (!match) return '';
 
-  const value = match[1];
-  const unit = match[2];
+  let totalMinutes = 0;
+  let found = false;
 
-  if (unit.startsWith('min')) {
-    return `PT${value}M`;
-  } else if (unit.startsWith('hour') || unit.startsWith('hr')) {
-    return `PT${value}H`;
-  } else if (unit.startsWith('day')) {
-    return `P${value}D`;
+  const daysMatch = lower.match(/(\d+)\s{0,1}(day)/);
+  if (daysMatch) {
+    totalMinutes += Number.parseInt(daysMatch[1], 10) * 24 * 60;
+    found = true;
+  }
+
+  const hoursMatch = lower.match(/(\d+)\s{0,1}(hour|hrs|hr|h(?!o))/);
+  if (hoursMatch) {
+    totalMinutes += Number.parseInt(hoursMatch[1], 10) * 60;
+    found = true;
+  }
+
+  const minsMatch = lower.match(/(\d+)\s{0,1}(min|mins)/);
+  if (minsMatch) {
+    totalMinutes += Number.parseInt(minsMatch[1], 10);
+    found = true;
+  }
+
+  if (found) {
+    return `PT${totalMinutes}M`;
   }
 
   return '';
