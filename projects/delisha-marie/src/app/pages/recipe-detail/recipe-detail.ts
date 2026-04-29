@@ -38,10 +38,10 @@ import { RecipeMeta } from './recipe-meta';
   template: `
     <div class="into-the-box pt-12 pb-12">
       <!-- Breadcrumbs -->
-      <dml-breadcrumbs [items]="breadcrumbItems()" class="block mb-8" />
+      <dml-breadcrumbs [items]="breadcrumbItems()" class="block mb-8 px-4 sm:px-0 mt-4 sm:mt-0" />
 
       @if (recipe(); as r) {
-        <dml-recipe-meta [recipe]="r" class="block mb-8" />
+        <dml-recipe-meta [recipe]="r" class="block mb-8 px-4 sm:px-0" />
 
         <article class="w-full">
           <!-- Hero Section -->
@@ -54,7 +54,7 @@ import { RecipeMeta } from './recipe-meta';
               <div class="flex-1 space-y-12">
                 <!-- Recipe Story (The Content) -->
                 @if (r.content) {
-                  <section class="prose prose-lg max-w-none">
+                  <section class="prose prose-lg max-w-none px-4 sm:px-0 py-8 sm:py-0">
                     <div
                       class="recipe-story text-lg md:text-xl text-[var(--mat-sys-on-surface-variant)] leading-relaxed font-serif first-letter:text-6xl first-letter:font-black first-letter:mr-1 first-letter:text-[var(--mat-sys-primary)]"
                       [innerHTML]="r.content"></div>

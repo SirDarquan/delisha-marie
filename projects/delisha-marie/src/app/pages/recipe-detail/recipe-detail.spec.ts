@@ -61,10 +61,7 @@ describe('RecipeDetail', () => {
 
     await TestBed.configureTestingModule({
       imports: [RecipeDetail],
-      providers: [
-        provideRouter([]),
-        { provide: RecipeService, useValue: recipeServiceMock },
-      ],
+      providers: [provideRouter([]), { provide: RecipeService, useValue: recipeServiceMock }],
     }).compileComponents();
 
     fixture = TestBed.createComponent(RecipeDetail);
@@ -117,7 +114,11 @@ describe('RecipeDetail', () => {
   });
 
   it('should handle breadcrumbs without category', () => {
-    fixture.componentRef.setInput('recipe', { ...mockRecipe, category: '', subcategory: undefined });
+    fixture.componentRef.setInput('recipe', {
+      ...mockRecipe,
+      category: '',
+      subcategory: undefined,
+    });
     const breadcrumbs = component.breadcrumbItems();
 
     expect(breadcrumbs.length).toBe(3); // Home > Recipes > Test Recipe

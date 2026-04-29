@@ -10,7 +10,7 @@ import { FormRoot, FormField, form, required, email } from '@angular/forms/signa
   imports: [CommonModule, MatButtonModule, MatInputModule, MatFormFieldModule, FormRoot, FormField],
   template: `
     <section
-      class="bg-[var(--mat-sys-surface-container-highest)] text-[var(--mat-sys-on-surface)] rounded-[2.5rem] p-8 shadow-sm relative overflow-hidden group"
+      class="bg-[var(--mat-sys-surface-container-highest)] text-[var(--mat-sys-on-surface)] rounded-[2.5rem] p-6 sm:p-8 shadow-sm relative overflow-hidden group border-y sm:border-0 border-[var(--mat-sys-outline-variant)]"
       aria-labelledby="newsletter-title">
       <div
         class="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-16 -mt-16 blur-2xl group-hover:bg-white/10 transition-colors"></div>

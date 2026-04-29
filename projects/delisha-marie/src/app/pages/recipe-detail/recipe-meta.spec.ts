@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { RecipeMeta } from './recipe-meta';
 import { RecipeService, Recipe } from '../../services/recipe.service';
 import { provideRouter } from '@angular/router';
-import { of } from 'rxjs';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 describe('RecipeMeta', () => {
   let component: RecipeMeta;
@@ -33,10 +33,7 @@ describe('RecipeMeta', () => {
 
     await TestBed.configureTestingModule({
       imports: [RecipeMeta],
-      providers: [
-        provideRouter([]),
-        { provide: RecipeService, useValue: recipeServiceMock },
-      ],
+      providers: [provideRouter([]), { provide: RecipeService, useValue: recipeServiceMock }],
     }).compileComponents();
 
     fixture = TestBed.createComponent(RecipeMeta);
@@ -78,11 +75,11 @@ describe('RecipeMeta', () => {
 
   it('should update comment count when resource resolves', async () => {
     recipeServiceMock.getComments.mockResolvedValue([{ id: '1' }, { id: '2' }]);
-    
+
     // Trigger resource re-fetch by updating the input (even with same ID to be safe or just wait)
     fixture.componentRef.setInput('recipe', { ...mockRecipe, id: '123-new' });
     fixture.detectChanges();
-    
+
     // Wait for resource
     await fixture.whenStable();
     fixture.detectChanges();
@@ -94,17 +91,17 @@ describe('RecipeMeta', () => {
   it('should have correct navigation links', () => {
     const compiled = fixture.nativeElement as HTMLElement;
     const links = compiled.querySelectorAll('a');
-    
+
     // Jump to Recipe
-    const jumpLink = Array.from(links).find(a => a.textContent?.includes('Jump to Recipe'));
+    const jumpLink = Array.from(links).find((a) => a.textContent?.includes('Jump to Recipe'));
     expect(jumpLink?.getAttribute('href')).toBe('/#recipe-card');
 
     // Comment Count
-    const commentLink = Array.from(links).find(a => a.textContent?.includes('Comment(s)'));
+    const commentLink = Array.from(links).find((a) => a.textContent?.includes('Comment(s)'));
     expect(commentLink?.getAttribute('href')).toBe('/#comments');
 
     // Author
-    const authorLink = Array.from(links).find(a => a.textContent?.includes('Author'));
+    const authorLink = Array.from(links).find((a) => a.textContent?.includes('Author'));
     expect(authorLink?.getAttribute('href')).toBe('/about');
   });
 

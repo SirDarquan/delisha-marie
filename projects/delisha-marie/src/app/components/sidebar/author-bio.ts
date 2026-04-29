@@ -7,7 +7,7 @@ import { MatButtonModule } from '@angular/material/button';
   imports: [CommonModule, NgOptimizedImage, MatButtonModule],
   template: `
     <section
-      class="bg-[var(--mat-sys-surface-container)] rounded-[2.5rem] p-8 text-center shadow-sm"
+      class="bg-[var(--mat-sys-surface-container)] rounded-[2.5rem] p-6 sm:p-8 text-center shadow-sm border-y sm:border-0 border-[var(--mat-sys-outline-variant)]"
       aria-labelledby="author-title">
       <div class="relative w-40 h-40 mx-auto mb-6">
         <img

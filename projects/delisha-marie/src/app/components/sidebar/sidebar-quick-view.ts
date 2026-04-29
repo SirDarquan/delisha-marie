@@ -16,7 +16,7 @@ import { WINDOW } from '../../services/global-tokens';
   imports: [CommonModule, MatIconModule, MatButtonModule, NgOptimizedImage],
   template: `
     <div
-      class="bg-[var(--mat-sys-surface-container-highest)] rounded-[2.5rem] p-6 shadow-xl border border-[var(--mat-sys-outline-variant)] overflow-hidden"
+      class="bg-[var(--mat-sys-surface-container-highest)] rounded-[2.5rem] p-6 shadow-none sm:shadow-xl border-y sm:border border-[var(--mat-sys-outline-variant)] overflow-hidden"
       aria-labelledby="quick-view-title">
       <div class="relative aspect-video rounded-2xl overflow-hidden mb-6">
         <img [ngSrc]="recipe().image" fill [alt]="recipe().title" class="object-cover" />

@@ -53,7 +53,7 @@ export interface CommentFormValue {
 
       <!-- Comment Form -->
       <div
-        class="bg-[var(--mat-sys-surface-container-low)] rounded-[2.5rem] p-8 md:p-12 border border-[var(--mat-sys-outline-variant)] mb-16"
+        class="bg-[var(--mat-sys-surface-container-low)] rounded-[2.5rem] p-6 sm:p-8 md:p-12 border-y sm:border border-[var(--mat-sys-outline-variant)] mb-16"
         id="respond">
         <div class="flex items-center justify-between mb-8">
           <h3 class="text-2xl font-black">
@@ -198,7 +198,8 @@ export interface CommentFormValue {
               <!-- Main Comment Card -->
               <div
                 class="bg-[var(--mat-sys-surface-container-low)] rounded-[2.5rem] p-8 border border-[var(--mat-sys-outline-variant)] shadow-sm relative group">
-                <div class="flex items-start justify-between mb-4">
+                <div
+                  class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-0 mb-4">
                   <div class="flex flex-col">
                     <span class="text-xl font-black tracking-tight">{{ comment.author }}</span>
                     <span class="text-xs opacity-50 font-medium">

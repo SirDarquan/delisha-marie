@@ -9,7 +9,7 @@ import { MatIconModule } from '@angular/material/icon';
   template: `
     <div class="hero-container mb-20">
       <div
-        class="relative aspect-[16/9] rounded-[3rem] overflow-hidden shadow-2xl group cursor-default">
+        class="relative aspect-[16/9] rounded-[3rem] overflow-hidden shadow-none sm:shadow-2xl group cursor-default">
         <!-- Image -->
         <img
           [ngSrc]="recipe().image"

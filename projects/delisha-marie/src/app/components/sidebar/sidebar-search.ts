@@ -19,7 +19,7 @@ import { Router } from '@angular/router';
   ],
   template: `
     <section
-      class="bg-[var(--mat-sys-surface-container-highest)] text-[var(--mat-sys-on-surface)] rounded-[2.5rem] p-8 shadow-sm"
+      class="bg-[var(--mat-sys-surface-container-highest)] text-[var(--mat-sys-on-surface)] rounded-[2.5rem] p-6 sm:p-8 shadow-sm border-y sm:border-0 border-[var(--mat-sys-outline-variant)]"
       aria-labelledby="search-title">
       <h3 id="search-title" class="text-xl font-black mb-6 flex items-center gap-2">
         <mat-icon class="scale-90">search</mat-icon>
