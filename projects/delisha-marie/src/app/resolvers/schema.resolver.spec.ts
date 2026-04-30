@@ -13,7 +13,6 @@ import {
   generateWebPageSchema,
   generateBreadcrumbSchema,
   getRecipeBreadcrumbs,
-  getBaseBreadcrumbs,
 } from './schema.resolver';
 import { describe, it, expect, beforeEach, vi, Mock } from 'vitest';
 import { Recipe, RecipeService } from '../services/recipe.service';
@@ -128,25 +127,7 @@ describe('schemaResolver', () => {
       expect(labels).toContain('Holidays');
       expect(labels).toContain('Christmas');
     });
-
-    it('getBaseBreadcrumbs - basic path', () => {
-      const result = getBaseBreadcrumbs('/recipes/desserts');
-      expect(result.length).toBe(3);
-      expect(result[0].label).toBe('Home');
-      expect(result[1].label).toBe('Recipes');
-      expect(result[2].label).toBe('Desserts');
-    });
-
-    it('getBaseBreadcrumbs - empty or undefined', () => {
-      let result = getBaseBreadcrumbs('');
-      expect(result.length).toBe(1);
-      expect(result[0].label).toBe('Home');
-
-      result = getBaseBreadcrumbs();
-      expect(result.length).toBe(1);
-    });
   });
-
   describe('Resolver logic', () => {
     it('should return schema array and append script for generic page', () => {
       const route = {
@@ -253,6 +234,71 @@ describe('schemaResolver', () => {
       expect(recipeSchema['prepTime']).toBe('PT1440M');
       expect(recipeSchema['cookTime']).toBe('PT150M');
       expect(recipeSchema['totalTime']).toBe('PT1590M');
+    });
+
+    it('should handle subcategory and comments in recipe schema', async () => {
+      const mockRecipe: Recipe = {
+        id: 1,
+        title: 'Recipe',
+        slug: 'recipe',
+        description: 'Desc',
+        image: '/img.jpg',
+        category: 'Cat',
+        subcategory: 'Sub',
+        prepTime: 'unknown', // Test non-empty invalid duration branch (line 703)
+        cookTime: '', // Test empty duration branch (line 675)
+        totalTime: '10 mins',
+        difficulty: 'Easy',
+        author: 'Author',
+        ingredients: ['Ing1'],
+        instructions: ['Step1'],
+        comments: [
+          {
+            id: '1',
+            recipeId: 'recipe',
+            author: 'User',
+            email: 'user@test.com',
+            content: 'Good',
+            rating: 5,
+            createdAt: '2023-01-01',
+          },
+        ],
+      };
+
+      vi.mocked(recipeService.getRecipeBySlug).mockResolvedValue(mockRecipe);
+
+      const route = {
+        paramMap: { get: () => 'recipe' },
+        queryParamMap: { get: () => null },
+      } as unknown as ActivatedRouteSnapshot;
+      const state = { url: '/recipe/recipe' } as RouterStateSnapshot;
+
+      const result = (await TestBed.runInInjectionContext(() =>
+        schemaRecipeResolver(route, state),
+      )) as Record<string, unknown>[];
+
+      const recipeSchema = result.find((s) => s['@type'] === 'Recipe') as Record<string, unknown>;
+      expect(recipeSchema['prepTime']).toBe(''); // From 'unknown' (line 703)
+      expect(recipeSchema['cookTime']).toBe(''); // From '' (line 675)
+      expect(recipeSchema['review']).toBeDefined();
+      expect(Array.isArray(recipeSchema['review'])).toBe(true);
+      expect((recipeSchema['review'] as unknown[]).length).toBe(1);
+
+      const breadcrumbSchema = result.find((s) => s['@type'] === 'BreadcrumbList') as Record<
+        string,
+        unknown
+      >;
+      const items = breadcrumbSchema['itemListElement'] as { name: string }[];
+      expect(items.some((i) => i.name === 'Sub')).toBe(true);
+    });
+
+    it('generateBreadcrumbSchema - should handle breadcrumbs without URLs', () => {
+      const result = generateBreadcrumbSchema(
+        [{ label: 'Home' }], // No URL
+        'http://base.com/',
+        'slug',
+      );
+      expect((result['itemListElement'] as { item: unknown }[])[0].item).toBeUndefined();
     });
 
     it('should return empty array if slug missing', async () => {

@@ -678,19 +678,19 @@ const convertToIso8601Duration = (duration: string): string => {
   let totalMinutes = 0;
   let found = false;
 
-  const daysMatch = /(\d+)\s?(day)/.exec(lower);
+  const daysMatch = /\b(\d{1,10})[ \t]*days?\b/.exec(lower);
   if (daysMatch) {
     totalMinutes += Number.parseInt(daysMatch[1], 10) * 24 * 60;
     found = true;
   }
 
-  const hoursMatch = /(\d+)\s?(hour|hrs|hr|h(?!o))/.exec(lower);
+  const hoursMatch = /\b(\d{1,10})[ \t]*(?:hours?|hrs|hr|h)\b/.exec(lower);
   if (hoursMatch) {
     totalMinutes += Number.parseInt(hoursMatch[1], 10) * 60;
     found = true;
   }
 
-  const minsMatch = /(\d+)\s?(min|mins)/.exec(lower);
+  const minsMatch = /\b(\d{1,10})[ \t]*(?:mins?|min)\b/.exec(lower);
   if (minsMatch) {
     totalMinutes += Number.parseInt(minsMatch[1], 10);
     found = true;
@@ -705,7 +705,7 @@ const convertToIso8601Duration = (duration: string): string => {
 /**
  * Generates breadcrumbs for list pages or other static pages.
  */
-export const getBaseBreadcrumbs = (currentCrumbs?: string): Breadcrumb[] => {
+const getBaseBreadcrumbs = (currentCrumbs?: string): Breadcrumb[] => {
   const items: Breadcrumb[] = [];
 
   // 1. Home
@@ -715,7 +715,7 @@ export const getBaseBreadcrumbs = (currentCrumbs?: string): Breadcrumb[] => {
     return items;
   }
 
-  const crumbs = currentCrumbs
+  currentCrumbs
     .split('/page/')[0]
     .split('/')
     .filter((c) => c !== '')
@@ -724,8 +724,5 @@ export const getBaseBreadcrumbs = (currentCrumbs?: string): Breadcrumb[] => {
       return `${acc}/${crumb}`;
     }, '');
 
-  if (crumbs !== currentCrumbs) {
-    deslugify(currentCrumbs);
-  }
   return items;
 };
