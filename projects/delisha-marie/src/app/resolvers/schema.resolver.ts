@@ -715,7 +715,7 @@ const getBaseBreadcrumbs = (currentCrumbs?: string): Breadcrumb[] => {
     return items;
   }
 
-  currentCrumbs
+  const crumbs = currentCrumbs
     .split('/page/')[0]
     .split('/')
     .filter((c) => c !== '')
@@ -724,5 +724,8 @@ const getBaseBreadcrumbs = (currentCrumbs?: string): Breadcrumb[] => {
       return `${acc}/${crumb}`;
     }, '');
 
+  if (crumbs !== currentCrumbs) {
+    deslugify(currentCrumbs);
+  }
   return items;
 };
