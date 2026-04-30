@@ -1,8 +1,12 @@
 import { Routes } from '@angular/router';
 import { Home } from './pages/home/home';
-import { seoRecipeListResolver, seoResolver } from './resolvers/seo.resolver';
-import { schemaResolver } from './resolvers/schema.resolver';
-import { recipeListTitleResolver } from './resolvers/title.resolver';
+import { seoRecipeListResolver, seoRecipeResolver, seoResolver } from './resolvers/seo.resolver';
+import { schemaRecipeResolver, schemaResolver } from './resolvers/schema.resolver';
+import {
+  recipeResolver,
+  recipeListTitleResolver,
+  recipeTitleResolver,
+} from './resolvers/recipe.resolver';
 
 export const routes: Routes = [
   {
@@ -14,7 +18,6 @@ export const routes: Routes = [
       description:
         'Discover authentic flavors and handcrafted recipes with Delisha Marie. Join our culinary journey for simple yet elegant dishes.',
       keywords: ['food blog', 'delisha marie', 'authentic recipes', 'home cooking', 'dallas food'],
-      // breadcrumbs: [{ name: 'Home', item: '{{origin}}' }],
     },
   },
   {
@@ -81,5 +84,25 @@ export const routes: Routes = [
       resolve: { seo: seoRecipeListResolver, schema: schemaResolver },
     },
   ]),
+  {
+    path: 'recipe/:slug',
+    title: recipeTitleResolver,
+    loadComponent: () => import('./pages/recipe-detail/recipe-detail').then((m) => m.RecipeDetail),
+    resolve: {
+      recipe: recipeResolver,
+      seo: seoRecipeResolver,
+      schema: schemaRecipeResolver,
+    },
+  },
+  {
+    path: 'recipe/:slug/page/:page',
+    title: recipeTitleResolver,
+    loadComponent: () => import('./pages/recipe-detail/recipe-detail').then((m) => m.RecipeDetail),
+    resolve: {
+      recipe: recipeResolver,
+      seo: seoRecipeResolver,
+      schema: schemaRecipeResolver,
+    },
+  },
   { path: '**', redirectTo: '' },
 ];

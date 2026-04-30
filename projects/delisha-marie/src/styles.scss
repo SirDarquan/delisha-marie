@@ -15,6 +15,7 @@
 }
 
 html {
+  scroll-behavior: smooth;
   // Apply the default Material 3 theme. Our :root CSS overrides will provide the custom colors.
   @include mat.theme((
     color: (

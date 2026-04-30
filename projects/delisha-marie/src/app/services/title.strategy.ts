@@ -16,6 +16,6 @@ export class TemplatePageTitleStrategy extends TitleStrategy {
       title = 'From my table to yours';
     }
 
-    this.titleService.setTitle(`${title} | Delisha Marie`);
+    this.titleService.setTitle(`${title} | Delisha Marie's Kitchen`);
   }
 }

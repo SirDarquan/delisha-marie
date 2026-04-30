@@ -1,14 +1,17 @@
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
-import { seoResolver, seoRecipeListResolver } from './seo.resolver';
+import { seoResolver, seoRecipeListResolver, seoRecipeResolver } from './seo.resolver';
 import { SeoService } from '../services/seo.service';
+import { SeoContent } from '../models/seo-content';
 import { DOCUMENT } from '@angular/common';
 import { RecipeListService } from '../pages/recipe-list/recipe-list.service';
+import { RecipeService, Recipe } from '../services/recipe.service';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 describe('Seo Resolvers', () => {
   let seoService: SeoService;
   let recipeListService: RecipeListService;
+  let recipeService: RecipeService;
   let mockDocument: { location: { origin: string; href: string } };
 
   beforeEach(() => {
@@ -29,12 +32,17 @@ describe('Seo Resolvers', () => {
             }),
           },
         },
+        {
+          provide: RecipeService,
+          useValue: { getRecipeBySlug: vi.fn().mockResolvedValue(null) },
+        },
         { provide: DOCUMENT, useValue: mockDocument },
       ],
     });
 
     seoService = TestBed.inject(SeoService);
     recipeListService = TestBed.inject(RecipeListService);
+    recipeService = TestBed.inject(RecipeService);
   });
 
   describe('seoResolver', () => {
@@ -53,7 +61,7 @@ describe('Seo Resolvers', () => {
 
       expect(seoService.setSEO).toHaveBeenCalledWith(
         expect.objectContaining({
-          title: 'Test | Delisha Marie',
+          title: "Test | Delisha Marie's Kitchen",
           description: 'Test Description',
           url: 'http://localhost:4200/test',
         }),
@@ -74,16 +82,17 @@ describe('Seo Resolvers', () => {
     });
 
     it('should handle missing image correctly', () => {
-      const route = { data: { image: undefined }, title: 'No Image' } as unknown as ActivatedRouteSnapshot;
+      const route = {
+        data: { image: undefined },
+        title: 'No Image',
+      } as unknown as ActivatedRouteSnapshot;
       const state = { url: '/no-image' } as RouterStateSnapshot;
 
       TestBed.runInInjectionContext(() => {
         seoResolver(route, state);
       });
 
-      expect(seoService.setSEO).toHaveBeenCalledWith(
-        expect.objectContaining({ image: '' }),
-      );
+      expect(seoService.setSEO).toHaveBeenCalledWith(expect.objectContaining({ image: '' }));
     });
 
     it('should resolve origin in arrays', () => {
@@ -150,10 +159,75 @@ describe('Seo Resolvers', () => {
         seoRecipeListResolver(route, state);
       });
 
-      expect(recipeListService.getInfo).toHaveBeenCalledWith(expect.objectContaining({
-        category: undefined,
-        url: ''
-      }));
+      expect(recipeListService.getInfo).toHaveBeenCalledWith(
+        expect.objectContaining({
+          category: undefined,
+          url: '',
+        }),
+      );
+    });
+  });
+
+  describe('seoRecipeResolver', () => {
+    beforeEach(() => {
+      vi.mocked(recipeService.getRecipeBySlug).mockClear();
+    });
+
+    it('should resolve recipe SEO data', async () => {
+      const mockRecipe = {
+        title: 'Title',
+        description: 'Desc',
+        image: '/img.jpg',
+        keywords: ['key'],
+        imageWidth: '800',
+        imageHeight: '800',
+      } as Recipe;
+
+      vi.mocked(recipeService.getRecipeBySlug).mockResolvedValue(mockRecipe);
+
+      const route = {
+        paramMap: { get: () => 'test-slug' },
+      } as unknown as ActivatedRouteSnapshot;
+      const state = { url: '/recipe/test-slug' } as RouterStateSnapshot;
+
+      await TestBed.runInInjectionContext(() => {
+        return seoRecipeResolver(route, state);
+      });
+
+      expect(recipeService.getRecipeBySlug).toHaveBeenCalledWith('test-slug');
+      expect(seoService.setSEO).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: "Title | Delisha Marie's Kitchen",
+          description: 'Desc',
+          image: 'http://localhost:4200/img.jpg',
+        }),
+      );
+    });
+
+    it('should return 404 SEO if slug missing', async () => {
+      const route = {
+        paramMap: { get: () => null },
+      } as unknown as ActivatedRouteSnapshot;
+
+      const result = await TestBed.runInInjectionContext(() => {
+        return seoRecipeResolver(route, { url: '/recipe/unknown' } as RouterStateSnapshot);
+      });
+
+      expect((result as SeoContent).content).toBe('noindex,nofollow');
+    });
+
+    it('should return 404 SEO if recipe not found', async () => {
+      vi.mocked(recipeService.getRecipeBySlug).mockResolvedValue(null);
+
+      const route = {
+        paramMap: { get: () => 'unknown' },
+      } as unknown as ActivatedRouteSnapshot;
+
+      const result = await TestBed.runInInjectionContext(() => {
+        return seoRecipeResolver(route, { url: '/recipe/unknown' } as RouterStateSnapshot);
+      });
+
+      expect((result as SeoContent).content).toBe('noindex,nofollow');
     });
   });
 });

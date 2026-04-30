@@ -11,11 +11,11 @@ export interface BreadcrumbItem {
   selector: 'dml-breadcrumbs',
   imports: [RouterLink, MatIconModule],
   template: `
-    <nav class="flex" aria-label="Breadcrumb">
+    <nav class="flex flex-wrap" aria-label="Breadcrumb">
       <ol
-        class="flex items-center space-x-2 text-sm font-medium text-[var(--mat-sys-on-surface-variant)]">
+        class="flex flex-wrap items-center gap-y-2 text-sm font-medium text-[var(--mat-sys-on-surface-variant)]">
         @for (item of items(); track item.label; let last = $last) {
-          <li class="flex items-center space-x-2">
+          <li class="flex items-center gap-x-2 whitespace-nowrap">
             @if (item.url && !last) {
               <a
                 [routerLink]="item.url"

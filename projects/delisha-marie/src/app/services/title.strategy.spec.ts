@@ -21,21 +21,25 @@ describe('TemplatePageTitleStrategy', () => {
     const mockSnapshot = {} as RouterStateSnapshot;
     vi.spyOn(strategy, 'buildTitle').mockReturnValue('Test Page');
     strategy.updateTitle(mockSnapshot);
-    expect(titleService.setTitle).toHaveBeenCalledWith('Test Page | Delisha Marie');
+    expect(titleService.setTitle).toHaveBeenCalledWith("Test Page | Delisha Marie's Kitchen");
   });
 
   it('should set default title when title is undefined', () => {
     const mockSnapshot = {} as RouterStateSnapshot;
     vi.spyOn(strategy, 'buildTitle').mockReturnValue(undefined);
     strategy.updateTitle(mockSnapshot);
-    expect(titleService.setTitle).toHaveBeenCalledWith('From my table to yours | Delisha Marie');
+    expect(titleService.setTitle).toHaveBeenCalledWith(
+      "From my table to yours | Delisha Marie's Kitchen",
+    );
   });
 
   it('should set default title when title is an empty string', () => {
     const mockSnapshot = {} as RouterStateSnapshot;
     vi.spyOn(strategy, 'buildTitle').mockReturnValue('');
     strategy.updateTitle(mockSnapshot);
-    expect(titleService.setTitle).toHaveBeenCalledWith('From my table to yours | Delisha Marie');
+    expect(titleService.setTitle).toHaveBeenCalledWith(
+      "From my table to yours | Delisha Marie's Kitchen",
+    );
   });
 
   it('should update the title multiple times', () => {
@@ -44,11 +48,11 @@ describe('TemplatePageTitleStrategy', () => {
 
     buildTitleSpy.mockReturnValue('Page 1');
     strategy.updateTitle(mockSnapshot);
-    expect(titleService.setTitle).toHaveBeenCalledWith('Page 1 | Delisha Marie');
+    expect(titleService.setTitle).toHaveBeenCalledWith("Page 1 | Delisha Marie's Kitchen");
 
     buildTitleSpy.mockReturnValue('Page 2');
     strategy.updateTitle(mockSnapshot);
-    expect(titleService.setTitle).toHaveBeenCalledWith('Page 2 | Delisha Marie');
+    expect(titleService.setTitle).toHaveBeenCalledWith("Page 2 | Delisha Marie's Kitchen");
   });
 
   it('should be injectable via TitleStrategy token when provided', () => {
