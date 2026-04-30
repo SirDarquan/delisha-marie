@@ -85,8 +85,11 @@ describe('RecipeService', () => {
     const req = httpMock.expectOne(
       '/api/recipes?page=1&pageSize=10&method=baking&category=&subcategory=',
     );
+    expect(req.request.method).toBe('GET');
     req.flush([]);
-    await promise;
+    const result = await promise;
+    expect(result.total).toBe(0);
+    expect(result.items).toEqual([]);
   });
 
   describe('getRecipeBySlug', () => {
