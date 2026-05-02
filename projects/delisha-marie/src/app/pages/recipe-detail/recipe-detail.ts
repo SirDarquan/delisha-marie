@@ -4,18 +4,17 @@ import {
   computed,
   input,
   ViewEncapsulation,
-  inject,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Breadcrumbs, BreadcrumbItem } from '../../components/breadcrumbs/breadcrumbs';
 import { RecipeHero } from './recipe-hero';
-import { Recipe, RecipeService } from '../../services/recipe.service';
-import { slugify } from '../../utils/slug';
+import { Recipe } from '../../services/recipe.service';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { Sidebar } from '../../components/sidebar/sidebar';
 import { SidebarQuickView } from '../../components/sidebar/sidebar-quick-view';
 import { RecipeCard } from './recipe-card';
+import { RecipeTags } from './recipe-tags';
 import { RecipeNavigation } from './recipe-navigation';
 import { RecipeComments } from './recipe-comments';
 import { RecipeMeta } from './recipe-meta';
@@ -31,6 +30,7 @@ import { RecipeMeta } from './recipe-meta';
     Sidebar,
     SidebarQuickView,
     RecipeCard,
+    RecipeTags,
     RecipeNavigation,
     RecipeComments,
     RecipeMeta,
@@ -60,6 +60,9 @@ import { RecipeMeta } from './recipe-meta';
 
                 <!-- Premium Recipe Card -->
                 <dml-recipe-card [recipe]="r" />
+
+                <!-- Recipe Tags -->
+                <dml-recipe-tags [recipe]="r" />
 
                 <!-- Recipe Navigation -->
                 <dml-recipe-navigation [previous]="r.navigation.prev" [next]="r.navigation.next" />

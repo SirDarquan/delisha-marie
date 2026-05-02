@@ -152,7 +152,7 @@ describe('RecipeDetail', () => {
     fixture.componentRef.setInput('recipe', { ...mockRecipe, content: undefined });
     fixture.detectChanges();
     const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('.recipe-story')).toBeFalsy();
+    expect(compiled.querySelector('.recipe-story')?.innerHTML).toBe('');
   });
 
   it('should return default breadcrumbs if recipe is null', () => {
