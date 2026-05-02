@@ -126,8 +126,9 @@ export class RecipeDetail {
   page = input<string>();
 
   readonly breadcrumbItems = computed((): BreadcrumbItem[] => {
-    const r = this.recipe()!;
+    const r = this.recipe();
+    if (!r) return [];
     const idx = r.breadcrumbs.main;
-    return idx ? r.breadcrumbs.items[idx] : [];
+    return typeof idx === 'number' ? r.breadcrumbs.items[idx] : [];
   });
 }

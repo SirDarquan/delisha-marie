@@ -172,10 +172,9 @@ describe('RecipeDetail', () => {
     expect(breadcrumbs.length).toBe(0);
   });
 
-  it('should return default breadcrumbs if recipe is null', () => {
+  it('should return empty array if recipe is null', () => {
     fixture.componentRef.setInput('recipe', null);
     const breadcrumbs = component.breadcrumbItems();
-    expect(breadcrumbs.length).toBe(2);
-    expect(breadcrumbs[1].label).toBe('Recipes');
+    expect(breadcrumbs.length).toBe(0);
   });
 });
