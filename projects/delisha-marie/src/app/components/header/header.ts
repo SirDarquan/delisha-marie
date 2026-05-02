@@ -16,20 +16,88 @@ import { ThemeService } from '../../services/theme.service';
     MatIconModule,
     MatSlideToggleModule,
   ],
+  styles: [
+    `
+      .logo-container {
+        display: flex;
+        align-items: center;
+        text-decoration: none;
+        cursor: pointer;
+        user-select: none;
+        gap: 0.25rem;
+      }
+
+      .logo-word {
+        display: flex;
+        align-items: center;
+      }
+
+      .logo-letter-bold {
+        font-size: 1.875rem; /* text-3xl for better presence */
+        font-weight: 900;
+        letter-spacing: -0.05em;
+        color: var(--mat-sys-primary);
+        line-height: 1;
+      }
+
+      .logo-letter-fade {
+        font-size: 1.5rem; /* text-2xl */
+        font-weight: 300;
+        letter-spacing: 0.05em;
+        color: var(--mat-sys-primary-inverse);
+        opacity: 1;
+        max-width: 200px;
+        overflow: hidden;
+        transition:
+          opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1),
+          max-width 0.6s cubic-bezier(0.4, 0, 0.2, 1),
+          transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        white-space: nowrap;
+        display: inline-block;
+        transform-origin: left;
+      }
+
+      @media (max-width: 767px) {
+        .logo-letter-fade {
+          opacity: 0;
+          max-width: 0;
+          pointer-events: none;
+          transform: scaleX(0);
+        }
+        .logo-container {
+          gap: 0;
+        }
+      }
+
+      @media (min-width: 768px) {
+        .logo-letter-fade {
+          opacity: 1;
+          max-width: 200px;
+          transform: scaleX(1);
+        }
+      }
+    `,
+  ],
   host: {
     class: 'sticky top-0 z-50 block',
   },
   template: `
     <mat-toolbar
       class="!bg-[var(--mat-sys-surface)]/80 backdrop-blur-md h-20 px-4 md:px-8 flex justify-between items-center border-b border-[var(--mat-sys-outline-variant)]">
-      <div class="flex items-center gap-2 cursor-pointer" routerLink="/">
-        <span class="text-2xl font-black tracking-tighter text-[var(--mat-sys-primary)]">
-          DELISHA
-        </span>
-        <span class="text-2xl font-light tracking-widest text-[var(--mat-sys-tertiary)] uppercase">
-          MARIE
-        </span>
-      </div>
+      <a class="flex items-center cursor-pointer logo-container" routerLink="/">
+        <div class="logo-word">
+          <span class="logo-letter-bold">D</span>
+          <span class="logo-letter-fade">elisha</span>
+        </div>
+        <div class="logo-word">
+          <span class="logo-letter-bold">M</span>
+          <span class="logo-letter-fade">arie's</span>
+        </div>
+        <div class="logo-word">
+          <span class="logo-letter-bold">K</span>
+          <span class="logo-letter-fade">itchen</span>
+        </div>
+      </a>
 
       <div class="hidden md:flex items-center gap-6">
         <a
