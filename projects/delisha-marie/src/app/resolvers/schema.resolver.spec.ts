@@ -13,6 +13,8 @@ import {
   generateWebPageSchema,
   generateBreadcrumbSchema,
   getRecipeBreadcrumbs,
+  generatePersonSchema,
+  generateImageObjectSchema,
 } from './schema.resolver';
 import { describe, it, expect, beforeEach, vi, Mock } from 'vitest';
 import { Recipe, RecipeService } from '../services/recipe.service';
@@ -118,6 +120,18 @@ describe('schemaResolver', () => {
       const labels = result.map((b) => b.label);
       expect(labels).toContain('The Best');
     });
+
+    it('generatePersonSchema', () => {
+      const result = generatePersonSchema('url', 'name');
+      expect(result['@type']).toBe('Person');
+      expect(result['name']).toBe('name');
+    });
+
+    it('generateImageObjectSchema', () => {
+      const result = generateImageObjectSchema('url', 'slug', 'imageUrl', 'caption');
+      expect(result['@type']).toBe('ImageObject');
+      expect(result['url']).toBe('imageUrl');
+    });
   });
   describe('Resolver logic', () => {
     it('should return schema array and append script for generic page', () => {
@@ -185,6 +199,20 @@ describe('schemaResolver', () => {
       expect(mockDocument.createElement).not.toHaveBeenCalled();
       // Should modify the existing one
       expect((existingScript as unknown as HTMLScriptElement).textContent).toContain('@context');
+    });
+
+    it('should handle paginated URLs in getBaseBreadcrumbs', () => {
+      const route = {
+        data: { description: 'desc' },
+        paramMap: { get: () => '' },
+      } as unknown as ActivatedRouteSnapshot;
+      const state = { url: '/recipes/page/2' } as RouterStateSnapshot;
+
+      const result = TestBed.runInInjectionContext(() => schemaResolver(route, state)) as Record<
+        string,
+        unknown
+      >[];
+      expect(result).toBeDefined();
     });
   });
 

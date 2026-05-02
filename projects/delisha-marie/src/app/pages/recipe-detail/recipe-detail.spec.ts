@@ -155,6 +155,23 @@ describe('RecipeDetail', () => {
     expect(compiled.querySelector('.recipe-story')?.innerHTML).toBe('');
   });
 
+  it('should return empty array if breadcrumb main index is undefined', () => {
+    fixture.componentRef.setInput('recipe', {
+      ...mockRecipe,
+      breadcrumbs: {
+        main: undefined as unknown as number,
+        items: [
+          [
+            { label: 'Home', url: '/' },
+            { label: 'Recipes', url: '/recipes' },
+          ],
+        ],
+      },
+    });
+    const breadcrumbs = component.breadcrumbItems();
+    expect(breadcrumbs.length).toBe(0);
+  });
+
   it('should return default breadcrumbs if recipe is null', () => {
     fixture.componentRef.setInput('recipe', null);
     const breadcrumbs = component.breadcrumbItems();

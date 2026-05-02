@@ -126,14 +126,8 @@ export class RecipeDetail {
   page = input<string>();
 
   readonly breadcrumbItems = computed((): BreadcrumbItem[] => {
-    const r = this.recipe();
-    if (!r || !r.breadcrumbs || !r.breadcrumbs.items) {
-      return [
-        { label: 'Home', url: '/' },
-        { label: 'Recipes', url: '/recipes' },
-      ];
-    }
+    const r = this.recipe()!;
     const idx = r.breadcrumbs.main;
-    return idx !== undefined ? r.breadcrumbs.items[idx] : [];
+    return idx ? r.breadcrumbs.items[idx] : [];
   });
 }

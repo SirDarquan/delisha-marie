@@ -408,7 +408,7 @@ export const generateBreadcrumbSchema = (
  */
 export const getRecipeBreadcrumbs = (recipe: Recipe): Breadcrumb[] => {
   const idx = recipe.breadcrumbs?.main;
-  return idx !== undefined ? recipe.breadcrumbs.items[idx] : [];
+  return idx ? recipe.breadcrumbs.items[idx] : [];
 };
 
 /**
