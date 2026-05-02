@@ -20,13 +20,13 @@ test.describe('Shared Components', () => {
   });
 
   test('should navigate between pages using main navbar', async ({ page }) => {
-    await page.getByRole('link', { name: 'Recipes', exact: true }).click();
+    await page.getByRole('link', { name: 'Recipes', exact: true }).first().click();
     await expect(page).toHaveURL(/\/recipe-index/);
 
-    await page.getByRole('link', { name: 'About', exact: true }).click();
+    await page.getByRole('link', { name: 'About', exact: true }).first().click();
     await expect(page).toHaveURL(/\/about/);
 
-    await page.getByRole('link', { name: 'Contact', exact: true }).click();
+    await page.getByRole('link', { name: 'Contact', exact: true }).first().click();
     await expect(page).toHaveURL(/\/contact/);
   });
 });

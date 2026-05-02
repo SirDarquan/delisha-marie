@@ -1,7 +1,12 @@
 name: "Update Angular Action"
 on: # when the action should run. Can also be a CRON or in response to external events. see https://git.io/JeBz1
   schedule:
-    - cron: '30 5 * * 1,2,3,4,5'
+    - cron: '30 10 * * 2,4' # Tuesdays and Thursdays at 10:30 UTC (5:30 AM EST)
+  workflow_dispatch: # Enable manual triggers
+
+permissions:
+  pull-requests: write
+  contents: write
 
 jobs:
   ngxUptodate:

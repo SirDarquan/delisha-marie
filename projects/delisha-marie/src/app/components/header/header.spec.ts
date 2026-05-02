@@ -35,7 +35,7 @@ describe('Header', () => {
     const fixture = TestBed.createComponent(Header);
     fixture.detectChanges();
     const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('span')?.textContent).toContain('DELISHA');
+    expect(compiled.querySelector('.logo-container')?.textContent).toContain('elisha');
   });
 
   it('should have navigation links', () => {
