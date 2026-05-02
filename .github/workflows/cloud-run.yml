@@ -1,12 +1,8 @@
 name: Deploy to Cloud Run
 
 on:
-  workflow_run:
-    workflows: ["Delisha-Marie CI"]
-    branches: [main]
-    types: [completed]
   schedule:
-    - cron: '30 10 * * *' # Daily at 10:30 UTC (5:30 AM EST)
+    - cron: '30 10 * * 1,5' # Daily at 10:30 UTC (5:30 AM EST)
   workflow_dispatch: # Enable manual triggers
 
 env:
@@ -17,7 +13,6 @@ env:
 
 jobs:
   deploy:
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     permissions:
       contents: 'read'
