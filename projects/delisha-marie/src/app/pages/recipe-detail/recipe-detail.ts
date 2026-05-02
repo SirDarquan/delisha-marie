@@ -18,6 +18,7 @@ import { RecipeTags } from './recipe-tags';
 import { RecipeNavigation } from './recipe-navigation';
 import { RecipeComments } from './recipe-comments';
 import { RecipeMeta } from './recipe-meta';
+import { RouterLink } from '@angular/router';
 
 @Component({
   selector: 'dm-recipe-detail',
@@ -34,6 +35,7 @@ import { RecipeMeta } from './recipe-meta';
     RecipeNavigation,
     RecipeComments,
     RecipeMeta,
+    RouterLink,
   ],
   template: `
     <div class="into-the-box pt-12 pb-12">
@@ -121,7 +123,6 @@ import { RecipeMeta } from './recipe-meta';
 export class RecipeDetail {
   // Input from resolver
   recipe = input<Recipe | null>(null);
-  slug = input<string>();
   page = input<string>();
 
   readonly breadcrumbItems = computed((): BreadcrumbItem[] => {
