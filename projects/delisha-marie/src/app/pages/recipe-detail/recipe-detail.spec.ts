@@ -139,40 +139,4 @@ describe('RecipeDetail', () => {
     expect(breadcrumbs.length).toBe(2);
     expect(breadcrumbs[1].label).toBe('Recipes');
   });
-
-  it('should compute navigation correct for middle recipe', () => {
-    fixture.componentRef.setInput('recipe', mockRecipe);
-    const nav = component.navigation();
-    expect(nav.prev?.slug).toBe('prev-recipe');
-    expect(nav.next?.slug).toBe('next-recipe');
-  });
-
-  it('should compute navigation correct for first recipe', () => {
-    fixture.componentRef.setInput('recipe', mockRecipes[0]);
-    const nav = component.navigation();
-    expect(nav.prev).toBeNull();
-    expect(nav.next?.slug).toBe('test-recipe');
-  });
-
-  it('should compute navigation correct for last recipe', () => {
-    fixture.componentRef.setInput('recipe', mockRecipes[2]);
-    const nav = component.navigation();
-    expect(nav.prev?.slug).toBe('test-recipe');
-    expect(nav.next).toBeNull();
-  });
-
-  it('should return null navigation if recipe is missing from list', () => {
-    fixture.componentRef.setInput('recipe', { ...mockRecipe, slug: 'unknown' });
-    const nav = component.navigation();
-    expect(nav.prev).toBeNull();
-    expect(nav.next).toBeNull();
-  });
-
-  it('should return null navigation if no recipes in service', () => {
-    recipeServiceMock.recipes.set([]);
-    fixture.componentRef.setInput('recipe', mockRecipe);
-    const nav = component.navigation();
-    expect(nav.prev).toBeNull();
-    expect(nav.next).toBeNull();
-  });
 });

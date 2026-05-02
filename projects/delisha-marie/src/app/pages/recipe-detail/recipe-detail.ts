@@ -65,7 +65,7 @@ import { RecipeMeta } from './recipe-meta';
                 <dml-recipe-card [recipe]="r" />
 
                 <!-- Recipe Navigation -->
-                <dml-recipe-navigation [previous]="navigation().prev" [next]="navigation().next" />
+                <dml-recipe-navigation [previous]="r.navigation.prev" [next]="r.navigation.next" />
 
                 <!-- Comments Section -->
                 <dml-recipe-comments [recipe]="r" [page]="page()" />

@@ -78,6 +78,15 @@ export interface Recipe {
   status?: 'draft' | 'scheduled' | 'published';
   likes?: number;
   preview_token?: string;
+  navigation: {
+    prev: NavigationLink | null;
+    next: NavigationLink | null;
+  };
+}
+
+export interface NavigationLink {
+  title: string;
+  slug: string;
 }
 
 @Injectable({
