@@ -4,6 +4,7 @@ import { Recipe, RecipeService } from '../../services/recipe.service';
 import { provideRouter } from '@angular/router';
 import { signal } from '@angular/core';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { createMockRecipe } from '../../utils/test-recipe';
 
 describe('RecipeDetail', () => {
   let component: RecipeDetail;
@@ -13,7 +14,7 @@ describe('RecipeDetail', () => {
     getComments: ReturnType<typeof vi.fn>;
   };
 
-  const mockRecipe: Recipe = {
+  const mockRecipe: Recipe = createMockRecipe({
     id: '1',
     title: 'Test Recipe',
     slug: 'test-recipe',
@@ -45,12 +46,12 @@ describe('RecipeDetail', () => {
     cuisine: 'American',
     theBest: true,
     content: '<p>A delicious test recipe story.</p>',
-  };
+  });
 
   const mockRecipes: Recipe[] = [
-    { ...mockRecipe, id: '0', slug: 'prev-recipe', title: 'Prev Recipe' },
+    createMockRecipe({ ...mockRecipe, id: '0', slug: 'prev-recipe', title: 'Prev Recipe' }),
     mockRecipe,
-    { ...mockRecipe, id: '2', slug: 'next-recipe', title: 'Next Recipe' },
+    createMockRecipe({ ...mockRecipe, id: '2', slug: 'next-recipe', title: 'Next Recipe' }),
   ];
 
   beforeEach(async () => {
@@ -105,7 +106,20 @@ describe('RecipeDetail', () => {
   });
 
   it('should handle breadcrumbs without subcategory', () => {
-    fixture.componentRef.setInput('recipe', { ...mockRecipe, subcategory: undefined });
+    fixture.componentRef.setInput('recipe', {
+      ...mockRecipe,
+      breadcrumbs: {
+        main: 0,
+        items: [
+          [
+            { label: 'Home', url: '/' },
+            { label: 'Recipes', url: '/recipes' },
+            { label: 'Desserts', url: '/recipes/desserts' },
+            { label: 'Test Recipe' },
+          ],
+        ],
+      },
+    });
     const breadcrumbs = component.breadcrumbItems();
 
     expect(breadcrumbs.length).toBe(4); // Home > Recipes > Desserts > Test Recipe
@@ -116,8 +130,16 @@ describe('RecipeDetail', () => {
   it('should handle breadcrumbs without category', () => {
     fixture.componentRef.setInput('recipe', {
       ...mockRecipe,
-      category: '',
-      subcategory: undefined,
+      breadcrumbs: {
+        main: 0,
+        items: [
+          [
+            { label: 'Home', url: '/' },
+            { label: 'Recipes', url: '/recipes' },
+            { label: 'Test Recipe' },
+          ],
+        ],
+      },
     });
     const breadcrumbs = component.breadcrumbItems();
 
@@ -130,49 +152,29 @@ describe('RecipeDetail', () => {
     fixture.componentRef.setInput('recipe', { ...mockRecipe, content: undefined });
     fixture.detectChanges();
     const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('.recipe-story')).toBeFalsy();
+    expect(compiled.querySelector('.recipe-story')?.innerHTML).toBe('');
   });
 
-  it('should return default breadcrumbs if recipe is null', () => {
+  it('should return empty array if breadcrumb main index is undefined', () => {
+    fixture.componentRef.setInput('recipe', {
+      ...mockRecipe,
+      breadcrumbs: {
+        main: undefined as unknown as number,
+        items: [
+          [
+            { label: 'Home', url: '/' },
+            { label: 'Recipes', url: '/recipes' },
+          ],
+        ],
+      },
+    });
+    const breadcrumbs = component.breadcrumbItems();
+    expect(breadcrumbs.length).toBe(0);
+  });
+
+  it('should return empty array if recipe is null', () => {
     fixture.componentRef.setInput('recipe', null);
     const breadcrumbs = component.breadcrumbItems();
-    expect(breadcrumbs.length).toBe(2);
-    expect(breadcrumbs[1].label).toBe('Recipes');
-  });
-
-  it('should compute navigation correct for middle recipe', () => {
-    fixture.componentRef.setInput('recipe', mockRecipe);
-    const nav = component.navigation();
-    expect(nav.prev?.slug).toBe('prev-recipe');
-    expect(nav.next?.slug).toBe('next-recipe');
-  });
-
-  it('should compute navigation correct for first recipe', () => {
-    fixture.componentRef.setInput('recipe', mockRecipes[0]);
-    const nav = component.navigation();
-    expect(nav.prev).toBeNull();
-    expect(nav.next?.slug).toBe('test-recipe');
-  });
-
-  it('should compute navigation correct for last recipe', () => {
-    fixture.componentRef.setInput('recipe', mockRecipes[2]);
-    const nav = component.navigation();
-    expect(nav.prev?.slug).toBe('test-recipe');
-    expect(nav.next).toBeNull();
-  });
-
-  it('should return null navigation if recipe is missing from list', () => {
-    fixture.componentRef.setInput('recipe', { ...mockRecipe, slug: 'unknown' });
-    const nav = component.navigation();
-    expect(nav.prev).toBeNull();
-    expect(nav.next).toBeNull();
-  });
-
-  it('should return null navigation if no recipes in service', () => {
-    recipeServiceMock.recipes.set([]);
-    fixture.componentRef.setInput('recipe', mockRecipe);
-    const nav = component.navigation();
-    expect(nav.prev).toBeNull();
-    expect(nav.next).toBeNull();
+    expect(breadcrumbs.length).toBe(0);
   });
 });

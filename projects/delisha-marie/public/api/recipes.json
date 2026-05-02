@@ -34,6 +34,7 @@
       "Let the chicken rest for 15 minutes before carving."
     ],
     "nutrition": {
+      "servingSize": "1 whole chicken",
       "calories": "450",
       "protein": "35g",
       "fat": "30g",
@@ -45,7 +46,43 @@
     "content": "<p>The journey of this Signature Lemon Herb Roast Chicken began in my grandmother's sun-drenched kitchen in the heart of the countryside. Every Sunday afternoon, the house would fill with the intoxicating aroma of roasting poultry and fresh herbs plucked straight from the garden. I remember standing on a wooden stool, watching her carefully tuck sprigs of rosemary under the skin with a precision that seemed almost magical. It wasn't just about the food; it was about the stories she told while the oven worked its slow, steady heat. Those afternoons taught me that a simple meal could hold the weight of generations, binding us together through shared flavors and laughter. Now, whenever I prepare this dish, I feel a profound connection to those roots and the timeless art of home cooking.</p><p>As you begin the preparation, the sensory experience is truly something to behold and appreciate in our fast-paced world. The zesty scent of fresh lemon zest hitting the air provides an immediate burst of energy that wakes up the kitchen. When you rub the olive oil over the skin, you can already visualize the golden, crispy finish that awaits your patient efforts. The sound of the herbs being chopped—the rhythmic 'thump-thump' of the knife—creates a culinary soundtrack that signals the start of something special. Even the garlic, with its papery skin and pungent cloves, adds a layer of rustic charm to the entire process. There is a deep satisfaction in using your hands to season and prepare a whole bird, knowing the care you put in will be tasted in every bite.</p><p>What sets this specific roast chicken apart from the countless others you might find is the careful balance of acidity and earthiness. While many recipes rely solely on salt and pepper, the infusion of lemon juice directly into the cavity ensures the meat remains incredibly moist. The combination of rosemary and thyme provides a classic, forest-like depth that perfectly complements the natural richness of the chicken. I've spent years perfecting the roasting temperature to ensure the skin shatters with a satisfying crunch while the inside remains tender. The secret, I've found, is the thorough drying of the skin before the oil is ever applied, a step often overlooked by the hurried cook. It is these small, deliberate details that elevate a standard dinner into a signature masterpiece that guests will talk about for weeks.</p><p>I'll never forget the time I served this at a frantic holiday gathering where everything else seemed to be going wrong at once. The side dishes were late, the wine hadn't been chilled, and a small kitchen fire had briefly dampened the festive spirits of my guests. However, the moment I pulled this radiant, golden chicken from the oven, a hush fell over the crowded room as the aroma took over. The tension immediately evaporated as people gathered around the carving board, drawn by the visual promise of a perfect meal. We ended up eating the chicken with our hands, sitting on the floor because there weren't enough chairs, and it was the best party we ever had. It served as a powerful reminder that as long as the main course is made with love and skill, the rest is just background noise.</p><p>For those of you who might be intimidated by the idea of roasting a whole chicken for the first time, I want to offer some gentle encouragement. It can feel like a daunting task to handle a large bird and manage oven temperatures, but I promise it is more forgiving than it looks. Think of it not as a test of your skills, but as a conversation between you and the ingredients you've chosen. If the skin isn't perfectly even or the carving is a bit messy, the flavor will still be there to reward your bravery. Every great chef started with a slightly burnt or underseasoned attempt, and that is exactly how we learn and grow. Take a deep breath, follow the steps one by one, and soon you'll be roasting with the confidence of a seasoned professional.</p><p>You can easily customize this recipe to suit the seasons or whatever ingredients you happen to have on hand in your pantry. In the autumn, I often swap the lemon for orange slices and add a touch of cinnamon to the spice rub for a warmer profile. During the height of summer, a handful of fresh oregano and some crushed red pepper flakes can give it a vibrant, Mediterranean flair. You can even roast the bird on a bed of root vegetables like carrots and parsnips, which will soak up all those delicious juices and become a meal in themselves. The versatility of a good roast chicken is what makes it a staple in any kitchen, regardless of your personal style. Feel free to experiment and find the combination that speaks most clearly to your own palate and creativity.</p><p>Food has a unique ability to act as a bridge between our past and our future, creating memories that last far longer than the meal itself. When we share a dish like this, we are offering more than just sustenance; we are offering a piece of our time and our heritage. I have seen the most stubborn disagreements dissolve over a shared plate of well-seasoned chicken and warm bread. There is a primal comfort in gathering around a table, putting away our devices, and simply focusing on the flavor and each other. It is in these moments that we truly live, anchored by the simple pleasures of a home-cooked meal and good company. By making this recipe, you are participating in a tradition as old as civilization itself, and that is something truly beautiful.</p><p>So, I invite you to put on your favorite apron, turn up some music, and start the journey of making this chicken today. Don't wait for a special occasion to create something wonderful; the act of cooking for yourself or your loved ones is reason enough to celebrate. Your kitchen is a space for exploration and joy, and this roast chicken is the perfect companion for your next adventure. Once you take that first bite and experience the crunch of the skin and the burst of lemon and herb, you'll understand why it's my signature. I can't wait to hear about your experience and the memories you'll create around your own dining table. Happy cooking, and may your kitchen always be filled with warmth, laughter, and the best aromas imaginable!</p>",
     "keywords": ["roast chicken", "lemon herb", "dinner", "healthy"],
     "rating": 4.49,
-    "ratingCount": 51
+    "ratingCount": 51,
+    "theBest": true,
+    "method": "Roasting",
+    "specialDiets": ["Low Carb", "Gluten Free"],
+    "holidays": ["Sunday Roast"],
+    "navigation": {
+      "next": { "title": "Creamy Garlic Parmesan Pasta", "slug": "/recipe/creamy-garlic-parmesan-pasta"  },
+      "prev": null
+    },
+    "breadcrumbs": {
+      "main": 1,
+      "items": [
+      [
+        { "label": "Home", "url": "/" },
+        { "label": "Recipes", "url": "/recipes" },
+        { "label": "Dinner", "url": "/recipes/dinner" },
+        { "label": "Signature Lemon Herb Roast Chicken", "url": "/recipe/signature-lemon-herb-roasted-chicken" }
+      ],
+      [
+        { "label": "Home", "url": "/" },
+        { "label": "The Best Recipes", "url": "/the-best-recipes" },
+        { "label": "The Best Dinner", "url": "/the-best-recipes/the-best-dinner" },
+        { "label": "Signature Lemon Herb Roast Chicken", "url": "/recipe/signature-lemon-herb-roasted-chicken" }
+      ],
+      [
+        { "label": "Method", "url": "/methods" },
+        { "label": "Roasting", "url": "/methods/roasting" }
+      ],
+      [
+        { "label": "Special Diets", "url": "/special-diets" },
+        { "label": "Low Carb", "url": "/special-diets/low-carb" }
+      ],
+      [
+        { "label": "Holidays", "url": "/holidays" },
+        { "label": "Sunday Roast", "url": "/holidays/sunday-roast" }
+      ]]
+    }
   },
   {
     "id": 2,
@@ -57,7 +94,11 @@
     "cookTime": "15 mins",
     "difficulty": "Easy",
     "featured": true,
-    "slug": "/recipe/creamy-garlic-parmesan-pasta"
+    "slug": "/recipe/creamy-garlic-parmesan-pasta",
+    "navigation": {
+      "next": { "title": "Garden Fresh Heirloom Tomato Tart", "slug": "/recipe/garden-fresh-heirloom-tomato-tart"  },
+      "prev": { "title": "Signature Lemon Herb Roast Chicken", "slug": "/recipe/signature-lemon-herb-roast-chicken" }
+    }
   },
   {
     "id": 3,
@@ -69,7 +110,11 @@
     "cookTime": "25 mins",
     "difficulty": "Intermediate",
     "featured": false,
-    "slug": "/recipe/garden-fresh-heirloom-tomato-tart"
+    "slug": "/recipe/garden-fresh-heirloom-tomato-tart",
+    "navigation": {
+      "next": { "title": "Spiced Moroccan Chickpea Stew", "slug": "/recipe/spiced-moroccan-chickpea-stew"  },
+      "prev": { "title": "Creamy Garlic Parmesan Pasta", "slug": "/recipe/creamy-garlic-parmesan-pasta" }
+    }
   },
   {
     "id": 4,
@@ -81,7 +126,11 @@
     "cookTime": "45 mins",
     "difficulty": "Easy",
     "featured": true,
-    "slug": "/recipe/spiced-moroccan-chickpea-stew"
+    "slug": "/recipe/spiced-moroccan-chickpea-stew",
+    "navigation": {
+      "next": { "title": "Classic New York Cheesecake", "slug": "/recipe/classic-new-york-cheesecake"  },
+      "prev": { "title": "Garden Fresh Heirloom Tomato Tart", "slug": "/recipe/garden-fresh-heirloom-tomato-tart" }
+    }
   },
   {
     "id": 5,
@@ -93,7 +142,11 @@
     "cookTime": "1h 30 mins",
     "difficulty": "Advanced",
     "featured": true,
-    "slug": "/recipe/classic-new-york-cheesecake"
+    "slug": "/recipe/classic-new-york-cheesecake",
+    "navigation": {
+      "next": { "title": "Truffle Infused Mushroom Risotto", "slug": "/recipe/truffle-infused-mushroom-risotto"  },
+      "prev": { "title": "Spiced Moroccan Chickpea Stew", "slug": "/recipe/spiced-moroccan-chickpea-stew" }
+    }
   },
   {
     "id": 6,
@@ -105,7 +158,11 @@
     "cookTime": "35 mins",
     "difficulty": "Intermediate",
     "featured": false,
-    "slug": "/recipe/truffle-infused-mushroom-risotto"
+    "slug": "/recipe/truffle-infused-mushroom-risotto",
+    "navigation": {
+      "next": { "title": "Mediterranean Grilled Seabass", "slug": "/recipe/mediterranean-grilled-seabass"  },
+      "prev": { "title": "Classic New York Cheesecake", "slug": "/recipe/classic-new-york-cheesecake" }
+    }
   },
   {
     "id": 7,
@@ -117,7 +174,11 @@
     "cookTime": "20 mins",
     "difficulty": "Intermediate",
     "featured": true,
-    "slug": "/recipe/mediterranean-grilled-seabass"
+    "slug": "/recipe/mediterranean-grilled-seabass",
+    "navigation": {
+      "next": { "title": "Avocado & Poached Egg Sourdough", "slug": "/recipe/avocado-poached-egg-sourdough"  },
+      "prev": { "title": "Truffle Infused Mushroom Risotto", "slug": "/recipe/truffle-infused-mushroom-risotto" }
+    }
   },
   {
     "id": 8,
@@ -129,7 +190,11 @@
     "cookTime": "10 mins",
     "difficulty": "Easy",
     "featured": false,
-    "slug": "/recipe/avocado-poached-egg-sourdough"
+    "slug": "/recipe/avocado-poached-egg-sourdough",
+    "navigation": {
+      "next": { "title": "Slow-Cooked Beef Bourguignon", "slug": "/recipe/slow-cooked-beef-bourguignon"  },
+      "prev": { "title": "Mediterranean Grilled Seabass", "slug": "/recipe/mediterranean-grilled-seabass" }
+    }
   },
   {
     "id": 9,
@@ -186,7 +251,11 @@
       "fiber": "4g",
       "sugar": "8g"
     },
-    "keywords": ["beef", "bourguignon", "stew", "french", "red wine", "slow cooked"]
+    "keywords": ["beef", "bourguignon", "stew", "french", "red wine", "slow cooked"],
+    "navigation": {
+      "next": { "title": "Zesty Thai Green Curry", "slug": "/recipe/zesty-thai-green-curry"  },
+      "prev": { "title": "Avocado & Poached Egg Sourdough", "slug": "/recipe/avocado-poached-egg-sourdough" }
+    }
   },
   {
     "id": 10,
@@ -198,7 +267,11 @@
     "cookTime": "20 mins",
     "difficulty": "Intermediate",
     "featured": false,
-    "slug": "/recipe/zesty-thai-green-curry"
+    "slug": "/recipe/zesty-thai-green-curry",
+    "navigation": {
+      "next": { "title": "Handmade Spinach & Ricotta Ravioli", "slug": "/recipe/handmade-spinach-ricotta-ravioli"  },
+      "prev": { "title": "Slow-Cooked Beef Bourguignon", "slug": "/recipe/slow-cooked-beef-bourguignon" }
+    }
   },
   {
     "id": 11,
@@ -210,7 +283,11 @@
     "cookTime": "10 mins",
     "difficulty": "Advanced",
     "featured": true,
-    "slug": "/recipe/handmade-spinach-ricotta-ravioli"
+    "slug": "/recipe/handmade-spinach-ricotta-ravioli",
+    "navigation": {
+      "next": { "title": "Smoked Salmon & Caper Bagel", "slug": "/recipe/smoked-salmon-caper-bagel"  },
+      "prev": { "title": "Zesty Thai Green Curry", "slug": "/recipe/zesty-thai-green-curry" }
+    }
   },
   {
     "id": 12,
@@ -222,7 +299,11 @@
     "cookTime": "5 mins",
     "difficulty": "Easy",
     "featured": false,
-    "slug": "/recipe/smoked-salmon-caper-bagel"
+    "slug": "/recipe/smoked-salmon-caper-bagel",
+    "navigation": {
+      "next": { "title": "Decadent Valrhona Chocolate Fondant", "slug": "/recipe/decadent-valrhona-chocolate-fondant"  },
+      "prev": { "title": "Handmade Spinach & Ricotta Ravioli", "slug": "/recipe/handmade-spinach-ricotta-ravioli" }
+    }
   },
   {
     "id": 13,
@@ -234,6 +315,10 @@
     "cookTime": "12 mins",
     "difficulty": "Intermediate",
     "featured": true,
-    "slug": "/recipe/decadent-valrhona-chocolate-fondant"
+    "slug": "/recipe/decadent-valrhona-chocolate-fondant",
+    "navigation": {
+      "next": null,
+      "prev": { "title": "Smoked Salmon & Caper Bagel", "slug": "/recipe/smoked-salmon-caper-bagel" }
+    }
   }
 ]

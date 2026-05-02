@@ -4,21 +4,21 @@ import {
   computed,
   input,
   ViewEncapsulation,
-  inject,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Breadcrumbs, BreadcrumbItem } from '../../components/breadcrumbs/breadcrumbs';
 import { RecipeHero } from './recipe-hero';
-import { Recipe, RecipeService } from '../../services/recipe.service';
-import { slugify } from '../../utils/slug';
+import { Recipe } from '../../services/recipe.service';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { Sidebar } from '../../components/sidebar/sidebar';
 import { SidebarQuickView } from '../../components/sidebar/sidebar-quick-view';
 import { RecipeCard } from './recipe-card';
+import { RecipeTags } from './recipe-tags';
 import { RecipeNavigation } from './recipe-navigation';
 import { RecipeComments } from './recipe-comments';
 import { RecipeMeta } from './recipe-meta';
+import { RouterLink } from '@angular/router';
 
 @Component({
   selector: 'dm-recipe-detail',
@@ -31,9 +31,11 @@ import { RecipeMeta } from './recipe-meta';
     Sidebar,
     SidebarQuickView,
     RecipeCard,
+    RecipeTags,
     RecipeNavigation,
     RecipeComments,
     RecipeMeta,
+    RouterLink,
   ],
   template: `
     <div class="into-the-box pt-12 pb-12">
@@ -52,20 +54,20 @@ import { RecipeMeta } from './recipe-meta';
             <div class="flex flex-col lg:flex-row gap-8">
               <!-- Main Content Area -->
               <div class="flex-1 space-y-12">
-                <!-- Recipe Story (The Content) -->
-                @if (r.content) {
-                  <section class="prose prose-lg max-w-none px-4 sm:px-0 py-8 sm:py-0">
-                    <div
-                      class="recipe-story text-lg md:text-xl text-[var(--mat-sys-on-surface-variant)] leading-relaxed font-serif first-letter:text-6xl first-letter:font-black first-letter:mr-1 first-letter:text-[var(--mat-sys-primary)]"
-                      [innerHTML]="r.content"></div>
-                  </section>
-                }
+                <section class="prose prose-lg max-w-none px-4 sm:px-0 py-8 sm:py-0">
+                  <div
+                    class="recipe-story text-lg md:text-xl text-[var(--mat-sys-on-surface-variant)] leading-relaxed font-serif first-letter:text-6xl first-letter:font-black first-letter:mr-1 first-letter:text-[var(--mat-sys-primary)]"
+                    [innerHTML]="r.content"></div>
+                </section>
 
                 <!-- Premium Recipe Card -->
                 <dml-recipe-card [recipe]="r" />
 
+                <!-- Recipe Tags -->
+                <dml-recipe-tags [recipe]="r" />
+
                 <!-- Recipe Navigation -->
-                <dml-recipe-navigation [previous]="navigation().prev" [next]="navigation().next" />
+                <dml-recipe-navigation [previous]="r.navigation.prev" [next]="r.navigation.next" />
 
                 <!-- Comments Section -->
                 <dml-recipe-comments [recipe]="r" [page]="page()" />
@@ -121,58 +123,12 @@ import { RecipeMeta } from './recipe-meta';
 export class RecipeDetail {
   // Input from resolver
   recipe = input<Recipe | null>(null);
-  slug = input<string>();
   page = input<string>();
 
   readonly breadcrumbItems = computed((): BreadcrumbItem[] => {
     const r = this.recipe();
-    const items: BreadcrumbItem[] = [
-      { label: 'Home', url: '/' },
-      { label: 'Recipes', url: '/recipes' },
-    ];
-
-    if (!r) return items;
-
-    // Add Category
-    if (r.category) {
-      const categorySlug = slugify(r.category);
-      items.push({
-        label: r.category,
-        url: `/recipes/${categorySlug}`,
-      });
-
-      // Add Subcategory if present
-      if (r.subcategory) {
-        const subcategorySlug = slugify(r.subcategory);
-        items.push({
-          label: r.subcategory,
-          url: `/recipes/${categorySlug}/${subcategorySlug}`,
-        });
-      }
-    }
-
-    // Add Recipe Name (last item, no URL)
-    items.push({ label: r.title });
-
-    return items;
-  });
-
-  private readonly recipeService = inject(RecipeService);
-  readonly allRecipes = this.recipeService.recipes;
-
-  readonly navigation = computed(() => {
-    const r = this.recipe();
-    const all = this.allRecipes();
-    if (!r || all.length === 0) return { prev: null, next: null, index: -1 };
-
-    const index = all.findIndex((x) => x.slug === r.slug);
-    if (index === -1) return { prev: null, next: null, index: -1 };
-
-    return {
-      prev: index > 0 ? { title: all[index - 1].title, slug: all[index - 1].slug } : null,
-      next:
-        index < all.length - 1 ? { title: all[index + 1].title, slug: all[index + 1].slug } : null,
-      index,
-    };
+    if (!r) return [];
+    const idx = r.breadcrumbs.main;
+    return typeof idx === 'number' ? r.breadcrumbs.items[idx] : [];
   });
 }

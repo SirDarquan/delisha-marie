@@ -6,9 +6,9 @@ export interface Breadcrumb {
   url?: string;
 }
 
-export interface BreadcrumbGroup {
-  main?: boolean;
-  items: Breadcrumb[];
+export interface Breadcrumbs {
+  main?: number;
+  items: Breadcrumb[][];
 }
 
 export interface Nutrition {
@@ -41,9 +41,9 @@ export interface Recipe {
   title: string;
   slug: string;
   description: string;
-  content?: string;
-  ingredients?: string[];
-  instructions?: string[];
+  content: string;
+  ingredients: string[];
+  instructions: string[];
   image: string;
   imageWidth?: string;
   imageHeight?: string;
@@ -53,31 +53,39 @@ export interface Recipe {
   cookTime: string;
   difficulty: string;
   totalTime: string;
-  servings?: string;
-  yield?: string;
+  yield: string;
   author: string;
-  createdAt?: string;
-  updatedAt?: string;
-  rating?: number;
-  ratingCount?: number;
-  reviewCount?: number;
-  comments?: Comment[];
+  createdAt: string;
+  updatedAt: string;
+  rating: number;
+  ratingCount: number;
+  reviewCount: number;
+  comments: Comment[];
   notes?: string[];
   equipment?: string[];
-  nutrition?: Nutrition;
-  cuisine?: string;
-  course?: string;
-  method?: string;
-  category: string;
+  nutrition: Nutrition;
+  cuisine: string;
+  course: string;
+  method: string;
+  category?: string;
   subcategory?: string;
   linkedIngredients?: { name: string; slug: string; text: string; measure?: string }[];
-  breadcrumbs?: BreadcrumbGroup[];
+  breadcrumbs: Breadcrumbs;
   keywords?: string[];
   specialDiets?: string[];
   holidays?: string[];
   status?: 'draft' | 'scheduled' | 'published';
   likes?: number;
   preview_token?: string;
+  navigation: {
+    prev: NavigationLink | null;
+    next: NavigationLink | null;
+  };
+}
+
+export interface NavigationLink {
+  title: string;
+  slug: string;
 }
 
 @Injectable({

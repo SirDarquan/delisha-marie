@@ -6,6 +6,7 @@ import { RecipeIndexService } from '../recipe-index/recipe-index.service';
 import { WINDOW } from '../../services/global-tokens';
 import { describe, it, expect, beforeEach, vi, Mock } from 'vitest';
 import { Subject } from 'rxjs';
+import { createMockRecipe } from '../../utils/test-recipe';
 
 describe('RecipeList', () => {
   let component: RecipeList;
@@ -15,7 +16,7 @@ describe('RecipeList', () => {
   let paramsSubject: Subject<Record<string, string>>;
 
   const mockRecipes: Recipe[] = [
-    {
+    createMockRecipe({
       id: 1,
       title: 'Recipe 1',
       description: 'Desc 1',
@@ -29,8 +30,8 @@ describe('RecipeList', () => {
       method: 'Baking',
       totalTime: '30m',
       author: 'Delisha Marie',
-    },
-    {
+    }),
+    createMockRecipe({
       id: 2,
       title: 'Recipe 2',
       description: 'Desc 2',
@@ -44,7 +45,7 @@ describe('RecipeList', () => {
       method: 'Baking',
       totalTime: '30m',
       author: 'Delisha Marie',
-    },
+    }),
   ];
 
   const recipeServiceMock = {

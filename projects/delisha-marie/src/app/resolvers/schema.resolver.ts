@@ -3,7 +3,7 @@ import { inject } from '@angular/core';
 import { ResolveFn } from '@angular/router';
 
 import { Recipe, RecipeService } from '../services/recipe.service';
-import { deslugify, slugify } from '../utils/slug';
+import { deslugify } from '../utils/slug';
 
 export interface SchemaObject {
   '@context'?: string;
@@ -407,108 +407,8 @@ export const generateBreadcrumbSchema = (
  * Also dynamically generates supplemental trails (main: false) for The Best, Method, Diets, and Holidays.
  */
 export const getRecipeBreadcrumbs = (recipe: Recipe): Breadcrumb[] => {
-  const finalGroups: Breadcrumb[] = [];
-  const recipeLabel = recipe.title;
-  const cleanSlug = recipe.slug.replace(/^\/?recipe\//, '').replace(/^\//, '');
-  const recipeUrl = `/recipe/${cleanSlug}`;
-
-  const generateTrail = (isMain: boolean, intermediateCrumbs: Breadcrumb[]) => {
-    const items: Breadcrumb[] = [{ label: 'Home', url: '/' }];
-
-    // 1. Ensure "Recipes" is the start for the main trail
-    if (isMain && (!intermediateCrumbs.length || intermediateCrumbs[0].label !== 'Recipes')) {
-      items.push({ label: 'Recipes', url: '/recipes' });
-    }
-
-    // 2. Add mid-level crumbs
-    intermediateCrumbs.forEach((crumb) => {
-      const labelSafe = crumb.label?.toLowerCase() || '';
-      // Skip dupes
-      if (labelSafe !== 'home' && crumb.label !== recipeLabel) {
-        items.push(crumb);
-      }
-    });
-
-    // 2. Close with the recipe
-    items.push({ label: recipeLabel, url: recipeUrl });
-
-    finalGroups.push(...items);
-  };
-
-  // --- Main Trail ---
-  const intermediate: Breadcrumb[] = [];
-  if (recipe.category) {
-    const catSlug = slugify(recipe.category);
-    intermediate.push({ label: recipe.category, url: `/recipes/${catSlug}` });
-
-    if (recipe.subcategory) {
-      const subSlug = slugify(recipe.subcategory);
-      intermediate.push({ label: recipe.subcategory, url: `/recipes/${catSlug}/${subSlug}` });
-    }
-  }
-  generateTrail(true, intermediate);
-
-  // --- Dynamic Supplementary Trails (main: false) ---
-  // The Best Trail
-  // if (recipe.theBest) {
-  //   const bestCrumbs: Breadcrumb[] = [{ label: 'The Best Recipes', url: '/recipes/the-best' }];
-
-  //   // Take categories from the main trail and prepend "The Best "
-  //   sourceItems.forEach((b) => {
-  //     if (b.label !== 'Recipes') {
-  //       bestCrumbs.push({
-  //         label: `The Best ${b.label}`,
-  //         url: b.url?.replace('/recipes/', '/recipes/the-best/'),
-  //       });
-  //     }
-  //   });
-
-  //   generateTrail(false, bestCrumbs);
-  // }
-
-  // Method Trail
-  if (recipe.method) {
-    const slug = recipe.method
-      .toLowerCase()
-      .replaceAll(' ', '-')
-      .replaceAll(/[^a-z0-9-]/g, '');
-    generateTrail(false, [
-      { label: 'Method', url: '/method' },
-      { label: recipe.method, url: `/method/${slug}` },
-    ]);
-  }
-
-  // Special Diets Trails
-  const specialDiets = (recipe as unknown as Record<string, unknown>)['specialDiets'];
-  if (specialDiets && Array.isArray(specialDiets) && specialDiets.length) {
-    specialDiets.forEach((diet: string) => {
-      const slug = diet
-        .toLowerCase()
-        .replaceAll(' ', '-')
-        .replaceAll(/[^a-z0-9-]/g, '');
-      generateTrail(false, [
-        { label: 'Special Diets', url: '/special-diets' },
-        { label: diet, url: `/special-diets/${slug}` },
-      ]);
-    });
-  }
-
-  // Holidays Trails
-  const holidays = (recipe as unknown as Record<string, unknown>)['holidays'];
-  if (holidays && Array.isArray(holidays) && holidays.length) {
-    holidays.forEach((holiday: string) => {
-      const slug = holiday
-        .toLowerCase()
-        .replaceAll(' ', '-')
-        .replaceAll(/[^a-z0-9-]/g, '');
-      generateTrail(false, [
-        { label: 'Holidays', url: '/holidays' },
-        { label: holiday, url: `/holidays/${slug}` },
-      ]);
-    });
-  }
-
-  return finalGroups;
+  const idx = recipe.breadcrumbs?.main;
+  return typeof idx === 'number' && recipe.breadcrumbs?.items ? recipe.breadcrumbs.items[idx] : [];
 };
 
 /**

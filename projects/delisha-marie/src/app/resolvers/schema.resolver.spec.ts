@@ -13,9 +13,12 @@ import {
   generateWebPageSchema,
   generateBreadcrumbSchema,
   getRecipeBreadcrumbs,
+  generatePersonSchema,
+  generateImageObjectSchema,
 } from './schema.resolver';
 import { describe, it, expect, beforeEach, vi, Mock } from 'vitest';
 import { Recipe, RecipeService } from '../services/recipe.service';
+import { createMockRecipe } from '../utils/test-recipe';
 
 describe('schemaResolver', () => {
   let mockDocument: {
@@ -99,33 +102,35 @@ describe('schemaResolver', () => {
       expect((result['itemListElement'] as Record<string, unknown>[])[0]['name']).toBe('Home');
     });
 
-    it('getRecipeBreadcrumbs - should generate trails for all attributes', () => {
-      const recipe: Recipe = {
-        id: 1,
-        title: 'Title',
-        description: '',
-        image: '',
-        category: 'Desserts',
-        prepTime: '',
-        cookTime: '',
-        difficulty: '',
-        theBest: false,
-        slug: 'title',
-        method: 'Air Fryer',
-        specialDiets: ['Vegan'],
-        holidays: ['Christmas'],
-        author: 'Delisha Marie',
-        totalTime: '',
-      };
+    it('getRecipeBreadcrumbs - should return main trail breadcrumbs from recipe', () => {
+      const recipe: Recipe = createMockRecipe({
+        breadcrumbs: {
+          main: 1,
+          items: [
+            [{ label: 'Home', url: '/' }],
+            [
+              { label: 'Home', url: '/' },
+              { label: 'The Best', url: '/the-best' },
+            ],
+          ],
+        },
+      });
       const result = getRecipeBreadcrumbs(recipe);
 
       const labels = result.map((b) => b.label);
-      expect(labels).toContain('Method');
-      expect(labels).toContain('Air Fryer');
-      expect(labels).toContain('Special Diets');
-      expect(labels).toContain('Vegan');
-      expect(labels).toContain('Holidays');
-      expect(labels).toContain('Christmas');
+      expect(labels).toContain('The Best');
+    });
+
+    it('generatePersonSchema', () => {
+      const result = generatePersonSchema('url', 'name');
+      expect(result['@type']).toBe('Person');
+      expect(result['name']).toBe('name');
+    });
+
+    it('generateImageObjectSchema', () => {
+      const result = generateImageObjectSchema('url', 'slug', 'imageUrl', 'caption');
+      expect(result['@type']).toBe('ImageObject');
+      expect(result['url']).toBe('imageUrl');
     });
   });
   describe('Resolver logic', () => {
@@ -195,12 +200,25 @@ describe('schemaResolver', () => {
       // Should modify the existing one
       expect((existingScript as unknown as HTMLScriptElement).textContent).toContain('@context');
     });
+
+    it('should handle paginated URLs in getBaseBreadcrumbs', () => {
+      const route = {
+        data: { description: 'desc' },
+        paramMap: { get: () => '' },
+      } as unknown as ActivatedRouteSnapshot;
+      const state = { url: '/recipes/page/2' } as RouterStateSnapshot;
+
+      const result = TestBed.runInInjectionContext(() => schemaResolver(route, state)) as Record<
+        string,
+        unknown
+      >[];
+      expect(result).toBeDefined();
+    });
   });
 
   describe('schemaRecipeResolver', () => {
     it('should return recipe schema array', async () => {
-      const mockRecipe: Recipe = {
-        id: 1,
+      const mockRecipe: Recipe = createMockRecipe({
         title: 'Recipe',
         slug: 'recipe',
         description: 'Desc',
@@ -213,7 +231,7 @@ describe('schemaResolver', () => {
         author: 'Author',
         ingredients: ['Ing1'],
         instructions: ['Step1'],
-      };
+      });
 
       vi.mocked(recipeService.getRecipeBySlug).mockResolvedValue(mockRecipe);
 
@@ -237,21 +255,32 @@ describe('schemaResolver', () => {
     });
 
     it('should handle subcategory and comments in recipe schema', async () => {
-      const mockRecipe: Recipe = {
-        id: 1,
+      const mockRecipe: Recipe = createMockRecipe({
         title: 'Recipe',
         slug: 'recipe',
         description: 'Desc',
         image: '/img.jpg',
         category: 'Cat',
         subcategory: 'Sub',
-        prepTime: 'unknown', // Test non-empty invalid duration branch (line 703)
-        cookTime: '', // Test empty duration branch (line 675)
+        prepTime: 'unknown',
+        cookTime: '',
         totalTime: '10 mins',
         difficulty: 'Easy',
         author: 'Author',
         ingredients: ['Ing1'],
         instructions: ['Step1'],
+        breadcrumbs: {
+          main: 0,
+          items: [
+            [
+              { label: 'Home', url: '/' },
+              { label: 'Recipes', url: '/recipes' },
+              { label: 'Desserts', url: '/recipes/desserts' },
+              { label: 'Sub', url: '/recipes/desserts/sub' },
+              { label: 'Recipe' },
+            ],
+          ],
+        },
         comments: [
           {
             id: '1',
@@ -263,7 +292,7 @@ describe('schemaResolver', () => {
             createdAt: '2023-01-01',
           },
         ],
-      };
+      });
 
       vi.mocked(recipeService.getRecipeBySlug).mockResolvedValue(mockRecipe);
 

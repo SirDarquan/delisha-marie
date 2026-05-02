@@ -2,12 +2,13 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { RecipeHero } from './recipe-hero';
 import { Recipe } from '../../services/recipe.service';
 import { IMAGE_LOADER, ImageLoaderConfig } from '@angular/common';
+import { createMockRecipe } from '../../utils/test-recipe';
 
 describe('RecipeHero', () => {
   let component: RecipeHero;
   let fixture: ComponentFixture<RecipeHero>;
 
-  const mockRecipe: Recipe = {
+  const mockRecipe: Recipe = createMockRecipe({
     id: '1',
     title: 'Test Recipe',
     slug: 'test-recipe',
@@ -18,7 +19,6 @@ describe('RecipeHero', () => {
     difficulty: 'Easy',
     totalTime: '30 min',
     author: 'Delisha Marie',
-    servings: '4',
     ingredients: ['Ingredient 1'],
     instructions: ['Step 1'],
     course: 'Main',
@@ -38,7 +38,7 @@ describe('RecipeHero', () => {
       servingSize: '1 serving',
     },
     theBest: true,
-  };
+  });
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
