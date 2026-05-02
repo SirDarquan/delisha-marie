@@ -52,14 +52,11 @@ import { RecipeMeta } from './recipe-meta';
             <div class="flex flex-col lg:flex-row gap-8">
               <!-- Main Content Area -->
               <div class="flex-1 space-y-12">
-                <!-- Recipe Story (The Content) -->
-                @if (r.content) {
-                  <section class="prose prose-lg max-w-none px-4 sm:px-0 py-8 sm:py-0">
-                    <div
-                      class="recipe-story text-lg md:text-xl text-[var(--mat-sys-on-surface-variant)] leading-relaxed font-serif first-letter:text-6xl first-letter:font-black first-letter:mr-1 first-letter:text-[var(--mat-sys-primary)]"
-                      [innerHTML]="r.content"></div>
-                  </section>
-                }
+                <section class="prose prose-lg max-w-none px-4 sm:px-0 py-8 sm:py-0">
+                  <div
+                    class="recipe-story text-lg md:text-xl text-[var(--mat-sys-on-surface-variant)] leading-relaxed font-serif first-letter:text-6xl first-letter:font-black first-letter:mr-1 first-letter:text-[var(--mat-sys-primary)]"
+                    [innerHTML]="r.content"></div>
+                </section>
 
                 <!-- Premium Recipe Card -->
                 <dml-recipe-card [recipe]="r" />

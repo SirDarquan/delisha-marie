@@ -49,7 +49,7 @@ import { Stars } from '../../components/stars/stars';
             <mat-icon class="text-[var(--mat-sys-primary)] text-base scale-75">restaurant</mat-icon>
             <span class="recipe-card-details-label text-sm italic lowercase">yield: </span>
             <span class="recipe-card-servings text-xs font-bold uppercase tracking-tight">{{
-              recipe().yield || recipe().servings || recipe().nutrition?.servingSize || '4 servings'
+              recipe().yield
             }}</span>
           </div>
 

@@ -60,7 +60,7 @@ import { WINDOW } from '../../services/global-tokens';
             <span class="block text-[10px] uppercase font-black opacity-50 tracking-widest"
               >Serves</span
             >
-            <span class="font-bold">{{ recipe().yield || recipe().servings }}</span>
+            <span class="font-bold">{{ recipe().yield }}</span>
           </div>
         </div>
         <div class="flex items-center gap-3">

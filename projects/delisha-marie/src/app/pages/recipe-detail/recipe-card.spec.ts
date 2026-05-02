@@ -11,6 +11,7 @@ describe('RecipeCard', () => {
 
   const mockRecipe: Recipe = {
     id: '1',
+    yield: '1 portion',
     title: 'Test Recipe',
     slug: 'test-recipe',
     description: 'A test recipe description',

@@ -18,7 +18,6 @@ describe('RecipeHero', () => {
     difficulty: 'Easy',
     totalTime: '30 min',
     author: 'Delisha Marie',
-    servings: '4',
     ingredients: ['Ingredient 1'],
     instructions: ['Step 1'],
     course: 'Main',
