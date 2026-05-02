@@ -55,7 +55,34 @@
       "next": { "title": "Creamy Garlic Parmesan Pasta", "slug": "/recipe/creamy-garlic-parmesan-pasta"  },
       "prev": null
     },
-    "ratingCount": 51
+    "breadcrumbs": {
+      "main": 1,
+      "items": [
+      [
+        { "label": "Home", "url": "/" },
+        { "label": "Recipes", "url": "/recipes" },
+        { "label": "Dinner", "url": "/recipes/dinner" },
+        { "label": "Signature Lemon Herb Roast Chicken", "url": "/recipe/signature-lemon-herb-roasted-chicken" }
+      ],
+      [
+        { "label": "Home", "url": "/" },
+        { "label": "The Best Recipes", "url": "/the-best-recipes" },
+        { "label": "The Best Dinner", "url": "/the-best-recipes/the-best-dinner" },
+        { "label": "Signature Lemon Herb Roast Chicken", "url": "/recipe/signature-lemon-herb-roasted-chicken" }
+      ],
+      [
+        { "label": "Method", "url": "/methods" },
+        { "label": "Roasting", "url": "/methods/roasting" }
+      ],
+      [
+        { "label": "Special Diets", "url": "/special-diets" },
+        { "label": "Low Carb", "url": "/special-diets/low-carb" }
+      ],
+      [
+        { "label": "Holidays", "url": "/holidays" },
+        { "label": "Sunday Roast", "url": "/holidays/sunday-roast" }
+      ]]
+    }
   },
   {
     "id": 2,

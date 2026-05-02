@@ -123,53 +123,13 @@ export class RecipeDetail {
 
   readonly breadcrumbItems = computed((): BreadcrumbItem[] => {
     const r = this.recipe();
-    const items: BreadcrumbItem[] = [
-      { label: 'Home', url: '/' },
-      { label: 'Recipes', url: '/recipes' },
-    ];
-
-    if (!r) return items;
-
-    // Add Category
-    if (r.category) {
-      const categorySlug = slugify(r.category);
-      items.push({
-        label: r.category,
-        url: `/recipes/${categorySlug}`,
-      });
-
-      // Add Subcategory if present
-      if (r.subcategory) {
-        const subcategorySlug = slugify(r.subcategory);
-        items.push({
-          label: r.subcategory,
-          url: `/recipes/${categorySlug}/${subcategorySlug}`,
-        });
-      }
+    if (!r || !r.breadcrumbs || !r.breadcrumbs.items) {
+      return [
+        { label: 'Home', url: '/' },
+        { label: 'Recipes', url: '/recipes' },
+      ];
     }
-
-    // Add Recipe Name (last item, no URL)
-    items.push({ label: r.title });
-
-    return items;
-  });
-
-  private readonly recipeService = inject(RecipeService);
-  readonly allRecipes = this.recipeService.recipes;
-
-  readonly navigation = computed(() => {
-    const r = this.recipe();
-    const all = this.allRecipes();
-    if (!r || all.length === 0) return { prev: null, next: null, index: -1 };
-
-    const index = all.findIndex((x) => x.slug === r.slug);
-    if (index === -1) return { prev: null, next: null, index: -1 };
-
-    return {
-      prev: index > 0 ? { title: all[index - 1].title, slug: all[index - 1].slug } : null,
-      next:
-        index < all.length - 1 ? { title: all[index + 1].title, slug: all[index + 1].slug } : null,
-      index,
-    };
+    const idx = r.breadcrumbs.main;
+    return idx !== undefined ? r.breadcrumbs.items[idx] : [];
   });
 }

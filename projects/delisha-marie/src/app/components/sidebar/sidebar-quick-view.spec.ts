@@ -4,6 +4,7 @@ import { Recipe } from '../../services/recipe.service';
 import { WINDOW } from '../../services/global-tokens';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { NgOptimizedImage, IMAGE_LOADER, ImageLoaderConfig } from '@angular/common';
+import { createMockRecipe } from '../../utils/test-recipe';
 
 describe('SidebarQuickView', () => {
   let component: SidebarQuickView;
@@ -14,7 +15,7 @@ describe('SidebarQuickView', () => {
     };
   };
 
-  const mockRecipe: Recipe = {
+  const mockRecipe: Recipe = createMockRecipe({
     id: '1',
     title: 'Quick Test Recipe',
     slug: 'quick-test-recipe',
@@ -26,8 +27,7 @@ describe('SidebarQuickView', () => {
     totalTime: '15 min',
     author: 'Delisha Marie',
     category: 'Test',
-    servings: '2',
-  };
+  });
 
   beforeEach(async () => {
     mockWindow = {

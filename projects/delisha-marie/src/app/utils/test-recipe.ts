@@ -1,0 +1,60 @@
+import { Recipe } from '../services/recipe.service';
+
+export function createMockRecipe(overrides: Partial<Recipe> = {}): Recipe {
+  return {
+    id: 1,
+    title: 'Test Recipe',
+    slug: '/recipe/test-recipe',
+    description: 'A delicious test recipe.',
+    content: '<p>Delicious test recipe instructions.</p>',
+    ingredients: ['1 cup of test ingredient'],
+    instructions: ['Step 1 test instructions.'],
+    image: '/images/recipes/test.png',
+    theBest: false,
+    prepTime: '10 mins',
+    cookTime: '20 mins',
+    difficulty: 'Easy',
+    totalTime: '30 mins',
+    yield: '4 servings',
+    author: 'Delisha Marie',
+    createdAt: '2026-01-01T00:00:00Z',
+    updatedAt: '2026-01-01T00:00:00Z',
+    rating: 5,
+    ratingCount: 1,
+    reviewCount: 1,
+    comments: [],
+    nutrition: {
+      calories: '150',
+      carbohydrates: '10g',
+      protein: '5g',
+      fat: '2g',
+      saturatedFat: '0g',
+      cholesterol: '0mg',
+      sodium: '50mg',
+      fiber: '1g',
+      sugar: '2g',
+      servingSize: '1 serving',
+    },
+    cuisine: 'American',
+    course: 'Main Course',
+    method: 'Baking',
+    // category: 'Dinner',
+    breadcrumbs: {
+      main: 0,
+      items: [
+        [
+          { label: 'Home', url: '/' },
+          { label: 'Recipes', url: '/recipes' },
+          { label: 'Desserts', url: '/recipes/desserts' },
+          { label: 'Cakes', url: '/recipes/desserts/cakes' },
+          { label: 'Test Recipe' },
+        ],
+      ],
+    },
+    navigation: {
+      prev: null,
+      next: null,
+    },
+    ...overrides,
+  };
+}

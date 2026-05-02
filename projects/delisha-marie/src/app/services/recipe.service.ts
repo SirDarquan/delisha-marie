@@ -6,9 +6,9 @@ export interface Breadcrumb {
   url?: string;
 }
 
-export interface BreadcrumbGroup {
-  main?: boolean;
-  items: Breadcrumb[];
+export interface Breadcrumbs {
+  main?: number;
+  items: Breadcrumb[][];
 }
 
 export interface Nutrition {
@@ -70,7 +70,7 @@ export interface Recipe {
   category?: string;
   subcategory?: string;
   linkedIngredients?: { name: string; slug: string; text: string; measure?: string }[];
-  breadcrumbs?: BreadcrumbGroup[];
+  breadcrumbs: Breadcrumbs;
   keywords?: string[];
   specialDiets?: string[];
   holidays?: string[];

@@ -5,11 +5,13 @@ import { Recipe } from '../../services/recipe.service';
 
 import { provideRouter } from '@angular/router';
 
+import { createMockRecipe } from '../../utils/test-recipe';
+
 describe('RecipeCard', () => {
   let component: RecipeCard;
   let fixture: ComponentFixture<RecipeCard>;
 
-  const mockRecipe: Recipe = {
+  const mockRecipe: Recipe = createMockRecipe({
     id: '1',
     yield: '1 portion',
     title: 'Test Recipe',
@@ -41,7 +43,7 @@ describe('RecipeCard', () => {
       saturatedFat: '1g',
       servingSize: '1 portion',
     },
-  };
+  });
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({

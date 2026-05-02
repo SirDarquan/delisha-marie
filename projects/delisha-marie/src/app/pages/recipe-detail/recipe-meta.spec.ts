@@ -3,6 +3,7 @@ import { RecipeMeta } from './recipe-meta';
 import { RecipeService, Recipe } from '../../services/recipe.service';
 import { provideRouter } from '@angular/router';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { createMockRecipe } from '../../utils/test-recipe';
 
 describe('RecipeMeta', () => {
   let component: RecipeMeta;
@@ -11,7 +12,7 @@ describe('RecipeMeta', () => {
     getComments: ReturnType<typeof vi.fn>;
   };
 
-  const mockRecipe: Recipe = {
+  const mockRecipe: Recipe = createMockRecipe({
     id: '123',
     title: 'Test Recipe',
     slug: 'test-recipe',
@@ -24,7 +25,7 @@ describe('RecipeMeta', () => {
     difficulty: 'Easy',
     category: 'Breakfast',
     createdAt: '2026-01-01T10:00:00Z',
-  };
+  });
 
   beforeEach(async () => {
     recipeServiceMock = {
@@ -47,6 +48,8 @@ describe('RecipeMeta', () => {
   });
 
   it('should display "Published" date if updatedAt is missing', () => {
+    fixture.componentRef.setInput('recipe', { ...mockRecipe, updatedAt: '' });
+    fixture.detectChanges();
     const compiled = fixture.nativeElement as HTMLElement;
     const dateText = compiled.querySelector('.recipe-meta')?.textContent;
     expect(dateText).toContain('Published: Jan 1, 2026');
