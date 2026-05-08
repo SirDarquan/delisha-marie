@@ -74,7 +74,7 @@ describe('Auth Router API', () => {
       });
 
       // Assert cookies are set
-      const cookies = res.headers['set-cookie'] as string[];
+      const cookies = res.headers['set-cookie'] as unknown as string[];
       expect(cookies).toBeDefined();
       expect(cookies.some((c: string) => c.includes('admin_access_token=access-123'))).toBe(true);
       expect(cookies.some((c: string) => c.includes('admin_refresh_token=refresh-123'))).toBe(true);
@@ -123,7 +123,7 @@ describe('Auth Router API', () => {
         session: mockSession,
       });
 
-      const cookies = res.headers['set-cookie'] as string[];
+      const cookies = res.headers['set-cookie'] as unknown as string[];
       expect(cookies).toBeDefined();
       expect(cookies.some((c: string) => c.includes('admin_access_token=access-123'))).toBe(true);
       expect(cookies.some((c: string) => c.includes('admin_refresh_token=refresh-123'))).toBe(true);
@@ -200,7 +200,7 @@ describe('Auth Router API', () => {
         session: mockSession,
       });
 
-      const cookies = res.headers['set-cookie'] as string[];
+      const cookies = res.headers['set-cookie'] as unknown as string[];
       expect(cookies).toBeDefined();
       expect(cookies.some((c: string) => c.includes('admin_access_token=access-google'))).toBe(
         true,
@@ -235,7 +235,7 @@ describe('Auth Router API', () => {
       expect(res.status).toBe(200);
       expect(res.body.message).toBe('Signed out successfully');
 
-      const cookies = res.headers['set-cookie'] as string[];
+      const cookies = res.headers['set-cookie'] as unknown as string[];
       expect(cookies).toBeDefined();
       expect(cookies.some((c: string) => c.includes('admin_access_token=;'))).toBe(true);
       expect(cookies.some((c: string) => c.includes('admin_refresh_token=;'))).toBe(true);
@@ -256,7 +256,7 @@ describe('Auth Router API', () => {
   describe('GET /auth/me', () => {
     it('should return user details if access token is valid', async () => {
       const mockUser = { id: 'user-123', email: 'test@example.com' };
-      vi.mocked(backendService.verifyToken).mockResolvedValue(mockUser);
+      vi.mocked(backendService.verifyToken).mockResolvedValue(mockUser as any);
 
       const res = await request(app)
         .get('/auth/me')
@@ -288,7 +288,7 @@ describe('Auth Router API', () => {
       expect(res.status).toBe(200);
       expect(res.body).toEqual({ user: mockUser });
 
-      const cookies = res.headers['set-cookie'] as string[];
+      const cookies = res.headers['set-cookie'] as unknown as string[];
       expect(cookies).toBeDefined();
       expect(cookies.some((c: string) => c.includes('admin_access_token=new-access-token'))).toBe(
         true,

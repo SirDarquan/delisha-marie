@@ -41,7 +41,7 @@ describe('Auth Middleware', () => {
 
   it('should pass and call next when a valid access token is provided', async () => {
     const mockUser = { id: 'user-123', email: 'test@example.com' };
-    vi.mocked(backendService.verifyToken).mockResolvedValue(mockUser);
+    vi.mocked(backendService.verifyToken).mockResolvedValue(mockUser as any);
 
     const res = await request(app)
       .get('/test-secure')
@@ -82,7 +82,7 @@ describe('Auth Middleware', () => {
       token: 'new-access-token',
     });
 
-    const cookies = res.headers['set-cookie'] as string[];
+    const cookies = res.headers['set-cookie'] as unknown as string[];
     expect(cookies).toBeDefined();
     expect(cookies.some((c: string) => c.includes('admin_access_token=new-access-token'))).toBe(
       true,

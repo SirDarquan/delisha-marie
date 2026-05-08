@@ -84,6 +84,9 @@
           "builder": "@angular/build:unit-test",
           "options": {
             "coverageReporters": ["lcov"],
+            "exclude": [
+              "projects/admin-delisha-marie/src/api/**/*.test.ts"
+            ],
             "watch": false
           }
         },
@@ -177,6 +180,9 @@
           "builder": "@angular/build:unit-test",
           "options": {
             "coverageReporters": ["lcov"],
+            "exclude": [
+              "projects/admin-delisha-marie/src/api/**/*.test.ts"
+            ],
             "watch": false
           }
         },

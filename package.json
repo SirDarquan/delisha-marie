@@ -8,7 +8,7 @@
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "test:api": "vitest --config projects/admin-delisha-marie/src/api/vitest.config.ts --run",
-    "test:all": "concurrently \"npm run lint\" \"npm run test -- --coverage\" \"npm run test:api\" \"npm run e2e\"",
+    "test:all": "concurrently \"npm run lint\" \"npm run test -- --coverage\" \"npm run test:api -- --coverage\" \"npm run e2e\"",
     "e2e": "playwright test -c projects/delisha-marie/playwright.config.ts",
     "serve:ssr:delisha-marie": "node dist/delisha-marie/server/server.mjs",
     "lint": "ng lint"
