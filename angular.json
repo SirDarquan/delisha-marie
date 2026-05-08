@@ -127,7 +127,12 @@
             "styles": [
               "projects/admin-delisha-marie/src/tailwind.css",
               "projects/admin-delisha-marie/src/styles.scss"
-            ]
+            ],
+            "server": "projects/admin-delisha-marie/src/main.server.ts",
+            "outputMode": "server",
+            "ssr": {
+              "entry": "projects/admin-delisha-marie/src/server.ts"
+            }
           },
           "configurations": {
             "production": {
