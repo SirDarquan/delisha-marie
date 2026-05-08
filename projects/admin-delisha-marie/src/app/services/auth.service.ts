@@ -27,7 +27,7 @@ export class AuthService implements OnDestroy {
   readonly isAuthenticated = computed(() => this._isAuthenticated());
   readonly currentUser = computed(() => this._currentUser());
 
-  private authSubscription: Subscription;
+  private readonly authSubscription: Subscription;
   private sessionInitPromise: Promise<void> | null = null;
 
   constructor() {
@@ -36,16 +36,17 @@ export class AuthService implements OnDestroy {
         await this.loginWithSocial(user);
       }
     });
-
-    if (isPlatformBrowser(this.platformId)) {
-      this.sessionInitPromise = this.checkSession();
-    } else {
-      this.sessionInitPromise = Promise.resolve();
-    }
   }
 
   waitForSessionInit(): Promise<void> {
-    return this.sessionInitPromise || Promise.resolve();
+    if (!this.sessionInitPromise) {
+      if (isPlatformBrowser(this.platformId)) {
+        this.sessionInitPromise = this.checkSession();
+      } else {
+        this.sessionInitPromise = Promise.resolve();
+      }
+    }
+    return this.sessionInitPromise;
   }
 
   async checkSession(): Promise<void> {

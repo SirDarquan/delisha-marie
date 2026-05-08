@@ -31,8 +31,7 @@ import {
   GoogleSigninButtonModule,
   SocialUser,
 } from '@abacritt/angularx-social-login';
-import { Subscription } from 'rxjs';
-import { debounceTime, switchMap } from 'rxjs';
+import { Subscription, debounceTime, switchMap } from 'rxjs';
 
 interface SignUpModel {
   username: string;

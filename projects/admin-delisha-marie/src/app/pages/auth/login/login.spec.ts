@@ -279,7 +279,12 @@ describe('LoginComponent', () => {
   });
 
   it('should handle cleanup on destroy', () => {
+    const unsubscribeSpy = vi.fn();
+    component['authSubscription'] = {
+      unsubscribe: unsubscribeSpy,
+    } as unknown as import('rxjs').Subscription;
+
     component.ngOnDestroy();
-    expect(true).toBe(true);
+    expect(unsubscribeSpy).toHaveBeenCalled();
   });
 });

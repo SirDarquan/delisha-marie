@@ -6,59 +6,96 @@ export interface AuthRequest extends Request {
   token?: string;
 }
 
+function shouldPropagateTokenError(err: unknown, refreshToken?: string): boolean {
+  if (!refreshToken) {
+    return true;
+  }
+  const isExpired = err instanceof Error && err.message.toLowerCase().includes('expired');
+  return !isExpired;
+}
+
+async function tryVerifyToken(token: string, refreshToken?: string): Promise<unknown> {
+  try {
+    return await backendService.verifyToken(token);
+  } catch (tokenErr: unknown) {
+    if (shouldPropagateTokenError(tokenErr, refreshToken)) {
+      throw tokenErr;
+    }
+    return null;
+  }
+}
+
+interface SupabaseSession {
+  access_token: string;
+  refresh_token?: string;
+  expires_in: number;
+}
+
+function setSessionCookies(res: Response, session: SupabaseSession) {
+  res.cookie('admin_access_token', session.access_token, {
+    httpOnly: true,
+    secure: false, // Ensure local dev compatibility
+    sameSite: 'lax',
+    path: '/',
+    maxAge: session.expires_in * 1000,
+  });
+
+  if (session.refresh_token) {
+    res.cookie('admin_refresh_token', session.refresh_token, {
+      httpOnly: true,
+      secure: false,
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+    });
+  }
+}
+
+async function tryRefreshSession(
+  res: Response,
+  refreshToken: string,
+): Promise<{ user: unknown; token: string } | null> {
+  const { data, error } = await backendService.supabase.auth.refreshSession({
+    refresh_token: refreshToken,
+  });
+
+  if (error) {
+    throw error;
+  }
+
+  if (!data.session || !data.user) {
+    return null;
+  }
+
+  setSessionCookies(res, data.session);
+
+  return {
+    user: data.user,
+    token: data.session.access_token,
+  };
+}
+
 export const authMiddleware = async (req: Request, res: Response, next: NextFunction) => {
   const authReq = req as AuthRequest;
   try {
-    const token = req.cookies && req.cookies['admin_access_token'];
-    const refreshToken = req.cookies && req.cookies['admin_refresh_token'];
+    const token = req.cookies?.['admin_access_token'];
+    const refreshToken = req.cookies?.['admin_refresh_token'];
 
     if (token) {
-      try {
-        const user = await backendService.verifyToken(token);
+      const user = await tryVerifyToken(token, refreshToken);
+      if (user) {
         authReq.user = user;
         authReq.token = token;
         next();
         return;
-      } catch (tokenErr: unknown) {
-        // If the token is expired or invalid, we attempt to refresh it using the refresh token
-        const isExpired =
-          tokenErr instanceof Error && tokenErr.message.toLowerCase().includes('expired');
-        if (!isExpired || !refreshToken) {
-          throw tokenErr;
-        }
       }
     }
 
     if (refreshToken) {
-      const { data, error } = await backendService.supabase.auth.refreshSession({
-        refresh_token: refreshToken,
-      });
-
-      if (error) {
-        throw error;
-      }
-
-      if (data.session && data.user) {
-        res.cookie('admin_access_token', data.session.access_token, {
-          httpOnly: true,
-          secure: false, // Ensure local dev compatibility
-          sameSite: 'lax',
-          path: '/',
-          maxAge: data.session.expires_in * 1000,
-        });
-
-        if (data.session.refresh_token) {
-          res.cookie('admin_refresh_token', data.session.refresh_token, {
-            httpOnly: true,
-            secure: false,
-            sameSite: 'lax',
-            path: '/',
-            maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-          });
-        }
-
-        authReq.user = data.user;
-        authReq.token = data.session.access_token;
+      const session = await tryRefreshSession(res, refreshToken);
+      if (session) {
+        authReq.user = session.user;
+        authReq.token = session.token;
         next();
         return;
       }
