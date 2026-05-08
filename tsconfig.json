@@ -33,6 +33,12 @@
     },
     {
       "path": "./projects/delisha-marie/tsconfig.spec.json"
+    },
+    {
+      "path": "./projects/admin-delisha-marie/tsconfig.app.json"
+    },
+    {
+      "path": "./projects/admin-delisha-marie/tsconfig.spec.json"
     }
   ]
 }
