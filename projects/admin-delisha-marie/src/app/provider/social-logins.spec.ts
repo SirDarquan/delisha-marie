@@ -3,7 +3,7 @@ import { SOCIAL_AUTH_CONFIG, SocialAuthServiceConfig } from '@abacritt/angularx-
 import { provideSocialLogins } from './social-logins';
 import { AppConfigService } from '../services/config.service';
 import { signal } from '@angular/core';
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 
 describe('SocialLogins Provider', () => {
   it('should resolve the social auth config dynamically from AppConfigService', () => {
@@ -27,11 +27,11 @@ describe('SocialLogins Provider', () => {
 
     expect(resolvedConfig).toBeDefined();
     expect(resolvedConfig.providers).toHaveLength(1);
-    
+
     // Verify internal construction properties loosely
     const googleProvider = resolvedConfig.providers[0];
     expect(googleProvider.id).toBe('GOOGLE');
-    // We test that the provider initialized successfully. 
+    // We test that the provider initialized successfully.
     // Inspecting the internal client id is hard on runtime object, but confirming it constructed is key.
     expect(googleProvider.provider).toBeTruthy();
   });

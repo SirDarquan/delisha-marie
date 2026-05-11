@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
-import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
 import { ApiService } from './api.service';
 
 describe('ApiService', () => {
@@ -10,8 +11,7 @@ describe('ApiService', () => {
     TestBed.resetTestingModule();
 
     TestBed.configureTestingModule({
-      imports: [HttpClientTestingModule],
-      providers: [ApiService],
+      providers: [provideHttpClient(), provideHttpClientTesting(), ApiService],
     });
 
     service = TestBed.inject(ApiService);

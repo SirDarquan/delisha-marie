@@ -24,7 +24,7 @@ export default defineConfig({
   ],
 
   webServer: {
-    command: 'npm start',
+    command: 'npm start -p delisha-marie',
     url: 'http://localhost:4200',
     reuseExistingServer: !process.env['CI'],
     stdout: 'ignore',

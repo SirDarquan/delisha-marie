@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
 import { AppConfigService, AppConfig, provideAppConfig } from './config.service';
 import { APP_PLUGINS } from '../../core/plugins/plugin.token';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
@@ -10,8 +11,7 @@ describe('AppConfigService', () => {
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      imports: [provideHttpClientTesting()],
-      providers: [AppConfigService],
+      providers: [provideHttpClient(), provideHttpClientTesting(), AppConfigService],
     });
 
     service = TestBed.inject(AppConfigService);
@@ -46,7 +46,7 @@ describe('AppConfigService', () => {
   });
 
   it('should log and throw a critical error if backend load fails', async () => {
-    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(vi.fn());
 
     const promise = service.init();
 

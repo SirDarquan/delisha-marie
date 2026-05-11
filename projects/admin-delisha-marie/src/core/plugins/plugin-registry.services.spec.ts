@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { PLATFORM_ID } from '@angular/core';
 import { PluginRegistry } from './plugin-registry.services';
 import { APP_PLUGINS, AppPlugin } from './plugin.token';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 
 describe('PluginRegistry', () => {
   let registry: PluginRegistry;
@@ -73,15 +73,15 @@ describe('PluginRegistry', () => {
   });
 
   it('should catch errors without halting sequential loop', async () => {
-    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(vi.fn());
+
     const pluginFailure: AppPlugin = {
       id: 'failing-plugin',
       init: async () => {
         throw new Error('Crash!');
       },
     };
-    
+
     const pluginSuccess: AppPlugin = {
       id: 'success-plugin',
       init: vi.fn(),
@@ -108,14 +108,11 @@ describe('PluginRegistry', () => {
 
   it('should work gracefully when no plugins are provided', async () => {
     TestBed.configureTestingModule({
-      providers: [
-        PluginRegistry,
-        { provide: PLATFORM_ID, useValue: 'browser' },
-      ],
+      providers: [PluginRegistry, { provide: PLATFORM_ID, useValue: 'browser' }],
     });
 
     registry = TestBed.inject(PluginRegistry);
-    
+
     // Should just execute peacefully without errors.
     await expect(registry.initAll()).resolves.toBeUndefined();
   });
