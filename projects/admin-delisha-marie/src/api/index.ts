@@ -9,7 +9,7 @@ const apiRouter = Router();
 apiRouter.use(cookieParser());
 
 // Register routers
-apiRouter.use(authRouter);
-apiRouter.use(recipesRouter);
+apiRouter.use('/api', authRouter);
+apiRouter.use('/api', recipesRouter);
 
 export default apiRouter;

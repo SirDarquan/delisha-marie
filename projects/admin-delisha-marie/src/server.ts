@@ -16,7 +16,7 @@ const angularApp = new AngularNodeAppEngine();
 app.use(express.json());
 
 // API Routes
-app.use('/api', apiRouter);
+app.use(apiRouter);
 
 /**
  * Serve static files from /browser

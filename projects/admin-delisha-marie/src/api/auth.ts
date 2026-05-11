@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { backendService } from './supabase-backend.service';
-import { authMiddleware, AuthRequest } from './middleware/auth.middleware';
+import { authMiddleware, AuthRequest, setAuthCookies } from './middleware/auth.middleware';
 
 const supabase = backendService.supabase;
 
@@ -61,6 +61,7 @@ async function signOut() {
   if (error) throw error;
 }
 
+
 const authRouter = Router();
 
 authRouter.post('/auth/signup', async (req: Request, res: Response) => {
@@ -71,22 +72,7 @@ authRouter.post('/auth/signup', async (req: Request, res: Response) => {
     }
     const data = await signUp(email, password, { username });
     if (data.session) {
-      res.cookie('admin_access_token', data.session.access_token, {
-        httpOnly: true,
-        secure: false, // Ensure local dev compatibility
-        sameSite: 'lax',
-        path: '/',
-        maxAge: data.session.expires_in * 1000,
-      });
-      if (data.session.refresh_token) {
-        res.cookie('admin_refresh_token', data.session.refresh_token, {
-          httpOnly: true,
-          secure: false, // Ensure local dev compatibility
-          sameSite: 'lax',
-          path: '/',
-          maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-        });
-      }
+      setAuthCookies(res, data.session);
     }
     return res.json({
       message: 'User signed up successfully!',
@@ -115,22 +101,7 @@ authRouter.post('/auth/login', async (req: Request, res: Response) => {
 
     const data = await signInWithPassword(email, password);
     if (data.session) {
-      res.cookie('admin_access_token', data.session.access_token, {
-        httpOnly: true,
-        secure: false, // Ensure local dev compatibility
-        sameSite: 'lax',
-        path: '/',
-        maxAge: data.session.expires_in * 1000,
-      });
-      if (data.session.refresh_token) {
-        res.cookie('admin_refresh_token', data.session.refresh_token, {
-          httpOnly: true,
-          secure: false, // Ensure local dev compatibility
-          sameSite: 'lax',
-          path: '/',
-          maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-        });
-      }
+      setAuthCookies(res, data.session);
     }
     return res.json({ session: data.session, user: data.user });
   } catch (err: unknown) {
@@ -148,22 +119,7 @@ authRouter.post('/auth/social-login', async (req: Request, res: Response) => {
 
     const data = await signInWithIdToken(token, provider || 'google');
     if (data.session) {
-      res.cookie('admin_access_token', data.session.access_token, {
-        httpOnly: true,
-        secure: false, // Ensure local dev compatibility
-        sameSite: 'lax',
-        path: '/',
-        maxAge: data.session.expires_in * 1000,
-      });
-      if (data.session.refresh_token) {
-        res.cookie('admin_refresh_token', data.session.refresh_token, {
-          httpOnly: true,
-          secure: false, // Ensure local dev compatibility
-          sameSite: 'lax',
-          path: '/',
-          maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-        });
-      }
+      setAuthCookies(res, data.session);
     }
     return res.json({ success: true, session: data.session, user: data.user });
   } catch (err: unknown) {

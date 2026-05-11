@@ -25,13 +25,7 @@ async function tryVerifyToken(token: string, refreshToken?: string): Promise<unk
   }
 }
 
-interface SupabaseSession {
-  access_token: string;
-  refresh_token?: string;
-  expires_in: number;
-}
-
-function setSessionCookies(res: Response, session: SupabaseSession) {
+export function setAuthCookies(res: Response, session: { access_token: string; refresh_token?: string; expires_in: number }) {
   res.cookie('admin_access_token', session.access_token, {
     httpOnly: true,
     secure: false, // Ensure local dev compatibility
@@ -67,7 +61,7 @@ async function tryRefreshSession(
     return null;
   }
 
-  setSessionCookies(res, data.session);
+  setAuthCookies(res, data.session);
 
   return {
     user: data.user,
