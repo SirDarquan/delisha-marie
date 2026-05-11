@@ -199,10 +199,8 @@ export class AuthService implements OnDestroy {
     });
     this._isAuthenticated.set(false);
     this._currentUser.set(null);
-    if (typeof window !== 'undefined') {
-      this.socialAuth.signOut().catch(() => {
-        /* ignore */
-      });
-    }
+    this.socialAuth.signOut().catch(() => {
+      /* ignore */
+    });
   }
 }
