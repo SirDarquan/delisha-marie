@@ -61,7 +61,6 @@ async function signOut() {
   if (error) throw error;
 }
 
-
 const authRouter = Router();
 
 authRouter.post('/auth/signup', async (req: Request, res: Response) => {

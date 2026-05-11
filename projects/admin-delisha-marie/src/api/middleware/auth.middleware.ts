@@ -25,7 +25,10 @@ async function tryVerifyToken(token: string, refreshToken?: string): Promise<unk
   }
 }
 
-export function setAuthCookies(res: Response, session: { access_token: string; refresh_token?: string; expires_in: number }) {
+export function setAuthCookies(
+  res: Response,
+  session: { access_token: string; refresh_token?: string; expires_in: number },
+) {
   res.cookie('admin_access_token', session.access_token, {
     httpOnly: true,
     secure: false, // Ensure local dev compatibility
