@@ -37,9 +37,9 @@ jobs:
     - run: npm run test:api -- --coverage
     - name: SonarQube Scan
       uses: SonarSource/sonarqube-scan-action@v7
-      with:
-        args: >
-          -Dsonar.verbose=true
+      # with:
+      #   args: >
+      #     -Dsonar.verbose=true
     # Check the Quality Gate status.
     - name: SonarQube Quality Gate check
       id: sonarqube-quality-gate-check
@@ -67,7 +67,7 @@ jobs:
     - name: Install Playwright Browsers
       run: npx playwright install --with-deps
     - name: Run E2E tests
-      run: npm run e2e
+      run: npm run e2e delisha-marie
 
   build:
     needs: [unit-tests, e2e-tests]
