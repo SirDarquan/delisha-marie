@@ -182,9 +182,9 @@ interface SignUpModel {
               <asl-google-signin-button
                 type="standard"
                 size="large"
-                [width]="400"
                 shape="circle"
-                data-use_fedcm_for_prompt="true"></asl-google-signin-button>
+                locale="en"
+                logo_alignment="center"></asl-google-signin-button>
             </div>
           </div>
 
@@ -202,16 +202,6 @@ interface SignUpModel {
       </mat-card>
     </div>
   `,
-  styles: [
-    `
-      asl-google-signin-button .nsm7Bb-HzV7m-LgbsSe {
-        background-color: var(--mat-sys-background) !important;
-        border: 1px solid var(--mat-sys-on-background) !important;
-        color: var(--mat-sys-on-surface) !important;
-        border-radius: 50%;
-      }
-    `,
-  ],
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
