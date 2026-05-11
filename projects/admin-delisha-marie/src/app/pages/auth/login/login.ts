@@ -69,9 +69,21 @@ interface LoginModel {
             <input
               matInput
               id="login-password"
-              type="password"
+              [type]="hidePassword() ? 'password' : 'text'"
               [formField]="loginForm.password"
               placeholder="Enter your password" />
+            <button
+              mat-icon-button
+              matSuffix
+              type="button"
+              (click)="hidePassword.set(!hidePassword())"
+              [attr.aria-label]="hidePassword() ? 'Show password' : 'Hide password'"
+              [attr.aria-pressed]="!hidePassword()"
+              style="background: transparent; border: none; color: rgb(148, 163, 184); cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 4px;">
+              <span class="material-icons">{{
+                hidePassword() ? 'visibility_off' : 'visibility'
+              }}</span>
+            </button>
           </mat-form-field>
 
           <div class="flex flex-col gap-3 mt-2">
