@@ -7,6 +7,7 @@ import {
 import express from 'express';
 import { join } from 'node:path';
 import apiRouter from './api';
+import configRouter from './api/config';
 
 const browserDistFolder = join(import.meta.dirname, '../browser');
 
@@ -17,6 +18,7 @@ app.use(express.json());
 
 // API Routes
 app.use(apiRouter);
+app.use(configRouter);
 
 /**
  * Serve static files from /browser
