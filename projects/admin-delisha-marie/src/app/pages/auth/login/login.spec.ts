@@ -137,7 +137,7 @@ describe('LoginComponent', () => {
     await submit(component['loginForm']);
 
     expect(loginParams).toEqual(['johndoe', 'Password123!']);
-    expect(router.navigate).toHaveBeenCalledWith(['/recipes']);
+    expect(router.navigate).toHaveBeenCalledWith(['/']);
   });
 
   it('should fail login and display error message on invalid credentials', async () => {
@@ -206,7 +206,7 @@ describe('LoginComponent', () => {
     );
 
     vi.advanceTimersByTime(1000);
-    expect(router.navigate).toHaveBeenCalledWith(['/recipes']);
+    expect(router.navigate).toHaveBeenCalledWith(['/']);
     vi.useRealTimers();
   });
 
@@ -238,7 +238,7 @@ describe('LoginComponent', () => {
     );
 
     vi.advanceTimersByTime(1000);
-    expect(router.navigate).toHaveBeenCalledWith(['/recipes']);
+    expect(router.navigate).toHaveBeenCalledWith(['/']);
     vi.useRealTimers();
   });
 
