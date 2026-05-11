@@ -181,7 +181,7 @@ export class LoginComponent implements OnInit, OnDestroy {
             });
             return;
           }
-          this.router.navigate(['/recipes']);
+          this.router.navigate(['/']);
         },
       },
     },
@@ -191,7 +191,7 @@ export class LoginComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     if (this.auth.isAuthenticated()) {
-      this.router.navigate(['/recipes']);
+      this.router.navigate(['/']);
       return;
     }
 
@@ -212,7 +212,7 @@ export class LoginComponent implements OnInit, OnDestroy {
         duration: 10000,
       });
       setTimeout(() => {
-        this.router.navigate(['/recipes']);
+        this.router.navigate(['/']);
       }, 1000);
     }
   }
@@ -256,7 +256,7 @@ export class LoginComponent implements OnInit, OnDestroy {
           duration: 10000,
         });
         setTimeout(() => {
-          this.router.navigate(['/recipes']);
+          this.router.navigate(['/']);
         }, 1000);
       }
     } catch {
