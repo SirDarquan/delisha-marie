@@ -17,7 +17,7 @@ import { MatButtonModule } from '@angular/material/button';
           <p class="text-slate-400 text-sm font-medium mt-1">
             Welcome back,
             @if (user()) {
-              {{ user().user_metadata.username }}
+              {{ user()?.user_metadata?.username }}
             } @else {
               Admin
             }
@@ -33,7 +33,9 @@ import { MatButtonModule } from '@angular/material/button';
         <div
           class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl transition hover:-translate-y-1 duration-300">
           <div class="flex justify-between items-center mb-4">
-            <span class="text-slate-400 text-sm font-bold uppercase tracking-wider">Total Recipes</span>
+            <span class="text-slate-400 text-sm font-bold uppercase tracking-wider"
+              >Total Recipes</span
+            >
             <span class="material-icons text-purple-400">restaurant</span>
           </div>
           <p class="text-4xl font-extrabold text-white">{{ totalRecipes() }}</p>
@@ -68,7 +70,9 @@ import { MatButtonModule } from '@angular/material/button';
           class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl transition hover:-translate-y-1 duration-300 flex flex-col justify-between">
           <div>
             <div class="flex justify-between items-center mb-4">
-              <span class="text-slate-400 text-sm font-bold uppercase tracking-wider">Creator Hub</span>
+              <span class="text-slate-400 text-sm font-bold uppercase tracking-wider"
+                >Creator Hub</span
+              >
               <span class="material-icons text-emerald-400">add_circle_outline</span>
             </div>
             <p class="text-slate-300 text-sm leading-relaxed">
@@ -87,7 +91,7 @@ import { MatButtonModule } from '@angular/material/button';
 
       <!-- Recent Recipes Section -->
     </div>
-`,
+  `,
 })
 export class HomeComponent {
   private readonly router = inject(Router);
