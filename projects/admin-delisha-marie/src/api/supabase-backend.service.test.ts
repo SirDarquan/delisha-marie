@@ -1,7 +1,17 @@
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 
 // 1. Explicitly declare mock functions outside to track calls
-const { mockGetUser, mockFrom, mockSelect, mockOrder, mockInsert, mockUpdate, mockDelete, mockEq, mockSingle } = vi.hoisted(() => ({
+const {
+  mockGetUser,
+  mockFrom,
+  mockSelect,
+  mockOrder,
+  mockInsert,
+  mockUpdate,
+  mockDelete,
+  mockEq,
+  mockSingle,
+} = vi.hoisted(() => ({
   mockGetUser: vi.fn(),
   mockFrom: vi.fn(),
   mockSelect: vi.fn(),
@@ -46,7 +56,7 @@ describe('BackendSupabaseService', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    
+
     // Reset default chain return values before each test run
     mockFrom.mockReturnValue(chain);
     mockSelect.mockReturnValue(chain);
@@ -56,7 +66,7 @@ describe('BackendSupabaseService', () => {
     mockDelete.mockReturnValue(chain);
     mockEq.mockReturnValue(chain);
     mockSingle.mockReturnValue(chain);
-    
+
     // Ensure createClient implementation persists
     createClient.mockImplementation(() => ({
       auth: { getUser: mockGetUser },

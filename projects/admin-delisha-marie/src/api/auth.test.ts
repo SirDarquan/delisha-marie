@@ -168,9 +168,7 @@ describe('Auth Router API', () => {
         error: null,
       } as any);
 
-      await request(app)
-        .post('/auth/login')
-        .send({ username: 'ghost', password: 'pw' });
+      await request(app).post('/auth/login').send({ username: 'ghost', password: 'pw' });
 
       expect(backendService.supabase.auth.signInWithPassword).toHaveBeenCalledWith({
         email: 'ghost@example.com',

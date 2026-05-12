@@ -1,7 +1,6 @@
 import fs from 'node:fs';
 import { findSourceMap } from 'node:module';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { describe, it, expect, beforeEach, vi, afterEach, type MockInstance } from 'vitest';
 import { loadCascadingEnvs, getSourceDir } from './env-utils';
 
@@ -39,9 +38,9 @@ describe('Environment Utilities Service', () => {
       const target = path.resolve('C:\\root\\sub1\\sub2');
       existsSpy.mockReturnValue(true);
       readSpy.mockReturnValue('KEY1=val1');
-      
+
       loadCascadingEnvs(start, target, '.testenv');
-      
+
       expect(readSpy).toHaveBeenCalledTimes(3);
       expect(process.env['KEY1']).toBe('val1');
     });
@@ -51,7 +50,7 @@ describe('Environment Utilities Service', () => {
       const target = path.resolve('D:\\other');
       existsSpy.mockReturnValue(true);
       readSpy.mockReturnValue('UNREL=yes');
-      
+
       loadCascadingEnvs(start, target, '.testenv');
       expect(readSpy).toHaveBeenCalledTimes(2);
     });
@@ -66,7 +65,7 @@ describe('Environment Utilities Service', () => {
       process.env['EXISTING_VAR'] = 'keep_me';
       existsSpy.mockReturnValue(true);
       readSpy.mockReturnValue('EXISTING_VAR=overwrite_me');
-      
+
       loadCascadingEnvs('/a', '/a');
       expect(process.env['EXISTING_VAR']).toBe('keep_me');
     });
@@ -74,8 +73,10 @@ describe('Environment Utilities Service', () => {
     it('should log an error to console if file parsing crashes', () => {
       const logSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
       existsSpy.mockReturnValue(true);
-      readSpy.mockImplementation(() => { throw new Error('Corrupt disk'); });
-      
+      readSpy.mockImplementation(() => {
+        throw new Error('Corrupt disk');
+      });
+
       loadCascadingEnvs('/a', '/a');
       expect(logSpy).toHaveBeenCalled();
       logSpy.mockRestore();
@@ -86,10 +87,12 @@ describe('Environment Utilities Service', () => {
     it('should execute internal SourceMap extraction and find match', () => {
       const mockUri = 'file:///C:/project/src/api/index.ts';
       const mockMap: MockSourceMap = { payload: { sources: [mockUri] } };
-      vi.mocked(findSourceMap).mockReturnValue(mockMap as unknown as ReturnType<typeof findSourceMap>);
-      
+      vi.mocked(findSourceMap).mockReturnValue(
+        mockMap as unknown as ReturnType<typeof findSourceMap>,
+      );
+
       existsSpy.mockImplementation((p) => String(p).includes('index.ts'));
-      
+
       const dir = getSourceDir('/api');
       expect(dir).toBeTruthy();
       expect(findSourceMap).toHaveBeenCalled();
@@ -98,10 +101,12 @@ describe('Environment Utilities Service', () => {
     it('should handle non-file protocol matching path string', () => {
       const mockUri = 'C:\\project\\src\\api\\index.ts';
       const mockMap: MockSourceMap = { payload: { sources: [mockUri] } };
-      vi.mocked(findSourceMap).mockReturnValue(mockMap as unknown as ReturnType<typeof findSourceMap>);
-      
+      vi.mocked(findSourceMap).mockReturnValue(
+        mockMap as unknown as ReturnType<typeof findSourceMap>,
+      );
+
       existsSpy.mockReturnValue(true);
-      
+
       const dir = getSourceDir('/api');
       expect(dir).toContain('api');
     });
@@ -114,7 +119,9 @@ describe('Environment Utilities Service', () => {
 
     it('should return current directory if sources exists but target not found', () => {
       const mockMap: MockSourceMap = { payload: { sources: ['/other/path/test.js'] } };
-      vi.mocked(findSourceMap).mockReturnValue(mockMap as unknown as ReturnType<typeof findSourceMap>);
+      vi.mocked(findSourceMap).mockReturnValue(
+        mockMap as unknown as ReturnType<typeof findSourceMap>,
+      );
       const dir = getSourceDir('/MISSING');
       expect(dir).toBeTruthy();
     });
