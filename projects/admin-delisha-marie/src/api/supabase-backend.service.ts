@@ -1,13 +1,12 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env['SUPABASE_URL'] || '';
-const supabaseKey = process.env['SUPABASE_KEY'] || '';
-
 export class BackendSupabaseService {
   public supabase: SupabaseClient;
+  private readonly supabaseUrl = process.env['SUPABASE_URL'] || '';
+  private readonly supabaseKey = process.env['SUPABASE_KEY'] || '';
 
   constructor() {
-    this.supabase = createClient(supabaseUrl, supabaseKey, {
+    this.supabase = createClient(this.supabaseUrl, this.supabaseKey, {
       auth: {
         autoRefreshToken: false,
         persistSession: false,
@@ -24,7 +23,7 @@ export class BackendSupabaseService {
 
   private getClient(token?: string): SupabaseClient {
     if (token) {
-      return createClient(supabaseUrl, supabaseKey, {
+      return createClient(this.supabaseUrl, this.supabaseKey, {
         global: {
           headers: {
             Authorization: `Bearer ${token}`,
