@@ -44,13 +44,10 @@ describe('SignUpComponent', () => {
         provideRouter([]),
         { provide: AuthService, useValue: fakeAuthService },
         { provide: SocialAuthService, useValue: fakeSocialAuthService },
+        { provide: MatSnackBar, useValue: fakeSnackBar },
       ],
     })
-      .overrideComponent(SignUpComponent, {
-        set: {
-          providers: [{ provide: MatSnackBar, useValue: fakeSnackBar }],
-        },
-      })
+      .overrideProvider(MatSnackBar, { useValue: fakeSnackBar })
       .compileComponents();
 
     router = TestBed.inject(Router);
@@ -97,8 +94,7 @@ describe('SignUpComponent', () => {
       password: 'ValidPassword123!',
     });
 
-    vi.advanceTimersByTime(1200);
-    expect(router.navigate).toHaveBeenCalledWith(['/recipes']);
+    expect(router.navigate).toHaveBeenCalledWith(['/']);
   });
 
   it('should not allow availability checking if username is short', async () => {
@@ -158,16 +154,14 @@ describe('SignUpComponent', () => {
   });
 
   it('should handle social auth state changes', () => {
-    vi.useFakeTimers();
     const mockUser = { name: 'Test User', email: 'test@example.com' } as SocialUser;
     authStateSubject.next(mockUser);
     expect(fakeSnackBar.open).toHaveBeenCalledWith(
-      'Successfully signed up/in as Test User! Redirecting...',
+      'Successfully authenticated as Test User! Redirecting...',
       'Close',
       { duration: 10000 },
     );
 
-    vi.advanceTimersByTime(1000);
-    expect(router.navigate).toHaveBeenCalledWith(['/recipes']);
+    expect(router.navigate).toHaveBeenCalledWith(['/']);
   });
 });

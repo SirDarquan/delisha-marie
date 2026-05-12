@@ -7,7 +7,7 @@ import { isPlatformBrowser } from '@angular/common';
 })
 export class PluginRegistry {
   private readonly plugins = inject(APP_PLUGINS, { optional: true }) ?? [];
-  private platformId = inject(PLATFORM_ID);
+  private readonly platformId = inject(PLATFORM_ID);
 
   async initAll(): Promise<void> {
     if (!isPlatformBrowser(this.platformId)) return; // skip SSR

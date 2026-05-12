@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { PLATFORM_ID } from '@angular/core';
 import { AuthService } from './auth.service';
 import { ApiService } from './api.service';
 import { SocialAuthService, SocialUser } from '@abacritt/angularx-social-login';
@@ -142,5 +143,170 @@ describe('AuthService', () => {
       email: 'sirda@example.com',
     });
     expect(user).toBe('sirda');
+  });
+
+  describe('Auth Error Handling and Core Methods', () => {
+    it('should return false when isEmailAvailable backend throws', async () => {
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+      apiMock.get.mockRejectedValue(new Error('Network err'));
+      const res = await service.isEmailAvailable('foo@bar.com');
+      expect(res).toBe(false);
+      expect(consoleSpy).toHaveBeenCalled();
+      consoleSpy.mockRestore();
+    });
+
+    it('should return false when isEmailAvailable is passed empty value', async () => {
+      const res = await service.isEmailAvailable('  ');
+      expect(res).toBe(false);
+    });
+
+    it('should return false when signUp backend throws', async () => {
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+      apiMock.post.mockRejectedValue(new Error('Signup err'));
+      const res = await service.signUp({ username: 'x', email: 'e@e.com' });
+      expect(res).toBe(false);
+      expect(consoleSpy).toHaveBeenCalled();
+      consoleSpy.mockRestore();
+    });
+
+    it('should login with social user successfully', async () => {
+      const user = { idToken: 'tok123', provider: 'GOOGLE', name: 'Social User' } as SocialUser;
+      apiMock.post.mockResolvedValue({
+        success: true,
+        session: { access_token: 'sestok' },
+        user: { username: 'social', email: 's@s.com' },
+      });
+      const res = await service.loginWithSocial(user);
+      expect(res).toBe(true);
+      expect(apiMock.post).toHaveBeenCalledWith('/auth/social-login', {
+        token: 'tok123',
+        provider: 'google',
+      });
+      expect(service.isAuthenticated()).toBe(true);
+    });
+
+    it('should return false if social login explicitly reports failure', async () => {
+      apiMock.post.mockResolvedValue({ success: false });
+      const res = await service.loginWithSocial({ idToken: 'x' } as SocialUser);
+      expect(res).toBe(false);
+    });
+
+    it('should handle social login exception thrown by backend', async () => {
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+      apiMock.post.mockRejectedValue(new Error('Failure'));
+      const res = await service.loginWithSocial({ idToken: 'x' } as SocialUser);
+      expect(res).toBe(false);
+      expect(consoleSpy).toHaveBeenCalled();
+      consoleSpy.mockRestore();
+    });
+
+    it('should return null if retrievePassword fails', async () => {
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+      apiMock.post.mockRejectedValue(new Error('Pass err'));
+      const res = await service.retrievePassword('x');
+      expect(res).toBeNull();
+      expect(consoleSpy).toHaveBeenCalled();
+      consoleSpy.mockRestore();
+    });
+
+    it('should return null if retrieveUsername fails', async () => {
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+      apiMock.post.mockRejectedValue(new Error('User err'));
+      const res = await service.retrieveUsername('x');
+      expect(res).toBeNull();
+      expect(consoleSpy).toHaveBeenCalled();
+      consoleSpy.mockRestore();
+    });
+
+    it('should resolve immediate session if platform is NOT browser', async () => {
+      // Redefine platform ID in a fresh setup if needed, or just cast mock it.
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({
+        providers: [
+          AuthService,
+          { provide: ApiService, useValue: apiMock },
+          { provide: SocialAuthService, useValue: fakeSocialAuthService },
+          { provide: 'PLATFORM_ID', useValue: 'server' },
+        ],
+      });
+      const svc = TestBed.inject(AuthService);
+
+      const promise = svc.waitForSessionInit();
+      expect(promise).toBeTruthy();
+      await expect(promise).resolves.toBeUndefined();
+    });
+
+    it('should perform checkSession and set session if api returns valid user', async () => {
+      apiMock.get.mockResolvedValue({ user: { username: 'found_user' } });
+
+      await service.checkSession();
+
+      expect(apiMock.get).toHaveBeenCalledWith(expect.stringContaining('/auth/me'));
+      expect(service.isAuthenticated()).toBe(true);
+      expect(service.currentUser()?.username).toBe('found_user');
+    });
+
+    it('should call checkSession once on waitForSessionInit and return the same promise on subsequent calls', async () => {
+      const spy = vi.spyOn(service, 'checkSession').mockResolvedValue();
+
+      const first = service.waitForSessionInit();
+      const second = service.waitForSessionInit();
+
+      expect(first).toBe(second);
+      expect(spy).toHaveBeenCalledTimes(1);
+    });
+
+    it('should trigger logout if checkSession fails or user is empty', async () => {
+      const logoutSpy = vi.spyOn(service, 'logout');
+
+      apiMock.get.mockResolvedValue({}); // no user
+      await service.checkSession();
+      expect(logoutSpy).toHaveBeenCalled();
+
+      logoutSpy.mockClear();
+      apiMock.get.mockRejectedValue(new Error('Backend down'));
+      await service.checkSession();
+      expect(logoutSpy).toHaveBeenCalled();
+    });
+
+    it('should avoid network calls on logout if not in browser mode', () => {
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({
+        providers: [
+          AuthService,
+          { provide: ApiService, useValue: apiMock },
+          { provide: SocialAuthService, useValue: fakeSocialAuthService },
+          { provide: PLATFORM_ID, useValue: 'server' },
+        ],
+      });
+      const svc = TestBed.inject(AuthService);
+      apiMock.post.mockClear();
+
+      svc.logout();
+      expect(apiMock.post).not.toHaveBeenCalled();
+    });
+
+    it('should login via subscription when socialAuth emits a user', async () => {
+      const loginSpy = vi.spyOn(service, 'loginWithSocial').mockResolvedValue(true);
+      const mockSocial = { idToken: 'xyz' } as SocialUser;
+
+      authStateSubject.next(mockSocial);
+
+      // Wait for next cycle because the subscription has `async` callback
+      await Promise.resolve();
+
+      expect(loginSpy).toHaveBeenCalledWith(mockSocial);
+    });
+
+    it('should fail login if api call itself returns exception in login method', async () => {
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+      apiMock.post.mockRejectedValue(new Error('Crit error'));
+
+      const res = await service.login('user', 'p');
+
+      expect(res).toBe(false);
+      expect(consoleSpy).toHaveBeenCalled();
+      consoleSpy.mockRestore();
+    });
   });
 });

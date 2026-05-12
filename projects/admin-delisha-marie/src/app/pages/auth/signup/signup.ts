@@ -5,8 +5,6 @@ import {
   signal,
   computed,
   ViewEncapsulation,
-  OnInit,
-  OnDestroy,
 } from '@angular/core';
 import { toSignal, toObservable } from '@angular/core/rxjs-interop';
 import {
@@ -25,13 +23,9 @@ import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatSnackBarModule, MatSnackBar } from '@angular/material/snack-bar';
 import { AuthService } from '../../../services/auth.service';
-import { BRAND_TITLE_TOKEN } from '../login/login';
-import {
-  SocialAuthService,
-  GoogleSigninButtonModule,
-  SocialUser,
-} from '@abacritt/angularx-social-login';
-import { Subscription, debounceTime, switchMap } from 'rxjs';
+import { GoogleSigninButtonModule } from '@abacritt/angularx-social-login';
+import { injectAuthCommon } from '../auth-shared.utils';
+import { debounceTime, switchMap } from 'rxjs';
 
 interface SignUpModel {
   username: string;
@@ -59,7 +53,7 @@ interface SignUpModel {
         <div class="text-center mb-6">
           <h1
             class="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-purple-400 to-pink-500 bg-clip-text text-transparent">
-            {{ brandTitle }}
+            {{ common.brandTitle }}
           </h1>
           <p class="text-slate-400 mt-1 font-medium text-sm">Create New Account</p>
         </div>
@@ -103,7 +97,7 @@ interface SignUpModel {
             <input
               matInput
               id="reg-password"
-              [type]="hidePassword() ? 'password' : 'text'"
+              [type]="common.hidePassword() ? 'password' : 'text'"
               [formField]="signUpForm.password"
               placeholder="Secure password"
               autocomplete="new-password" />
@@ -111,12 +105,12 @@ interface SignUpModel {
               mat-icon-button
               matSuffix
               type="button"
-              (click)="hidePassword.set(!hidePassword())"
-              [attr.aria-label]="hidePassword() ? 'Show password' : 'Hide password'"
-              [attr.aria-pressed]="!hidePassword()"
+              (click)="common.togglePassword()"
+              [attr.aria-label]="common.hidePassword() ? 'Show password' : 'Hide password'"
+              [attr.aria-pressed]="!common.hidePassword()"
               style="background: transparent; border: none; color: rgb(148, 163, 184); cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 4px;">
               <span class="material-icons">{{
-                hidePassword() ? 'visibility_off' : 'visibility'
+                common.hidePassword() ? 'visibility_off' : 'visibility'
               }}</span>
             </button>
             @if (signUpForm.password().touched() && signUpForm.password().invalid()) {
@@ -183,7 +177,6 @@ interface SignUpModel {
                 type="standard"
                 size="large"
                 shape="circle"
-                locale="en"
                 logo_alignment="center"></asl-google-signin-button>
             </div>
           </div>
@@ -205,12 +198,12 @@ interface SignUpModel {
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class SignUpComponent implements OnInit, OnDestroy {
+export class SignUpComponent {
   private readonly router = inject(Router);
   private readonly auth = inject(AuthService);
-  private readonly socialAuth = inject(SocialAuthService);
   private readonly snackBar = inject(MatSnackBar);
-  protected readonly brandTitle = inject(BRAND_TITLE_TOKEN, { optional: true }) || 'Admin Portal';
+
+  protected readonly common = injectAuthCommon({ redirectUrl: '/' });
 
   protected readonly signUpModel = signal<SignUpModel>({ username: '', email: '', password: '' });
   protected readonly signUpForm = form(
@@ -244,7 +237,7 @@ export class SignUpComponent implements OnInit, OnDestroy {
                 duration: 5000,
               },
             );
-            this.router.navigate(['/recipes']);
+            this.router.navigate(['/']);
           } else {
             this.snackBar.open(
               'Registration failed. Please check your data and try again.',
@@ -259,7 +252,6 @@ export class SignUpComponent implements OnInit, OnDestroy {
     },
   );
 
-  private authSubscription?: Subscription;
   protected readonly usernameChecking = toObservable(this.signUpForm.username().value);
   protected readonly usernameAvailable = toSignal(
     this.usernameChecking.pipe(
@@ -274,7 +266,6 @@ export class SignUpComponent implements OnInit, OnDestroy {
     { initialValue: null as boolean | null },
   );
 
-  protected readonly hidePassword = signal<boolean>(true);
   protected readonly emailAvailable = signal<boolean | null>(null);
 
   protected isMinLength = computed(() => (this.signUpForm.password().value() || '').length >= 8);
@@ -282,27 +273,4 @@ export class SignUpComponent implements OnInit, OnDestroy {
   protected hasLowercase = computed(() => /[a-z]/.test(this.signUpForm.password().value() || ''));
   protected hasNumber = computed(() => /\d/.test(this.signUpForm.password().value() || ''));
   protected hasSpecial = computed(() => /[@$!%*?&]/.test(this.signUpForm.password().value() || ''));
-
-  ngOnInit(): void {
-    this.authSubscription = this.socialAuth.authState.subscribe((user: SocialUser) => {
-      if (user) {
-        this.handleSocialUser(user);
-      }
-    });
-  }
-
-  ngOnDestroy(): void {
-    this.authSubscription?.unsubscribe();
-  }
-
-  private handleSocialUser(user: SocialUser): void {
-    if (user) {
-      this.snackBar.open(`Successfully signed up/in as ${user.name}! Redirecting...`, 'Close', {
-        duration: 10000,
-      });
-      setTimeout(() => {
-        this.router.navigate(['/recipes']);
-      }, 1000);
-    }
-  }
 }

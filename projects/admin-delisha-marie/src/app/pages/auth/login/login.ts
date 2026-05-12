@@ -2,11 +2,9 @@ import {
   Component,
   ChangeDetectionStrategy,
   inject,
-  signal,
   ViewEncapsulation,
-  InjectionToken,
   OnInit,
-  OnDestroy,
+  signal,
 } from '@angular/core';
 import { form, FormRoot, FormField, required } from '@angular/forms/signals';
 import { Router, RouterLink } from '@angular/router';
@@ -16,14 +14,9 @@ import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatSnackBarModule, MatSnackBar } from '@angular/material/snack-bar';
 import { AuthService } from '../../../services/auth.service';
-import {
-  SocialAuthService,
-  GoogleSigninButtonModule,
-  SocialUser,
-} from '@abacritt/angularx-social-login';
-import { Subscription } from 'rxjs';
+import { GoogleSigninButtonModule } from '@abacritt/angularx-social-login';
+import { injectAuthCommon } from '../auth-shared.utils';
 
-export const BRAND_TITLE_TOKEN = new InjectionToken<string>('brandTitle');
 interface LoginModel {
   username: string;
   password: string;
@@ -49,7 +42,7 @@ interface LoginModel {
         <div class="text-center mb-6">
           <h1
             class="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-purple-400 to-pink-500 bg-clip-text text-transparent">
-            {{ brandTitle }}
+            {{ common.brandTitle }}
           </h1>
         </div>
 
@@ -69,19 +62,19 @@ interface LoginModel {
             <input
               matInput
               id="login-password"
-              [type]="hidePassword() ? 'password' : 'text'"
+              [type]="common.hidePassword() ? 'password' : 'text'"
               [formField]="loginForm.password"
               placeholder="Enter your password" />
             <button
               mat-icon-button
               matSuffix
               type="button"
-              (click)="hidePassword.set(!hidePassword())"
-              [attr.aria-label]="hidePassword() ? 'Show password' : 'Hide password'"
-              [attr.aria-pressed]="!hidePassword()"
+              (click)="common.togglePassword()"
+              [attr.aria-label]="common.hidePassword() ? 'Show password' : 'Hide password'"
+              [attr.aria-pressed]="!common.hidePassword()"
               style="background: transparent; border: none; color: rgb(148, 163, 184); cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 4px;">
               <span class="material-icons">{{
-                hidePassword() ? 'visibility_off' : 'visibility'
+                common.hidePassword() ? 'visibility_off' : 'visibility'
               }}</span>
             </button>
           </mat-form-field>
@@ -154,14 +147,13 @@ interface LoginModel {
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class LoginComponent implements OnInit, OnDestroy {
+export class LoginComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly auth = inject(AuthService);
-  private readonly socialAuth = inject(SocialAuthService);
   private readonly snackBar = inject(MatSnackBar);
-  protected readonly brandTitle = inject(BRAND_TITLE_TOKEN, { optional: true }) || 'Admin Portal';
 
-  protected readonly hidePassword = signal<boolean>(true);
+  protected readonly common = injectAuthCommon({ redirectUrl: '/' });
+
   protected readonly loginModel = signal<LoginModel>({ username: '', password: '' });
   protected readonly loginForm = form(
     this.loginModel,
@@ -187,33 +179,9 @@ export class LoginComponent implements OnInit, OnDestroy {
     },
   );
 
-  private authSubscription?: Subscription;
-
   ngOnInit(): void {
     if (this.auth.isAuthenticated()) {
       this.router.navigate(['/']);
-      return;
-    }
-
-    this.authSubscription = this.socialAuth.authState.subscribe((user: SocialUser) => {
-      if (user) {
-        this.handleSocialUser(user);
-      }
-    });
-  }
-
-  ngOnDestroy(): void {
-    this.authSubscription?.unsubscribe();
-  }
-
-  private handleSocialUser(user: SocialUser): void {
-    if (user) {
-      this.snackBar.open(`Successfully logged in as ${user.name}! Redirecting...`, 'Close', {
-        duration: 10000,
-      });
-      setTimeout(() => {
-        this.router.navigate(['/']);
-      }, 1000);
     }
   }
 

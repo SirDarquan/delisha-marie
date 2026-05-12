@@ -1,7 +1,8 @@
 import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import { vi, Mock } from 'vitest';
-import { LoginComponent, BRAND_TITLE_TOKEN } from './login';
+import { LoginComponent } from './login';
+import { BRAND_TITLE_TOKEN } from '../auth-shared.utils';
 import { AuthService } from '../../../services/auth.service';
 import { SocialAuthService, SocialUser } from '@abacritt/angularx-social-login';
 import { submit } from '@angular/forms/signals';
@@ -96,13 +97,10 @@ describe('LoginComponent', () => {
         { provide: AuthService, useValue: fakeAuthService },
         { provide: SocialAuthService, useValue: fakeSocialAuthService },
         { provide: BRAND_TITLE_TOKEN, useValue: 'Test Brand' },
+        { provide: MatSnackBar, useValue: fakeSnackBar },
       ],
     })
-      .overrideComponent(LoginComponent, {
-        set: {
-          providers: [{ provide: MatSnackBar, useValue: fakeSnackBar }],
-        },
-      })
+      .overrideProvider(MatSnackBar, { useValue: fakeSnackBar })
       .compileComponents();
 
     router = TestBed.inject(Router);
@@ -122,7 +120,7 @@ describe('LoginComponent', () => {
   it('should create the login component', () => {
     expect(component).toBeTruthy();
     // Using bracket notation to access protected member for testing
-    expect(component['brandTitle']).toBe('Test Brand');
+    expect(component['common'].brandTitle).toBe('Test Brand');
   });
 
   it('should start with login form invalid when empty', () => {
@@ -196,18 +194,14 @@ describe('LoginComponent', () => {
   });
 
   it('should handle social auth state changes', () => {
-    vi.useFakeTimers();
     const mockUser = { name: 'Test User', email: 'test@example.com' } as SocialUser;
     authStateSubject.next(mockUser);
     expect(snackBar.open).toHaveBeenCalledWith(
-      'Successfully logged in as Test User! Redirecting...',
+      'Successfully authenticated as Test User! Redirecting...',
       'Close',
       { duration: 10000 },
     );
-
-    vi.advanceTimersByTime(1000);
     expect(router.navigate).toHaveBeenCalledWith(['/']);
-    vi.useRealTimers();
   });
 
   it('should handle social auth state changes with null user', () => {
@@ -278,13 +272,29 @@ describe('LoginComponent', () => {
     );
   });
 
-  it('should handle cleanup on destroy', () => {
-    const unsubscribeSpy = vi.fn();
-    component['authSubscription'] = {
-      unsubscribe: unsubscribeSpy,
-    } as unknown as import('rxjs').Subscription;
+  it('should immediately navigate if already authenticated upon init', async () => {
+    fakeIsAuthenticated.set(true);
 
-    component.ngOnDestroy();
-    expect(unsubscribeSpy).toHaveBeenCalled();
+    TestBed.resetTestingModule();
+    await TestBed.configureTestingModule({
+      imports: [LoginComponent],
+      providers: [
+        provideRouter([]),
+        { provide: AuthService, useValue: fakeAuthService },
+        { provide: SocialAuthService, useValue: fakeSocialAuthService },
+        { provide: BRAND_TITLE_TOKEN, useValue: 'Test Brand' },
+        { provide: MatSnackBar, useValue: fakeSnackBar },
+      ],
+    })
+      .overrideProvider(MatSnackBar, { useValue: fakeSnackBar })
+      .compileComponents();
+
+    const r = TestBed.inject(Router);
+    vi.spyOn(r, 'navigate');
+
+    const fix = TestBed.createComponent(LoginComponent);
+    fix.detectChanges();
+
+    expect(r.navigate).toHaveBeenCalledWith(['/']);
   });
 });
