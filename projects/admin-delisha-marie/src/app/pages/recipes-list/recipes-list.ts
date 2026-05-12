@@ -175,7 +175,7 @@ export class RecipesListComponent {
     return all.filter(
       (r) =>
         r.title.toLowerCase().includes(term) ||
-        (r.category && r.category.toLowerCase().includes(term)),
+        (r.category?.toLowerCase().includes(term)),
     );
   });
 

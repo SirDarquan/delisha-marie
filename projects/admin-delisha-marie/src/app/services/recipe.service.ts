@@ -33,7 +33,7 @@ export class RecipeService {
     this.api
       .get<Recipe[]>('/recipes.json')
       .then((data) => {
-        if (data && data.length) {
+        if (data.length) {
           this._recipes.set(data);
           this.saveToStorage(data);
         }
