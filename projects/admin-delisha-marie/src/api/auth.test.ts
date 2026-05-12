@@ -161,6 +161,23 @@ describe('Auth Router API', () => {
       });
     });
 
+    it('should fall back to computed email if username lookup yields null', async () => {
+      vi.mocked(backendService.supabase.rpc).mockResolvedValue({ data: null, error: null } as any);
+      vi.mocked(backendService.supabase.auth.signInWithPassword).mockResolvedValue({
+        data: { user: { id: '1' } as any, session: { access_token: 'a' } as any },
+        error: null,
+      } as any);
+
+      await request(app)
+        .post('/auth/login')
+        .send({ username: 'ghost', password: 'pw' });
+
+      expect(backendService.supabase.auth.signInWithPassword).toHaveBeenCalledWith({
+        email: 'ghost@example.com',
+        password: 'pw',
+      });
+    });
+
     it('should return 401 if signInWithPassword fails', async () => {
       vi.mocked(backendService.supabase.auth.signInWithPassword).mockRejectedValue(
         new Error('Invalid login'),
@@ -325,6 +342,15 @@ describe('Auth Router API', () => {
       expect(res.status).toBe(400);
       expect(res.body.error).toBe('Username query parameter is required');
     });
+
+    it('should return 400 if internal call throws', async () => {
+      vi.mocked(backendService.supabase.rpc).mockRejectedValue(new Error('RPC Failure'));
+
+      const res = await request(app).get('/auth/check-username').query({ username: 'baduser' });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe('RPC Failure');
+    });
   });
 
   describe('GET /auth/check-email', () => {
@@ -348,6 +374,15 @@ describe('Auth Router API', () => {
 
       expect(res.status).toBe(400);
       expect(res.body.error).toBe('Email query parameter is required');
+    });
+
+    it('should return 400 if internal call throws', async () => {
+      vi.mocked(backendService.supabase.rpc).mockRejectedValue(new Error('Email Check Fail'));
+
+      const res = await request(app).get('/auth/check-email').query({ email: 'x@y.com' });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe('Email Check Fail');
     });
   });
 });

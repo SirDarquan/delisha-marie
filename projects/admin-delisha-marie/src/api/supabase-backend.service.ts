@@ -1,8 +1,7 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
-// Use environment variables or fallback to hardcoded ones for local development
-const supabaseUrl = process.env['SUPABASE_URL'] || 'https://julwjfgliuhyeszrxazk.supabase.co';
-const supabaseKey = process.env['SUPABASE_KEY'] || 'sb_publishable_ptVkZRyX2L6biCqdFMy8YQ_FaxKiCS3';
+const supabaseUrl = process.env['SUPABASE_URL'] || '';
+const supabaseKey = process.env['SUPABASE_KEY'] || '';
 
 export class BackendSupabaseService {
   public supabase: SupabaseClient;

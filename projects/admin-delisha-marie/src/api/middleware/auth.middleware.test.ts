@@ -124,4 +124,19 @@ describe('Auth Middleware', () => {
     expect(res.status).toBe(401);
     expect(res.body.error).toBe('Unauthorized: Invalid refresh token');
   });
+
+  it('should return 401 when refresh returns empty data without explicitly throwing', async () => {
+    vi.mocked(backendService.verifyToken).mockRejectedValue(new Error('token has expired'));
+    vi.mocked(backendService.supabase.auth.refreshSession).mockResolvedValue({
+      data: { session: null, user: null },
+      error: null,
+    } as any);
+
+    const res = await request(app)
+      .get('/test-secure')
+      .set('Cookie', ['admin_access_token=expired-token', 'admin_refresh_token=bad-refresh']);
+
+    expect(res.status).toBe(401);
+    expect(res.body.error).toBe('Token missing or invalid');
+  });
 });
