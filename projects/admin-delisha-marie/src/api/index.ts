@@ -1,11 +1,8 @@
+import './load-env';
 import { Router } from 'express';
 import cookieParser from 'cookie-parser';
 import authRouter from './auth';
 import recipesRouter from './recipes';
-import { loadCascadingEnvs, getSourceDir } from './env-utils';
-
-// Dynamically resolve and execute cascaded loading
-loadCascadingEnvs(process.cwd(), getSourceDir('/api'));
 
 const apiRouter = Router();
 

@@ -173,9 +173,7 @@ export class RecipesListComponent {
     const all = this.recipeService.recipes();
     if (!term) return all;
     return all.filter(
-      (r) =>
-        r.title.toLowerCase().includes(term) ||
-        (r.category?.toLowerCase().includes(term)),
+      (r) => r.title.toLowerCase().includes(term) || r.category?.toLowerCase().includes(term),
     );
   });
 
