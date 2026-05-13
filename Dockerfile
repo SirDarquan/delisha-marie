@@ -13,7 +13,7 @@ RUN npm ci
 COPY . .
 
 # Build the application
-RUN npm run build
+RUN npm run build delisha-marie
 
 # Run Stage
 FROM node:24-slim AS run

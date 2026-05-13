@@ -13,7 +13,7 @@ RUN npm ci
 COPY . .
 
 # Build the admin dashboard application explicitly
-RUN SUPABASE_URL="https://placeholder.supabase.co" SUPABASE_KEY="placeholder" npx ng build admin-delisha-marie
+RUN npm run build admin-delisha-marie
 
 
 # Run Stage
