@@ -13,7 +13,7 @@ RUN npm ci
 COPY . .
 
 # Build the admin dashboard application explicitly
-RUN npm run build admin-delisha-marie
+RUN SUPABASE_URL="https://placeholder.supabase.co" npm run build admin-delisha-marie
 
 
 # Run Stage
