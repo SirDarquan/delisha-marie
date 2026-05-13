@@ -2,8 +2,8 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 export class BackendSupabaseService {
   public supabase: SupabaseClient;
-  private readonly supabaseUrl = process.env['SUPABASE_URL'] || 'http://placeholder-for-build-url';
-  private readonly supabaseKey = process.env['SUPABASE_KEY'] || 'placeholder-key';
+  private readonly supabaseUrl = process.env['SUPABASE_URL'] || '';
+  private readonly supabaseKey = process.env['SUPABASE_KEY'] || '';
 
   constructor() {
     this.supabase = createClient(this.supabaseUrl, this.supabaseKey, {

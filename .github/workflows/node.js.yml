@@ -72,6 +72,9 @@ jobs:
   build:
     needs: [unit-tests, e2e-tests]
     runs-on: ubuntu-latest
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
     steps:
     - uses: actions/checkout@v6
     - name: Use Node.js 24.x
