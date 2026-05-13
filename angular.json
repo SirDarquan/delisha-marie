@@ -84,6 +84,9 @@
           "builder": "@angular/build:unit-test",
           "options": {
             "coverageReporters": ["lcov"],
+            "exclude": [
+              "projects/admin-delisha-marie/src/api/**/*.test.ts"
+            ],
             "watch": false
           }
         },
@@ -95,6 +98,102 @@
               "projects/delisha-marie/**/*.html"
             ],
             "eslintConfig": "projects/delisha-marie/eslint.config.js",
+            "fix": true
+          }
+        }
+      }
+    },
+    "admin-delisha-marie": {
+      "projectType": "application",
+      "schematics": {
+        "@schematics/angular:component": {
+          "inlineTemplate": true,
+          "style": "scss"
+        }
+      },
+      "root": "projects/admin-delisha-marie",
+      "sourceRoot": "projects/admin-delisha-marie/src",
+      "prefix": "app",
+      "architect": {
+        "build": {
+          "builder": "@angular/build:application",
+          "options": {
+            "browser": "projects/admin-delisha-marie/src/main.ts",
+            "tsConfig": "projects/admin-delisha-marie/tsconfig.app.json",
+            "inlineStyleLanguage": "scss",
+            "assets": [
+              {
+                "glob": "**/*",
+                "input": "projects/admin-delisha-marie/public"
+              }
+            ],
+            "styles": [
+              "projects/admin-delisha-marie/src/tailwind.css",
+              "projects/admin-delisha-marie/src/styles.scss"
+            ],
+            "server": "projects/admin-delisha-marie/src/main.server.ts",
+            "outputMode": "server",
+            "ssr": {
+              "entry": "projects/admin-delisha-marie/src/server.ts"
+            }
+          },
+          "configurations": {
+            "production": {
+              "budgets": [
+                {
+                  "type": "initial",
+                  "maximumWarning": "500kB",
+                  "maximumError": "1MB"
+                },
+                {
+                  "type": "anyComponentStyle",
+                  "maximumWarning": "4kB",
+                  "maximumError": "8kB"
+                }
+              ],
+              "outputHashing": "all"
+            },
+            "development": {
+              "optimization": false,
+              "extractLicenses": false,
+              "sourceMap": true
+            }
+          },
+          "defaultConfiguration": "production"
+        },
+        "serve": {
+          "builder": "@angular/build:dev-server",
+          "options": {
+            "port": 4201
+          },
+          "configurations": {
+            "production": {
+              "buildTarget": "admin-delisha-marie:build:production"
+            },
+            "development": {
+              "buildTarget": "admin-delisha-marie:build:development"
+            }
+          },
+          "defaultConfiguration": "development"
+        },
+        "test": {
+          "builder": "@angular/build:unit-test",
+          "options": {
+            "coverageReporters": ["lcov"],
+            "exclude": [
+              "projects/admin-delisha-marie/src/api/**/*.test.ts"
+            ],
+            "watch": false
+          }
+        },
+        "lint": {
+          "builder": "@angular-eslint/builder:lint",
+          "options": {
+            "lintFilePatterns": [
+              "projects/admin-delisha-marie/**/*.ts",
+              "projects/admin-delisha-marie/**/*.html"
+            ],
+            "eslintConfig": "projects/admin-delisha-marie/eslint.config.js",
             "fix": true
           }
         }
