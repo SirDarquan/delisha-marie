@@ -2,10 +2,10 @@ import { Router, Request, Response } from 'express';
 import { backendService } from './supabase-backend.service';
 import { authMiddleware, AuthRequest, setAuthCookies } from './middleware/auth.middleware';
 
-const supabase = backendService.supabase;
+const getSupabase = () => backendService.supabase;
 
 async function isUsernameAvailable(username: string): Promise<boolean> {
-  const { data, error } = await supabase.rpc('check_username_available', {
+  const { data, error } = await getSupabase().rpc('check_username_available', {
     check_username: username,
   });
   if (error) throw error;
@@ -13,7 +13,7 @@ async function isUsernameAvailable(username: string): Promise<boolean> {
 }
 
 async function isEmailAvailable(email: string): Promise<boolean> {
-  const { data, error } = await supabase.rpc('check_email_available', {
+  const { data, error } = await getSupabase().rpc('check_email_available', {
     check_email: email,
   });
   if (error) throw error;
@@ -21,7 +21,7 @@ async function isEmailAvailable(email: string): Promise<boolean> {
 }
 
 async function getEmailByUsername(username: string): Promise<string | null> {
-  const { data, error } = await supabase.rpc('get_email_by_username', {
+  const { data, error } = await getSupabase().rpc('get_email_by_username', {
     username,
   });
   if (error) throw error;
@@ -29,7 +29,7 @@ async function getEmailByUsername(username: string): Promise<string | null> {
 }
 
 async function signUp(email: string, password: string, data: Record<string, unknown> = {}) {
-  const { data: authData, error } = await supabase.auth.signUp({
+  const { data: authData, error } = await getSupabase().auth.signUp({
     email,
     password,
     options: { data },
@@ -39,7 +39,7 @@ async function signUp(email: string, password: string, data: Record<string, unkn
 }
 
 async function signInWithPassword(email: string, password: string) {
-  const { data, error } = await supabase.auth.signInWithPassword({
+  const { data, error } = await getSupabase().auth.signInWithPassword({
     email,
     password,
   });
@@ -48,7 +48,7 @@ async function signInWithPassword(email: string, password: string) {
 }
 
 async function signInWithIdToken(token: string, provider: 'google' | 'apple' = 'google') {
-  const { data, error } = await supabase.auth.signInWithIdToken({
+  const { data, error } = await getSupabase().auth.signInWithIdToken({
     provider,
     token,
   });
@@ -57,7 +57,7 @@ async function signInWithIdToken(token: string, provider: 'google' | 'apple' = '
 }
 
 async function signOut() {
-  const { error } = await supabase.auth.signOut();
+  const { error } = await getSupabase().auth.signOut();
   if (error) throw error;
 }
 

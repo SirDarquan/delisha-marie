@@ -10,11 +10,11 @@ describe('RecipeFormComponent', () => {
   let fixture: ComponentFixture<RecipeFormComponent>;
 
   let mockRecipeById: Recipe | null = null;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let createPayload: any = null;
+
+  let createPayload: Partial<Recipe> = {};
   let updateId: string | number | null = null;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let updatePayload: any = null;
+
+  let updatePayload: Partial<Recipe> = {};
   let navigated: unknown[] = [];
   let routeParams: Record<string, string> = {};
 
@@ -22,16 +22,16 @@ describe('RecipeFormComponent', () => {
     getRecipeByIdOrSlug: (id: string | number) => {
       return id ? mockRecipeById : null;
     },
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    createRecipe: (payload: any) => {
+
+    createRecipe: (payload: Partial<Recipe>) => {
       createPayload = payload;
-      return { id: 1, ...payload };
+      return { id: 1, ...payload } as unknown as Recipe;
     },
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    updateRecipe: (id: string | number, payload: any) => {
+
+    updateRecipe: (id: string | number, payload: Partial<Recipe>) => {
       updateId = id;
       updatePayload = payload;
-      return { id, ...payload };
+      return { id, ...payload } as unknown as Recipe;
     },
   };
 
@@ -51,9 +51,9 @@ describe('RecipeFormComponent', () => {
 
   beforeEach(async () => {
     mockRecipeById = null;
-    createPayload = null;
+    createPayload = {};
     updateId = null;
-    updatePayload = null;
+    updatePayload = {};
     navigated = [];
     routeParams = {};
 
@@ -204,7 +204,7 @@ describe('RecipeFormComponent', () => {
     fixture.detectChanges();
     // title and slug are empty, form invalid
     component.onSubmit();
-    expect(createPayload).toBeNull();
+    expect(createPayload).toEqual({});
     expect(navigated).toEqual([]);
   });
 });

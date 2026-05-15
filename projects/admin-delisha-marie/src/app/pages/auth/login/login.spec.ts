@@ -20,6 +20,8 @@ interface MockAuthService {
   loginBiosignature: Mock;
   retrieveUsername: Mock;
   retrievePassword: Mock;
+  checkSession: Mock;
+  waitForSessionInit: Mock;
 }
 
 interface MockSocialAuthService {
@@ -38,11 +40,14 @@ describe('LoginComponent', () => {
   const authStateSubject = new Subject<SocialUser>();
 
   if (typeof navigator !== 'undefined' && !navigator.credentials) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (navigator as any).credentials = {
-      get: vi.fn(),
-      create: vi.fn(),
-    };
+    Object.defineProperty(navigator, 'credentials', {
+      value: {
+        get: vi.fn(),
+        create: vi.fn(),
+      },
+      writable: true,
+      configurable: true,
+    });
   }
 
   let fakeSnackBar: { open: Mock };
@@ -84,6 +89,11 @@ describe('LoginComponent', () => {
       retrievePassword: vi
         .fn()
         .mockImplementation(async (user: string) => (user === 'sirda' ? 'Password123!' : null)),
+      checkSession: vi.fn().mockImplementation(async () => {
+        fakeIsAuthenticated.set(true);
+        fakeCurrentUser.set({ username: 'sirda', email: 'sirda@example.com' });
+      }),
+      waitForSessionInit: vi.fn().mockResolvedValue(undefined),
     };
     fakeSocialAuthService = {
       authState: authStateSubject,
@@ -205,7 +215,7 @@ describe('LoginComponent', () => {
   });
 
   it('should handle social auth state changes with null user', () => {
-    authStateSubject.next(null as any); // eslint-disable-line @typescript-eslint/no-explicit-any
+    authStateSubject.next(null as unknown as SocialUser);
     expect(snackBar.open).not.toHaveBeenCalled();
   });
 
@@ -294,6 +304,7 @@ describe('LoginComponent', () => {
 
     const fix = TestBed.createComponent(LoginComponent);
     fix.detectChanges();
+    await fix.whenStable();
 
     expect(r.navigate).toHaveBeenCalledWith(['/']);
   });

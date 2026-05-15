@@ -179,7 +179,8 @@ export class LoginComponent implements OnInit {
     },
   );
 
-  ngOnInit(): void {
+  async ngOnInit(): Promise<void> {
+    await this.auth.waitForSessionInit();
     if (this.auth.isAuthenticated()) {
       this.router.navigate(['/']);
     }
@@ -220,6 +221,7 @@ export class LoginComponent implements OnInit {
       });
 
       if (credential) {
+        await this.auth.checkSession();
         this.snackBar.open('Passkey authenticated successfully! Logging you in...', 'Close', {
           duration: 10000,
         });

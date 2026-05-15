@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 
 // 1. Explicitly declare mock functions outside to track calls
@@ -66,7 +65,7 @@ describe('Auth Router API', () => {
         refreshSession: mockRefreshSession,
         getUser: mockGetUser,
       },
-    } as any;
+    } as unknown as typeof backendService.supabase;
 
     app = express();
     app.use(express.json());
@@ -86,7 +85,7 @@ describe('Auth Router API', () => {
       vi.mocked(backendService.supabase.auth.signUp).mockResolvedValue({
         data: { user: mockUser, session: mockSession },
         error: null,
-      } as any);
+      } as unknown as Awaited<ReturnType<typeof backendService.supabase.auth.signUp>>);
 
       const res = await request(app)
         .post('/auth/signup')
@@ -137,7 +136,7 @@ describe('Auth Router API', () => {
       vi.mocked(backendService.supabase.auth.signInWithPassword).mockResolvedValue({
         data: { user: mockUser, session: mockSession },
         error: null,
-      } as any);
+      } as unknown as Awaited<ReturnType<typeof backendService.supabase.auth.signInWithPassword>>);
 
       const res = await request(app)
         .post('/auth/login')
@@ -166,12 +165,12 @@ describe('Auth Router API', () => {
       vi.mocked(backendService.supabase.rpc).mockResolvedValue({
         data: 'resolved@example.com',
         error: null,
-      } as any);
+      } as unknown as Awaited<ReturnType<typeof backendService.supabase.rpc>>);
 
       vi.mocked(backendService.supabase.auth.signInWithPassword).mockResolvedValue({
         data: { user: mockUser, session: mockSession },
         error: null,
-      } as any);
+      } as unknown as Awaited<ReturnType<typeof backendService.supabase.auth.signInWithPassword>>);
 
       const res = await request(app)
         .post('/auth/login')
@@ -188,11 +187,14 @@ describe('Auth Router API', () => {
     });
 
     it('should fall back to computed email if username lookup yields null', async () => {
-      vi.mocked(backendService.supabase.rpc).mockResolvedValue({ data: null, error: null } as any);
-      vi.mocked(backendService.supabase.auth.signInWithPassword).mockResolvedValue({
-        data: { user: { id: '1' } as any, session: { access_token: 'a' } as any },
+      vi.mocked(backendService.supabase.rpc).mockResolvedValue({
+        data: null,
         error: null,
-      } as any);
+      } as unknown as Awaited<ReturnType<typeof backendService.supabase.rpc>>);
+      vi.mocked(backendService.supabase.auth.signInWithPassword).mockResolvedValue({
+        data: { user: { id: '1' } as unknown, session: { access_token: 'a' } as unknown },
+        error: null,
+      } as unknown as Awaited<ReturnType<typeof backendService.supabase.auth.signInWithPassword>>);
 
       await request(app).post('/auth/login').send({ username: 'ghost', password: 'pw' });
 
@@ -228,7 +230,7 @@ describe('Auth Router API', () => {
       vi.mocked(backendService.supabase.auth.signInWithIdToken).mockResolvedValue({
         data: { user: mockUser, session: mockSession },
         error: null,
-      } as any);
+      } as unknown as Awaited<ReturnType<typeof backendService.supabase.auth.signInWithIdToken>>);
 
       const res = await request(app)
         .post('/auth/social-login')
@@ -269,7 +271,9 @@ describe('Auth Router API', () => {
 
   describe('POST /auth/signout', () => {
     it('should successfully sign out and clear cookies', async () => {
-      vi.mocked(backendService.supabase.auth.signOut).mockResolvedValue({ error: null } as any);
+      vi.mocked(backendService.supabase.auth.signOut).mockResolvedValue({
+        error: null,
+      } as unknown as Awaited<ReturnType<typeof backendService.supabase.auth.signOut>>);
 
       const res = await request(app).post('/auth/signout');
 
@@ -297,7 +301,9 @@ describe('Auth Router API', () => {
   describe('GET /auth/me', () => {
     it('should return user details if access token is valid', async () => {
       const mockUser = { id: 'user-123', email: 'test@example.com' };
-      vi.mocked(backendService.verifyToken).mockResolvedValue(mockUser as any);
+      vi.mocked(backendService.verifyToken).mockResolvedValue(
+        mockUser as unknown as Awaited<ReturnType<typeof backendService.verifyToken>>,
+      );
 
       const res = await request(app)
         .get('/auth/me')
@@ -320,7 +326,7 @@ describe('Auth Router API', () => {
       vi.mocked(backendService.supabase.auth.refreshSession).mockResolvedValue({
         data: { user: mockUser, session: mockSession },
         error: null,
-      } as any);
+      } as unknown as Awaited<ReturnType<typeof backendService.supabase.auth.refreshSession>>);
 
       const res = await request(app)
         .get('/auth/me')
@@ -349,7 +355,7 @@ describe('Auth Router API', () => {
       vi.mocked(backendService.supabase.rpc).mockResolvedValue({
         data: true,
         error: null,
-      } as any);
+      } as unknown as Awaited<ReturnType<typeof backendService.supabase.rpc>>);
 
       const res = await request(app).get('/auth/check-username').query({ username: 'tester' });
 
@@ -382,7 +388,7 @@ describe('Auth Router API', () => {
       vi.mocked(backendService.supabase.rpc).mockResolvedValue({
         data: false,
         error: null,
-      } as any);
+      } as unknown as Awaited<ReturnType<typeof backendService.supabase.rpc>>);
 
       const res = await request(app).get('/auth/check-email').query({ email: 'test@example.com' });
 

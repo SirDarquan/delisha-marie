@@ -24,11 +24,7 @@ recipesRouter.get('/recipes', async (req: Request, res: Response) => {
 recipesRouter.post('/recipes', async (req: Request, res: Response) => {
   try {
     const client = backendService.getClient((req as AuthRequest).token);
-    const { data, error } = await client
-      .from('recipes')
-      .insert(req.body)
-      .select()
-      .single();
+    const { data, error } = await client.from('recipes').insert(req.body).select().single();
     if (error) throw error;
     return res.json(data);
   } catch (err: unknown) {

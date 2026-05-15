@@ -7,25 +7,17 @@ vi.hoisted(() => {
 });
 
 // 1. Explicitly declare mock functions outside to track calls
-const {
-  mockFrom,
-  mockSelect,
-  mockOrder,
-  mockInsert,
-  mockUpdate,
-  mockDelete,
-  mockEq,
-  mockSingle,
-} = vi.hoisted(() => ({
-  mockFrom: vi.fn(),
-  mockSelect: vi.fn(),
-  mockOrder: vi.fn(),
-  mockInsert: vi.fn(),
-  mockUpdate: vi.fn(),
-  mockDelete: vi.fn(),
-  mockEq: vi.fn(),
-  mockSingle: vi.fn(),
-}));
+const { mockFrom, mockSelect, mockOrder, mockInsert, mockUpdate, mockDelete, mockEq, mockSingle } =
+  vi.hoisted(() => ({
+    mockFrom: vi.fn(),
+    mockSelect: vi.fn(),
+    mockOrder: vi.fn(),
+    mockInsert: vi.fn(),
+    mockUpdate: vi.fn(),
+    mockDelete: vi.fn(),
+    mockEq: vi.fn(),
+    mockSingle: vi.fn(),
+  }));
 
 // 2. Setup the chain linkages
 const mockChain = {
@@ -65,16 +57,14 @@ describe('Recipes Router API', () => {
     mockEq.mockReturnValue(mockChain);
     mockSingle.mockReturnValue(mockChain);
 
-    // Spy on getClient to return our mocked supabase client instance
     vi.mocked(backendService.getClient).mockReturnValue({
       from: mockFrom,
-    } as any);
+    } as unknown as ReturnType<typeof backendService.getClient>);
 
-    // Automatically mock verifyToken to validate our expected test token
     vi.mocked(backendService.verifyToken).mockResolvedValue({
       id: 'user-123',
       email: 'test@example.com',
-    } as any);
+    } as unknown as Awaited<ReturnType<typeof backendService.verifyToken>>);
 
     app = express();
     app.use(express.json());

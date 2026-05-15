@@ -1,18 +1,27 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 export class BackendSupabaseService {
-  public supabase: SupabaseClient;
+  private _supabase: SupabaseClient | null = null;
   private readonly supabaseUrl = process.env['SUPABASE_URL'] || '';
   private readonly supabaseKey = process.env['SUPABASE_KEY'] || '';
 
-  constructor() {
-    this.supabase = createClient(this.supabaseUrl, this.supabaseKey, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-        detectSessionInUrl: false,
-      },
-    });
+  public get supabase(): SupabaseClient {
+    if (!this._supabase) {
+      const url = process.env['SUPABASE_URL'] || this.supabaseUrl;
+      const key = process.env['SUPABASE_KEY'] || this.supabaseKey;
+      this._supabase = createClient(url, key, {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false,
+          detectSessionInUrl: false,
+        },
+      });
+    }
+    return this._supabase;
+  }
+
+  public set supabase(val: SupabaseClient) {
+    this._supabase = val;
   }
 
   async verifyToken(token: string) {

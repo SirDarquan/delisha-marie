@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 
 // 1. Explicitly declare mock functions outside to track calls
@@ -36,7 +35,7 @@ describe('Auth Middleware', () => {
       auth: {
         refreshSession: mockRefreshSession,
       },
-    } as any;
+    } as unknown as typeof backendService.supabase;
 
     app = express();
     app.use(express.json());
@@ -44,13 +43,16 @@ describe('Auth Middleware', () => {
 
     // Setup a test endpoint that uses the middleware
     app.get('/test-secure', authMiddleware, (req, res) => {
-      res.json({ message: 'Success', user: (req as any).user, token: (req as any).token });
+      const customReq = req as unknown as { user: unknown; token: unknown };
+      res.json({ message: 'Success', user: customReq.user, token: customReq.token });
     });
   });
 
   it('should pass and call next when a valid access token is provided', async () => {
     const mockUser = { id: 'user-123', email: 'test@example.com' };
-    vi.mocked(backendService.verifyToken).mockResolvedValue(mockUser as any);
+    vi.mocked(backendService.verifyToken).mockResolvedValue(
+      mockUser as unknown as Awaited<ReturnType<typeof backendService.verifyToken>>,
+    );
 
     const res = await request(app)
       .get('/test-secure')
@@ -78,7 +80,7 @@ describe('Auth Middleware', () => {
     vi.mocked(backendService.supabase.auth.refreshSession).mockResolvedValue({
       data: { user: mockUser, session: mockSession },
       error: null,
-    } as any);
+    } as unknown as Awaited<ReturnType<typeof backendService.supabase.auth.refreshSession>>);
 
     const res = await request(app)
       .get('/test-secure')
@@ -124,7 +126,7 @@ describe('Auth Middleware', () => {
     vi.mocked(backendService.supabase.auth.refreshSession).mockResolvedValue({
       data: { session: null, user: null },
       error: new Error('Invalid refresh token'),
-    } as any);
+    } as unknown as Awaited<ReturnType<typeof backendService.supabase.auth.refreshSession>>);
 
     const res = await request(app)
       .get('/test-secure')
@@ -139,7 +141,7 @@ describe('Auth Middleware', () => {
     vi.mocked(backendService.supabase.auth.refreshSession).mockResolvedValue({
       data: { session: null, user: null },
       error: null,
-    } as any);
+    } as unknown as Awaited<ReturnType<typeof backendService.supabase.auth.refreshSession>>);
 
     const res = await request(app)
       .get('/test-secure')
