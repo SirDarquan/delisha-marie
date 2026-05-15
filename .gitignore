@@ -49,3 +49,6 @@ Thumbs.db
 
 .agents/
 .env
+
+# cypress angular supabase
+skills-lock.json

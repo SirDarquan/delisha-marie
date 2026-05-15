@@ -49,6 +49,10 @@ jobs:
 
   e2e-tests:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        app: [admin, blog]
     steps:
     - uses: actions/checkout@v6
     - name: Use Node.js 24.x
@@ -56,18 +60,11 @@ jobs:
       with:
         node-version: 24.x
         cache: 'npm'
-    - name: Cache node modules
-      uses: actions/cache@v3
+    - name: Run Cypress E2E Parallel Matrix
+      uses: cypress-io/github-action@v6
       with:
-        path: ~/.npm
-        key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-        restore-keys: |
-          ${{ runner.os }}-node-
-    - run: npm ci --ignore-scripts
-    - name: Install Playwright Browsers
-      run: npx playwright install --with-deps
-    - name: Run E2E tests
-      run: npm run e2e delisha-marie
+        command: npm run e2e:${{ matrix.app }}
+        install: true
 
   build:
     needs: [unit-tests, e2e-tests]
