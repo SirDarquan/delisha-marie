@@ -49,11 +49,13 @@ export function loadCascadingEnvs(startDir: string, targetDir: string, fileName 
 }
 
 function resolveMappedPath(sources: string[], target: string): string | null {
+  const normalizedTarget = path.normalize(target);
   for (const source of sources) {
-    if (source.includes(target)) {
-      const origin = source.startsWith('file://') ? fileURLToPath(source) : source;
-      if (fs.existsSync(origin)) {
-        return path.dirname(origin);
+    const origin = source.startsWith('file://') ? fileURLToPath(source) : source;
+    const normalizedOrigin = path.normalize(origin);
+    if (normalizedOrigin.includes(normalizedTarget)) {
+      if (fs.existsSync(normalizedOrigin)) {
+        return path.dirname(normalizedOrigin);
       }
     }
   }

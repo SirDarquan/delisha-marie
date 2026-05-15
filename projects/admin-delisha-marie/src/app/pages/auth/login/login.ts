@@ -180,9 +180,11 @@ export class LoginComponent implements OnInit {
   );
 
   ngOnInit(): void {
-    if (this.auth.isAuthenticated()) {
-      this.router.navigate(['/']);
-    }
+    void this.auth.waitForSessionInit().then(() => {
+      if (this.auth.isAuthenticated()) {
+        this.router.navigate(['/']);
+      }
+    });
   }
 
   protected async onForgotUsername() {
@@ -220,6 +222,7 @@ export class LoginComponent implements OnInit {
       });
 
       if (credential) {
+        await this.auth.checkSession();
         this.snackBar.open('Passkey authenticated successfully! Logging you in...', 'Close', {
           duration: 10000,
         });

@@ -201,7 +201,9 @@ export interface CommentFormValue {
                 <div
                   class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-0 mb-4">
                   <div class="flex flex-col">
-                    <span class="text-xl font-black tracking-tight">{{ comment.author }}</span>
+                    <span class="comment-author text-xl font-black tracking-tight">{{
+                      comment.author
+                    }}</span>
                     <span class="text-xs opacity-50 font-medium">
                       {{ comment.createdAt | date: 'MMM d, yyyy' }} @
                       {{ comment.createdAt | date: 'h:mm a' }}
@@ -212,7 +214,8 @@ export interface CommentFormValue {
                   }
                 </div>
 
-                <p class="text-lg leading-relaxed text-[var(--mat-sys-on-surface-variant)] mb-6">
+                <p
+                  class="comment-content text-lg leading-relaxed text-[var(--mat-sys-on-surface-variant)] mb-6">
                   {{ comment.content }}
                 </p>
 

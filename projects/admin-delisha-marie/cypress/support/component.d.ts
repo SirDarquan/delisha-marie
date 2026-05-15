@@ -1,0 +1,9 @@
+import { mount } from 'cypress/angular-zoneless';
+
+declare global {
+  namespace Cypress {
+    interface Chainable {
+      mount: typeof mount;
+    }
+  }
+}

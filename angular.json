@@ -3,7 +3,7 @@
   "version": 1,
   "cli": {
     "packageManager": "npm",
-    "schematicCollections": ["angular-eslint"]
+    "schematicCollections": ["@cypress/schematic", "angular-eslint", "@schematics/angular"]
   },
   "newProjectRoot": "projects",
   "projects": {
@@ -64,9 +64,42 @@
               "optimization": false,
               "extractLicenses": false,
               "sourceMap": true
+            },
+            "e2e": {
+              "optimization": false,
+              "extractLicenses": false,
+              "sourceMap": true,
+              "ssr": false,
+              "prerender": false,
+              "outputMode": "static"
             }
           },
           "defaultConfiguration": "production"
+        },
+        "build-spa": {
+          "builder": "@angular/build:application",
+          "options": {
+            "browser": "projects/delisha-marie/src/main.ts",
+            "tsConfig": "projects/delisha-marie/tsconfig.app.json",
+            "inlineStyleLanguage": "scss",
+            "assets": [
+              {
+                "glob": "**/*",
+                "input": "projects/delisha-marie/public"
+              }
+            ],
+            "styles": [
+              "projects/delisha-marie/src/tailwind.css",
+              "projects/delisha-marie/src/styles.scss"
+            ]
+          },
+          "configurations": {
+            "e2e": {
+              "optimization": false,
+              "extractLicenses": false,
+              "sourceMap": true
+            }
+          }
         },
         "serve": {
           "builder": "@angular/build:dev-server",
@@ -76,6 +109,9 @@
             },
             "development": {
               "buildTarget": "delisha-marie:build:development"
+            },
+            "e2e": {
+              "buildTarget": "delisha-marie:build-spa:e2e"
             }
           },
           "defaultConfiguration": "development"
@@ -84,9 +120,7 @@
           "builder": "@angular/build:unit-test",
           "options": {
             "coverageReporters": ["lcov"],
-            "exclude": [
-              "projects/admin-delisha-marie/src/api/**/*.test.ts"
-            ],
+            "exclude": ["projects/admin-delisha-marie/src/api/**/*.test.ts"],
             "watch": false
           }
         },
@@ -99,6 +133,54 @@
             ],
             "eslintConfig": "projects/delisha-marie/eslint.config.js",
             "fix": true
+          }
+        },
+        "cypress-run": {
+          "builder": "@cypress/schematic:cypress",
+          "options": {
+            "devServerTarget": "delisha-marie:serve:e2e",
+            "configFile": "projects/delisha-marie/cypress.config.ts"
+          },
+          "configurations": {
+            "production": {
+              "devServerTarget": "delisha-marie:serve:production"
+            }
+          }
+        },
+        "cypress-open": {
+          "builder": "@cypress/schematic:cypress",
+          "options": {
+            "watch": true,
+            "headless": false,
+            "configFile": "projects/delisha-marie/cypress.config.ts"
+          }
+        },
+        "ct": {
+          "builder": "@cypress/schematic:cypress",
+          "options": {
+            "devServerTarget": "delisha-marie:serve",
+            "watch": true,
+            "headless": false,
+            "testingType": "component"
+          },
+          "configurations": {
+            "development": {
+              "devServerTarget": "delisha-marie:serve:development"
+            }
+          }
+        },
+        "e2e": {
+          "builder": "@cypress/schematic:cypress",
+          "options": {
+            "devServerTarget": "delisha-marie:serve:e2e",
+            "watch": true,
+            "headless": false,
+            "configFile": "projects/delisha-marie/cypress.config.ts"
+          },
+          "configurations": {
+            "production": {
+              "devServerTarget": "delisha-marie:serve:production"
+            }
           }
         }
       }
@@ -157,9 +239,42 @@
               "optimization": false,
               "extractLicenses": false,
               "sourceMap": true
+            },
+            "e2e": {
+              "optimization": false,
+              "extractLicenses": false,
+              "sourceMap": true,
+              "ssr": false,
+              "prerender": false,
+              "outputMode": "static"
             }
           },
           "defaultConfiguration": "production"
+        },
+        "build-spa": {
+          "builder": "@angular/build:application",
+          "options": {
+            "browser": "projects/admin-delisha-marie/src/main.ts",
+            "tsConfig": "projects/admin-delisha-marie/tsconfig.app.json",
+            "inlineStyleLanguage": "scss",
+            "assets": [
+              {
+                "glob": "**/*",
+                "input": "projects/admin-delisha-marie/public"
+              }
+            ],
+            "styles": [
+              "projects/admin-delisha-marie/src/tailwind.css",
+              "projects/admin-delisha-marie/src/styles.scss"
+            ]
+          },
+          "configurations": {
+            "e2e": {
+              "optimization": false,
+              "extractLicenses": false,
+              "sourceMap": true
+            }
+          }
         },
         "serve": {
           "builder": "@angular/build:dev-server",
@@ -172,6 +287,9 @@
             },
             "development": {
               "buildTarget": "admin-delisha-marie:build:development"
+            },
+            "e2e": {
+              "buildTarget": "admin-delisha-marie:build-spa:e2e"
             }
           },
           "defaultConfiguration": "development"
@@ -180,10 +298,17 @@
           "builder": "@angular/build:unit-test",
           "options": {
             "coverageReporters": ["lcov"],
-            "exclude": [
-              "projects/admin-delisha-marie/src/api/**/*.test.ts"
-            ],
+            "exclude": ["projects/admin-delisha-marie/src/api/**/*.test.ts"],
             "watch": false
+          }
+        },
+        "test-api": {
+          "builder": "@angular/build:unit-test",
+          "options": {
+            "coverageReporters": ["lcov"],
+            "include": ["projects/admin-delisha-marie/src/api/**/*.test.ts"],
+            "watch": false,
+            "runnerConfig": "projects/admin-delisha-marie/src/api/vitest.config.ts"
           }
         },
         "lint": {
@@ -195,6 +320,54 @@
             ],
             "eslintConfig": "projects/admin-delisha-marie/eslint.config.js",
             "fix": true
+          }
+        },
+        "cypress-run": {
+          "builder": "@cypress/schematic:cypress",
+          "options": {
+            "devServerTarget": "admin-delisha-marie:serve:e2e",
+            "configFile": "projects/admin-delisha-marie/cypress.config.ts"
+          },
+          "configurations": {
+            "production": {
+              "devServerTarget": "admin-delisha-marie:serve:production"
+            }
+          }
+        },
+        "cypress-open": {
+          "builder": "@cypress/schematic:cypress",
+          "options": {
+            "watch": true,
+            "headless": false,
+            "configFile": "projects/admin-delisha-marie/cypress.config.ts"
+          }
+        },
+        "ct": {
+          "builder": "@cypress/schematic:cypress",
+          "options": {
+            "devServerTarget": "admin-delisha-marie:serve",
+            "watch": true,
+            "headless": false,
+            "testingType": "component"
+          },
+          "configurations": {
+            "development": {
+              "devServerTarget": "admin-delisha-marie:serve:development"
+            }
+          }
+        },
+        "e2e": {
+          "builder": "@cypress/schematic:cypress",
+          "options": {
+            "devServerTarget": "admin-delisha-marie:serve:e2e",
+            "watch": true,
+            "headless": false,
+            "configFile": "projects/admin-delisha-marie/cypress.config.ts"
+          },
+          "configurations": {
+            "production": {
+              "devServerTarget": "admin-delisha-marie:serve:production"
+            }
           }
         }
       }

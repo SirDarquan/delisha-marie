@@ -99,7 +99,7 @@ describe('Environment Utilities Service', () => {
     });
 
     it('should handle non-file protocol matching path string', () => {
-      const mockUri = 'C:\\project\\src\\api\\index.ts';
+      const mockUri = '/project/src/api/index.ts';
       const mockMap: MockSourceMap = { payload: { sources: [mockUri] } };
       vi.mocked(findSourceMap).mockReturnValue(
         mockMap as unknown as ReturnType<typeof findSourceMap>,

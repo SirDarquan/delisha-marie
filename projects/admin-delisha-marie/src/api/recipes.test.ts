@@ -1,35 +1,45 @@
+import { vi, describe, it, expect, beforeEach } from 'vitest';
+
+// Ensure Env vars exist before static initialization in imported modules
+vi.hoisted(() => {
+  process.env['SUPABASE_URL'] = 'https://example.supabase.co';
+  process.env['SUPABASE_KEY'] = 'test-key';
+});
+
+// 1. Explicitly declare mock functions outside to track calls
+const { mockFrom, mockSelect, mockOrder, mockInsert, mockUpdate, mockDelete, mockEq, mockSingle } =
+  vi.hoisted(() => ({
+    mockFrom: vi.fn(),
+    mockSelect: vi.fn(),
+    mockOrder: vi.fn(),
+    mockInsert: vi.fn(),
+    mockUpdate: vi.fn(),
+    mockDelete: vi.fn(),
+    mockEq: vi.fn(),
+    mockSingle: vi.fn(),
+  }));
+
+// 2. Setup the chain linkages
+const mockChain = {
+  from: mockFrom,
+  select: mockSelect,
+  order: mockOrder,
+  insert: mockInsert,
+  update: mockUpdate,
+  delete: mockDelete,
+  eq: mockEq,
+  single: mockSingle,
+};
+
 import express from 'express';
 import request from 'supertest';
 import cookieParser from 'cookie-parser';
-import { vi, describe, it, expect, beforeEach } from 'vitest';
 import recipesRouter from './recipes';
 import { backendService } from './supabase-backend.service';
 
-// Mock backendService
-vi.mock('./supabase-backend.service', () => {
-  return {
-    backendService: {
-      getRecipes: vi.fn(),
-      createRecipe: vi.fn(),
-      updateRecipe: vi.fn(),
-      deleteRecipe: vi.fn(),
-      verifyToken: vi.fn(),
-    },
-  };
-});
-
-// Mock authMiddleware to automatically authenticate and pass a test token/user
-vi.mock('./middleware/auth.middleware', () => {
-  return {
-    authMiddleware: (req: express.Request, res: express.Response, next: express.NextFunction) => {
-      Object.assign(req, {
-        user: { id: 'user-123', email: 'test@example.com' },
-        token: 'test-token-xyz',
-      });
-      next();
-    },
-  };
-});
+// Instrument backendService methods so they can be mocked dynamically
+vi.spyOn(backendService, 'getClient');
+vi.spyOn(backendService, 'verifyToken');
 
 describe('Recipes Router API', () => {
   let app: express.Express;
@@ -37,9 +47,36 @@ describe('Recipes Router API', () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
+    // Reset default chain return values before each test run
+    mockFrom.mockReturnValue(mockChain);
+    mockSelect.mockReturnValue(mockChain);
+    mockOrder.mockReturnValue(mockChain);
+    mockInsert.mockReturnValue(mockChain);
+    mockUpdate.mockReturnValue(mockChain);
+    mockDelete.mockReturnValue(mockChain);
+    mockEq.mockReturnValue(mockChain);
+    mockSingle.mockReturnValue(mockChain);
+
+    vi.mocked(backendService.getClient).mockReturnValue({
+      from: mockFrom,
+    } as unknown as ReturnType<typeof backendService.getClient>);
+
+    vi.mocked(backendService.verifyToken).mockResolvedValue({
+      id: 'user-123',
+      email: 'test@example.com',
+    } as unknown as Awaited<ReturnType<typeof backendService.verifyToken>>);
+
     app = express();
     app.use(express.json());
     app.use(cookieParser());
+
+    // Automatically inject access cookie into every request to pass authMiddleware
+    app.use((req, res, next) => {
+      req.cookies = req.cookies || {};
+      req.cookies['admin_access_token'] = 'test-token-xyz';
+      next();
+    });
+
     app.use('/', recipesRouter);
   });
 
@@ -50,17 +87,20 @@ describe('Recipes Router API', () => {
         { id: 'recipe-2', title: 'Yummy Pie' },
       ];
 
-      vi.mocked(backendService.getRecipes).mockResolvedValue(mockRecipes);
+      mockOrder.mockResolvedValue({ data: mockRecipes, error: null });
 
       const res = await request(app).get('/recipes');
 
       expect(res.status).toBe(200);
       expect(res.body).toEqual(mockRecipes);
-      expect(backendService.getRecipes).toHaveBeenCalledWith('test-token-xyz');
+      expect(backendService.getClient).toHaveBeenCalledWith('test-token-xyz');
+      expect(mockFrom).toHaveBeenCalledWith('recipes');
+      expect(mockSelect).toHaveBeenCalledWith('*');
+      expect(mockOrder).toHaveBeenCalledWith('created_at', { ascending: false });
     });
 
     it('should return 500 when fetching recipes throws an error', async () => {
-      vi.mocked(backendService.getRecipes).mockRejectedValue(new Error('Database error'));
+      mockOrder.mockResolvedValue({ data: null, error: new Error('Database error') });
 
       const res = await request(app).get('/recipes');
 
@@ -74,17 +114,18 @@ describe('Recipes Router API', () => {
       const inputRecipe = { title: 'New Salad', description: 'Fresh veggies' };
       const createdRecipe = { id: 'recipe-3', ...inputRecipe };
 
-      vi.mocked(backendService.createRecipe).mockResolvedValue(createdRecipe);
+      mockSingle.mockResolvedValue({ data: createdRecipe, error: null });
 
       const res = await request(app).post('/recipes').send(inputRecipe);
 
       expect(res.status).toBe(200);
       expect(res.body).toEqual(createdRecipe);
-      expect(backendService.createRecipe).toHaveBeenCalledWith(inputRecipe, 'test-token-xyz');
+      expect(backendService.getClient).toHaveBeenCalledWith('test-token-xyz');
+      expect(mockInsert).toHaveBeenCalledWith(inputRecipe);
     });
 
     it('should return 400 when recipe creation fails', async () => {
-      vi.mocked(backendService.createRecipe).mockRejectedValue(new Error('Invalid payload'));
+      mockSingle.mockResolvedValue({ data: null, error: new Error('Invalid payload') });
 
       const res = await request(app).post('/recipes').send({});
 
@@ -102,21 +143,19 @@ describe('Recipes Router API', () => {
         description: 'Fresh veggies',
       };
 
-      vi.mocked(backendService.updateRecipe).mockResolvedValue(updatedRecipe);
+      mockSingle.mockResolvedValue({ data: updatedRecipe, error: null });
 
       const res = await request(app).put('/recipes/recipe-3').send(updateData);
 
       expect(res.status).toBe(200);
       expect(res.body).toEqual(updatedRecipe);
-      expect(backendService.updateRecipe).toHaveBeenCalledWith(
-        'recipe-3',
-        updateData,
-        'test-token-xyz',
-      );
+      expect(backendService.getClient).toHaveBeenCalledWith('test-token-xyz');
+      expect(mockUpdate).toHaveBeenCalledWith(updateData);
+      expect(mockEq).toHaveBeenCalledWith('id', 'recipe-3');
     });
 
     it('should return 400 when recipe update fails', async () => {
-      vi.mocked(backendService.updateRecipe).mockRejectedValue(new Error('Update failed'));
+      mockSingle.mockResolvedValue({ data: null, error: new Error('Update failed') });
 
       const res = await request(app).put('/recipes/recipe-3').send({});
 
@@ -127,17 +166,19 @@ describe('Recipes Router API', () => {
 
   describe('DELETE /recipes/:id', () => {
     it('should successfully delete a recipe and return success', async () => {
-      vi.mocked(backendService.deleteRecipe).mockResolvedValue();
+      mockEq.mockResolvedValue({ error: null });
 
       const res = await request(app).delete('/recipes/recipe-3');
 
       expect(res.status).toBe(200);
       expect(res.body).toEqual({ success: true });
-      expect(backendService.deleteRecipe).toHaveBeenCalledWith('recipe-3', 'test-token-xyz');
+      expect(backendService.getClient).toHaveBeenCalledWith('test-token-xyz');
+      expect(mockDelete).toHaveBeenCalled();
+      expect(mockEq).toHaveBeenCalledWith('id', 'recipe-3');
     });
 
     it('should return 400 when recipe deletion fails', async () => {
-      vi.mocked(backendService.deleteRecipe).mockRejectedValue(new Error('Delete forbidden'));
+      mockEq.mockResolvedValue({ error: new Error('Delete forbidden') });
 
       const res = await request(app).delete('/recipes/recipe-3');
 
