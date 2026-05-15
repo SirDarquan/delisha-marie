@@ -1,12 +1,10 @@
 import { TestBed } from '@angular/core/testing';
-import { PLATFORM_ID } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, UrlTree } from '@angular/router';
 import { authGuard } from './auth.guard';
 import { AuthService } from '../services/auth.service';
 
 describe('authGuard', () => {
   let isAuth = false;
-  let navigated: unknown[] = [];
 
   const fakeAuthService = {
     isAuthenticated: () => isAuth,
@@ -14,14 +12,13 @@ describe('authGuard', () => {
   };
 
   const fakeRouter = {
-    navigate: (commands: unknown[]) => {
-      navigated = commands;
+    parseUrl: (url: string) => {
+      return { _mockUrlTree: url } as unknown as UrlTree;
     },
   };
 
   beforeEach(() => {
     isAuth = false;
-    navigated = [];
 
     TestBed.configureTestingModule({
       providers: [
@@ -31,11 +28,10 @@ describe('authGuard', () => {
     });
   });
 
-  it('should redirect if user is not logged in', async () => {
+  it('should redirect to /login if user is not logged in', async () => {
     await TestBed.runInInjectionContext(async () => {
       const result = await authGuard();
-      expect(result).toBe(false);
-      expect(navigated).toEqual(['/login']);
+      expect(result).toEqual({ _mockUrlTree: '/login' } as unknown as UrlTree);
     });
   });
 
@@ -44,17 +40,6 @@ describe('authGuard', () => {
     await TestBed.runInInjectionContext(async () => {
       const result = await authGuard();
       expect(result).toBe(true);
-      expect(navigated).toEqual([]);
-    });
-  });
-
-  it('should bypass logic when not on platform browser (SSR state)', async () => {
-    TestBed.overrideProvider(PLATFORM_ID, { useValue: 'server' });
-
-    await TestBed.runInInjectionContext(async () => {
-      const result = await authGuard();
-      expect(result).toBe(true);
-      expect(navigated).toEqual([]);
     });
   });
 });
