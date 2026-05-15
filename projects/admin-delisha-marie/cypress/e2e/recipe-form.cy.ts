@@ -14,18 +14,18 @@ describe('Admin Recipe Form Flow', () => {
     ingredients: ['1 lb Chicken breast', '3 cloves garlic', '2 sprigs rosemary'],
     instructions: ['Season chicken', 'Pan-sear on high', 'Simmer with herbs'],
     image: 'chicken.jpg',
-    author: 'Delisha Marie'
+    author: 'Delisha Marie',
   };
 
   beforeEach(() => {
     // Ensure the page considers us authenticated immediately on load
     cy.intercept('GET', '**/auth/me*', {
       statusCode: 200,
-      body: { 
-        user: { 
+      body: {
+        user: {
           username: 'admin',
-          email: 'admin@delishamarie.com' 
-        } 
+          email: 'admin@delishamarie.com',
+        },
       },
     }).as('getCurrentUser');
   });
@@ -36,12 +36,12 @@ describe('Admin Recipe Form Flow', () => {
     cy.visit('/recipes/create', {
       onBeforeLoad: (win) => {
         win.localStorage.setItem('admin_recipes', JSON.stringify([]));
-      }
+      },
     });
 
     cy.intercept('POST', '**/api/recipes*', {
       statusCode: 201,
-      body: mockRecipe
+      body: mockRecipe,
     }).as('createRecipe');
 
     cy.get('p.text-slate-400').should('contain.text', 'New Recipe');
@@ -93,19 +93,19 @@ describe('Admin Recipe Form Flow', () => {
     cy.visit('/recipes/edit/99', {
       onBeforeLoad: (win) => {
         win.localStorage.setItem('admin_recipes', JSON.stringify([mockRecipe]));
-      }
+      },
     });
 
     cy.intercept('PUT', '**/api/recipes/*', {
       statusCode: 200,
-      body: { ...mockRecipe, title: 'Updated Chicken Title' }
+      body: { ...mockRecipe, title: 'Updated Chicken Title' },
     }).as('updateRecipe');
 
     cy.get('p.text-slate-400').should('contain.text', 'Edit Recipe');
 
     // Form values should now be preloaded instantly!
     cy.get('#title').should('have.value', mockRecipe.title);
-    
+
     cy.get('#title').clear().type('Updated Chicken Title');
     cy.get('#title').blur();
 

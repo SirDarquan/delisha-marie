@@ -3,7 +3,7 @@ describe('Main Blog Global Navigation', () => {
     // Intercept any active Supabase request on startup if needed
     cy.intercept('GET', '**/rest/v1/recipes*', {
       statusCode: 200,
-      body: []
+      body: [],
     }).as('getEmptyRecipes');
 
     cy.visit('/');
@@ -14,7 +14,7 @@ describe('Main Blog Global Navigation', () => {
     cy.get('dm-header').should('be.visible');
     cy.get('.logo-container').should('be.visible');
     cy.get('dm-footer').should('exist');
-    
+
     // Title is branded using dynamic TitleStrategy on router stabilization
     cy.title().should('eq', "Home | Delisha Marie's Kitchen");
   });

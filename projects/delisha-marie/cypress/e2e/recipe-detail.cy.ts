@@ -23,7 +23,7 @@ describe('Single Recipe Detail View', () => {
       fat: '22g',
       carbohydrates: '18g',
       protein: '35g',
-      servingSize: '1 bowl'
+      servingSize: '1 bowl',
     },
     breadcrumbs: {
       main: 0,
@@ -31,21 +31,21 @@ describe('Single Recipe Detail View', () => {
         [
           { label: 'Home', url: '/' },
           { label: 'Recipes', url: '/recipes' },
-          { label: 'Signature Beef Stew' }
-        ]
-      ]
+          { label: 'Signature Beef Stew' },
+        ],
+      ],
     },
     navigation: {
       prev: { title: 'Previous Salad', slug: 'previous-salad' },
-      next: { title: 'Next Pie', slug: 'next-pie' }
-    }
+      next: { title: 'Next Pie', slug: 'next-pie' },
+    },
   };
 
   beforeEach(() => {
     // Setup active recipe list API mock
     cy.intercept('GET', '/api/recipes*', {
       statusCode: 200,
-      body: [mockFullRecipe]
+      body: [mockFullRecipe],
     }).as('getRecipeList');
 
     // Stub comments list for this recipe
@@ -57,9 +57,9 @@ describe('Single Recipe Detail View', () => {
           recipeId: '101',
           author: 'Grace Hopper',
           content: 'Absolutely phenomenal stew! Reminds me of Sunday dinner.',
-          createdAt: new Date().toISOString()
-        }
-      ]
+          createdAt: new Date().toISOString(),
+        },
+      ],
     }).as('getRecipeComments');
 
     cy.visit('/recipe/signature-beef-stew');
@@ -68,22 +68,30 @@ describe('Single Recipe Detail View', () => {
 
   it('should populate the HTML Head with robust JSON-LD Schema markup', () => {
     // JSON-LD resolver dynamically injects a script block wrapped in @graph
-    cy.get('script[type="application/ld+json"]').should('exist').then((scripts) => {
-      const scriptContents = Array.from(scripts).map(s => JSON.parse(s.textContent || '{}'));
-      
-      // The schema resolver wraps elements inside the '@graph' array property
-      const rootObj = scriptContents.find(s => s['@graph'] && Array.isArray(s['@graph']));
-      expect(rootObj).to.exist;
-      
-      const recipeSchema = rootObj['@graph'].find((s: any) => s['@type'] === 'Recipe');
-      expect(recipeSchema).to.exist;
-      expect(recipeSchema.name).to.equal('Signature Beef Stew');
-    });
+    cy.get('script[type="application/ld+json"]')
+      .should('exist')
+      .then((scripts) => {
+        const scriptContents = Array.from(scripts).map((s) => JSON.parse(s.textContent || '{}'));
+
+        // The schema resolver wraps elements inside the '@graph' array property
+        interface GraphObject {
+          '@graph': { '@type': string; name?: string }[];
+        }
+        const rootObj = scriptContents.find(
+          (s): s is GraphObject =>
+            s && '@graph' in s && Array.isArray((s as GraphObject)['@graph']),
+        );
+        expect(rootObj).to.not.equal(undefined);
+
+        const recipeSchema = rootObj?.['@graph'].find((s) => s['@type'] === 'Recipe');
+        expect(recipeSchema).to.not.equal(undefined);
+        expect(recipeSchema?.name).to.equal('Signature Beef Stew');
+      });
   });
 
   it('should render the main article layout, including the breadcrumb tree', () => {
     cy.get('article').should('be.visible');
-    
+
     // Verify Breadcrumbs
     cy.get('dml-breadcrumbs')
       .should('contain.text', 'Home')
@@ -95,7 +103,7 @@ describe('Single Recipe Detail View', () => {
     cy.get('#recipe-card').within(() => {
       // Title & Author check
       cy.get('.recipe-card-title').should('contain.text', 'Signature Beef Stew');
-      
+
       // Metrics
       cy.get('.recipe-card-time').contains('2h 20m');
       cy.get('.recipe-card-servings').contains('6 servings');

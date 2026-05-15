@@ -13,10 +13,10 @@ describe('Recipe Discovery Listings', () => {
       rating: 5,
       nutrition: {
         calories: '200 kcal',
-        servingSize: '1 plate'
+        servingSize: '1 plate',
       },
       navigation: { prev: null, next: null },
-      breadcrumbs: { items: [] }
+      breadcrumbs: { items: [] },
     }));
   };
 
@@ -29,24 +29,22 @@ describe('Recipe Discovery Listings', () => {
           {
             name: 'Dinner',
             url: '/recipes/dinner',
-            children: [
-              { name: 'Chicken', url: '/recipes/dinner/chicken' }
-            ]
-          }
+            children: [{ name: 'Chicken', url: '/recipes/dinner/chicken' }],
+          },
         ],
         methodsList: [],
         holidays: [],
         specialDiets: [],
         bestRecipes: [],
-        ingredients: []
-      }
+        ingredients: [],
+      },
     }).as('getIndex');
   });
 
   it('should load list view grid and render recipe cards with proper imagery', () => {
     cy.intercept('GET', '/api/recipes*', {
       statusCode: 200,
-      body: generateMockRecipes(5)
+      body: generateMockRecipes(5),
     }).as('getRecipes');
 
     cy.visit('/recipes');
@@ -54,7 +52,7 @@ describe('Recipe Discovery Listings', () => {
 
     // Check header display title
     cy.get('h1').should('contain.text', 'Recipes');
-    
+
     // Check dynamic breadcrumbs
     cy.get('dml-breadcrumbs').should('contain.text', 'Home').and('contain.text', 'Recipes');
 
@@ -66,7 +64,7 @@ describe('Recipe Discovery Listings', () => {
   it('should display empty state icon/message when no recipes are yielded', () => {
     cy.intercept('GET', '/api/recipes*', {
       statusCode: 200,
-      body: []
+      body: [],
     }).as('getEmptyRecipes');
 
     cy.visit('/recipes');
@@ -79,7 +77,7 @@ describe('Recipe Discovery Listings', () => {
   it('should handle pagination controls correctly when items exceed standard limit', () => {
     cy.intercept('GET', '/api/recipes*', {
       statusCode: 200,
-      body: generateMockRecipes(15) // 15 items, first page will show 12
+      body: generateMockRecipes(15), // 15 items, first page will show 12
     }).as('getPaginatedRecipes');
 
     cy.visit('/recipes');
@@ -99,11 +97,11 @@ describe('Recipe Discovery Listings', () => {
   it('should display refine category filters and navigate to subcategory path', () => {
     cy.intercept('GET', '/api/recipes*', {
       statusCode: 200,
-      body: generateMockRecipes(2)
+      body: generateMockRecipes(2),
     }).as('getFilteredRecipes');
 
     cy.visit('/recipes/dinner');
-    
+
     // Check dynamic title matches category name
     cy.get('h1').should('contain.text', 'Dinner');
 

@@ -21,17 +21,8 @@ import './commands';
 
 import { mount } from 'cypress/angular-zoneless';
 
-// Augment the Cypress namespace to include type definitions for
-// your custom command.
-// Alternatively, can be defined in cypress/support/component.d.ts
-// with a <reference path="./component" /> at the top of your spec.
-declare global {
-  namespace Cypress {
-    interface Chainable {
-      mount: typeof mount;
-    }
-  }
-}
+// The Cypress namespace augmentation has been moved to component.d.ts
+// to satisfy ESLint's no-namespace rule in ambient contexts naturally.
 
 Cypress.Commands.add('mount', mount);
 
