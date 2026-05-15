@@ -1,22 +1,28 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import express from 'express';
-import request from 'supertest';
-import cookieParser from 'cookie-parser';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
-import authRouter from './auth';
-import { backendService } from './supabase-backend.service';
 
-// Mock the backendService
-vi.mock('./supabase-backend.service', () => {
-  const mockRpc = vi.fn();
-  const mockSignUp = vi.fn();
-  const mockSignInWithPassword = vi.fn();
-  const mockSignInWithIdToken = vi.fn();
-  const mockSignOut = vi.fn();
-  const mockRefreshSession = vi.fn();
-  const mockGetUser = vi.fn();
+// 1. Explicitly declare mock functions outside to track calls
+const {
+  mockRpc,
+  mockSignUp,
+  mockSignInWithPassword,
+  mockSignInWithIdToken,
+  mockSignOut,
+  mockRefreshSession,
+  mockGetUser,
+} = vi.hoisted(() => ({
+  mockRpc: vi.fn(),
+  mockSignUp: vi.fn(),
+  mockSignInWithPassword: vi.fn(),
+  mockSignInWithIdToken: vi.fn(),
+  mockSignOut: vi.fn(),
+  mockRefreshSession: vi.fn(),
+  mockGetUser: vi.fn(),
+}));
 
-  const mockSupabase = {
+// 2. Mock the supabase client globally
+vi.mock('@supabase/supabase-js', () => ({
+  createClient: vi.fn().mockImplementation(() => ({
     rpc: mockRpc,
     auth: {
       signUp: mockSignUp,
@@ -26,21 +32,41 @@ vi.mock('./supabase-backend.service', () => {
       refreshSession: mockRefreshSession,
       getUser: mockGetUser,
     },
-  };
+  })),
+}));
 
-  return {
-    backendService: {
-      supabase: mockSupabase,
-      verifyToken: vi.fn(),
-    },
-  };
-});
+// 3. Ensure Env vars exist for static initialization
+process.env['SUPABASE_URL'] = 'https://example.supabase.co';
+process.env['SUPABASE_KEY'] = 'test-key';
+
+// 4. Standard imports
+import express from 'express';
+import request from 'supertest';
+import cookieParser from 'cookie-parser';
+import authRouter from './auth';
+import { backendService } from './supabase-backend.service';
+
+// 5. Instrument backendService methods so they can be mocked dynamically
+vi.spyOn(backendService, 'verifyToken');
 
 describe('Auth Router API', () => {
   let app: express.Express;
 
   beforeEach(() => {
     vi.clearAllMocks();
+
+    // Explicitly assign mocked Supabase client to ensure it overrides standard instance
+    backendService.supabase = {
+      rpc: mockRpc,
+      auth: {
+        signUp: mockSignUp,
+        signInWithPassword: mockSignInWithPassword,
+        signInWithIdToken: mockSignInWithIdToken,
+        signOut: mockSignOut,
+        refreshSession: mockRefreshSession,
+        getUser: mockGetUser,
+      },
+    } as any;
 
     app = express();
     app.use(express.json());

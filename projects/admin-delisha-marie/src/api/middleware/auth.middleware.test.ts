@@ -1,33 +1,42 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import express from 'express';
-import request from 'supertest';
-import cookieParser from 'cookie-parser';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
-import { authMiddleware } from './auth.middleware';
-import { backendService } from '../supabase-backend.service';
 
-// Mock backendService
-vi.mock('../supabase-backend.service', () => {
-  const mockRefreshSession = vi.fn();
-  const mockSupabase = {
+// 1. Explicitly declare mock functions outside to track calls
+const { mockRefreshSession } = vi.hoisted(() => ({
+  mockRefreshSession: vi.fn(),
+}));
+
+// 2. Mock the supabase client globally
+vi.mock('@supabase/supabase-js', () => ({
+  createClient: vi.fn().mockImplementation(() => ({
     auth: {
       refreshSession: mockRefreshSession,
     },
-  };
+  })),
+}));
 
-  return {
-    backendService: {
-      supabase: mockSupabase,
-      verifyToken: vi.fn(),
-    },
-  };
-});
+// 3. Standard imports
+import express from 'express';
+import request from 'supertest';
+import cookieParser from 'cookie-parser';
+import { authMiddleware } from './auth.middleware';
+import { backendService } from '../supabase-backend.service';
+
+// 4. Instrument backendService methods so they can be mocked dynamically
+vi.spyOn(backendService, 'verifyToken');
 
 describe('Auth Middleware', () => {
   let app: express.Express;
 
   beforeEach(() => {
     vi.clearAllMocks();
+
+    // Explicitly override singleton supabase client with mock client
+    backendService.supabase = {
+      auth: {
+        refreshSession: mockRefreshSession,
+      },
+    } as any;
 
     app = express();
     app.use(express.json());

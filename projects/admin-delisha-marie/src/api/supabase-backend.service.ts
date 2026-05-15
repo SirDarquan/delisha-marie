@@ -21,7 +21,7 @@ export class BackendSupabaseService {
     return data.user;
   }
 
-  private getClient(token?: string): SupabaseClient {
+  public getClient(token?: string): SupabaseClient {
     if (token) {
       return createClient(this.supabaseUrl, this.supabaseKey, {
         global: {
@@ -32,41 +32,6 @@ export class BackendSupabaseService {
       });
     }
     return this.supabase;
-  }
-
-  async getRecipes(token?: string) {
-    const { data, error } = await this.getClient(token)
-      .from('recipes')
-      .select('*')
-      .order('created_at', { ascending: false });
-    if (error) throw error;
-    return data;
-  }
-
-  async createRecipe(recipe: Record<string, unknown>, token?: string) {
-    const { data, error } = await this.getClient(token)
-      .from('recipes')
-      .insert(recipe)
-      .select()
-      .single();
-    if (error) throw error;
-    return data;
-  }
-
-  async updateRecipe(id: string, recipe: Record<string, unknown>, token?: string) {
-    const { data, error } = await this.getClient(token)
-      .from('recipes')
-      .update(recipe)
-      .eq('id', id)
-      .select()
-      .single();
-    if (error) throw error;
-    return data;
-  }
-
-  async deleteRecipe(id: string, token?: string) {
-    const { error } = await this.getClient(token).from('recipes').delete().eq('id', id);
-    if (error) throw error;
   }
 }
 

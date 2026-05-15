@@ -302,6 +302,15 @@
             "watch": false
           }
         },
+        "test-api": {
+          "builder": "@angular/build:unit-test",
+          "options": {
+            "coverageReporters": ["lcov"],
+            "include": ["projects/admin-delisha-marie/src/api/**/*.test.ts"],
+            "watch": false,
+            "runnerConfig": "projects/admin-delisha-marie/src/api/vitest.config.ts"
+          }
+        },
         "lint": {
           "builder": "@angular-eslint/builder:lint",
           "options": {
