@@ -39,7 +39,7 @@ recipesRouter.put('/recipes/:id', async (req: Request, res: Response) => {
     const { data, error } = await client
       .from('recipes')
       .update(req.body)
-      .eq('id', req.params['id'] as string)
+      .eq('id', req.params['id'])
       .select()
       .single();
     if (error) throw error;
@@ -53,10 +53,7 @@ recipesRouter.put('/recipes/:id', async (req: Request, res: Response) => {
 recipesRouter.delete('/recipes/:id', async (req: Request, res: Response) => {
   try {
     const client = backendService.getClient((req as AuthRequest).token);
-    const { error } = await client
-      .from('recipes')
-      .delete()
-      .eq('id', req.params['id'] as string);
+    const { error } = await client.from('recipes').delete().eq('id', req.params['id']);
     if (error) throw error;
     return res.json({ success: true });
   } catch (err: unknown) {

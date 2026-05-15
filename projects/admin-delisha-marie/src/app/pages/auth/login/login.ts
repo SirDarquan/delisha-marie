@@ -179,11 +179,12 @@ export class LoginComponent implements OnInit {
     },
   );
 
-  async ngOnInit(): Promise<void> {
-    await this.auth.waitForSessionInit();
-    if (this.auth.isAuthenticated()) {
-      this.router.navigate(['/']);
-    }
+  ngOnInit(): void {
+    void this.auth.waitForSessionInit().then(() => {
+      if (this.auth.isAuthenticated()) {
+        this.router.navigate(['/']);
+      }
+    });
   }
 
   protected async onForgotUsername() {
