@@ -4,6 +4,13 @@ import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { describe, it, expect, beforeEach } from 'vitest';
 import { provideRouter } from '@angular/router';
 
+interface ContactTestInstance {
+  contactForm: () => { invalid: () => boolean };
+  userModel: {
+    set: (v: { name: string; email: string; subject: string; message: string }) => void;
+  };
+}
+
 describe('Contact', () => {
   beforeEach(async () => {
     TestBed.resetTestingModule();
@@ -24,8 +31,9 @@ describe('Contact', () => {
     fixture.detectChanges();
     const component = fixture.componentInstance;
     // Accessing protected form proxy via type cast for testing
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const form = (component as any).contactForm;
+
+    const testInstance = component as unknown as ContactTestInstance;
+    const form = testInstance.contactForm;
     expect(form().invalid()).toBe(true);
   });
 
@@ -42,8 +50,8 @@ describe('Contact', () => {
     fixture.detectChanges();
     const component = fixture.componentInstance;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const userModel = (component as any).userModel;
+    const testInstance = component as unknown as ContactTestInstance;
+    const userModel = testInstance.userModel;
     userModel.set({
       name: 'Test',
       email: 'test@example.com',
