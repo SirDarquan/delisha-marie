@@ -39,13 +39,7 @@ export class AuthService implements OnDestroy {
   }
 
   waitForSessionInit(): Promise<void> {
-    if (!this.sessionInitPromise) {
-      if (isPlatformBrowser(this.platformId)) {
-        this.sessionInitPromise = this.checkSession();
-      } else {
-        this.sessionInitPromise = Promise.resolve();
-      }
-    }
+    this.sessionInitPromise ??= this.checkSession();
     return this.sessionInitPromise;
   }
 

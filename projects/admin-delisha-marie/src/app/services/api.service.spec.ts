@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
-import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
+import { PLATFORM_ID, REQUEST } from '@angular/core';
 import { ApiService } from './api.service';
 
 describe('ApiService', () => {
@@ -74,5 +75,69 @@ describe('ApiService', () => {
 
     const res = await promise;
     expect(res).toEqual(mockData);
+  });
+
+  it('should merge provided options and always include withCredentials', async () => {
+    const headers = new HttpHeaders({ 'X-Custom-Header': 'value' });
+    const params = new HttpParams().set('page', '1');
+
+    service.get('test', { headers, params });
+
+    const req = httpMock.expectOne((request) => request.url === '/api/test');
+    expect(req.request.withCredentials).toBe(true);
+    expect(req.request.headers.get('X-Custom-Header')).toBe('value');
+    expect(req.request.params.get('page')).toBe('1');
+    req.flush({});
+  });
+
+  describe('SSR Context', () => {
+    let ssrService: ApiService;
+    let ssrHttpMock: HttpTestingController;
+
+    beforeEach(() => {
+      TestBed.resetTestingModule();
+
+      const mockRequest = {
+        headers: {
+          get: (name: string) => (name === 'cookie' ? 'my_test_cookie=123' : null),
+        },
+      };
+
+      TestBed.configureTestingModule({
+        providers: [
+          provideHttpClient(),
+          provideHttpClientTesting(),
+          ApiService,
+          { provide: PLATFORM_ID, useValue: 'server' },
+          { provide: REQUEST, useValue: mockRequest },
+        ],
+      });
+
+      ssrService = TestBed.inject(ApiService);
+      ssrHttpMock = TestBed.inject(HttpTestingController);
+    });
+
+    afterEach(() => {
+      ssrHttpMock.verify();
+    });
+
+    it('should forward cookies from the request when running on the server', async () => {
+      ssrService.get('test');
+
+      const req = ssrHttpMock.expectOne('/api/test');
+      expect(req.request.headers.get('cookie')).toBe('my_test_cookie=123');
+      expect(req.request.withCredentials).toBe(true);
+      req.flush({});
+    });
+
+    it('should preserve existing headers while forwarding cookies on the server', async () => {
+      const existingHeaders = new HttpHeaders({ Authorization: 'Bearer token' });
+      ssrService.get('test', { headers: existingHeaders });
+
+      const req = ssrHttpMock.expectOne('/api/test');
+      expect(req.request.headers.get('cookie')).toBe('my_test_cookie=123');
+      expect(req.request.headers.get('Authorization')).toBe('Bearer token');
+      req.flush({});
+    });
   });
 });
