@@ -39,9 +39,7 @@ export class AuthService implements OnDestroy {
   }
 
   waitForSessionInit(): Promise<void> {
-    if (!this.sessionInitPromise) {
-      this.sessionInitPromise = this.checkSession();
-    }
+    this.sessionInitPromise ??= this.checkSession();
     return this.sessionInitPromise;
   }
 
