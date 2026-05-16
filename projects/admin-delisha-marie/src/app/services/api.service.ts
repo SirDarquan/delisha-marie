@@ -21,10 +21,14 @@ export class ApiService {
     if (!isPlatformBrowser(this.platformId) && this.request) {
       const cookie = this.request.headers.get('cookie');
       if (cookie) {
-        opts['headers'] = new HttpHeaders({
-          ...(opts['headers'] as Record<string, string | string[]>),
-          cookie: cookie,
-        });
+        let headers = opts['headers'] as
+          | HttpHeaders
+          | Record<string, string | string[]>
+          | undefined;
+        if (!(headers instanceof HttpHeaders)) {
+          headers = new HttpHeaders(headers || {});
+        }
+        opts['headers'] = headers.set('cookie', cookie);
       }
     }
     return opts;
