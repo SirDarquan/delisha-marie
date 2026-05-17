@@ -7,13 +7,13 @@ import { vi, Mock } from 'vitest';
 import { injectAuthCommon, BRAND_TITLE_TOKEN } from './auth-shared.utils';
 
 describe('auth-shared.utils', () => {
-  let routerMock: { navigate: Mock };
+  let routerMock: { navigate: Mock; navigateByUrl: Mock };
   let snackBarMock: { open: Mock };
   let authStateSubject: Subject<SocialUser | null>;
   let socialAuthServiceMock: { authState: Subject<SocialUser | null> };
 
   beforeEach(() => {
-    routerMock = { navigate: vi.fn() };
+    routerMock = { navigate: vi.fn(), navigateByUrl: vi.fn() };
     snackBarMock = { open: vi.fn() };
     authStateSubject = new Subject<SocialUser | null>();
     socialAuthServiceMock = { authState: authStateSubject };
@@ -67,7 +67,7 @@ describe('auth-shared.utils', () => {
         'Close',
         { duration: 10000 },
       );
-      expect(routerMock.navigate).toHaveBeenCalledWith(['/dashboard']);
+      expect(routerMock.navigateByUrl).toHaveBeenCalledWith('/dashboard');
     });
   });
 
@@ -77,7 +77,7 @@ describe('auth-shared.utils', () => {
       authStateSubject.next(null);
 
       expect(snackBarMock.open).not.toHaveBeenCalled();
-      expect(routerMock.navigate).not.toHaveBeenCalled();
+      expect(routerMock.navigateByUrl).not.toHaveBeenCalled();
     });
   });
 });

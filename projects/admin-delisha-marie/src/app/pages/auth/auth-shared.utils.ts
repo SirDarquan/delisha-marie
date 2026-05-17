@@ -1,5 +1,5 @@
 import { inject, signal, DestroyRef, InjectionToken } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { SocialAuthService, SocialUser } from '@abacritt/angularx-social-login';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -12,6 +12,7 @@ export interface AuthCommonConfig {
 
 export function injectAuthCommon(config: AuthCommonConfig) {
   const router = inject(Router);
+  const route = inject(ActivatedRoute, { optional: true });
   const socialAuth = inject(SocialAuthService);
   const snackBar = inject(MatSnackBar);
   const destroyRef = inject(DestroyRef);
@@ -25,7 +26,8 @@ export function injectAuthCommon(config: AuthCommonConfig) {
       snackBar.open(`Successfully authenticated as ${user.name}! Redirecting...`, 'Close', {
         duration: 10000,
       });
-      router.navigate([config.redirectUrl]);
+      const returnUrl = route?.snapshot.queryParams['returnUrl'] || config.redirectUrl;
+      router.navigateByUrl(returnUrl);
     }
   });
 
