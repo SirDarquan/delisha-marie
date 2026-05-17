@@ -34,6 +34,7 @@ describe('SignUpComponent', () => {
   };
 
   beforeEach(async () => {
+    TestBed.resetTestingModule();
     signUpReturnValue = true;
     signUpParams = null;
     fakeSnackBar = { open: vi.fn() };
@@ -52,6 +53,7 @@ describe('SignUpComponent', () => {
 
     router = TestBed.inject(Router);
     vi.spyOn(router, 'navigate');
+    vi.spyOn(router, 'navigateByUrl');
 
     fixture = TestBed.createComponent(SignUpComponent);
     component = fixture.componentInstance;
@@ -162,6 +164,6 @@ describe('SignUpComponent', () => {
       { duration: 10000 },
     );
 
-    expect(router.navigate).toHaveBeenCalledWith(['/']);
+    expect(router.navigateByUrl).toHaveBeenCalledWith('/');
   });
 });

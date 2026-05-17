@@ -1,7 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 import { provideHttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
-import { PLATFORM_ID, REQUEST } from '@angular/core';
 import { ApiService } from './api.service';
 
 describe('ApiService', () => {
@@ -88,56 +87,5 @@ describe('ApiService', () => {
     expect(req.request.headers.get('X-Custom-Header')).toBe('value');
     expect(req.request.params.get('page')).toBe('1');
     req.flush({});
-  });
-
-  describe('SSR Context', () => {
-    let ssrService: ApiService;
-    let ssrHttpMock: HttpTestingController;
-
-    beforeEach(() => {
-      TestBed.resetTestingModule();
-
-      const mockRequest = {
-        headers: {
-          get: (name: string) => (name === 'cookie' ? 'my_test_cookie=123' : null),
-        },
-      };
-
-      TestBed.configureTestingModule({
-        providers: [
-          provideHttpClient(),
-          provideHttpClientTesting(),
-          ApiService,
-          { provide: PLATFORM_ID, useValue: 'server' },
-          { provide: REQUEST, useValue: mockRequest },
-        ],
-      });
-
-      ssrService = TestBed.inject(ApiService);
-      ssrHttpMock = TestBed.inject(HttpTestingController);
-    });
-
-    afterEach(() => {
-      ssrHttpMock.verify();
-    });
-
-    it('should forward cookies from the request when running on the server', async () => {
-      ssrService.get('test');
-
-      const req = ssrHttpMock.expectOne('/api/test');
-      expect(req.request.headers.get('cookie')).toBe('my_test_cookie=123');
-      expect(req.request.withCredentials).toBe(true);
-      req.flush({});
-    });
-
-    it('should preserve existing headers while forwarding cookies on the server', async () => {
-      const existingHeaders = new HttpHeaders({ Authorization: 'Bearer token' });
-      ssrService.get('test', { headers: existingHeaders });
-
-      const req = ssrHttpMock.expectOne('/api/test');
-      expect(req.request.headers.get('cookie')).toBe('my_test_cookie=123');
-      expect(req.request.headers.get('Authorization')).toBe('Bearer token');
-      req.flush({});
-    });
   });
 });

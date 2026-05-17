@@ -105,10 +105,10 @@ describe('Environment Utilities Service', () => {
         mockMap as unknown as ReturnType<typeof findSourceMap>,
       );
 
-      existsSpy.mockReturnValue(true);
+      existsSpy.mockImplementation((p) => String(p) === path.normalize(mockUri));
 
       const dir = getSourceDir('/api');
-      expect(dir).toContain('api');
+      expect(dir).toBe(path.dirname(path.normalize(mockUri)));
     });
 
     it('should silently fall back to current directory if map is missing', () => {

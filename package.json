@@ -9,7 +9,7 @@
     "test": "ng test",
     "test:api": "ng run admin-delisha-marie:test-api",
     "test:all": "npm run lint && npm run test -- --coverage && npm run test:api -- --coverage && npm run e2e",
-    "e2e": "npm run e2e:admin && npm run e2e:blog",
+    "e2e": "npm run e2e:blog && npm run e2e:admin",
     "e2e:admin": "ng run admin-delisha-marie:cypress-run",
     "e2e:blog": "ng run delisha-marie:cypress-run",
     "serve:ssr:delisha-marie": "node dist/delisha-marie/server/server.mjs",

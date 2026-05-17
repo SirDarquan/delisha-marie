@@ -1,8 +1,14 @@
-import { inject } from '@angular/core';
-import { Router } from '@angular/router';
+import { inject, PLATFORM_ID } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
+import { Router, ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
 import { AuthService } from '../services/auth.service';
 
-export const authGuard = async () => {
+export const authGuard = async (_route: ActivatedRouteSnapshot, state: RouterStateSnapshot) => {
+  const platformId = inject(PLATFORM_ID);
+  if (!isPlatformBrowser(platformId)) {
+    return true;
+  }
+
   const auth = inject(AuthService);
   const router = inject(Router);
 
@@ -12,5 +18,5 @@ export const authGuard = async () => {
     return true;
   }
 
-  return router.parseUrl('/login');
+  return router.createUrlTree(['/login'], { queryParams: { returnUrl: state.url } });
 };

@@ -1,4 +1,4 @@
-import { Router, Request, Response } from 'express';
+import { Router, Response } from 'express';
 import { backendService } from './supabase-backend.service';
 import { authMiddleware, AuthRequest } from './middleware/auth.middleware';
 
@@ -6,9 +6,9 @@ const recipesRouter = Router();
 
 recipesRouter.use(authMiddleware);
 
-recipesRouter.get('/recipes', async (req: Request, res: Response) => {
+recipesRouter.get('/recipes', async (req: AuthRequest, res: Response) => {
   try {
-    const client = backendService.getClient((req as AuthRequest).token);
+    const client = backendService.getClient(req.token);
     const { data, error } = await client
       .from('recipes')
       .select('*')
@@ -21,9 +21,9 @@ recipesRouter.get('/recipes', async (req: Request, res: Response) => {
   }
 });
 
-recipesRouter.post('/recipes', async (req: Request, res: Response) => {
+recipesRouter.post('/recipes', async (req: AuthRequest, res: Response) => {
   try {
-    const client = backendService.getClient((req as AuthRequest).token);
+    const client = backendService.getClient(req.token);
     const { data, error } = await client.from('recipes').insert(req.body).select().single();
     if (error) throw error;
     return res.json(data);
@@ -33,9 +33,9 @@ recipesRouter.post('/recipes', async (req: Request, res: Response) => {
   }
 });
 
-recipesRouter.put('/recipes/:id', async (req: Request, res: Response) => {
+recipesRouter.put('/recipes/:id', async (req: AuthRequest, res: Response) => {
   try {
-    const client = backendService.getClient((req as AuthRequest).token);
+    const client = backendService.getClient(req.token);
     const { data, error } = await client
       .from('recipes')
       .update(req.body)
@@ -50,9 +50,9 @@ recipesRouter.put('/recipes/:id', async (req: Request, res: Response) => {
   }
 });
 
-recipesRouter.delete('/recipes/:id', async (req: Request, res: Response) => {
+recipesRouter.delete('/recipes/:id', async (req: AuthRequest, res: Response) => {
   try {
-    const client = backendService.getClient((req as AuthRequest).token);
+    const client = backendService.getClient(req.token);
     const { error } = await client.from('recipes').delete().eq('id', req.params['id']);
     if (error) throw error;
     return res.json({ success: true });
