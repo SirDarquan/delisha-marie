@@ -7,7 +7,7 @@ import {
   signal,
 } from '@angular/core';
 import { form, FormRoot, FormField, required } from '@angular/forms/signals';
-import { Router, RouterLink } from '@angular/router';
+import { Router, RouterLink, ActivatedRoute } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -103,7 +103,8 @@ interface LoginModel {
               <asl-google-signin-button
                 type="standard"
                 size="large"
-                logo_alignment="center"></asl-google-signin-button>
+                logo_alignment="center"
+                locale="en"></asl-google-signin-button>
             </div>
 
             <button
@@ -149,6 +150,7 @@ interface LoginModel {
 })
 export class LoginComponent implements OnInit {
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
   private readonly auth = inject(AuthService);
   private readonly snackBar = inject(MatSnackBar);
 
@@ -173,16 +175,18 @@ export class LoginComponent implements OnInit {
             });
             return;
           }
-          this.router.navigate(['/']);
+          const returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/';
+          this.router.navigateByUrl(returnUrl);
         },
       },
     },
   );
 
   ngOnInit(): void {
-    void this.auth.waitForSessionInit().then(() => {
+    this.auth.waitForSessionInit().then(() => {
       if (this.auth.isAuthenticated()) {
-        this.router.navigate(['/']);
+        const returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/';
+        this.router.navigateByUrl(returnUrl);
       }
     });
   }
@@ -227,7 +231,8 @@ export class LoginComponent implements OnInit {
           duration: 10000,
         });
         setTimeout(() => {
-          this.router.navigate(['/']);
+          const returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/';
+          this.router.navigateByUrl(returnUrl);
         }, 1000);
       }
     } catch {

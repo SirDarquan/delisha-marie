@@ -1,5 +1,5 @@
 import { TestBed, ComponentFixture } from '@angular/core/testing';
-import { Router, provideRouter } from '@angular/router';
+import { Router, provideRouter, ActivatedRoute } from '@angular/router';
 import { vi, Mock } from 'vitest';
 import { LoginComponent } from './login';
 import { BRAND_TITLE_TOKEN } from '../auth-shared.utils';
@@ -39,6 +39,15 @@ describe('LoginComponent', () => {
   let loginParams: [string, string] | null = null;
   const authStateSubject = new Subject<SocialUser>();
 
+  let queryParams: Record<string, string> = {};
+  const fakeActivatedRoute = {
+    snapshot: {
+      get queryParams() {
+        return queryParams;
+      },
+    },
+  };
+
   if (typeof navigator !== 'undefined' && !navigator.credentials) {
     Object.defineProperty(navigator, 'credentials', {
       value: {
@@ -58,10 +67,12 @@ describe('LoginComponent', () => {
   const fakeCurrentUser = signal<unknown>(null);
 
   beforeEach(async () => {
+    TestBed.resetTestingModule();
     loginReturnValue = true;
     loginParams = null;
     fakeIsAuthenticated.set(false);
     fakeCurrentUser.set(null);
+    queryParams = {};
 
     fakeSnackBar = { open: vi.fn() };
     fakeAuthService = {
@@ -104,6 +115,7 @@ describe('LoginComponent', () => {
       imports: [LoginComponent],
       providers: [
         provideRouter([]),
+        { provide: ActivatedRoute, useValue: fakeActivatedRoute },
         { provide: AuthService, useValue: fakeAuthService },
         { provide: SocialAuthService, useValue: fakeSocialAuthService },
         { provide: BRAND_TITLE_TOKEN, useValue: 'Test Brand' },
@@ -115,6 +127,7 @@ describe('LoginComponent', () => {
 
     router = TestBed.inject(Router);
     vi.spyOn(router, 'navigate');
+    vi.spyOn(router, 'navigateByUrl');
 
     fixture = TestBed.createComponent(LoginComponent);
     component = fixture.componentInstance;
@@ -145,7 +158,7 @@ describe('LoginComponent', () => {
     await submit(component['loginForm']);
 
     expect(loginParams).toEqual(['johndoe', 'Password123!']);
-    expect(router.navigate).toHaveBeenCalledWith(['/']);
+    expect(router.navigateByUrl).toHaveBeenCalledWith('/');
   });
 
   it('should fail login and display error message on invalid credentials', async () => {
@@ -211,7 +224,7 @@ describe('LoginComponent', () => {
       'Close',
       { duration: 10000 },
     );
-    expect(router.navigate).toHaveBeenCalledWith(['/']);
+    expect(router.navigateByUrl).toHaveBeenCalledWith('/');
   });
 
   it('should handle social auth state changes with null user', () => {
@@ -242,7 +255,7 @@ describe('LoginComponent', () => {
     );
 
     vi.advanceTimersByTime(1000);
-    expect(router.navigate).toHaveBeenCalledWith(['/']);
+    expect(router.navigateByUrl).toHaveBeenCalledWith('/');
     vi.useRealTimers();
   });
 
@@ -301,11 +314,30 @@ describe('LoginComponent', () => {
 
     const r = TestBed.inject(Router);
     vi.spyOn(r, 'navigate');
+    vi.spyOn(r, 'navigateByUrl');
 
     const fix = TestBed.createComponent(LoginComponent);
     fix.detectChanges();
     await fix.whenStable();
 
-    expect(r.navigate).toHaveBeenCalledWith(['/']);
+    expect(r.navigateByUrl).toHaveBeenCalledWith('/');
+  });
+
+  it('should redirect to custom returnUrl on successful form login', async () => {
+    queryParams = { returnUrl: '/recipes' };
+    loginReturnValue = true;
+    component['loginModel'].set({ username: 'johndoe', password: 'Password123!' });
+    expect(component['loginForm']().valid()).toBeTruthy();
+
+    await submit(component['loginForm']);
+
+    expect(router.navigateByUrl).toHaveBeenCalledWith('/recipes');
+  });
+
+  it('should redirect to custom returnUrl on social auth state changes', () => {
+    queryParams = { returnUrl: '/recipes' };
+    const mockUser = { name: 'Test User', email: 'test@example.com' } as SocialUser;
+    authStateSubject.next(mockUser);
+    expect(router.navigateByUrl).toHaveBeenCalledWith('/recipes');
   });
 });
