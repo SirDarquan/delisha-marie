@@ -6,7 +6,7 @@ export default defineConfig({
     specPattern: 'projects/delisha-marie/cypress/e2e/**/*.cy.ts',
     supportFile: 'projects/delisha-marie/cypress/support/e2e.ts',
   },
-
+  allowCypressEnv: false,
   component: {
     devServer: {
       framework: 'angular',
