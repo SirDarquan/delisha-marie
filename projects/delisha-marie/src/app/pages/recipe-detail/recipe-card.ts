@@ -5,7 +5,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDividerModule } from '@angular/material/divider';
 import { RouterLink } from '@angular/router';
-import { Stars } from '../../components/stars/stars';
+import { Stars } from '@dm/library';
 
 @Component({
   selector: 'dml-recipe-card',
