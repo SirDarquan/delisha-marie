@@ -17,7 +17,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { Router } from '@angular/router';
 import { Recipe, RecipeService, Comment } from '../../services/recipe.service';
-import { Stars } from '../../components/stars/stars';
+import { Stars } from '@dm/library';
 import { WINDOW } from '../../services/global-tokens';
 
 export interface CommentFormValue {

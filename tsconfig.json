@@ -3,6 +3,9 @@
 {
   "compileOnSave": false,
   "compilerOptions": {
+    "paths": {
+      "@dm/library": ["./projects/dm/library/src/public-api.ts"]
+    },
     "strict": true,
     "noImplicitOverride": true,
     "noPropertyAccessFromIndexSignature": true,
@@ -39,6 +42,12 @@
     },
     {
       "path": "./projects/admin-delisha-marie/tsconfig.spec.json"
+    },
+    {
+      "path": "./projects/dm/library/tsconfig.lib.json"
+    },
+    {
+      "path": "./projects/dm/library/tsconfig.spec.json"
     }
   ]
 }
