@@ -48,7 +48,7 @@ describe('Admin Recipes List Page', () => {
   });
 
   it('should render the page header and the list of recipes in a table', () => {
-    cy.get('h1').should('contain.text', 'Admin Portal');
+    cy.get('h1').should('contain.text', 'Recipe Directory');
 
     // Check table structure
     cy.get('table[aria-label="List of all recipes"]').should('exist');

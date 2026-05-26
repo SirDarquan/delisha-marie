@@ -1,42 +1,14 @@
 import { Component, ChangeDetectionStrategy, inject, computed } from '@angular/core';
-import { RouterLink, Router } from '@angular/router';
+import { RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { RecipeService } from '../../services/recipe.service';
-import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-home',
   imports: [RouterLink, MatButtonModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="min-h-screen bg-slate-950 text-slate-100 font-sans p-4 md:p-8">
-      <header class="flex justify-between items-center mb-8 pb-4 border-b border-slate-800">
-        <div>
-          <h1
-            class="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-purple-400 to-pink-500 bg-clip-text text-transparent">
-            Delisha Marie Admin
-          </h1>
-          <p class="text-slate-400 text-sm font-medium mt-1">
-            Welcome back,
-            @if (user()) {
-              {{ user()?.user_metadata?.username }}
-            } @else {
-              Admin
-            }
-            !
-          </p>
-        </div>
-        <div>
-          <button
-            mat-stroked-button
-            color="warn"
-            (click)="onLogout()"
-            class="border-rose-500 text-rose-400 hover:bg-rose-500/10 cursor-pointer">
-            Log Out
-          </button>
-        </div>
-      </header>
-
+    <div class="p-4 md:p-8">
       <main class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <!-- Stats Card: Total Recipes -->
         <div
@@ -146,15 +118,7 @@ import { AuthService } from '../../services/auth.service';
 })
 export class HomeComponent {
   private readonly recipeService = inject(RecipeService);
-  private readonly authService = inject(AuthService);
-  private readonly router = inject(Router);
 
-  readonly user = computed(() => this.authService.currentUser());
   readonly totalRecipes = computed(() => this.recipeService.recipes().length);
   readonly recentRecipes = computed(() => this.recipeService.recipes().slice(-3).reverse());
-
-  onLogout(): void {
-    this.authService.logout();
-    this.router.navigate(['/login']);
-  }
 }

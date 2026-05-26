@@ -5,7 +5,6 @@ import {
   signal,
   OnInit,
   ViewEncapsulation,
-  InjectionToken,
 } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink, ActivatedRoute } from '@angular/router';
@@ -15,8 +14,6 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { RecipeService } from '../../services/recipe.service';
 import { Recipe } from '../../models/recipe.model';
-
-export const RECIPE_FORM_BRAND_TOKEN = new InjectionToken<string>('recipeFormBrand');
 
 @Component({
   selector: 'app-recipe-form',
@@ -29,25 +26,22 @@ export const RECIPE_FORM_BRAND_TOKEN = new InjectionToken<string>('recipeFormBra
     MatSelectModule,
   ],
   template: `
-    <div class="min-h-screen bg-slate-950 text-slate-100 font-sans p-4 md:p-8">
-      <header class="flex justify-between items-center mb-6 pb-4 border-b border-slate-800">
+    <div class="p-4 md:p-8">
+      <div class="mb-6 max-w-4xl mx-auto flex justify-between items-center">
         <div>
-          <h1
-            class="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-purple-400 to-pink-500 bg-clip-text text-transparent">
-            {{ brandTitle }}
-          </h1>
-          <p class="text-slate-400 text-sm font-medium mt-1">
+          <h1 class="text-2xl font-bold text-white tracking-tight">
             {{ isEdit() ? 'Edit Recipe' : 'New Recipe' }}
+          </h1>
+          <p class="text-slate-400 text-xs font-medium mt-1">
+            Fill in the fields below to publish a recipe
           </p>
         </div>
-        <div>
-          <a
-            routerLink="/recipes"
-            class="text-slate-300 hover:text-purple-400 transition text-sm font-semibold cursor-pointer">
-            Back to Recipes
-          </a>
-        </div>
-      </header>
+        <a
+          routerLink="/recipes"
+          class="text-slate-300 hover:text-purple-400 transition text-sm font-semibold cursor-pointer flex items-center gap-1">
+          <span class="material-icons text-sm">arrow_back</span> Back to Recipes
+        </a>
+      </div>
 
       <main
         class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl max-w-4xl mx-auto backdrop-blur-md">
@@ -240,8 +234,6 @@ export class RecipeFormComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly recipeService = inject(RecipeService);
-  protected readonly brandTitle =
-    inject(RECIPE_FORM_BRAND_TOKEN, { optional: true }) || 'Admin Portal';
 
   protected readonly isEdit = signal<boolean>(false);
   private readonly idToEdit = signal<string | number | null>(null);

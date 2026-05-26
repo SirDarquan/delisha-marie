@@ -54,7 +54,7 @@ describe('Admin Signup Page', () => {
   });
 
   it('should check validation patterns', () => {
-    cy.get('#reg-password').should('not.be.disabled').type('weakpass');
+    cy.get('#reg-password').should('not.be.disabled').type('weakpass', { delay: 100 });
     cy.get('#reg-password').blur();
 
     cy.contains('At least 8 chars').should('have.class', 'text-green-400');

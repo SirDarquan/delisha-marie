@@ -1,9 +1,8 @@
 import { TestBed, ComponentFixture } from '@angular/core/testing';
-import { Router, provideRouter } from '@angular/router';
+import { provideRouter } from '@angular/router';
 import { signal } from '@angular/core';
-import { RecipesListComponent, ADMIN_BRAND_TOKEN } from './recipes-list';
+import { RecipesListComponent } from './recipes-list';
 import { RecipeService } from '../../services/recipe.service';
-import { AuthService } from '../../services/auth.service';
 import { Recipe } from '../../models/recipe.model';
 
 describe('RecipesListComponent', () => {
@@ -30,8 +29,6 @@ describe('RecipesListComponent', () => {
   ]);
 
   let deletedId: string | number | null = null;
-  let logoutCalled = false;
-  let navigated: unknown[] = [];
 
   const fakeRecipeService = {
     recipes: mockRecipesSignal,
@@ -41,16 +38,8 @@ describe('RecipesListComponent', () => {
     },
   };
 
-  const fakeAuthService = {
-    logout: () => {
-      logoutCalled = true;
-    },
-  };
-
   beforeEach(async () => {
     deletedId = null;
-    logoutCalled = false;
-    navigated = [];
     mockRecipesSignal.set([
       {
         id: 1,
@@ -72,22 +61,11 @@ describe('RecipesListComponent', () => {
 
     await TestBed.configureTestingModule({
       imports: [RecipesListComponent],
-      providers: [
-        provideRouter([]),
-        { provide: RecipeService, useValue: fakeRecipeService },
-        { provide: AuthService, useValue: fakeAuthService },
-      ],
+      providers: [provideRouter([]), { provide: RecipeService, useValue: fakeRecipeService }],
     }).compileComponents();
 
     fixture = TestBed.createComponent(RecipesListComponent);
     component = fixture.componentInstance;
-
-    // Overwrite the real Router's navigate method
-    const router = TestBed.inject(Router);
-    router.navigate = (commands: unknown[]) => {
-      navigated = commands;
-      return Promise.resolve(true);
-    };
 
     fixture.detectChanges();
   });
@@ -140,35 +118,12 @@ describe('RecipesListComponent', () => {
     window.confirm = originalConfirm;
   });
 
-  it('should call logout and navigate to login', () => {
-    component.onLogout();
-    expect(logoutCalled).toBe(true);
-    expect(navigated).toEqual(['/login']);
-  });
-
   it('should render no results message when search returns empty', () => {
     mockRecipesSignal.set([]);
     fixture.detectChanges();
 
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.textContent).toContain('No recipes found.');
-  });
-
-  it('should accept custom brand title token', async () => {
-    TestBed.resetTestingModule();
-    await TestBed.configureTestingModule({
-      imports: [RecipesListComponent],
-      providers: [
-        provideRouter([]),
-        { provide: RecipeService, useValue: fakeRecipeService },
-        { provide: AuthService, useValue: fakeAuthService },
-        { provide: ADMIN_BRAND_TOKEN, useValue: 'Super Admin' },
-      ],
-    }).compileComponents();
-
-    const fix = TestBed.createComponent(RecipesListComponent);
-    fix.detectChanges();
-    expect(fix.componentInstance['brandTitle']).toBe('Super Admin');
   });
 
   it('should render image when provided in recipe object', () => {
