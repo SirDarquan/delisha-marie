@@ -5,39 +5,23 @@ import {
   signal,
   computed,
   ViewEncapsulation,
-  InjectionToken,
 } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import { RouterLink } from '@angular/router';
 import { LowerCasePipe } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { RecipeService } from '../../services/recipe.service';
-import { AuthService } from '../../services/auth.service';
-
-export const ADMIN_BRAND_TOKEN = new InjectionToken<string>('adminBrandTitle');
 
 @Component({
   selector: 'app-recipes-list',
   imports: [RouterLink, LowerCasePipe, MatButtonModule],
   template: `
-    <div class="min-h-screen bg-slate-950 text-slate-100 font-sans p-4 md:p-8">
-      <header class="flex justify-between items-center mb-6 pb-4 border-b border-slate-800">
+    <div class="p-4 md:p-8">
+      <div class="mb-6 flex justify-between items-center">
         <div>
-          <h1
-            class="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-purple-400 to-pink-500 bg-clip-text text-transparent">
-            {{ brandTitle }}
-          </h1>
-          <p class="text-slate-400 text-sm font-medium mt-1">Manage Recipes</p>
+          <h1 class="text-2xl font-bold text-white tracking-tight">Recipe Directory</h1>
+          <p class="text-slate-400 text-xs font-medium mt-1">Manage and edit your recipes</p>
         </div>
-        <div>
-          <button
-            mat-stroked-button
-            color="warn"
-            (click)="onLogout()"
-            class="border-rose-500 text-rose-400 hover:bg-rose-500/10 cursor-pointer">
-            Log Out
-          </button>
-        </div>
-      </header>
+      </div>
 
       <main
         class="bg-slate-900 border border-slate-800 rounded-2xl p-4 md:p-6 shadow-2xl backdrop-blur-md">
@@ -162,9 +146,6 @@ export const ADMIN_BRAND_TOKEN = new InjectionToken<string>('adminBrandTitle');
 })
 export class RecipesListComponent {
   private readonly recipeService = inject(RecipeService);
-  private readonly auth = inject(AuthService);
-  private readonly router = inject(Router);
-  protected readonly brandTitle = inject(ADMIN_BRAND_TOKEN, { optional: true }) || 'Admin Portal';
 
   protected readonly searchTerm = signal<string>('');
 
@@ -186,10 +167,5 @@ export class RecipesListComponent {
     if (confirm('Are you sure you want to delete this recipe? This action cannot be undone.')) {
       this.recipeService.deleteRecipe(id);
     }
-  }
-
-  onLogout(): void {
-    this.auth.logout();
-    this.router.navigate(['/login']);
   }
 }

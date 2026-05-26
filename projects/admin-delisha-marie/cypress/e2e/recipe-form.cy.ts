@@ -44,7 +44,7 @@ describe('Admin Recipe Form Flow', () => {
       body: mockRecipe,
     }).as('createRecipe');
 
-    cy.get('p.text-slate-400').should('contain.text', 'New Recipe');
+    cy.get('h1').should('contain.text', 'New Recipe');
 
     // Ensure the form control signals are fully initialized and bound before typing
     cy.get('#title').should('not.be.disabled').type(mockRecipe.title);
@@ -101,7 +101,7 @@ describe('Admin Recipe Form Flow', () => {
       body: { ...mockRecipe, title: 'Updated Chicken Title' },
     }).as('updateRecipe');
 
-    cy.get('p.text-slate-400').should('contain.text', 'Edit Recipe');
+    cy.get('h1').should('contain.text', 'Edit Recipe');
 
     // Form values should now be preloaded instantly!
     cy.get('#title').should('have.value', mockRecipe.title);
