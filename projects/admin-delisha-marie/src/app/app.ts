@@ -34,7 +34,7 @@ export class App {
   private readonly currentUrl = toSignal(
     this.router.events.pipe(
       filter((e) => e instanceof NavigationEnd),
-      map((e) => (e as NavigationEnd).urlAfterRedirects),
+      map((e) => (e).urlAfterRedirects),
     ),
     { initialValue: this.router.url },
   );
