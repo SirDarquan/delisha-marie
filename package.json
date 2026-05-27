@@ -33,6 +33,8 @@
     "@angular/platform-server": "^21.2.14",
     "@angular/router": "^21.2.14",
     "@angular/ssr": "^21.2.12",
+    "@descope/angular-sdk": "^0.25.3",
+    "@descope/node-sdk": "^2.6.0",
     "@supabase/supabase-js": "^2.105.2",
     "cookie-parser": "^1.4.7",
     "express": "^5.1.0",

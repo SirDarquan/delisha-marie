@@ -6,6 +6,7 @@ import { APP_PLUGINS, AppPlugin } from '../../core/plugins/plugin.token';
 
 export interface AppConfig {
   SocialClients: SocialClients;
+  DescopeProjectId?: string;
 }
 
 export const provideAppConfig = () => [
@@ -34,11 +35,18 @@ export class AppConfigService implements AppPlugin {
     try {
       const data = await firstValueFrom(this.http.get<AppConfig>('/config'));
       this.config.set(data);
-      console.log(this.config());
     } catch (error) {
       console.error('CRITICAL: Failed to fetch application configuration from Express!', error);
       // Setting a baseline fallback or throwing might crash the app intentionally.
       throw error;
     }
+  }
+
+  socialClients() {
+    return this.config()?.SocialClients;
+  }
+
+  DescopeProjectId() {
+    return this.config()?.DescopeProjectId;
   }
 }

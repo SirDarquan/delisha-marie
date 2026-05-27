@@ -145,6 +145,91 @@ describe('AuthService', () => {
     expect(user).toBe('sirda');
   });
 
+  it('should call sendOtp via backend', async () => {
+    apiMock.post.mockResolvedValue({ success: true, isNewUser: true });
+    const result = await service.sendOtp('new@example.com');
+    expect(apiMock.post).toHaveBeenCalledWith('/auth/descope/send-otp', {
+      email: 'new@example.com',
+    });
+    expect(result).toEqual({ success: true, isNewUser: true });
+  });
+
+  it('should return default on sendOtp failure', async () => {
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    apiMock.post.mockRejectedValue(new Error('Send error'));
+    const result = await service.sendOtp('new@example.com');
+    expect(result).toEqual({ success: false, isNewUser: false });
+    expect(consoleSpy).toHaveBeenCalled();
+    consoleSpy.mockRestore();
+  });
+
+  it('should call verifyOtp and set session on success', async () => {
+    const mockUser = { username: 'johndoe', email: 'john@example.com' };
+    apiMock.post.mockResolvedValue({
+      success: true,
+      session: { access_token: 'token123' },
+      user: mockUser,
+    });
+    const success = await service.verifyOtp('john@example.com', '123456');
+    expect(apiMock.post).toHaveBeenCalledWith('/auth/descope/verify-otp', {
+      email: 'john@example.com',
+      code: '123456',
+    });
+    expect(success).toBe(true);
+    expect(service.isAuthenticated()).toBe(true);
+    expect(service.currentUser()).toEqual(mockUser);
+  });
+
+  it('should return false on verifyOtp failure', async () => {
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    apiMock.post.mockRejectedValue(new Error('Verify error'));
+    const success = await service.verifyOtp('john@example.com', '123456');
+    expect(success).toBe(false);
+    expect(consoleSpy).toHaveBeenCalled();
+    consoleSpy.mockRestore();
+  });
+
+  it('should call registerDescope and set session on success', async () => {
+    const mockUser = { username: 'johndoe', email: 'john@example.com' };
+    apiMock.post.mockResolvedValue({
+      success: true,
+      session: { access_token: 'token123' },
+      user: mockUser,
+    });
+    const success = await service.registerDescope(
+      'john@example.com',
+      'token123',
+      'John',
+      'Doe',
+      'johndoe',
+    );
+    expect(apiMock.post).toHaveBeenCalledWith('/auth/descope/register', {
+      email: 'john@example.com',
+      descopeToken: 'token123',
+      firstName: 'John',
+      lastName: 'Doe',
+      displayName: 'johndoe',
+    });
+    expect(success).toBe(true);
+    expect(service.isAuthenticated()).toBe(true);
+    expect(service.currentUser()).toEqual(mockUser);
+  });
+
+  it('should return false on registerDescope failure', async () => {
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    apiMock.post.mockRejectedValue(new Error('Register error'));
+    const success = await service.registerDescope(
+      'john@example.com',
+      'token123',
+      'John',
+      'Doe',
+      'johndoe',
+    );
+    expect(success).toBe(false);
+    expect(consoleSpy).toHaveBeenCalled();
+    consoleSpy.mockRestore();
+  });
+
   describe('Auth Error Handling and Core Methods', () => {
     it('should return false when isEmailAvailable backend throws', async () => {
       const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);

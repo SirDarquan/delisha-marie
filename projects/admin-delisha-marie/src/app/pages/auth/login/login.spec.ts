@@ -13,6 +13,9 @@ import { signal } from '@angular/core';
 interface MockAuthService {
   isAuthenticated: unknown;
   currentUser: unknown;
+  authError: unknown;
+  descopeToken: unknown;
+  isNewUserFlag: unknown;
   login: Mock;
   isUsernameAvailable: Mock;
   isEmailAvailable: Mock;
@@ -22,6 +25,9 @@ interface MockAuthService {
   retrievePassword: Mock;
   checkSession: Mock;
   waitForSessionInit: Mock;
+  sendOtp: Mock;
+  verifyOtp: Mock;
+  registerDescope: Mock;
 }
 
 interface MockSocialAuthService {
@@ -36,7 +42,6 @@ describe('LoginComponent', () => {
   let snackBar: MatSnackBar;
 
   let loginReturnValue = true;
-  let loginParams: [string, string] | null = null;
   const authStateSubject = new Subject<SocialUser>();
 
   let queryParams: Record<string, string> = {};
@@ -65,21 +70,28 @@ describe('LoginComponent', () => {
 
   const fakeIsAuthenticated = signal(false);
   const fakeCurrentUser = signal<unknown>(null);
+  const fakeAuthError = signal<string | null>(null);
+  const fakeDescopeToken = signal<string>('mock_descope_token');
+  const fakeIsNewUserFlag = signal<boolean>(false);
 
   beforeEach(async () => {
     TestBed.resetTestingModule();
     loginReturnValue = true;
-    loginParams = null;
     fakeIsAuthenticated.set(false);
     fakeCurrentUser.set(null);
+    fakeAuthError.set(null);
+    fakeDescopeToken.set('mock_descope_token');
+    fakeIsNewUserFlag.set(false);
     queryParams = {};
 
     fakeSnackBar = { open: vi.fn() };
     fakeAuthService = {
       isAuthenticated: fakeIsAuthenticated,
       currentUser: fakeCurrentUser,
-      login: vi.fn().mockImplementation(async (u: string, p: string) => {
-        loginParams = [u, p];
+      authError: fakeAuthError,
+      descopeToken: fakeDescopeToken,
+      isNewUserFlag: fakeIsNewUserFlag,
+      login: vi.fn().mockImplementation(async (u: string) => {
         if (loginReturnValue) {
           fakeIsAuthenticated.set(true);
           fakeCurrentUser.set({ username: u, email: 'john@example.com' });
@@ -105,6 +117,9 @@ describe('LoginComponent', () => {
         fakeCurrentUser.set({ username: 'sirda', email: 'sirda@example.com' });
       }),
       waitForSessionInit: vi.fn().mockResolvedValue(undefined),
+      sendOtp: vi.fn().mockResolvedValue({ success: true, isNewUser: false }),
+      verifyOtp: vi.fn().mockResolvedValue(true),
+      registerDescope: vi.fn().mockResolvedValue(true),
     };
     fakeSocialAuthService = {
       authState: authStateSubject,
@@ -142,36 +157,173 @@ describe('LoginComponent', () => {
 
   it('should create the login component', () => {
     expect(component).toBeTruthy();
-    // Using bracket notation to access protected member for testing
     expect(component['common'].brandTitle).toBe('Test Brand');
   });
 
-  it('should start with login form invalid when empty', () => {
-    expect(component['loginForm']().valid()).toBeFalsy();
+  it('should start with step1Form invalid when empty', () => {
+    expect(component['step1Form']().valid()).toBeFalsy();
   });
 
-  it('should succeed login and navigate on valid form submission', async () => {
-    loginReturnValue = true;
-    component['loginModel'].set({ username: 'johndoe', password: 'Password123!' });
-    expect(component['loginForm']().valid()).toBeTruthy();
+  it('should succeed sending OTP and transition to step 2 (existing user)', async () => {
+    fakeAuthService.sendOtp.mockResolvedValue({ success: true, isNewUser: false });
+    component['step1Model'].set({ email: 'test@example.com' });
+    expect(component['step1Form']().valid()).toBeTruthy();
 
-    await submit(component['loginForm']);
+    await submit(component['step1Form']);
 
-    expect(loginParams).toEqual(['johndoe', 'Password123!']);
+    expect(fakeAuthService.sendOtp).toHaveBeenCalledWith('test@example.com');
+    expect(component['currentStep']()).toBe('otp');
+    expect(component['isNewUser']()).toBe(false);
+    expect(component['userEmail']()).toBe('test@example.com');
+  });
+
+  it('should succeed sending OTP and transition to step 2 (new user)', async () => {
+    fakeAuthService.sendOtp.mockResolvedValue({ success: true, isNewUser: true });
+    component['step1Model'].set({ email: 'new@example.com' });
+    expect(component['step1Form']().valid()).toBeTruthy();
+
+    await submit(component['step1Form']);
+
+    expect(fakeAuthService.sendOtp).toHaveBeenCalledWith('new@example.com');
+    expect(component['currentStep']()).toBe('otp');
+    expect(component['isNewUser']()).toBe(true);
+    expect(component['userEmail']()).toBe('new@example.com');
+  });
+
+  it('should show snackbar message when sending OTP fails', async () => {
+    fakeAuthService.sendOtp.mockResolvedValue({ success: false, isNewUser: false });
+    component['step1Model'].set({ email: 'error@example.com' });
+
+    await submit(component['step1Form']);
+
+    expect(snackBar.open).toHaveBeenCalledWith(
+      'Failed to send OTP. Please try again.',
+      'Close',
+      expect.any(Object),
+    );
+    expect(component['currentStep']()).toBe('email');
+  });
+
+  it('should verify OTP and redirect on success for existing user', async () => {
+    component['userEmail'].set('john@example.com');
+    component['isNewUser'].set(false);
+    component['currentStep'].set('otp');
+    component['step2Model'].set({ code: '123456' });
+
+    fakeAuthService.verifyOtp.mockResolvedValue(true);
+
+    await submit(component['step2Form']);
+
+    expect(fakeAuthService.verifyOtp).toHaveBeenCalledWith('john@example.com', '123456');
+    expect(snackBar.open).toHaveBeenCalledWith(
+      'Successfully logged in!',
+      'Close',
+      expect.any(Object),
+    );
     expect(router.navigateByUrl).toHaveBeenCalledWith('/');
   });
 
-  it('should fail login and display error message on invalid credentials', async () => {
-    loginReturnValue = false;
-    component['loginModel'].set({ username: 'johndoe', password: 'Password123!' });
-    expect(component['loginForm']().valid()).toBeTruthy();
+  it('should show snackbar message when OTP verification fails for existing user', async () => {
+    component['userEmail'].set('john@example.com');
+    component['isNewUser'].set(false);
+    component['currentStep'].set('otp');
+    component['step2Model'].set({ code: '123456' });
 
-    await submit(component['loginForm']);
+    fakeAuthService.verifyOtp.mockResolvedValue(false);
 
-    expect(loginParams).toEqual(['johndoe', 'Password123!']);
-    expect(snackBar.open).toHaveBeenCalledWith('Invalid username or password.', 'Close', {
-      duration: 10000,
+    await submit(component['step2Form']);
+
+    expect(snackBar.open).toHaveBeenCalledWith(
+      'Invalid verification code. Please try again.',
+      'Close',
+      expect.any(Object),
+    );
+  });
+
+  it('should verify OTP and transition to step 3 for new user when code is submitted', async () => {
+    component['userEmail'].set('new@example.com');
+    component['currentStep'].set('otp');
+    component['step2Model'].set({ code: '123456' });
+
+    fakeAuthService.verifyOtp.mockResolvedValue(true);
+    fakeIsNewUserFlag.set(true);
+
+    await submit(component['step2Form']);
+
+    expect(fakeAuthService.verifyOtp).toHaveBeenCalledWith('new@example.com', '123456');
+    expect(component['currentStep']()).toBe('info');
+  });
+
+  it('should complete registration and redirect on successful step 3 submission', async () => {
+    component['userEmail'].set('new@example.com');
+    component['otpCode'].set('123456');
+    component['isNewUser'].set(true);
+    component['currentStep'].set('info');
+
+    component['step3Model'].set({
+      firstName: 'Alice',
+      lastName: 'Wonder',
+      displayName: 'alicew',
     });
+
+    fakeAuthService.registerDescope.mockResolvedValue(true);
+
+    await submit(component['step3Form']);
+
+    expect(fakeAuthService.registerDescope).toHaveBeenCalledWith(
+      'new@example.com',
+      'mock_descope_token',
+      'Alice',
+      'Wonder',
+      'alicew',
+    );
+    expect(snackBar.open).toHaveBeenCalledWith(
+      'Profile created and logged in successfully!',
+      'Close',
+      expect.any(Object),
+    );
+    expect(router.navigateByUrl).toHaveBeenCalledWith('/');
+  });
+
+  it('should show error when registration fails', async () => {
+    component['userEmail'].set('new@example.com');
+    component['otpCode'].set('123456');
+    component['isNewUser'].set(true);
+    component['currentStep'].set('info');
+
+    component['step3Model'].set({
+      firstName: 'Alice',
+      lastName: 'Wonder',
+      displayName: 'alicew',
+    });
+
+    fakeAuthService.registerDescope.mockResolvedValue(false);
+
+    await submit(component['step3Form']);
+
+    expect(snackBar.open).toHaveBeenCalledWith(
+      'Registration failed. Please try again.',
+      'Close',
+      expect.any(Object),
+    );
+  });
+
+  it('should resend OTP code successfully', async () => {
+    component['userEmail'].set('john@example.com');
+    component['currentStep'].set('otp');
+    component['step2Model'].set({ code: '123456' });
+
+    fakeAuthService.sendOtp.mockResolvedValue({ success: true, isNewUser: false });
+
+    await component['resendOtp']();
+
+    expect(fakeAuthService.sendOtp).toHaveBeenCalledWith('john@example.com');
+    expect(component['step2Model']().code).toBe('');
+    expect(snackBar.open).toHaveBeenCalledWith(
+      'A new OTP has been sent successfully to john@example.com',
+      'Close',
+      expect.any(Object),
+    );
   });
 
   it('should handle forgot username success', async () => {
@@ -323,13 +475,16 @@ describe('LoginComponent', () => {
     expect(r.navigateByUrl).toHaveBeenCalledWith('/');
   });
 
-  it('should redirect to custom returnUrl on successful form login', async () => {
+  it('should redirect to custom returnUrl on successful form login (OTP)', async () => {
     queryParams = { returnUrl: '/recipes' };
-    loginReturnValue = true;
-    component['loginModel'].set({ username: 'johndoe', password: 'Password123!' });
-    expect(component['loginForm']().valid()).toBeTruthy();
+    component['userEmail'].set('john@example.com');
+    component['isNewUser'].set(false);
+    component['currentStep'].set('otp');
+    component['step2Model'].set({ code: '123456' });
 
-    await submit(component['loginForm']);
+    fakeAuthService.verifyOtp.mockResolvedValue(true);
+
+    await submit(component['step2Form']);
 
     expect(router.navigateByUrl).toHaveBeenCalledWith('/recipes');
   });

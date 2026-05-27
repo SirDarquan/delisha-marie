@@ -9,71 +9,61 @@ describe('Admin Login Page', () => {
       }).as('getCurrentUser');
 
       cy.visit('/login');
-      cy.get('#login-username').should('be.visible');
+      cy.get('#login-email').should('be.visible');
     });
 
-    it('should render the login form with username and password fields', () => {
-      cy.get('h1').should('contain', 'Admin Portal');
-      cy.get('#login-username').should('be.visible');
-      cy.get('#login-password').should('be.visible');
-      cy.get('button[type="submit"]').should('contain', 'Log In');
+    it('should render the login form with email field', () => {
+      cy.get('h1').should('contain', 'Delisha Marie');
+      cy.get('#login-email').should('be.visible');
+      cy.get('button[type="submit"]:visible').should('contain', 'Log In');
     });
 
-    it('should show error message when login fails with invalid credentials', () => {
-      cy.intercept('POST', '**/auth/login', {
-        statusCode: 401,
-        body: { error: 'Invalid credentials' },
-      }).as('postLoginFail');
+    it('should show error message when sending OTP fails', () => {
+      cy.intercept('POST', '**/auth/descope/send-otp', {
+        statusCode: 400,
+        body: { error: 'Failed to send OTP' },
+      }).as('postSendOtpFail');
 
-      cy.get('#login-username').should('not.be.disabled').type('wrong-user');
-      cy.get('#login-password').should('not.be.disabled').type('wrong-pass');
+      cy.get('#login-email').should('not.be.disabled').type('error@example.com');
+      cy.get('button[type="submit"]:visible').should('not.be.disabled').click();
+      cy.wait('@postSendOtpFail');
 
-      cy.get('button[type="submit"]').should('not.be.disabled').click({ force: true });
-      cy.wait('@postLoginFail');
-
-      cy.contains('Invalid username or password.').should('be.visible');
+      cy.contains('Failed to send OTP').should('be.visible');
     });
 
-    it('should allow toggling password visibility', () => {
-      // Ensure password field is initially obscured
-      cy.get('#login-password').should('have.attr', 'type', 'password');
+    it('should allow successful existing user login via OTP and redirect to admin dashboard', () => {
+      cy.intercept('POST', '**/auth/descope/send-otp', {
+        statusCode: 200,
+        body: { success: true, isNewUser: false },
+      }).as('postSendOtp');
 
-      // Use regular click to trigger browser events natively, ensuring NgZone registration
-      cy.get('button[aria-label="Show password"]').click();
-
-      // Verify field reveals text value
-      cy.get('#login-password').should('have.attr', 'type', 'text');
-
-      // Toggling back should work identically
-      cy.get('button[aria-label="Hide password"]').click();
-      cy.get('#login-password').should('have.attr', 'type', 'password');
-    });
-
-    it('should allow successful log in and redirect to admin dashboard', () => {
-      cy.intercept('POST', '**/auth/login', {
+      cy.intercept('POST', '**/auth/descope/verify-otp', {
         statusCode: 200,
         body: {
+          success: true,
           session: { access_token: 'mock_token' },
           user: {
             username: 'sirda',
             email: 'sirda@example.com',
           },
         },
-      }).as('postLogin');
+      }).as('postVerifyOtp');
 
       cy.intercept('GET', '**/api/recipes*', {
         statusCode: 200,
         body: [],
       }).as('getRecipes');
 
-      // Wait for fields to be active/enabled before typing
-      cy.get('#login-username').should('not.be.disabled').type('sirda');
-      cy.get('#login-username').blur();
+      // 1. Enter email
+      cy.get('#login-email').type('sirda@example.com');
+      cy.get('button[type="submit"]:visible').click();
+      cy.wait('@postSendOtp');
 
-      cy.get('#login-password').should('not.be.disabled').type('SuperSecurePass!1');
-      cy.get('#login-password').blur();
+      // 2. Transition to Step 2 (OTP)
+      cy.get('#login-otp').should('be.visible');
+      cy.get('#login-otp').type('123456');
 
-      // CRITICAL: Override the /auth/me intercept BEFORE submitting the form
+      // Intercept auth/me with authenticated state before confirming OTP
       cy.intercept('GET', '**/auth/me*', {
         statusCode: 200,
         body: {
@@ -84,8 +74,74 @@ describe('Admin Login Page', () => {
         },
       }).as('getCurrentUserAfterLogin');
 
-      cy.get('button[type="submit"]').should('not.be.disabled').click({ force: true });
-      cy.wait('@postLogin');
+      cy.get('button[type="submit"]:visible').click();
+      cy.wait('@postVerifyOtp');
+
+      cy.location('pathname', { timeout: 10000 }).should('eq', '/');
+    });
+
+    it('should allow successful new user signup and sync with Supabase', () => {
+      cy.intercept('POST', '**/auth/descope/send-otp', {
+        statusCode: 200,
+        body: { success: true, isNewUser: true },
+      }).as('postSendOtpNew');
+
+      cy.intercept('POST', '**/auth/descope/verify-otp', {
+        statusCode: 200,
+        body: {
+          success: true,
+          isNewUser: true,
+          descopeToken: 'mock_descope_token',
+        },
+      }).as('postVerifyOtpNew');
+
+      cy.intercept('POST', '**/auth/descope/register', {
+        statusCode: 200,
+        body: {
+          success: true,
+          session: { access_token: 'mock_token' },
+          user: {
+            username: 'alicew',
+            email: 'new@example.com',
+          },
+        },
+      }).as('postRegister');
+
+      cy.intercept('GET', '**/api/recipes*', {
+        statusCode: 200,
+        body: [],
+      }).as('getRecipes');
+
+      // 1. Enter email
+      cy.get('#login-email').type('new@example.com');
+      cy.get('button[type="submit"]:visible').click();
+      cy.wait('@postSendOtpNew');
+
+      // 2. Step 2: OTP Entry
+      cy.get('#login-otp').should('be.visible');
+      cy.get('#login-otp').type('123456');
+      cy.get('button[type="submit"]:visible').click();
+      cy.wait('@postVerifyOtpNew');
+
+      // 3. Step 3: Profile Info Setup
+      cy.get('#info-email').should('be.disabled').and('have.value', 'new@example.com');
+      cy.get('#info-firstName').type('Alice');
+      cy.get('#info-lastName').type('Wonder');
+      cy.get('#info-displayName').type('alicew');
+
+      // Intercept auth/me to be authenticated
+      cy.intercept('GET', '**/auth/me*', {
+        statusCode: 200,
+        body: {
+          user: {
+            username: 'alicew',
+            email: 'new@example.com',
+          },
+        },
+      }).as('getCurrentUserAfterRegister');
+
+      cy.get('button[type="submit"]:visible').click();
+      cy.wait('@postRegister');
 
       cy.location('pathname', { timeout: 10000 }).should('eq', '/');
     });
@@ -123,8 +179,6 @@ describe('Admin Login Page', () => {
     });
 
     it('should authenticate via passkey successfully', () => {
-      // Intercept /auth/me to return 200 BEFORE action so that the authGuard on the '/' route
-      // successfully authenticates the user once redirection is triggered!
       cy.intercept('GET', '**/auth/me*', {
         statusCode: 200,
         body: {
@@ -133,7 +187,6 @@ describe('Admin Login Page', () => {
       }).as('getCurrentUserPasskey');
 
       cy.window().then((win) => {
-        // Ensure navigator.credentials is defined in the headless environment
         if (!win.navigator.credentials) {
           Object.defineProperty(win.navigator, 'credentials', {
             value: { get: () => Promise.resolve(null) },

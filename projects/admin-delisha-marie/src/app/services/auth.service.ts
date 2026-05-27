@@ -3,6 +3,7 @@ import { isPlatformBrowser } from '@angular/common';
 import { ApiService } from './api.service';
 import { SocialAuthService, SocialUser } from '@abacritt/angularx-social-login';
 import { Subscription } from 'rxjs';
+import { DescopeAuthConfig } from '@descope/angular-sdk';
 
 export interface AdminUser {
   username: string;
@@ -20,12 +21,19 @@ export class AuthService implements OnDestroy {
   private readonly api = inject(ApiService);
   private readonly socialAuth = inject(SocialAuthService);
   private readonly platformId = inject(PLATFORM_ID);
+  private readonly descopeConfig = inject(DescopeAuthConfig, { optional: true });
 
   private readonly _isAuthenticated = signal<boolean>(false);
   private readonly _currentUser = signal<AdminUser | null>(null);
+  private readonly _authError = signal<string | null>(null);
+  private readonly _descopeToken = signal<string>('');
+  private readonly _isNewUserFlag = signal<boolean>(false);
 
   readonly isAuthenticated = computed(() => this._isAuthenticated());
   readonly currentUser = computed(() => this._currentUser());
+  readonly authError = computed(() => this._authError());
+  readonly descopeToken = computed(() => this._descopeToken());
+  readonly isNewUserFlag = computed(() => this._isNewUserFlag());
 
   private readonly authSubscription: Subscription;
   private sessionInitPromise: Promise<void> | null = null;
@@ -136,7 +144,6 @@ export class AuthService implements OnDestroy {
   async loginWithSocial(socialUser: SocialUser): Promise<boolean> {
     try {
       // Real app implementation: verify the token on the backend
-      console.log(socialUser);
       const resp = await this.api.post<{
         success: boolean;
         session?: { access_token: string };
@@ -153,6 +160,103 @@ export class AuthService implements OnDestroy {
       return false;
     } catch (err) {
       console.error('Social login error:', err);
+      return false;
+    }
+  }
+
+  async sendOtp(email: string): Promise<{ success: boolean; isNewUser: boolean }> {
+    this._authError.set(null);
+    try {
+      const resp = await this.api.post<{ success: boolean; isNewUser: boolean }>(
+        '/auth/descope/send-otp',
+        {
+          email: email.trim(),
+        },
+      );
+      return { success: !!resp.success, isNewUser: !!resp.isNewUser };
+    } catch (err) {
+      console.error('Send OTP error:', err);
+      const errMsg =
+        err && typeof err === 'object' && 'error' in err
+          ? (err as { error?: { error?: string } }).error?.error || 'Failed to send OTP'
+          : 'Failed to send OTP';
+      this._authError.set(errMsg);
+      return { success: false, isNewUser: false };
+    }
+  }
+
+  async verifyOtp(email: string, code: string): Promise<boolean> {
+    this._authError.set(null);
+    this._descopeToken.set('');
+    this._isNewUserFlag.set(false);
+    try {
+      const resp = await this.api.post<{
+        success: boolean;
+        isNewUser?: boolean;
+        descopeToken?: string;
+        session?: { access_token: string };
+        user?: AdminUser;
+      }>('/auth/descope/verify-otp', {
+        email: email.trim(),
+        code: code.trim(),
+      });
+      if (resp.success) {
+        if (resp.isNewUser) {
+          this._descopeToken.set(resp.descopeToken || '');
+          this._isNewUserFlag.set(true);
+          return true;
+        } else if (resp.session?.access_token && resp.user) {
+          this._isNewUserFlag.set(false);
+          this.setSession(resp.user);
+          return true;
+        }
+      }
+      this._authError.set('Invalid verification code.');
+      return false;
+    } catch (err) {
+      console.error('Verify OTP error:', err);
+      const errMsg =
+        err && typeof err === 'object' && 'error' in err
+          ? (err as { error?: { error?: string } }).error?.error || 'Verification failed'
+          : 'Verification failed';
+      this._authError.set(errMsg);
+      return false;
+    }
+  }
+
+  async registerDescope(
+    email: string,
+    descopeToken: string,
+    firstName: string,
+    lastName: string,
+    displayName: string,
+  ): Promise<boolean> {
+    this._authError.set(null);
+    try {
+      const resp = await this.api.post<{
+        success: boolean;
+        session?: { access_token: string };
+        user?: AdminUser;
+      }>('/auth/descope/register', {
+        email: email.trim(),
+        descopeToken: descopeToken.trim(),
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        displayName: displayName.trim(),
+      });
+      if (resp.success && resp.session?.access_token && resp.user) {
+        this.setSession(resp.user);
+        return true;
+      }
+      this._authError.set('Registration failed.');
+      return false;
+    } catch (err) {
+      console.error('Register Descope error:', err);
+      const errMsg =
+        err && typeof err === 'object' && 'error' in err
+          ? (err as { error?: { error?: string } }).error?.error || 'Registration failed'
+          : 'Registration failed';
+      this._authError.set(errMsg);
       return false;
     }
   }
