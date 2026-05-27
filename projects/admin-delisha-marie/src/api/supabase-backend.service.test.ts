@@ -72,4 +72,12 @@ describe('BackendSupabaseService', () => {
       expect(client).not.toBe(service.supabase);
     });
   });
+
+  describe('lazy client initialization', () => {
+    it('should lazily create standard and admin clients', () => {
+      const freshService = new BackendSupabaseService();
+      expect(freshService.supabase).toBeDefined();
+      expect(freshService.supabaseAdmin).toBeDefined();
+    });
+  });
 });

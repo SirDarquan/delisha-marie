@@ -2,6 +2,7 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 export class BackendSupabaseService {
   private _supabase: SupabaseClient | null = null;
+  private _supabaseAdmin: SupabaseClient | null = null;
   private readonly supabaseUrl = process.env['SUPABASE_URL'] || '';
   private readonly supabaseKey = process.env['SUPABASE_KEY'] || '';
 
@@ -22,6 +23,27 @@ export class BackendSupabaseService {
 
   public set supabase(val: SupabaseClient) {
     this._supabase = val;
+  }
+
+  public get supabaseAdmin(): SupabaseClient {
+    if (!this._supabaseAdmin) {
+      const url = process.env['SUPABASE_URL'] || this.supabaseUrl;
+      // Prefer service role key for administrative functions
+      const key =
+        process.env['SUPABASE_SERVICE_ROLE_KEY'] || process.env['SUPABASE_KEY'] || this.supabaseKey;
+      this._supabaseAdmin = createClient(url, key, {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false,
+          detectSessionInUrl: false,
+        },
+      });
+    }
+    return this._supabaseAdmin;
+  }
+
+  public set supabaseAdmin(val: SupabaseClient) {
+    this._supabaseAdmin = val;
   }
 
   async verifyToken(token: string) {

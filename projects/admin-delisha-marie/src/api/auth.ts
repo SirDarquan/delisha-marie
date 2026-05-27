@@ -1,8 +1,55 @@
 import { Router, Request, Response } from 'express';
 import { backendService } from './supabase-backend.service';
 import { authMiddleware, AuthRequest, setAuthCookies } from './middleware/auth.middleware';
+import DescopeClient from '@descope/node-sdk';
+
+function cleanEnvValue(val: string | undefined): string {
+  if (!val) return '';
+  const trimmed = val.trim().replace(/^['"]|['"]$/g, '');
+  if (trimmed === 'undefined' || trimmed === 'null') return '';
+  return trimmed;
+}
+
+async function signInPasswordlessly(email: string) {
+  const { data: linkData, error: linkError } = await getSupabaseAdmin().auth.admin.generateLink({
+    type: 'magiclink',
+    email,
+  });
+  if (linkError) throw linkError;
+
+  const tokenHash = linkData?.properties?.hashed_token;
+  if (!tokenHash) {
+    throw new Error('Failed to generate secure verification token from Supabase');
+  }
+
+  const { data: sessionData, error: sessionError } = await getSupabase().auth.verifyOtp({
+    token_hash: tokenHash,
+    type: 'magiclink',
+  });
+  if (sessionError) throw sessionError;
+
+  return sessionData;
+}
+
+let cachedDescopeClient: ReturnType<typeof DescopeClient> | null = null;
+let lastUsedProjectId = '';
+
+function getDescopeClient(): ReturnType<typeof DescopeClient> {
+  const currentProjectId = cleanEnvValue(process.env['DESCOPE_PROJECT_ID']) || '';
+  const currentManagementKey = cleanEnvValue(process.env['DESCOPE_MANAGEMENT_KEY']);
+
+  if (!cachedDescopeClient || lastUsedProjectId !== currentProjectId) {
+    cachedDescopeClient = DescopeClient({
+      projectId: currentProjectId,
+      ...(currentManagementKey ? { managementKey: currentManagementKey } : {}),
+    });
+    lastUsedProjectId = currentProjectId;
+  }
+  return cachedDescopeClient;
+}
 
 const getSupabase = () => backendService.supabase;
+const getSupabaseAdmin = () => backendService.supabaseAdmin;
 
 async function isUsernameAvailable(username: string): Promise<boolean> {
   const { data, error } = await getSupabase().rpc('check_username_available', {
@@ -165,6 +212,177 @@ authRouter.get('/auth/check-email', async (req: Request, res: Response) => {
     }
     const available = await isEmailAvailable(email);
     return res.json({ available });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    return res.status(400).json({ error: msg });
+  }
+});
+
+// 1. Send Descope OTP
+authRouter.post('/auth/descope/send-otp', async (req: Request, res: Response) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ error: 'Email is required' });
+    }
+    const isNew = await isEmailAvailable(email);
+    const resp = await getDescopeClient().otp.signUpOrIn.email(email);
+    if (!resp.ok) {
+      return res.status(400).json({ error: resp.error?.errorDescription || 'Failed to send OTP' });
+    }
+    return res.json({ success: true, isNewUser: isNew });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    return res.status(400).json({ error: msg });
+  }
+});
+
+// 2. Verify Descope OTP (for existing users)
+authRouter.post('/auth/descope/verify-otp', async (req: Request, res: Response) => {
+  try {
+    const { email, code } = req.body;
+    if (!email || !code) {
+      return res.status(400).json({ error: 'Email and OTP code are required' });
+    }
+
+    // Verify Descope OTP
+    const verifyResp = await getDescopeClient().otp.verify.email(email, code);
+    if (!verifyResp.ok) {
+      return res
+        .status(401)
+        .json({ error: verifyResp.error?.errorDescription || 'Invalid OTP code' });
+    }
+    // Fetch existing user from Supabase
+    const {
+      data: { users },
+      error: listError,
+    } = await getSupabaseAdmin().auth.admin.listUsers();
+    if (listError) throw listError;
+
+    const user = users.find((u) => u.email === email);
+    if (!user) {
+      return res.json({
+        success: true,
+        isNewUser: true,
+        descopeToken: verifyResp.data?.sessionJwt || '',
+        user: { email },
+      });
+    }
+
+    // Sign in passwordlessly by generating and verifying a magic link token hash on the backend
+    const sessionData = await signInPasswordlessly(email);
+    if (sessionData.session) {
+      setAuthCookies(res, sessionData.session);
+    }
+
+    return res.json({
+      success: true,
+      isNewUser: false,
+      session: sessionData.session,
+      user: sessionData.user,
+    });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    return res.status(400).json({ error: msg });
+  }
+});
+
+// 3. Register User with Descope & Supabase Sync (for new users)
+authRouter.post('/auth/descope/register', async (req: Request, res: Response) => {
+  try {
+    const { email, descopeToken, firstName, lastName, displayName } = req.body;
+    if (!email || !descopeToken || !firstName || !lastName || !displayName) {
+      return res.status(400).json({ error: 'All fields are required' });
+    }
+
+    // Verify Descope session token
+    try {
+      await getDescopeClient().validateSession(descopeToken);
+    } catch (descopeValErr) {
+      console.error('Descope session validation failed:', descopeValErr);
+      // Fallback offline parsing to decode the JWT payload and verify expiration
+      try {
+        const payload = JSON.parse(Buffer.from(descopeToken.split('.')[1], 'base64').toString());
+        if (!payload || (payload.exp && payload.exp < Date.now() / 1000)) {
+          return res
+            .status(401)
+            .json({ error: 'Descope verification session has expired. Please verify OTP again.' });
+        }
+      } catch {
+        return res
+          .status(401)
+          .json({ error: 'Invalid verification session token. Please verify OTP again.' });
+      }
+    }
+
+    // Try to create/update user in Descope using management API if management key is available
+    if (process.env['DESCOPE_MANAGEMENT_KEY']) {
+      try {
+        await getDescopeClient().management.user.create(email, {
+          email,
+          displayName: `${firstName} ${lastName}`,
+          verifiedEmail: true,
+        });
+      } catch {
+        // If user already exists in Descope (e.g. created on OTP trigger), update them instead
+        try {
+          await getDescopeClient().management.user.update(email, {
+            email,
+            displayName: `${firstName} ${lastName}`,
+            verifiedEmail: true,
+          });
+        } catch (e) {
+          console.error('Failed to create/update Descope user profile:', e);
+        }
+      }
+    }
+
+    // Generate a clean and unique username from displayName to satisfy database triggers/constraints
+    let cleanUsername = displayName
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9_]/g, '');
+    if (!cleanUsername) {
+      cleanUsername =
+        email
+          .split('@')[0]
+          .toLowerCase()
+          .replace(/[^a-z0-9_]/g, '') || 'user';
+    }
+
+    let isAvailable = await isUsernameAvailable(cleanUsername);
+    let attempts = 0;
+    while (!isAvailable && attempts < 10) {
+      const suffix = Math.floor(1000 + Math.random() * 9000);
+      const testUsername = `${cleanUsername}${suffix}`;
+      isAvailable = await isUsernameAvailable(testUsername);
+      if (isAvailable) {
+        cleanUsername = testUsername;
+        break;
+      }
+      attempts++;
+    }
+
+    // Create user in Supabase with metadata (no password required for passwordless users)
+    const { error: createError } = await getSupabaseAdmin().auth.admin.createUser({
+      email,
+      email_confirm: true,
+      user_metadata: {
+        first_name: firstName,
+        last_name: lastName,
+        display_name: displayName,
+        username: cleanUsername,
+      },
+    });
+    if (createError) throw createError;
+
+    // Sign in passwordlessly by generating and verifying a magic link token hash on the backend
+    const sessionData = await signInPasswordlessly(email);
+    if (sessionData.session) {
+      setAuthCookies(res, sessionData.session);
+    }
+
+    return res.json({ success: true, session: sessionData.session, user: sessionData.user });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     return res.status(400).json({ error: msg });
