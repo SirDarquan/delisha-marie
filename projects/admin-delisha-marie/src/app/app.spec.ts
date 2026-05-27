@@ -33,6 +33,12 @@ describe('App', () => {
     expect(app).toBeTruthy();
   });
 
+  it('should have the title signal set to "admin-delisha-marie"', () => {
+    const fixture = TestBed.createComponent(App);
+    const app = fixture.componentInstance;
+    expect(app['title']()).toBe('admin-delisha-marie');
+  });
+
   it('should control header display reactively based on routing URL', async () => {
     const fixture = TestBed.createComponent(App);
     const app = fixture.componentInstance;
@@ -56,5 +62,27 @@ describe('App', () => {
     await router.navigate(['/recipes']);
     fixture.detectChanges();
     expect(app['showHeader']()).toBe(true);
+  });
+
+  it('should render the app-header only when showHeader is true', async () => {
+    const fixture = TestBed.createComponent(App);
+    const router = TestBed.inject(Router);
+
+    // Initial root route
+    fixture.detectChanges();
+    let headerEl = fixture.nativeElement.querySelector('app-header');
+    expect(headerEl).toBeTruthy();
+
+    // Navigate to /login (showHeader is false)
+    await router.navigate(['/login']);
+    fixture.detectChanges();
+    headerEl = fixture.nativeElement.querySelector('app-header');
+    expect(headerEl).toBeFalsy();
+
+    // Navigate to /recipes (showHeader is true)
+    await router.navigate(['/recipes']);
+    fixture.detectChanges();
+    headerEl = fixture.nativeElement.querySelector('app-header');
+    expect(headerEl).toBeTruthy();
   });
 });

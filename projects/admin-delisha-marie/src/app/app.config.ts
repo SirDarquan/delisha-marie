@@ -11,8 +11,10 @@ import { provideClientHydration, withEventReplay } from '@angular/platform-brows
 import { routes } from './app.routes';
 import { authInterceptor } from './interceptors/auth.interceptor';
 import { provideSocialLogins } from './provider/social-logins';
+import { provideDescope } from './provider/descope';
 import { PluginRegistry } from '../core/plugins/plugin-registry.services';
 import { provideAppConfig } from './services/config.service';
+import { BRAND_TITLE_TOKEN } from './pages/auth/auth-shared.utils';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -24,5 +26,7 @@ export const appConfig: ApplicationConfig = {
     provideAppInitializer(() => inject(PluginRegistry).initAll()),
     provideAppConfig(),
     provideSocialLogins(),
+    provideDescope(),
+    { provide: BRAND_TITLE_TOKEN, useValue: 'Delisha Marie' },
   ],
 };
