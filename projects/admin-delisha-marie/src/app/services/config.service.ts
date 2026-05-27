@@ -6,7 +6,7 @@ import { APP_PLUGINS, AppPlugin } from '../../core/plugins/plugin.token';
 
 export interface AppConfig {
   SocialClients: SocialClients;
-  DescopeProjectId: string;
+  DescopeProjectId?: string;
 }
 
 export const provideAppConfig = () => [
@@ -40,5 +40,13 @@ export class AppConfigService implements AppPlugin {
       // Setting a baseline fallback or throwing might crash the app intentionally.
       throw error;
     }
+  }
+
+  socialClients() {
+    return this.config()?.SocialClients;
+  }
+
+  DescopeProjectId() {
+    return this.config()?.DescopeProjectId;
   }
 }

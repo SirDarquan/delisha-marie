@@ -701,15 +701,13 @@ describe('Auth Router API', () => {
     it('should return 400 if registration throws an error', async () => {
       vi.mocked(mockRpc).mockRejectedValue(new Error('RPC registration error'));
 
-      const res = await request(app)
-        .post('/auth/descope/register')
-        .send({
-          email: 'error@example.com',
-          descopeToken: 'valid-descope-token',
-          firstName: 'John',
-          lastName: 'Doe',
-          displayName: 'John Doe',
-        });
+      const res = await request(app).post('/auth/descope/register').send({
+        email: 'error@example.com',
+        descopeToken: 'valid-descope-token',
+        firstName: 'John',
+        lastName: 'Doe',
+        displayName: 'John Doe',
+      });
 
       expect(res.status).toBe(400);
       expect(res.body.error).toBe('RPC registration error');
