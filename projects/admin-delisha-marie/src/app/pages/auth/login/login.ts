@@ -361,7 +361,7 @@ export class LoginComponent implements OnInit, AfterViewInit {
     this.step2Model,
     (s) => {
       required(s.code, { message: 'Verification code is required' });
-      pattern(s.code, /^[0-9]{6}$/, { message: 'Code must be exactly 6 digits' });
+      pattern(s.code, /^\d{6}$/, { message: 'Code must be exactly 6 digits' });
     },
     {
       submission: {

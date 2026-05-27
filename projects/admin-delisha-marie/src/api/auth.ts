@@ -287,6 +287,79 @@ authRouter.post('/auth/descope/verify-otp', async (req: Request, res: Response) 
   }
 });
 
+async function validateDescopeSession(descopeToken: string): Promise<void> {
+  try {
+    await getDescopeClient().validateSession(descopeToken);
+  } catch (descopeValErr) {
+    console.error('Descope session validation failed:', descopeValErr);
+    // Fallback offline parsing to decode the JWT payload and verify expiration
+    try {
+      const payload = JSON.parse(Buffer.from(descopeToken.split('.')[1], 'base64').toString());
+      if (!payload || (payload.exp && payload.exp < Date.now() / 1000)) {
+        throw new Error('Descope verification session has expired. Please verify OTP again.', {
+          cause: descopeValErr,
+        });
+      }
+    } catch (e) {
+      const msg =
+        e instanceof Error && e.message.includes('expired')
+          ? e.message
+          : 'Invalid verification session token. Please verify OTP again.';
+      throw new Error(msg, { cause: e });
+    }
+  }
+}
+
+async function syncDescopeUser(email: string, firstName: string, lastName: string): Promise<void> {
+  if (!cleanEnvValue(process.env['DESCOPE_MANAGEMENT_KEY'])) return;
+  try {
+    await getDescopeClient().management.user.create(email, {
+      email,
+      displayName: `${firstName} ${lastName}`,
+      verifiedEmail: true,
+    });
+  } catch {
+    // If user already exists in Descope (e.g. created on OTP trigger), update them instead
+    try {
+      await getDescopeClient().management.user.update(email, {
+        email,
+        displayName: `${firstName} ${lastName}`,
+        verifiedEmail: true,
+      });
+    } catch (e) {
+      console.error('Failed to create/update Descope user profile:', e);
+    }
+  }
+}
+
+async function generateUniqueUsername(displayName: string, email: string): Promise<string> {
+  let cleanUsername = displayName
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9_]/g, '');
+  if (!cleanUsername) {
+    cleanUsername =
+      email
+        .split('@')[0]
+        .toLowerCase()
+        .replace(/[^a-z0-9_]/g, '') || 'user';
+  }
+
+  let isAvailable = await isUsernameAvailable(cleanUsername);
+  let attempts = 0;
+  while (!isAvailable && attempts < 10) {
+    const suffix = Math.floor(1000 + Math.random() * 9000);
+    const testUsername = `${cleanUsername}${suffix}`;
+    isAvailable = await isUsernameAvailable(testUsername);
+    if (isAvailable) {
+      cleanUsername = testUsername;
+      break;
+    }
+    attempts++;
+  }
+  return cleanUsername;
+}
+
 // 3. Register User with Descope & Supabase Sync (for new users)
 authRouter.post('/auth/descope/register', async (req: Request, res: Response) => {
   try {
@@ -297,71 +370,17 @@ authRouter.post('/auth/descope/register', async (req: Request, res: Response) =>
 
     // Verify Descope session token
     try {
-      await getDescopeClient().validateSession(descopeToken);
-    } catch (descopeValErr) {
-      console.error('Descope session validation failed:', descopeValErr);
-      // Fallback offline parsing to decode the JWT payload and verify expiration
-      try {
-        const payload = JSON.parse(Buffer.from(descopeToken.split('.')[1], 'base64').toString());
-        if (!payload || (payload.exp && payload.exp < Date.now() / 1000)) {
-          return res
-            .status(401)
-            .json({ error: 'Descope verification session has expired. Please verify OTP again.' });
-        }
-      } catch {
-        return res
-          .status(401)
-          .json({ error: 'Invalid verification session token. Please verify OTP again.' });
-      }
+      await validateDescopeSession(descopeToken);
+    } catch (descopeErr: unknown) {
+      const msg = descopeErr instanceof Error ? descopeErr.message : String(descopeErr);
+      return res.status(401).json({ error: msg });
     }
 
     // Try to create/update user in Descope using management API if management key is available
-    if (process.env['DESCOPE_MANAGEMENT_KEY']) {
-      try {
-        await getDescopeClient().management.user.create(email, {
-          email,
-          displayName: `${firstName} ${lastName}`,
-          verifiedEmail: true,
-        });
-      } catch {
-        // If user already exists in Descope (e.g. created on OTP trigger), update them instead
-        try {
-          await getDescopeClient().management.user.update(email, {
-            email,
-            displayName: `${firstName} ${lastName}`,
-            verifiedEmail: true,
-          });
-        } catch (e) {
-          console.error('Failed to create/update Descope user profile:', e);
-        }
-      }
-    }
+    await syncDescopeUser(email, firstName, lastName);
 
     // Generate a clean and unique username from displayName to satisfy database triggers/constraints
-    let cleanUsername = displayName
-      .trim()
-      .toLowerCase()
-      .replace(/[^a-z0-9_]/g, '');
-    if (!cleanUsername) {
-      cleanUsername =
-        email
-          .split('@')[0]
-          .toLowerCase()
-          .replace(/[^a-z0-9_]/g, '') || 'user';
-    }
-
-    let isAvailable = await isUsernameAvailable(cleanUsername);
-    let attempts = 0;
-    while (!isAvailable && attempts < 10) {
-      const suffix = Math.floor(1000 + Math.random() * 9000);
-      const testUsername = `${cleanUsername}${suffix}`;
-      isAvailable = await isUsernameAvailable(testUsername);
-      if (isAvailable) {
-        cleanUsername = testUsername;
-        break;
-      }
-      attempts++;
-    }
+    const cleanUsername = await generateUniqueUsername(displayName, email);
 
     // Create user in Supabase with metadata (no password required for passwordless users)
     const { error: createError } = await getSupabaseAdmin().auth.admin.createUser({

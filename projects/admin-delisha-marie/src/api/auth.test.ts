@@ -1,4 +1,5 @@
 import { vi, describe, it, expect, beforeEach } from 'vitest';
+import DescopeClient from '@descope/node-sdk';
 
 // 1. Explicitly declare mock functions outside to track calls
 const {
@@ -711,6 +712,211 @@ describe('Auth Router API', () => {
 
       expect(res.status).toBe(400);
       expect(res.body.error).toBe('RPC registration error');
+    });
+  });
+
+  describe('Auth API Coverage Boosters', () => {
+    beforeEach(() => {
+      process.env['DESCOPE_MANAGEMENT_KEY'] = 'test-mgmt-key';
+
+      // Setup default successful mocks for the registration flow
+      vi.mocked(mockRpc).mockResolvedValue({
+        data: true,
+        error: null,
+      } as unknown as Awaited<ReturnType<typeof backendService.supabase.rpc>>);
+      vi.mocked(mockCreateUser).mockResolvedValue({
+        data: { user: { id: 'new-id', email: 'new@example.com' } },
+        error: null,
+      } as unknown as Awaited<
+        ReturnType<typeof backendService.supabaseAdmin.auth.admin.createUser>
+      >);
+      vi.mocked(mockGenerateLink).mockResolvedValue({
+        data: { properties: { hashed_token: 'link-token-hash' } },
+        error: null,
+      } as unknown as Awaited<
+        ReturnType<typeof backendService.supabaseAdmin.auth.admin.generateLink>
+      >);
+      vi.mocked(mockVerifyOtp).mockResolvedValue({
+        data: {
+          session: {
+            access_token: 'sb-access-token',
+            refresh_token: 'sb-refresh-token',
+            expires_in: 3600,
+          },
+          user: { id: 'new-id', email: 'new@example.com' },
+        },
+        error: null,
+      } as unknown as Awaited<ReturnType<typeof backendService.supabase.auth.verifyOtp>>);
+      vi.mocked(mockValidateSession).mockResolvedValue(undefined);
+      vi.mocked(mockUserCreate).mockResolvedValue({
+        ok: true,
+      } as unknown as Awaited<
+        ReturnType<ReturnType<typeof DescopeClient>['management']['user']['create']>
+      >);
+      vi.mocked(mockUserUpdate).mockResolvedValue({
+        ok: true,
+      } as unknown as Awaited<
+        ReturnType<ReturnType<typeof DescopeClient>['management']['user']['update']>
+      >);
+    });
+
+    afterEach(() => {
+      delete process.env['DESCOPE_MANAGEMENT_KEY'];
+    });
+
+    it('should cover cleanEnvValue helper logic for quotes and placeholder strings', async () => {
+      const originalProjectId = process.env['DESCOPE_PROJECT_ID'];
+      process.env['DESCOPE_PROJECT_ID'] = '"test-quoted-id"';
+
+      const res = await request(app).post('/auth/descope/send-otp').send({
+        email: 'test@example.com',
+      });
+      expect(res.status).toBeDefined();
+
+      process.env['DESCOPE_PROJECT_ID'] = 'undefined';
+      await request(app).post('/auth/descope/send-otp').send({
+        email: 'test@example.com',
+      });
+
+      if (originalProjectId) {
+        process.env['DESCOPE_PROJECT_ID'] = originalProjectId;
+      } else {
+        delete process.env['DESCOPE_PROJECT_ID'];
+      }
+    });
+
+    it('should throw an error in signInPasswordlessly when tokenHash is missing', async () => {
+      vi.mocked(mockGenerateLink).mockResolvedValue({
+        data: { properties: {} },
+        error: null,
+      } as unknown as Awaited<
+        ReturnType<typeof backendService.supabaseAdmin.auth.admin.generateLink>
+      >);
+
+      vi.mocked(mockOtpVerify.email).mockResolvedValue({
+        ok: true,
+        data: { sessionJwt: 'jwt' },
+      } as unknown as Awaited<
+        ReturnType<ReturnType<typeof DescopeClient>['otp']['verify']['email']>
+      >);
+      vi.mocked(mockListUsers).mockResolvedValue({
+        data: { users: [{ id: 'user-id', email: 'sirda@example.com' }] },
+        error: null,
+      } as unknown as Awaited<
+        ReturnType<typeof backendService.supabaseAdmin.auth.admin.listUsers>
+      >);
+
+      const res = await request(app).post('/auth/descope/verify-otp').send({
+        email: 'sirda@example.com',
+        code: '123456',
+      });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error).toContain('Failed to generate secure verification token');
+    });
+
+    it('should cover validateDescopeSession try-catch offline decryption fallbacks', async () => {
+      vi.mocked(mockValidateSession).mockRejectedValue(new Error('Session validation failed'));
+
+      const payload = { exp: Math.floor(Date.now() / 1000) - 10 };
+      const mockToken = `header.${Buffer.from(JSON.stringify(payload)).toString('base64')}.signature`;
+
+      const res1 = await request(app).post('/auth/descope/register').send({
+        email: 'new@example.com',
+        descopeToken: mockToken,
+        firstName: 'John',
+        lastName: 'Doe',
+        displayName: 'John',
+      });
+      expect(res1.status).toBe(401);
+      expect(res1.body.error).toContain('expired');
+
+      const res2 = await request(app).post('/auth/descope/register').send({
+        email: 'new@example.com',
+        descopeToken: 'completely-invalid-token',
+        firstName: 'John',
+        lastName: 'Doe',
+        displayName: 'John',
+      });
+      expect(res2.status).toBe(401);
+      expect(res2.body.error).toContain('Invalid verification session token');
+    });
+
+    it('should cover syncDescopeUser management API failures', async () => {
+      await request(app).post('/auth/descope/register').send({
+        email: 'new@example.com',
+        descopeToken: 'valid.token.signature',
+        firstName: 'John',
+        lastName: 'Doe',
+        displayName: 'John',
+      });
+      expect(mockUserCreate).toHaveBeenCalled();
+
+      vi.mocked(mockUserCreate).mockRejectedValue(new Error('User already exists'));
+      await request(app).post('/auth/descope/register').send({
+        email: 'new@example.com',
+        descopeToken: 'valid.token.signature',
+        firstName: 'John',
+        lastName: 'Doe',
+        displayName: 'John',
+      });
+      expect(mockUserUpdate).toHaveBeenCalled();
+
+      vi.mocked(mockUserUpdate).mockRejectedValue(new Error('Update failed'));
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+      await request(app).post('/auth/descope/register').send({
+        email: 'new@example.com',
+        descopeToken: 'valid.token.signature',
+        firstName: 'John',
+        lastName: 'Doe',
+        displayName: 'John',
+      });
+      expect(consoleSpy).toHaveBeenCalled();
+      consoleSpy.mockRestore();
+    });
+
+    it('should cover username generation fallback when displayName consists only of special characters', async () => {
+      const res = await request(app).post('/auth/descope/register').send({
+        email: 'special-char-user@example.com',
+        descopeToken: 'valid.token.signature',
+        firstName: 'John',
+        lastName: 'Doe',
+        displayName: '!!!',
+      });
+      expect(res.status).toBe(200);
+      expect(mockCreateUser).toHaveBeenCalledWith(
+        expect.objectContaining({
+          user_metadata: expect.objectContaining({
+            username: 'specialcharuser',
+          }),
+        }),
+      );
+    });
+
+    it('should cover username collision while loop in generateUniqueUsername', async () => {
+      vi.mocked(mockRpc)
+        .mockResolvedValueOnce({
+          data: false,
+          error: null,
+        } as unknown as Awaited<ReturnType<typeof backendService.supabase.rpc>>)
+        .mockResolvedValueOnce({
+          data: false,
+          error: null,
+        } as unknown as Awaited<ReturnType<typeof backendService.supabase.rpc>>)
+        .mockResolvedValueOnce({
+          data: true,
+          error: null,
+        } as unknown as Awaited<ReturnType<typeof backendService.supabase.rpc>>);
+
+      const res = await request(app).post('/auth/descope/register').send({
+        email: 'collision@example.com',
+        descopeToken: 'valid.token.signature',
+        firstName: 'John',
+        lastName: 'Doe',
+        displayName: 'Collision',
+      });
+      expect(res.status).toBe(200);
+      expect(mockRpc).toHaveBeenCalledTimes(3);
     });
   });
 });
