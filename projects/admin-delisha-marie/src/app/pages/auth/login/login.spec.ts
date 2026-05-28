@@ -2,6 +2,7 @@ import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { Router, provideRouter, ActivatedRoute } from '@angular/router';
 import { vi, Mock } from 'vitest';
 import { LoginComponent } from './login';
+import { DOCUMENT } from '@angular/common';
 import { BRAND_TITLE_TOKEN } from '../auth-shared.utils';
 import { AuthService } from '../../../services/auth.service';
 import { submit } from '@angular/forms/signals';
@@ -36,6 +37,7 @@ describe('LoginComponent', () => {
   let fixture: ComponentFixture<LoginComponent>;
   let router: Router;
   let snackBar: MatSnackBar;
+  let assignMock: Mock<(url: string) => void>;
 
   let loginReturnValue = true;
 
@@ -79,6 +81,7 @@ describe('LoginComponent', () => {
     fakeDescopeEmail.set('google-new-user@example.com');
     fakeIsNewUserFlag.set(false);
     queryParams = {};
+    assignMock = vi.fn<(url: string) => void>();
 
     fakeSnackBar = { open: vi.fn() };
     fakeAuthService = {
@@ -125,6 +128,26 @@ describe('LoginComponent', () => {
         { provide: AuthService, useValue: fakeAuthService },
         { provide: BRAND_TITLE_TOKEN, useValue: 'Test Brand' },
         { provide: MatSnackBar, useValue: fakeSnackBar },
+        {
+          provide: DOCUMENT,
+          useFactory: () => {
+            return new Proxy(globalThis.document, {
+              get(target, prop) {
+                if (prop === 'location') {
+                  return {
+                    origin: 'http://localhost',
+                    assign: (url: string) => assignMock(url),
+                  };
+                }
+                const val = Reflect.get(target, prop);
+                if (typeof val === 'function') {
+                  return val.bind(target);
+                }
+                return val;
+              },
+            });
+          },
+        },
       ],
     })
       .overrideProvider(MatSnackBar, { useValue: fakeSnackBar })
@@ -321,18 +344,10 @@ describe('LoginComponent', () => {
       .mocked(fakeAuthService.startDescopeGoogleOAuth)
       .mockResolvedValue('https://google.com/oauth-start');
 
-    const assignMock = vi.fn();
-    vi.stubGlobal('location', {
-      assign: assignMock,
-      origin: 'http://localhost',
-    });
-
     await component['loginWithDescopeGoogle']();
 
     expect(startSpy).toHaveBeenCalled();
     expect(assignMock).toHaveBeenCalledWith('https://google.com/oauth-start');
-
-    vi.unstubAllGlobals();
   });
 
   it('should show snackbar error if starting Google OAuth fails', async () => {

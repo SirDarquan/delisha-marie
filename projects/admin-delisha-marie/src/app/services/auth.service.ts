@@ -196,17 +196,8 @@ export class AuthService {
         descopeToken,
       });
 
-      if (resp.success) {
-        if (resp.isNewUser) {
-          this._descopeToken.set(resp.descopeToken || '');
-          this._descopeEmail.set(email);
-          this._isNewUserFlag.set(true);
-          return true;
-        } else if (resp.session?.access_token && resp.user) {
-          this._isNewUserFlag.set(false);
-          this.setSession(resp.user);
-          return true;
-        }
+      if (this.handleAuthResponse(email, resp)) {
+        return true;
       }
 
       this._authError.set('OAuth verification with backend failed.');
@@ -258,16 +249,8 @@ export class AuthService {
         email: email.trim(),
         code: code.trim(),
       });
-      if (resp.success) {
-        if (resp.isNewUser) {
-          this._descopeToken.set(resp.descopeToken || '');
-          this._isNewUserFlag.set(true);
-          return true;
-        } else if (resp.session?.access_token && resp.user) {
-          this._isNewUserFlag.set(false);
-          this.setSession(resp.user);
-          return true;
-        }
+      if (this.handleAuthResponse(email, resp)) {
+        return true;
       }
       this._authError.set('Invalid verification code.');
       return false;
@@ -317,6 +300,31 @@ export class AuthService {
       this._authError.set(errMsg);
       return false;
     }
+  }
+
+  private handleAuthResponse(
+    email: string,
+    resp: {
+      success: boolean;
+      isNewUser?: boolean;
+      descopeToken?: string;
+      session?: { access_token: string };
+      user?: AdminUser;
+    },
+  ): boolean {
+    if (resp.success) {
+      if (resp.isNewUser) {
+        this._descopeToken.set(resp.descopeToken || '');
+        this._descopeEmail.set(email);
+        this._isNewUserFlag.set(true);
+        return true;
+      } else if (resp.session?.access_token && resp.user) {
+        this._isNewUserFlag.set(false);
+        this.setSession(resp.user);
+        return true;
+      }
+    }
+    return false;
   }
 
   private setSession(user: AdminUser): void {

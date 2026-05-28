@@ -8,6 +8,7 @@ import {
   computed,
   AfterViewInit,
   PLATFORM_ID,
+  DOCUMENT,
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { form, FormRoot, FormField, required, email, pattern } from '@angular/forms/signals';
@@ -323,6 +324,7 @@ export class LoginComponent implements OnInit, AfterViewInit {
   private readonly route = inject(ActivatedRoute);
   private readonly auth = inject(AuthService);
   private readonly snackBar = inject(MatSnackBar);
+  private readonly document = inject(DOCUMENT);
 
   protected readonly common = injectAuthCommon();
 
@@ -582,10 +584,10 @@ export class LoginComponent implements OnInit, AfterViewInit {
 
   protected async loginWithDescopeGoogle() {
     this.isGoogleLogin.set(true);
-    const redirectUrl = window.location.origin + '/login';
+    const redirectUrl = this.document.location.origin + '/login';
     const url = await this.auth.startDescopeGoogleOAuth(redirectUrl);
     if (url) {
-      window.location.assign(url);
+      this.document.location.assign(url);
     } else {
       this.isGoogleLogin.set(false);
       this.snackBar.open('Failed to start Google sign in. Please try again.', 'Close', {

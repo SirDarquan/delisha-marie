@@ -382,7 +382,7 @@ describe('AuthService', () => {
           { provide: ApiService, useValue: apiMock },
           { provide: DescopeAuthConfig, useValue: { projectId: 'test-project' } },
           { provide: DescopeAuthService, useValue: fakeDescopeAuthService },
-          { provide: 'PLATFORM_ID', useValue: 'server' },
+          { provide: PLATFORM_ID, useValue: 'server' },
         ],
       });
       const svc = TestBed.inject(AuthService);
@@ -452,6 +452,128 @@ describe('AuthService', () => {
       expect(res).toBe(false);
       expect(consoleSpy).toHaveBeenCalled();
       consoleSpy.mockRestore();
+    });
+
+    it('should call setSession on signUp success if session and user are present', async () => {
+      const mockUser = { username: 'john', email: 'john@e.com' };
+      apiMock.post.mockResolvedValue({
+        success: true,
+        session: { access_token: 't' },
+        user: mockUser,
+      });
+      const res = await service.signUp(mockUser);
+      expect(res).toBe(true);
+      expect(service.isAuthenticated()).toBe(true);
+      expect(service.currentUser()).toEqual(mockUser);
+    });
+
+    it('should return false when descopeAuth is not available for OAuth operations', async () => {
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({
+        providers: [
+          AuthService,
+          { provide: ApiService, useValue: apiMock },
+          { provide: DescopeAuthConfig, useValue: { projectId: 'test-project' } },
+          { provide: DescopeAuthService, useValue: null },
+        ],
+      });
+      const svc = TestBed.inject(AuthService);
+      const url = await svc.startDescopeGoogleOAuth('http://localhost');
+      expect(url).toBeNull();
+
+      const res = await svc.exchangeDescopeOAuthCode('code');
+      expect(res).toBe(false);
+    });
+
+    it('should handle sendOtp rejection with a non-Error', async () => {
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+      apiMock.post.mockRejectedValue('Raw string network failure');
+      const res = await service.sendOtp('test@test.com');
+      expect(res.success).toBe(false);
+      expect(service.authError()).toBe('Failed to send OTP');
+      consoleSpy.mockRestore();
+    });
+
+    it('should handle verifyOtp resolving with success: false', async () => {
+      apiMock.post.mockResolvedValue({ success: false });
+      const res = await service.verifyOtp('test@test.com', '123456');
+      expect(res).toBe(false);
+      expect(service.authError()).toBe('Invalid verification code.');
+    });
+
+    it('should handle verifyOtp rejection with a non-Error', async () => {
+      apiMock.post.mockRejectedValue({ error: { error: 'Invalid token' } });
+      const res = await service.verifyOtp('test@test.com', '123456');
+      expect(res).toBe(false);
+      expect(service.authError()).toBe('Invalid token');
+    });
+
+    it('should handle registerDescope resolving with success: false', async () => {
+      apiMock.post.mockResolvedValue({ success: false });
+      const res = await service.registerDescope('e@e.com', 't', 'F', 'L', 'D');
+      expect(res).toBe(false);
+      expect(service.authError()).toBe('Registration failed.');
+    });
+
+    it('should handle registerDescope rejection with a non-Error', async () => {
+      apiMock.post.mockRejectedValue('Raw registration error');
+      const res = await service.registerDescope('e@e.com', 't', 'F', 'L', 'D');
+      expect(res).toBe(false);
+      expect(service.authError()).toBe('Registration failed');
+    });
+
+    it('should swallow errors when signout endpoint fails in logout', async () => {
+      apiMock.post.mockRejectedValue(new Error('Signout failed'));
+      expect(() => service.logout()).not.toThrow();
+      expect(service.isAuthenticated()).toBe(false);
+      expect(service.currentUser()).toBeNull();
+    });
+
+    it('should correctly report descope availability based on config', () => {
+      expect(service.isDescopeAvailable()).toBe(true);
+
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({
+        providers: [
+          AuthService,
+          { provide: ApiService, useValue: apiMock },
+          { provide: DescopeAuthConfig, useValue: null },
+          { provide: DescopeAuthService, useValue: null },
+        ],
+      });
+      const svc = TestBed.inject(AuthService);
+      expect(svc.isDescopeAvailable()).toBe(false);
+    });
+
+    it('should log error and return null if startDescopeGoogleOAuth throws an error', async () => {
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+      fakeDescopeAuthService.descopeSdk.oauth.start.mockImplementation(() => {
+        throw new Error('OAuth start crash');
+      });
+      const url = await service.startDescopeGoogleOAuth('http://localhost/login');
+      expect(url).toBeNull();
+      expect(consoleSpy).toHaveBeenCalled();
+      consoleSpy.mockRestore();
+    });
+
+    it('should set authError and return false if handleAuthResponse returns false', async () => {
+      fakeDescopeAuthService.descopeSdk.oauth.exchange.mockReturnValue(
+        of({
+          ok: true,
+          data: {
+            sessionJwt: 'descope-jwt',
+            user: { email: 'e@e.com' },
+          },
+        }),
+      );
+
+      apiMock.post.mockResolvedValue({
+        success: false,
+      });
+
+      const res = await service.exchangeDescopeOAuthCode('code123');
+      expect(res).toBe(false);
+      expect(service.authError()).toBe('OAuth verification with backend failed.');
     });
   });
 });

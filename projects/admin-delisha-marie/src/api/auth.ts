@@ -210,6 +210,42 @@ authRouter.post('/auth/descope/send-otp', async (req: Request, res: Response) =>
   }
 });
 
+async function handleDescopeVerification(
+  email: string,
+  descopeToken: string,
+  res: Response,
+): Promise<Response> {
+  // Fetch existing user from Supabase
+  const {
+    data: { users },
+    error: listError,
+  } = await getSupabaseAdmin().auth.admin.listUsers();
+  if (listError) throw listError;
+
+  const user = users.find((u) => u.email === email);
+  if (!user) {
+    return res.json({
+      success: true,
+      isNewUser: true,
+      descopeToken,
+      user: { email },
+    });
+  }
+
+  // Sign in passwordlessly by generating and verifying a magic link token hash on the backend
+  const sessionData = await signInPasswordlessly(email);
+  if (sessionData.session) {
+    setAuthCookies(res, sessionData.session);
+  }
+
+  return res.json({
+    success: true,
+    isNewUser: false,
+    session: sessionData.session,
+    user: sessionData.user,
+  });
+}
+
 // 2. Verify Descope OTP (for existing users)
 authRouter.post('/auth/descope/verify-otp', async (req: Request, res: Response) => {
   try {
@@ -225,35 +261,8 @@ authRouter.post('/auth/descope/verify-otp', async (req: Request, res: Response) 
         .status(401)
         .json({ error: verifyResp.error?.errorDescription || 'Invalid OTP code' });
     }
-    // Fetch existing user from Supabase
-    const {
-      data: { users },
-      error: listError,
-    } = await getSupabaseAdmin().auth.admin.listUsers();
-    if (listError) throw listError;
 
-    const user = users.find((u) => u.email === email);
-    if (!user) {
-      return res.json({
-        success: true,
-        isNewUser: true,
-        descopeToken: verifyResp.data?.sessionJwt || '',
-        user: { email },
-      });
-    }
-
-    // Sign in passwordlessly by generating and verifying a magic link token hash on the backend
-    const sessionData = await signInPasswordlessly(email);
-    if (sessionData.session) {
-      setAuthCookies(res, sessionData.session);
-    }
-
-    return res.json({
-      success: true,
-      isNewUser: false,
-      session: sessionData.session,
-      user: sessionData.user,
-    });
+    return await handleDescopeVerification(email, verifyResp.data?.sessionJwt || '', res);
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     return res.status(400).json({ error: msg });
@@ -397,35 +406,7 @@ authRouter.post('/auth/descope/verify-oauth', async (req: Request, res: Response
       return res.status(401).json({ error: msg });
     }
 
-    // Fetch existing user from Supabase
-    const {
-      data: { users },
-      error: listError,
-    } = await getSupabaseAdmin().auth.admin.listUsers();
-    if (listError) throw listError;
-
-    const user = users.find((u) => u.email === email);
-    if (!user) {
-      return res.json({
-        success: true,
-        isNewUser: true,
-        descopeToken,
-        user: { email },
-      });
-    }
-
-    // Sign in passwordlessly by generating and verifying a magic link token hash on the backend
-    const sessionData = await signInPasswordlessly(email);
-    if (sessionData.session) {
-      setAuthCookies(res, sessionData.session);
-    }
-
-    return res.json({
-      success: true,
-      isNewUser: false,
-      session: sessionData.session,
-      user: sessionData.user,
-    });
+    return await handleDescopeVerification(email, descopeToken, res);
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     return res.status(400).json({ error: msg });
