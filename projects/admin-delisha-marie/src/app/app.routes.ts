@@ -7,10 +7,6 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/auth/login/login').then((m) => m.LoginComponent),
   },
   {
-    path: 'signup',
-    loadComponent: () => import('./pages/auth/signup/signup').then((m) => m.SignUpComponent),
-  },
-  {
     path: 'recipes',
     loadComponent: () =>
       import('./pages/recipes-list/recipes-list').then((m) => m.RecipesListComponent),

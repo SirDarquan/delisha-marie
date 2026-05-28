@@ -4,10 +4,8 @@ import { vi, Mock } from 'vitest';
 import { LoginComponent } from './login';
 import { BRAND_TITLE_TOKEN } from '../auth-shared.utils';
 import { AuthService } from '../../../services/auth.service';
-import { SocialAuthService, SocialUser } from '@abacritt/angularx-social-login';
 import { submit } from '@angular/forms/signals';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { Subject } from 'rxjs';
 import { signal } from '@angular/core';
 
 interface MockAuthService {
@@ -15,24 +13,22 @@ interface MockAuthService {
   currentUser: unknown;
   authError: unknown;
   descopeToken: unknown;
+  descopeEmail: unknown;
   isNewUserFlag: unknown;
+  isDescopeAvailable: unknown;
   login: Mock;
   isUsernameAvailable: Mock;
   isEmailAvailable: Mock;
   signUp: Mock;
   loginBiosignature: Mock;
-  retrieveUsername: Mock;
-  retrievePassword: Mock;
+
   checkSession: Mock;
   waitForSessionInit: Mock;
   sendOtp: Mock;
   verifyOtp: Mock;
   registerDescope: Mock;
-}
-
-interface MockSocialAuthService {
-  authState: Subject<SocialUser>;
-  initState: Subject<boolean>;
+  startDescopeGoogleOAuth: Mock;
+  exchangeDescopeOAuthCode: Mock;
 }
 
 describe('LoginComponent', () => {
@@ -42,7 +38,6 @@ describe('LoginComponent', () => {
   let snackBar: MatSnackBar;
 
   let loginReturnValue = true;
-  const authStateSubject = new Subject<SocialUser>();
 
   let queryParams: Record<string, string> = {};
   const fakeActivatedRoute = {
@@ -66,12 +61,12 @@ describe('LoginComponent', () => {
 
   let fakeSnackBar: { open: Mock };
   let fakeAuthService: MockAuthService;
-  let fakeSocialAuthService: MockSocialAuthService;
 
   const fakeIsAuthenticated = signal(false);
   const fakeCurrentUser = signal<unknown>(null);
   const fakeAuthError = signal<string | null>(null);
   const fakeDescopeToken = signal<string>('mock_descope_token');
+  const fakeDescopeEmail = signal<string>('google-new-user@example.com');
   const fakeIsNewUserFlag = signal<boolean>(false);
 
   beforeEach(async () => {
@@ -81,6 +76,7 @@ describe('LoginComponent', () => {
     fakeCurrentUser.set(null);
     fakeAuthError.set(null);
     fakeDescopeToken.set('mock_descope_token');
+    fakeDescopeEmail.set('google-new-user@example.com');
     fakeIsNewUserFlag.set(false);
     queryParams = {};
 
@@ -90,7 +86,9 @@ describe('LoginComponent', () => {
       currentUser: fakeCurrentUser,
       authError: fakeAuthError,
       descopeToken: fakeDescopeToken,
+      descopeEmail: fakeDescopeEmail,
       isNewUserFlag: fakeIsNewUserFlag,
+      isDescopeAvailable: signal(true),
       login: vi.fn().mockImplementation(async (u: string) => {
         if (loginReturnValue) {
           fakeIsAuthenticated.set(true);
@@ -106,12 +104,7 @@ describe('LoginComponent', () => {
         fakeCurrentUser.set({ username: 'sirda', email: 'sirda@example.com' });
         return true;
       }),
-      retrieveUsername: vi
-        .fn()
-        .mockImplementation(async (email: string) => (email === 'test@test.com' ? 'sirda' : null)),
-      retrievePassword: vi
-        .fn()
-        .mockImplementation(async (user: string) => (user === 'sirda' ? 'Password123!' : null)),
+
       checkSession: vi.fn().mockImplementation(async () => {
         fakeIsAuthenticated.set(true);
         fakeCurrentUser.set({ username: 'sirda', email: 'sirda@example.com' });
@@ -120,10 +113,8 @@ describe('LoginComponent', () => {
       sendOtp: vi.fn().mockResolvedValue({ success: true, isNewUser: false }),
       verifyOtp: vi.fn().mockResolvedValue(true),
       registerDescope: vi.fn().mockResolvedValue(true),
-    };
-    fakeSocialAuthService = {
-      authState: authStateSubject,
-      initState: new Subject<boolean>(),
+      startDescopeGoogleOAuth: vi.fn(),
+      exchangeDescopeOAuthCode: vi.fn(),
     };
 
     await TestBed.configureTestingModule({
@@ -132,7 +123,6 @@ describe('LoginComponent', () => {
         provideRouter([]),
         { provide: ActivatedRoute, useValue: fakeActivatedRoute },
         { provide: AuthService, useValue: fakeAuthService },
-        { provide: SocialAuthService, useValue: fakeSocialAuthService },
         { provide: BRAND_TITLE_TOKEN, useValue: 'Test Brand' },
         { provide: MatSnackBar, useValue: fakeSnackBar },
       ],
@@ -326,124 +316,34 @@ describe('LoginComponent', () => {
     );
   });
 
-  it('should handle forgot username success', async () => {
-    vi.spyOn(window, 'prompt').mockReturnValue('test@test.com');
-    await component['onForgotUsername']();
-    expect(snackBar.open).toHaveBeenCalledWith('Your username is: sirda', 'Close', {
-      duration: 10000,
-    });
-  });
+  it('should call startDescopeGoogleOAuth and redirect when clicking Google Sign-in button', async () => {
+    const startSpy = vi
+      .mocked(fakeAuthService.startDescopeGoogleOAuth)
+      .mockResolvedValue('https://google.com/oauth-start');
 
-  it('should handle forgot username failure', async () => {
-    vi.spyOn(window, 'prompt').mockReturnValue('unknown@test.com');
-    await component['onForgotUsername']();
-    expect(snackBar.open).toHaveBeenCalledWith('Email address not found.', 'Close', {
-      duration: 10000,
-    });
-  });
-
-  it('should handle forgot username cancellation', async () => {
-    vi.spyOn(window, 'prompt').mockReturnValue(null);
-    await component['onForgotUsername']();
-    expect(fakeAuthService.retrieveUsername).not.toHaveBeenCalled();
-  });
-
-  it('should handle forgot password success', async () => {
-    vi.spyOn(window, 'prompt').mockReturnValue('sirda');
-    await component['onForgotPassword']();
-    expect(snackBar.open).toHaveBeenCalledWith('Your password is: Password123!', 'Close', {
-      duration: 10000,
-    });
-  });
-
-  it('should handle forgot password failure', async () => {
-    vi.spyOn(window, 'prompt').mockReturnValue('unknown');
-    await component['onForgotPassword']();
-    expect(snackBar.open).toHaveBeenCalledWith('Username not found.', 'Close', { duration: 10000 });
-  });
-
-  it('should handle forgot password cancellation', async () => {
-    vi.spyOn(window, 'prompt').mockReturnValue(null);
-    await component['onForgotPassword']();
-    expect(fakeAuthService.retrievePassword).not.toHaveBeenCalled();
-  });
-
-  it('should handle social auth state changes', () => {
-    const mockUser = { name: 'Test User', email: 'test@example.com' } as SocialUser;
-    authStateSubject.next(mockUser);
-    expect(snackBar.open).toHaveBeenCalledWith(
-      'Successfully authenticated as Test User! Redirecting...',
-      'Close',
-      { duration: 10000 },
-    );
-    expect(router.navigateByUrl).toHaveBeenCalledWith('/');
-  });
-
-  it('should handle social auth state changes with null user', () => {
-    authStateSubject.next(null as unknown as SocialUser);
-    expect(snackBar.open).not.toHaveBeenCalled();
-  });
-
-  it('should authenticate with passkey when PublicKeyCredential exists', async () => {
-    vi.useFakeTimers();
-    const win = window as unknown as Record<string, unknown>;
-    win['PublicKeyCredential'] = true;
-    const getSpy = vi.fn().mockResolvedValue({});
-    Object.defineProperty(navigator, 'credentials', {
-      value: { get: getSpy },
-      configurable: true,
-      writable: true,
+    const assignMock = vi.fn();
+    vi.stubGlobal('location', {
+      assign: assignMock,
+      origin: 'http://localhost',
     });
 
-    void component['authenticateWithPasskey']();
+    await component['loginWithDescopeGoogle']();
 
-    await Promise.resolve();
-    await Promise.resolve();
+    expect(startSpy).toHaveBeenCalled();
+    expect(assignMock).toHaveBeenCalledWith('https://google.com/oauth-start');
+
+    vi.unstubAllGlobals();
+  });
+
+  it('should show snackbar error if starting Google OAuth fails', async () => {
+    vi.mocked(fakeAuthService.startDescopeGoogleOAuth).mockResolvedValue(null);
+
+    await component['loginWithDescopeGoogle']();
 
     expect(snackBar.open).toHaveBeenCalledWith(
-      'Passkey authenticated successfully! Logging you in...',
+      'Failed to start Google sign in. Please try again.',
       'Close',
-      { duration: 10000 },
-    );
-
-    vi.advanceTimersByTime(1000);
-    expect(router.navigateByUrl).toHaveBeenCalledWith('/');
-    vi.useRealTimers();
-  });
-
-  it('should handle passkey authentication returning null', async () => {
-    const win = window as unknown as Record<string, unknown>;
-    win['PublicKeyCredential'] = true;
-    const getSpy = vi.fn().mockResolvedValue(null);
-    Object.defineProperty(navigator, 'credentials', {
-      value: { get: getSpy },
-      configurable: true,
-      writable: true,
-    });
-
-    await component['authenticateWithPasskey']();
-    expect(snackBar.open).not.toHaveBeenCalledWith(
-      'Passkey authenticated successfully! Logging you in...',
-      'Close',
-      expect.anything(),
-    );
-  });
-
-  it('should fail passkey authentication if it throws an error', async () => {
-    const win = window as unknown as Record<string, unknown>;
-    win['PublicKeyCredential'] = true;
-    const getSpy = vi.fn().mockRejectedValue(new Error('Cancelled'));
-    Object.defineProperty(navigator, 'credentials', {
-      value: { get: getSpy },
-      configurable: true,
-      writable: true,
-    });
-
-    await component['authenticateWithPasskey']();
-    expect(snackBar.open).toHaveBeenCalledWith(
-      'Passkey authentication failed or was cancelled.',
-      'Close',
-      { duration: 10000 },
+      { duration: 5000 },
     );
   });
 
@@ -456,7 +356,6 @@ describe('LoginComponent', () => {
       providers: [
         provideRouter([]),
         { provide: AuthService, useValue: fakeAuthService },
-        { provide: SocialAuthService, useValue: fakeSocialAuthService },
         { provide: BRAND_TITLE_TOKEN, useValue: 'Test Brand' },
         { provide: MatSnackBar, useValue: fakeSnackBar },
       ],
@@ -489,10 +388,47 @@ describe('LoginComponent', () => {
     expect(router.navigateByUrl).toHaveBeenCalledWith('/recipes');
   });
 
-  it('should redirect to custom returnUrl on social auth state changes', () => {
-    queryParams = { returnUrl: '/recipes' };
-    const mockUser = { name: 'Test User', email: 'test@example.com' } as SocialUser;
-    authStateSubject.next(mockUser);
-    expect(router.navigateByUrl).toHaveBeenCalledWith('/recipes');
+  it('should handle exchange code query parameter successfully for existing user', async () => {
+    vi.mocked(fakeAuthService.waitForSessionInit).mockResolvedValue(undefined);
+    fakeIsAuthenticated.set(false);
+    queryParams = { code: 'code123' };
+    vi.mocked(fakeAuthService.exchangeDescopeOAuthCode).mockResolvedValue(true);
+    fakeIsNewUserFlag.set(false);
+
+    component.ngOnInit();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(fakeAuthService.exchangeDescopeOAuthCode).toHaveBeenCalledWith('code123');
+    expect(router.navigateByUrl).toHaveBeenCalledWith('/');
+  });
+
+  it('should handle exchange code query parameter successfully for new user', async () => {
+    vi.mocked(fakeAuthService.waitForSessionInit).mockResolvedValue(undefined);
+    fakeIsAuthenticated.set(false);
+    queryParams = { code: 'code123' };
+    vi.mocked(fakeAuthService.exchangeDescopeOAuthCode).mockResolvedValue(true);
+    fakeIsNewUserFlag.set(true);
+
+    component.ngOnInit();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(component['currentStep']()).toBe('info');
+    expect(component['userEmail']()).toBe('google-new-user@example.com');
+  });
+
+  it('should show snackbar error if exchange fails', async () => {
+    vi.mocked(fakeAuthService.waitForSessionInit).mockResolvedValue(undefined);
+    fakeIsAuthenticated.set(false);
+    queryParams = { code: 'code123' };
+    vi.mocked(fakeAuthService.exchangeDescopeOAuthCode).mockResolvedValue(false);
+    fakeAuthError.set('OAuth failed');
+
+    component.ngOnInit();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(snackBar.open).toHaveBeenCalledWith('OAuth failed', 'Close', { duration: 5000 });
   });
 });

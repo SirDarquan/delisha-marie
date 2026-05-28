@@ -2,8 +2,8 @@ import { TestBed } from '@angular/core/testing';
 import { PLATFORM_ID } from '@angular/core';
 import { AuthService } from './auth.service';
 import { ApiService } from './api.service';
-import { SocialAuthService, SocialUser } from '@abacritt/angularx-social-login';
-import { Subject } from 'rxjs';
+import { DescopeAuthConfig, DescopeAuthService } from '@descope/angular-sdk';
+import { of } from 'rxjs';
 import { vi } from 'vitest';
 
 describe('AuthService', () => {
@@ -14,10 +14,13 @@ describe('AuthService', () => {
     put: ReturnType<typeof vi.fn>;
     delete: ReturnType<typeof vi.fn>;
   };
-  const authStateSubject = new Subject<SocialUser>();
-  const fakeSocialAuthService = {
-    authState: authStateSubject.asObservable(),
-    signOut: vi.fn().mockResolvedValue({}),
+  let fakeDescopeAuthService: {
+    descopeSdk: {
+      oauth: {
+        start: ReturnType<typeof vi.fn>;
+        exchange: ReturnType<typeof vi.fn>;
+      };
+    };
   };
 
   beforeEach(() => {
@@ -28,11 +31,21 @@ describe('AuthService', () => {
       delete: vi.fn().mockResolvedValue({}),
     };
 
+    fakeDescopeAuthService = {
+      descopeSdk: {
+        oauth: {
+          start: vi.fn(),
+          exchange: vi.fn(),
+        },
+      },
+    };
+
     TestBed.configureTestingModule({
       providers: [
         AuthService,
         { provide: ApiService, useValue: apiMock },
-        { provide: SocialAuthService, useValue: fakeSocialAuthService },
+        { provide: DescopeAuthConfig, useValue: { projectId: 'test-project' } },
+        { provide: DescopeAuthService, useValue: fakeDescopeAuthService },
       ],
     });
 
@@ -125,24 +138,6 @@ describe('AuthService', () => {
     service.logout();
     expect(service.isAuthenticated()).toBe(false);
     expect(service.currentUser()).toBeNull();
-  });
-
-  it('should retrieve password via backend', async () => {
-    apiMock.post.mockResolvedValue({ password: 'secret_password' });
-    const pw = await service.retrievePassword('sirda');
-    expect(apiMock.post).toHaveBeenCalledWith('/auth/retrieve-password', {
-      identifier: 'sirda',
-    });
-    expect(pw).toBe('secret_password');
-  });
-
-  it('should retrieve username via backend', async () => {
-    apiMock.post.mockResolvedValue({ username: 'sirda' });
-    const user = await service.retrieveUsername('sirda@example.com');
-    expect(apiMock.post).toHaveBeenCalledWith('/auth/retrieve-username', {
-      email: 'sirda@example.com',
-    });
-    expect(user).toBe('sirda');
   });
 
   it('should call sendOtp via backend', async () => {
@@ -254,51 +249,126 @@ describe('AuthService', () => {
       consoleSpy.mockRestore();
     });
 
-    it('should login with social user successfully', async () => {
-      const user = { idToken: 'tok123', provider: 'GOOGLE', name: 'Social User' } as SocialUser;
+    it('should start descope google oauth successfully', async () => {
+      fakeDescopeAuthService.descopeSdk.oauth.start.mockReturnValue(
+        of({ ok: true, data: { url: 'https://google.com/oauth' } }),
+      );
+      const url = await service.startDescopeGoogleOAuth('http://localhost/login');
+      expect(url).toBe('https://google.com/oauth');
+      expect(fakeDescopeAuthService.descopeSdk.oauth.start).toHaveBeenCalledWith(
+        'google',
+        'http://localhost/login',
+      );
+    });
+
+    it('should return null if start descope google oauth fails', async () => {
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+      fakeDescopeAuthService.descopeSdk.oauth.start.mockReturnValue(
+        of({ ok: false, error: { errorDescription: 'Err' } }),
+      );
+      const url = await service.startDescopeGoogleOAuth('http://localhost/login');
+      expect(url).toBeNull();
+      consoleSpy.mockRestore();
+    });
+
+    it('should exchange descope oauth code successfully and bridge session for existing user', async () => {
+      fakeDescopeAuthService.descopeSdk.oauth.exchange.mockReturnValue(
+        of({
+          ok: true,
+          data: {
+            sessionJwt: 'descope-jwt',
+            user: { email: 'existing@e.com' },
+          },
+        }),
+      );
+
       apiMock.post.mockResolvedValue({
         success: true,
-        session: { access_token: 'sestok' },
-        user: { username: 'social', email: 's@s.com' },
+        isNewUser: false,
+        session: { access_token: 'supabase-token' },
+        user: { email: 'existing@e.com' },
       });
-      const res = await service.loginWithSocial(user);
+
+      const res = await service.exchangeDescopeOAuthCode('code123');
       expect(res).toBe(true);
-      expect(apiMock.post).toHaveBeenCalledWith('/auth/social-login', {
-        token: 'tok123',
-        provider: 'google',
+      expect(apiMock.post).toHaveBeenCalledWith('/auth/descope/verify-oauth', {
+        email: 'existing@e.com',
+        descopeToken: 'descope-jwt',
       });
       expect(service.isAuthenticated()).toBe(true);
+      expect(service.isNewUserFlag()).toBe(false);
     });
 
-    it('should return false if social login explicitly reports failure', async () => {
-      apiMock.post.mockResolvedValue({ success: false });
-      const res = await service.loginWithSocial({ idToken: 'x' } as SocialUser);
+    it('should exchange descope oauth code and set isNewUserFlag: true for new user', async () => {
+      fakeDescopeAuthService.descopeSdk.oauth.exchange.mockReturnValue(
+        of({
+          ok: true,
+          data: {
+            sessionJwt: 'descope-jwt',
+            user: { email: 'new@e.com' },
+          },
+        }),
+      );
+
+      apiMock.post.mockResolvedValue({
+        success: true,
+        isNewUser: true,
+        descopeToken: 'descope-jwt',
+      });
+
+      const res = await service.exchangeDescopeOAuthCode('code123');
+      expect(res).toBe(true);
+      expect(service.isNewUserFlag()).toBe(true);
+      expect(service.descopeToken()).toBe('descope-jwt');
+      expect(service.descopeEmail()).toBe('new@e.com');
+      expect(service.isAuthenticated()).toBe(false);
+    });
+
+    it('should handle exchange oauth failures and return false', async () => {
+      fakeDescopeAuthService.descopeSdk.oauth.exchange.mockReturnValue(
+        of({
+          ok: false,
+          error: { errorDescription: 'Invalid code' },
+        }),
+      );
+
+      const res = await service.exchangeDescopeOAuthCode('code123');
       expect(res).toBe(false);
+      expect(service.authError()).toBe('Invalid code');
     });
 
-    it('should handle social login exception thrown by backend', async () => {
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
-      apiMock.post.mockRejectedValue(new Error('Failure'));
-      const res = await service.loginWithSocial({ idToken: 'x' } as SocialUser);
+    it('should return false if exchange returns no email address', async () => {
+      fakeDescopeAuthService.descopeSdk.oauth.exchange.mockReturnValue(
+        of({
+          ok: true,
+          data: {
+            sessionJwt: 'descope-jwt',
+            user: { email: '' },
+          },
+        }),
+      );
+
+      const res = await service.exchangeDescopeOAuthCode('code123');
       expect(res).toBe(false);
-      expect(consoleSpy).toHaveBeenCalled();
-      consoleSpy.mockRestore();
+      expect(service.authError()).toBe('No email address returned from Google account.');
     });
 
-    it('should return null if retrievePassword fails', async () => {
+    it('should handle backend verification exception thrown by bridge', async () => {
       const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
-      apiMock.post.mockRejectedValue(new Error('Pass err'));
-      const res = await service.retrievePassword('x');
-      expect(res).toBeNull();
-      expect(consoleSpy).toHaveBeenCalled();
-      consoleSpy.mockRestore();
-    });
+      fakeDescopeAuthService.descopeSdk.oauth.exchange.mockReturnValue(
+        of({
+          ok: true,
+          data: {
+            sessionJwt: 'descope-jwt',
+            user: { email: 'e@e.com' },
+          },
+        }),
+      );
 
-    it('should return null if retrieveUsername fails', async () => {
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
-      apiMock.post.mockRejectedValue(new Error('User err'));
-      const res = await service.retrieveUsername('x');
-      expect(res).toBeNull();
+      apiMock.post.mockRejectedValue(new Error('Bridge failure'));
+
+      const res = await service.exchangeDescopeOAuthCode('code123');
+      expect(res).toBe(false);
       expect(consoleSpy).toHaveBeenCalled();
       consoleSpy.mockRestore();
     });
@@ -310,7 +380,8 @@ describe('AuthService', () => {
         providers: [
           AuthService,
           { provide: ApiService, useValue: apiMock },
-          { provide: SocialAuthService, useValue: fakeSocialAuthService },
+          { provide: DescopeAuthConfig, useValue: { projectId: 'test-project' } },
+          { provide: DescopeAuthService, useValue: fakeDescopeAuthService },
           { provide: 'PLATFORM_ID', useValue: 'server' },
         ],
       });
@@ -360,7 +431,8 @@ describe('AuthService', () => {
         providers: [
           AuthService,
           { provide: ApiService, useValue: apiMock },
-          { provide: SocialAuthService, useValue: fakeSocialAuthService },
+          { provide: DescopeAuthConfig, useValue: { projectId: 'test-project' } },
+          { provide: DescopeAuthService, useValue: fakeDescopeAuthService },
           { provide: PLATFORM_ID, useValue: 'server' },
         ],
       });
@@ -369,18 +441,6 @@ describe('AuthService', () => {
 
       svc.logout();
       expect(apiMock.post).not.toHaveBeenCalled();
-    });
-
-    it('should login via subscription when socialAuth emits a user', async () => {
-      const loginSpy = vi.spyOn(service, 'loginWithSocial').mockResolvedValue(true);
-      const mockSocial = { idToken: 'xyz' } as SocialUser;
-
-      authStateSubject.next(mockSocial);
-
-      // Wait for next cycle because the subscription has `async` callback
-      await Promise.resolve();
-
-      expect(loginSpy).toHaveBeenCalledWith(mockSocial);
     });
 
     it('should fail login if api call itself returns exception in login method', async () => {
