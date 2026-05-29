@@ -55,6 +55,7 @@ export function createMockRecipe(overrides: Partial<Recipe> = {}): Recipe {
       prev: null,
       next: null,
     },
+    status: 'published',
     ...overrides,
   };
 }

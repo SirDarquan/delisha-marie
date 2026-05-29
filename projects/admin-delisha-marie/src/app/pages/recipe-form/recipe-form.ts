@@ -147,6 +147,20 @@ import { Recipe } from '../../models/recipe.model';
                 class="bg-slate-800/40 border border-slate-700/60 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-400/20 text-white placeholder-slate-500 transition" />
             </div>
 
+            <div class="flex flex-col gap-1">
+              <label for="status" class="text-xs font-semibold text-slate-300"
+                >Status <span class="text-rose-400">*</span></label
+              >
+              <select
+                id="status"
+                formControlName="status"
+                class="bg-slate-800/40 border border-slate-700/60 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-400/20 text-white transition">
+                <option value="draft" class="bg-slate-900">Draft</option>
+                <option value="scheduled" class="bg-slate-900">Scheduled</option>
+                <option value="published" class="bg-slate-900">Published</option>
+              </select>
+            </div>
+
             <div class="flex flex-col gap-1 md:col-span-2">
               <label for="image" class="text-xs font-semibold text-slate-300">Image URL</label>
               <input
@@ -247,6 +261,8 @@ export class RecipeFormComponent implements OnInit {
     cookTime: [''],
     totalTime: [''],
     yield: [''],
+    status: ['draft', [Validators.required]],
+    preview_token: [''],
     image: [''],
     description: [''],
     content: [''],
@@ -270,6 +286,8 @@ export class RecipeFormComponent implements OnInit {
           cookTime: recipe.cookTime || '',
           totalTime: recipe.totalTime || '',
           yield: recipe.yield || '',
+          status: recipe.status || 'draft',
+          preview_token: recipe.preview_token || '',
           image: recipe.image || '',
           description: recipe.description || '',
           content: recipe.content || '',
@@ -312,6 +330,8 @@ export class RecipeFormComponent implements OnInit {
         ingredients,
         instructions,
         author: 'Delisha Marie',
+        status: (f.status as 'draft' | 'scheduled' | 'published') || 'draft',
+        preview_token: f.preview_token || '',
       };
 
       if (this.isEdit()) {

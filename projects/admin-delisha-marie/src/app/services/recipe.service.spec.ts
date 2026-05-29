@@ -24,6 +24,7 @@ describe('RecipeService', () => {
       totalTime: '',
       yield: '',
       author: 'Delisha Marie',
+      status: 'published',
     },
     {
       id: 2,
@@ -40,6 +41,7 @@ describe('RecipeService', () => {
       totalTime: '',
       yield: '',
       author: 'Delisha Marie',
+      status: 'draft',
     },
   ];
 
@@ -146,6 +148,7 @@ describe('RecipeService', () => {
       totalTime: '',
       yield: '',
       author: 'Delisha Marie',
+      status: 'draft',
     };
 
     const created = service.createRecipe(newRecipe);
@@ -177,6 +180,7 @@ describe('RecipeService', () => {
       totalTime: '',
       yield: '',
       author: 'Chef',
+      status: 'draft',
     });
 
     const req = httpMock.expectOne('/api/recipes');
@@ -209,6 +213,7 @@ describe('RecipeService', () => {
       totalTime: '',
       yield: '',
       author: 'Delisha Marie',
+      status: 'draft',
     });
     expect(created.id).toBe(1);
     expect(service.recipes().length).toBe(1);
