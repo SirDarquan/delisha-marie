@@ -1,8 +1,15 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-import { SocialClients } from '../provider/social-logins';
 import { APP_PLUGINS, AppPlugin } from '../../core/plugins/plugin.token';
+
+export interface SocialClients {
+  GoogleClientId?: string;
+  AmazonClientId?: string;
+  FacebookClientId?: string;
+  VKClientId?: string;
+  MicrosoftClientId?: string;
+}
 
 export interface AppConfig {
   SocialClients: SocialClients;
@@ -25,7 +32,7 @@ export class AppConfigService implements AppPlugin {
   /**
    * Holds the fully resolved application configuration after loading completes.
    */
-  readonly config = signal<AppConfig | null>(null);
+  private readonly config = signal<AppConfig | null>(null);
 
   /**
    * Loads the application configuration from the /config endpoint.
@@ -42,7 +49,7 @@ export class AppConfigService implements AppPlugin {
     }
   }
 
-  socialClients() {
+  SocialClients() {
     return this.config()?.SocialClients;
   }
 
