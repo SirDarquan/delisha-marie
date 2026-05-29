@@ -22,7 +22,14 @@ describe('App', () => {
           { path: 'recipes', component: DummyComponent },
           { path: '', component: DummyComponent },
         ]),
-        { provide: AuthService, useValue: { currentUser: signal(null), logout: vi.fn() } },
+        {
+          provide: AuthService,
+          useValue: {
+            isAuthenticated: signal(true),
+            currentUser: signal(null),
+            logout: vi.fn(),
+          },
+        },
       ],
     }).compileComponents();
   });

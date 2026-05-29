@@ -26,12 +26,14 @@ describe('AppConfigService', () => {
     expect(service).toBeTruthy();
     expect(service.id).toBe('AppConfigService');
     expect(service.order).toBe(1);
-    expect(service.config()).toBeNull();
+    expect(service.SocialClients()).toBeUndefined();
+    expect(service.DescopeProjectId()).toBeUndefined();
   });
 
   it('should fetch configuration from /config and populate signal state', async () => {
     const mockConfig: AppConfig = {
       SocialClients: { GoogleClientId: 'test-google-123' },
+      DescopeProjectId: 'test-descope-456',
     };
 
     const promise = service.init();
@@ -42,7 +44,8 @@ describe('AppConfigService', () => {
 
     await promise;
 
-    expect(service.config()).toEqual(mockConfig);
+    expect(service.SocialClients()).toEqual(mockConfig.SocialClients);
+    expect(service.DescopeProjectId()).toBe('test-descope-456');
   });
 
   it('should log and throw a critical error if backend load fails', async () => {
@@ -56,7 +59,8 @@ describe('AppConfigService', () => {
     await expect(promise).rejects.toThrow();
 
     expect(consoleSpy).toHaveBeenCalled();
-    expect(service.config()).toBeNull();
+    expect(service.SocialClients()).toBeUndefined();
+    expect(service.DescopeProjectId()).toBeUndefined();
 
     consoleSpy.mockRestore();
   });

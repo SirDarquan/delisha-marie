@@ -10,7 +10,6 @@ import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/
 import { provideClientHydration, withEventReplay } from '@angular/platform-browser';
 import { routes } from './app.routes';
 import { authInterceptor } from './interceptors/auth.interceptor';
-import { provideSocialLogins } from './provider/social-logins';
 import { provideDescope } from './provider/descope';
 import { PluginRegistry } from '../core/plugins/plugin-registry.services';
 import { provideAppConfig } from './services/config.service';
@@ -25,7 +24,6 @@ export const appConfig: ApplicationConfig = {
     provideHttpClient(withFetch(), withInterceptors([authInterceptor])),
     provideAppInitializer(() => inject(PluginRegistry).initAll()),
     provideAppConfig(),
-    provideSocialLogins(),
     provideDescope(),
     { provide: BRAND_TITLE_TOKEN, useValue: 'Delisha Marie' },
   ],

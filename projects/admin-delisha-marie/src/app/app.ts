@@ -10,6 +10,7 @@ import { RouterOutlet, Router, NavigationEnd } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { filter, map } from 'rxjs/operators';
 import { HeaderComponent } from './components/header/header';
+import { AuthService } from './services/auth.service';
 
 @Component({
   selector: 'app-root',
@@ -30,6 +31,7 @@ import { HeaderComponent } from './components/header/header';
 export class App {
   protected readonly title = signal('admin-delisha-marie');
   private readonly router = inject(Router);
+  private readonly auth = inject(AuthService);
 
   private readonly currentUrl = toSignal(
     this.router.events.pipe(
@@ -41,6 +43,8 @@ export class App {
 
   protected readonly showHeader = computed(() => {
     const url = this.currentUrl();
-    return url && !url.includes('/login') && !url.includes('/signup');
+    return (
+      this.auth.isAuthenticated() && url && !url.includes('/login') && !url.includes('/signup')
+    );
   });
 }

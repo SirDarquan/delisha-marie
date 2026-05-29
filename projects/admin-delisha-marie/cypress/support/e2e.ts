@@ -15,3 +15,13 @@
 
 // When a command from ./commands is ready to use, import with `import './commands'` syntax
 // import './commands';
+
+beforeEach(() => {
+  cy.intercept('GET', '**/config', {
+    statusCode: 200,
+    body: {
+      SocialClients: {},
+      DescopeProjectId: 'mock-descope-project-id',
+    },
+  }).as('getAppConfig');
+});

@@ -7,10 +7,11 @@ export function provideDescope(): Provider {
     provide: DescopeAuthConfig,
     useFactory: () => {
       const appConfigService = inject(AppConfigService);
-      const projectId = appConfigService.config()?.DescopeProjectId || '';
       return {
-        projectId,
-      };
+        get projectId(): string {
+          return appConfigService.DescopeProjectId() || '';
+        },
+      } as DescopeAuthConfig;
     },
   };
 }

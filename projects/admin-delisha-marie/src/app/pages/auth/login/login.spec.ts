@@ -2,37 +2,34 @@ import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { Router, provideRouter, ActivatedRoute } from '@angular/router';
 import { vi, Mock } from 'vitest';
 import { LoginComponent } from './login';
+import { DOCUMENT } from '@angular/common';
 import { BRAND_TITLE_TOKEN } from '../auth-shared.utils';
 import { AuthService } from '../../../services/auth.service';
-import { SocialAuthService, SocialUser } from '@abacritt/angularx-social-login';
 import { submit } from '@angular/forms/signals';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { Subject } from 'rxjs';
-import { signal } from '@angular/core';
+import { signal, PLATFORM_ID, WritableSignal } from '@angular/core';
 
 interface MockAuthService {
   isAuthenticated: unknown;
   currentUser: unknown;
   authError: unknown;
   descopeToken: unknown;
+  descopeEmail: unknown;
   isNewUserFlag: unknown;
+  isDescopeAvailable: unknown;
   login: Mock;
   isUsernameAvailable: Mock;
   isEmailAvailable: Mock;
   signUp: Mock;
   loginBiosignature: Mock;
-  retrieveUsername: Mock;
-  retrievePassword: Mock;
+
   checkSession: Mock;
   waitForSessionInit: Mock;
   sendOtp: Mock;
   verifyOtp: Mock;
   registerDescope: Mock;
-}
-
-interface MockSocialAuthService {
-  authState: Subject<SocialUser>;
-  initState: Subject<boolean>;
+  startDescopeGoogleOAuth: Mock;
+  exchangeDescopeOAuthCode: Mock;
 }
 
 describe('LoginComponent', () => {
@@ -40,9 +37,9 @@ describe('LoginComponent', () => {
   let fixture: ComponentFixture<LoginComponent>;
   let router: Router;
   let snackBar: MatSnackBar;
+  let assignMock: Mock<(url: string) => void>;
 
   let loginReturnValue = true;
-  const authStateSubject = new Subject<SocialUser>();
 
   let queryParams: Record<string, string> = {};
   const fakeActivatedRoute = {
@@ -66,12 +63,12 @@ describe('LoginComponent', () => {
 
   let fakeSnackBar: { open: Mock };
   let fakeAuthService: MockAuthService;
-  let fakeSocialAuthService: MockSocialAuthService;
 
   const fakeIsAuthenticated = signal(false);
   const fakeCurrentUser = signal<unknown>(null);
   const fakeAuthError = signal<string | null>(null);
   const fakeDescopeToken = signal<string>('mock_descope_token');
+  const fakeDescopeEmail = signal<string>('google-new-user@example.com');
   const fakeIsNewUserFlag = signal<boolean>(false);
 
   beforeEach(async () => {
@@ -81,8 +78,10 @@ describe('LoginComponent', () => {
     fakeCurrentUser.set(null);
     fakeAuthError.set(null);
     fakeDescopeToken.set('mock_descope_token');
+    fakeDescopeEmail.set('google-new-user@example.com');
     fakeIsNewUserFlag.set(false);
     queryParams = {};
+    assignMock = vi.fn<(url: string) => void>();
 
     fakeSnackBar = { open: vi.fn() };
     fakeAuthService = {
@@ -90,7 +89,9 @@ describe('LoginComponent', () => {
       currentUser: fakeCurrentUser,
       authError: fakeAuthError,
       descopeToken: fakeDescopeToken,
+      descopeEmail: fakeDescopeEmail,
       isNewUserFlag: fakeIsNewUserFlag,
+      isDescopeAvailable: signal(true),
       login: vi.fn().mockImplementation(async (u: string) => {
         if (loginReturnValue) {
           fakeIsAuthenticated.set(true);
@@ -106,12 +107,7 @@ describe('LoginComponent', () => {
         fakeCurrentUser.set({ username: 'sirda', email: 'sirda@example.com' });
         return true;
       }),
-      retrieveUsername: vi
-        .fn()
-        .mockImplementation(async (email: string) => (email === 'test@test.com' ? 'sirda' : null)),
-      retrievePassword: vi
-        .fn()
-        .mockImplementation(async (user: string) => (user === 'sirda' ? 'Password123!' : null)),
+
       checkSession: vi.fn().mockImplementation(async () => {
         fakeIsAuthenticated.set(true);
         fakeCurrentUser.set({ username: 'sirda', email: 'sirda@example.com' });
@@ -120,10 +116,8 @@ describe('LoginComponent', () => {
       sendOtp: vi.fn().mockResolvedValue({ success: true, isNewUser: false }),
       verifyOtp: vi.fn().mockResolvedValue(true),
       registerDescope: vi.fn().mockResolvedValue(true),
-    };
-    fakeSocialAuthService = {
-      authState: authStateSubject,
-      initState: new Subject<boolean>(),
+      startDescopeGoogleOAuth: vi.fn(),
+      exchangeDescopeOAuthCode: vi.fn(),
     };
 
     await TestBed.configureTestingModule({
@@ -132,9 +126,28 @@ describe('LoginComponent', () => {
         provideRouter([]),
         { provide: ActivatedRoute, useValue: fakeActivatedRoute },
         { provide: AuthService, useValue: fakeAuthService },
-        { provide: SocialAuthService, useValue: fakeSocialAuthService },
         { provide: BRAND_TITLE_TOKEN, useValue: 'Test Brand' },
         { provide: MatSnackBar, useValue: fakeSnackBar },
+        {
+          provide: DOCUMENT,
+          useFactory: () => {
+            return new Proxy(globalThis.document, {
+              get(target, prop) {
+                if (prop === 'location') {
+                  return {
+                    origin: 'http://localhost',
+                    assign: (url: string) => assignMock(url),
+                  };
+                }
+                const val = Reflect.get(target, prop);
+                if (typeof val === 'function') {
+                  return val.bind(target);
+                }
+                return val;
+              },
+            });
+          },
+        },
       ],
     })
       .overrideProvider(MatSnackBar, { useValue: fakeSnackBar })
@@ -208,6 +221,7 @@ describe('LoginComponent', () => {
     component['userEmail'].set('john@example.com');
     component['isNewUser'].set(false);
     component['currentStep'].set('otp');
+    fixture.detectChanges();
     component['step2Model'].set({ code: '123456' });
 
     fakeAuthService.verifyOtp.mockResolvedValue(true);
@@ -227,6 +241,7 @@ describe('LoginComponent', () => {
     component['userEmail'].set('john@example.com');
     component['isNewUser'].set(false);
     component['currentStep'].set('otp');
+    fixture.detectChanges();
     component['step2Model'].set({ code: '123456' });
 
     fakeAuthService.verifyOtp.mockResolvedValue(false);
@@ -243,6 +258,7 @@ describe('LoginComponent', () => {
   it('should verify OTP and transition to step 3 for new user when code is submitted', async () => {
     component['userEmail'].set('new@example.com');
     component['currentStep'].set('otp');
+    fixture.detectChanges();
     component['step2Model'].set({ code: '123456' });
 
     fakeAuthService.verifyOtp.mockResolvedValue(true);
@@ -259,6 +275,7 @@ describe('LoginComponent', () => {
     component['otpCode'].set('123456');
     component['isNewUser'].set(true);
     component['currentStep'].set('info');
+    fixture.detectChanges();
 
     component['step3Model'].set({
       firstName: 'Alice',
@@ -290,6 +307,7 @@ describe('LoginComponent', () => {
     component['otpCode'].set('123456');
     component['isNewUser'].set(true);
     component['currentStep'].set('info');
+    fixture.detectChanges();
 
     component['step3Model'].set({
       firstName: 'Alice',
@@ -311,6 +329,7 @@ describe('LoginComponent', () => {
   it('should resend OTP code successfully', async () => {
     component['userEmail'].set('john@example.com');
     component['currentStep'].set('otp');
+    fixture.detectChanges();
     component['step2Model'].set({ code: '123456' });
 
     fakeAuthService.sendOtp.mockResolvedValue({ success: true, isNewUser: false });
@@ -326,124 +345,26 @@ describe('LoginComponent', () => {
     );
   });
 
-  it('should handle forgot username success', async () => {
-    vi.spyOn(window, 'prompt').mockReturnValue('test@test.com');
-    await component['onForgotUsername']();
-    expect(snackBar.open).toHaveBeenCalledWith('Your username is: sirda', 'Close', {
-      duration: 10000,
-    });
+  it('should call startDescopeGoogleOAuth and redirect when clicking Google Sign-in button', async () => {
+    const startSpy = vi
+      .mocked(fakeAuthService.startDescopeGoogleOAuth)
+      .mockResolvedValue('https://google.com/oauth-start');
+
+    await component['loginWithDescopeGoogle']();
+
+    expect(startSpy).toHaveBeenCalled();
+    expect(assignMock).toHaveBeenCalledWith('https://google.com/oauth-start');
   });
 
-  it('should handle forgot username failure', async () => {
-    vi.spyOn(window, 'prompt').mockReturnValue('unknown@test.com');
-    await component['onForgotUsername']();
-    expect(snackBar.open).toHaveBeenCalledWith('Email address not found.', 'Close', {
-      duration: 10000,
-    });
-  });
+  it('should show snackbar error if starting Google OAuth fails', async () => {
+    vi.mocked(fakeAuthService.startDescopeGoogleOAuth).mockResolvedValue(null);
 
-  it('should handle forgot username cancellation', async () => {
-    vi.spyOn(window, 'prompt').mockReturnValue(null);
-    await component['onForgotUsername']();
-    expect(fakeAuthService.retrieveUsername).not.toHaveBeenCalled();
-  });
-
-  it('should handle forgot password success', async () => {
-    vi.spyOn(window, 'prompt').mockReturnValue('sirda');
-    await component['onForgotPassword']();
-    expect(snackBar.open).toHaveBeenCalledWith('Your password is: Password123!', 'Close', {
-      duration: 10000,
-    });
-  });
-
-  it('should handle forgot password failure', async () => {
-    vi.spyOn(window, 'prompt').mockReturnValue('unknown');
-    await component['onForgotPassword']();
-    expect(snackBar.open).toHaveBeenCalledWith('Username not found.', 'Close', { duration: 10000 });
-  });
-
-  it('should handle forgot password cancellation', async () => {
-    vi.spyOn(window, 'prompt').mockReturnValue(null);
-    await component['onForgotPassword']();
-    expect(fakeAuthService.retrievePassword).not.toHaveBeenCalled();
-  });
-
-  it('should handle social auth state changes', () => {
-    const mockUser = { name: 'Test User', email: 'test@example.com' } as SocialUser;
-    authStateSubject.next(mockUser);
-    expect(snackBar.open).toHaveBeenCalledWith(
-      'Successfully authenticated as Test User! Redirecting...',
-      'Close',
-      { duration: 10000 },
-    );
-    expect(router.navigateByUrl).toHaveBeenCalledWith('/');
-  });
-
-  it('should handle social auth state changes with null user', () => {
-    authStateSubject.next(null as unknown as SocialUser);
-    expect(snackBar.open).not.toHaveBeenCalled();
-  });
-
-  it('should authenticate with passkey when PublicKeyCredential exists', async () => {
-    vi.useFakeTimers();
-    const win = window as unknown as Record<string, unknown>;
-    win['PublicKeyCredential'] = true;
-    const getSpy = vi.fn().mockResolvedValue({});
-    Object.defineProperty(navigator, 'credentials', {
-      value: { get: getSpy },
-      configurable: true,
-      writable: true,
-    });
-
-    void component['authenticateWithPasskey']();
-
-    await Promise.resolve();
-    await Promise.resolve();
+    await component['loginWithDescopeGoogle']();
 
     expect(snackBar.open).toHaveBeenCalledWith(
-      'Passkey authenticated successfully! Logging you in...',
+      'Failed to start Google sign in. Please try again.',
       'Close',
-      { duration: 10000 },
-    );
-
-    vi.advanceTimersByTime(1000);
-    expect(router.navigateByUrl).toHaveBeenCalledWith('/');
-    vi.useRealTimers();
-  });
-
-  it('should handle passkey authentication returning null', async () => {
-    const win = window as unknown as Record<string, unknown>;
-    win['PublicKeyCredential'] = true;
-    const getSpy = vi.fn().mockResolvedValue(null);
-    Object.defineProperty(navigator, 'credentials', {
-      value: { get: getSpy },
-      configurable: true,
-      writable: true,
-    });
-
-    await component['authenticateWithPasskey']();
-    expect(snackBar.open).not.toHaveBeenCalledWith(
-      'Passkey authenticated successfully! Logging you in...',
-      'Close',
-      expect.anything(),
-    );
-  });
-
-  it('should fail passkey authentication if it throws an error', async () => {
-    const win = window as unknown as Record<string, unknown>;
-    win['PublicKeyCredential'] = true;
-    const getSpy = vi.fn().mockRejectedValue(new Error('Cancelled'));
-    Object.defineProperty(navigator, 'credentials', {
-      value: { get: getSpy },
-      configurable: true,
-      writable: true,
-    });
-
-    await component['authenticateWithPasskey']();
-    expect(snackBar.open).toHaveBeenCalledWith(
-      'Passkey authentication failed or was cancelled.',
-      'Close',
-      { duration: 10000 },
+      { duration: 5000 },
     );
   });
 
@@ -456,7 +377,6 @@ describe('LoginComponent', () => {
       providers: [
         provideRouter([]),
         { provide: AuthService, useValue: fakeAuthService },
-        { provide: SocialAuthService, useValue: fakeSocialAuthService },
         { provide: BRAND_TITLE_TOKEN, useValue: 'Test Brand' },
         { provide: MatSnackBar, useValue: fakeSnackBar },
       ],
@@ -480,6 +400,7 @@ describe('LoginComponent', () => {
     component['userEmail'].set('john@example.com');
     component['isNewUser'].set(false);
     component['currentStep'].set('otp');
+    fixture.detectChanges();
     component['step2Model'].set({ code: '123456' });
 
     fakeAuthService.verifyOtp.mockResolvedValue(true);
@@ -489,10 +410,504 @@ describe('LoginComponent', () => {
     expect(router.navigateByUrl).toHaveBeenCalledWith('/recipes');
   });
 
-  it('should redirect to custom returnUrl on social auth state changes', () => {
-    queryParams = { returnUrl: '/recipes' };
-    const mockUser = { name: 'Test User', email: 'test@example.com' } as SocialUser;
-    authStateSubject.next(mockUser);
-    expect(router.navigateByUrl).toHaveBeenCalledWith('/recipes');
+  it('should handle exchange code query parameter successfully for existing user', async () => {
+    vi.mocked(fakeAuthService.waitForSessionInit).mockResolvedValue(undefined);
+    fakeIsAuthenticated.set(false);
+    queryParams = { code: 'code123' };
+    vi.mocked(fakeAuthService.exchangeDescopeOAuthCode).mockResolvedValue(true);
+    fakeIsNewUserFlag.set(false);
+
+    component.ngOnInit();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(fakeAuthService.exchangeDescopeOAuthCode).toHaveBeenCalledWith('code123');
+    expect(router.navigateByUrl).toHaveBeenCalledWith('/');
+  });
+
+  it('should handle exchange code query parameter successfully for new user', async () => {
+    vi.mocked(fakeAuthService.waitForSessionInit).mockResolvedValue(undefined);
+    fakeIsAuthenticated.set(false);
+    queryParams = { code: 'code123' };
+    vi.mocked(fakeAuthService.exchangeDescopeOAuthCode).mockResolvedValue(true);
+    fakeIsNewUserFlag.set(true);
+
+    component.ngOnInit();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(component['currentStep']()).toBe('info');
+    expect(component['userEmail']()).toBe('google-new-user@example.com');
+  });
+
+  it('should show snackbar error if exchange fails', async () => {
+    vi.mocked(fakeAuthService.waitForSessionInit).mockResolvedValue(undefined);
+    fakeIsAuthenticated.set(false);
+    queryParams = { code: 'code123' };
+    vi.mocked(fakeAuthService.exchangeDescopeOAuthCode).mockResolvedValue(false);
+    fakeAuthError.set('OAuth failed');
+
+    component.ngOnInit();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(snackBar.open).toHaveBeenCalledWith('OAuth failed', 'Close', { duration: 5000 });
+  });
+
+  // Coverage Boosters: Constructor flow with 'code' param during component creation
+  it('should initialize exchangingOAuth and isGoogleLogin in constructor when code param is present', async () => {
+    TestBed.resetTestingModule();
+    queryParams = { code: 'oauth-code' };
+
+    await TestBed.configureTestingModule({
+      imports: [LoginComponent],
+      providers: [
+        provideRouter([]),
+        { provide: ActivatedRoute, useValue: fakeActivatedRoute },
+        { provide: AuthService, useValue: fakeAuthService },
+        { provide: BRAND_TITLE_TOKEN, useValue: 'Test Brand' },
+        { provide: MatSnackBar, useValue: fakeSnackBar },
+      ],
+    })
+      .overrideProvider(MatSnackBar, { useValue: fakeSnackBar })
+      .compileComponents();
+
+    const fix = TestBed.createComponent(LoginComponent);
+    const comp = fix.componentInstance;
+    expect(comp['exchangingOAuth']()).toBe(true);
+    expect(comp['isGoogleLogin']()).toBe(true);
+    fix.detectChanges();
+  });
+
+  // Coverage Boosters: Catch blocks for Step 1
+  it('should handle exceptions during OTP send', async () => {
+    fakeAuthService.sendOtp.mockRejectedValue(new Error('Send OTP connection error'));
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    component['step1Model'].set({ email: 'test@example.com' });
+    await submit(component['step1Form']);
+
+    expect(snackBar.open).toHaveBeenCalledWith('An error occurred. Please try again.', 'Close', {
+      duration: 5000,
+    });
+    expect(consoleErrorSpy).toHaveBeenCalled();
+    consoleErrorSpy.mockRestore();
+  });
+
+  // Coverage Boosters: Catch blocks for Step 2
+  it('should handle exceptions during OTP verification', async () => {
+    component['userEmail'].set('john@example.com');
+    component['currentStep'].set('otp');
+    fixture.detectChanges();
+    component['step2Model'].set({ code: '123456' });
+
+    fakeAuthService.verifyOtp.mockRejectedValue(new Error('Verify OTP timeout error'));
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    await submit(component['step2Form']);
+
+    expect(snackBar.open).toHaveBeenCalledWith('Verification failed. Please try again.', 'Close', {
+      duration: 5000,
+    });
+    expect(consoleErrorSpy).toHaveBeenCalled();
+    consoleErrorSpy.mockRestore();
+  });
+
+  // Coverage Boosters: Catch blocks and OAuth failures for exchangeDescopeOAuthCode
+  it('should handle exceptions inside ngOnInit code exchange', async () => {
+    vi.mocked(fakeAuthService.waitForSessionInit).mockResolvedValue(undefined);
+    fakeIsAuthenticated.set(false);
+    queryParams = { code: 'code123' };
+    vi.mocked(fakeAuthService.exchangeDescopeOAuthCode).mockRejectedValue(
+      new Error('Network error'),
+    );
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    component.ngOnInit();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(snackBar.open).toHaveBeenCalledWith(
+      'An error occurred during Google sign in.',
+      'Close',
+      { duration: 5000 },
+    );
+    expect(consoleErrorSpy).toHaveBeenCalled();
+    expect(component['isGoogleLogin']()).toBe(false);
+    consoleErrorSpy.mockRestore();
+  });
+
+  // Coverage Boosters: Step 3 Session Expiration branches for Google OAuth login
+  it('should redirect Google login flow to email screen on registration session expiration', async () => {
+    vi.useFakeTimers();
+    component['userEmail'].set('expired-google@example.com');
+    component['isNewUser'].set(true);
+    component['currentStep'].set('info');
+    component['isGoogleLogin'].set(true);
+    fixture.detectChanges();
+
+    component['step3Model'].set({
+      firstName: 'Alice',
+      lastName: 'Wonder',
+      displayName: 'alicew',
+    });
+
+    fakeAuthService.registerDescope.mockResolvedValue(false);
+    fakeAuthError.set('Descope token expired');
+
+    await submit(component['step3Form']);
+
+    expect(snackBar.open).toHaveBeenCalledWith(
+      'Session has expired or is invalid. Redirecting to Google Login...',
+      'Close',
+      { duration: 7000 },
+    );
+
+    vi.advanceTimersByTime(1000);
+    expect(component['currentStep']()).toBe('email');
+    vi.useRealTimers();
+  });
+
+  // Coverage Boosters: Step 3 Session Expiration branches for Normal Email OTP login
+  it('should redirect Email OTP flow to otp screen on registration session expiration', async () => {
+    vi.useFakeTimers();
+    component['userEmail'].set('expired-otp@example.com');
+    component['isNewUser'].set(true);
+    component['currentStep'].set('info');
+    component['isGoogleLogin'].set(false);
+    fixture.detectChanges();
+
+    component['step3Model'].set({
+      firstName: 'Bob',
+      lastName: 'Builder',
+      displayName: 'bob',
+    });
+
+    fakeAuthService.registerDescope.mockResolvedValue(false);
+    fakeAuthError.set('Descope code expired');
+
+    await submit(component['step3Form']);
+
+    expect(snackBar.open).toHaveBeenCalledWith(
+      'Session has expired or is invalid. Redirecting to verify your OTP again...',
+      'Close',
+      { duration: 7000 },
+    );
+
+    expect(component['step2Model']().code).toBe('');
+
+    vi.advanceTimersByTime(1000);
+    expect(component['currentStep']()).toBe('otp');
+    vi.useRealTimers();
+  });
+
+  // Coverage Boosters: Catch blocks for Step 3
+  it('should handle registration exceptions during step 3 submit', async () => {
+    component['userEmail'].set('new@example.com');
+    component['currentStep'].set('info');
+    fixture.detectChanges();
+
+    component['step3Model'].set({
+      firstName: 'Alice',
+      lastName: 'Wonder',
+      displayName: 'alicew',
+    });
+
+    fakeAuthService.registerDescope.mockRejectedValue(new Error('Db constraint error'));
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    await submit(component['step3Form']);
+
+    expect(snackBar.open).toHaveBeenCalledWith(
+      'An error occurred during registration. Please try again.',
+      'Close',
+      { duration: 5000 },
+    );
+    expect(consoleErrorSpy).toHaveBeenCalled();
+    consoleErrorSpy.mockRestore();
+  });
+
+  // Coverage Boosters: resendOtp failures
+  it('should do nothing in resendOtp if userEmail is empty', async () => {
+    component['userEmail'].set('');
+    component['currentStep'].set('otp');
+    fixture.detectChanges();
+
+    await component['resendOtp']();
+    expect(fakeAuthService.sendOtp).not.toHaveBeenCalled();
+  });
+
+  it('should show error in resendOtp when sending fails', async () => {
+    component['userEmail'].set('john@example.com');
+    component['currentStep'].set('otp');
+    fixture.detectChanges();
+
+    fakeAuthService.sendOtp.mockResolvedValue({ success: false, isNewUser: false });
+    fakeAuthError.set('Resend limit reached');
+
+    await component['resendOtp']();
+
+    expect(snackBar.open).toHaveBeenCalledWith('Resend limit reached', 'Close', { duration: 5000 });
+  });
+
+  it('should handle exceptions during resendOtp', async () => {
+    component['userEmail'].set('john@example.com');
+    component['currentStep'].set('otp');
+    fixture.detectChanges();
+
+    fakeAuthService.sendOtp.mockRejectedValue(new Error('Network disconnected'));
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    await component['resendOtp']();
+
+    expect(snackBar.open).toHaveBeenCalledWith('Error sending new OTP.', 'Close', {
+      duration: 5000,
+    });
+    expect(consoleErrorSpy).toHaveBeenCalled();
+    consoleErrorSpy.mockRestore();
+  });
+
+  // Coverage Boosters: Back Button layout navigations
+  it('should compute backButtonLabel reactively based on isGoogleLogin', () => {
+    component['isGoogleLogin'].set(true);
+    expect(component['backButtonLabel']()).toBe('← Back to Login');
+
+    component['isGoogleLogin'].set(false);
+    expect(component['backButtonLabel']()).toBe('← Back to Verification Code');
+  });
+
+  it('should transition correctly in goBackFromProfile', () => {
+    component['isGoogleLogin'].set(true);
+    component['goBackFromProfile']();
+    expect(component['currentStep']()).toBe('email');
+
+    component['isGoogleLogin'].set(false);
+    component['goBackFromProfile']();
+    expect(component['currentStep']()).toBe('otp');
+  });
+
+  it('should transition correctly in goBackToEmail', () => {
+    component['currentStep'].set('otp');
+    component['goBackToEmail']();
+    expect(component['currentStep']()).toBe('email');
+  });
+
+  // Coverage Boosters: additional inline template rendering and validation checks
+  it('should render authenticating loader when exchangingOAuth is true', () => {
+    component['exchangingOAuth'].set(true);
+    fixture.detectChanges();
+    const compiled = fixture.nativeElement;
+    expect(compiled.querySelector('.animate-pulse')).toBeTruthy();
+    expect(compiled.textContent).toContain('Authenticating...');
+  });
+
+  it('should show error when email is touched and invalid', () => {
+    component['step1Form'].email().markAsTouched();
+    component['step1Model'].set({ email: 'invalid-email' });
+    fixture.detectChanges();
+    const compiled = fixture.nativeElement;
+    expect(compiled.textContent).toContain('Please enter a valid email address.');
+  });
+
+  it('should show error when verification code is touched and invalid', () => {
+    component['currentStep'].set('otp');
+    component['step2Form'].code().markAsTouched();
+    component['step2Model'].set({ code: '123' });
+    fixture.detectChanges();
+    const compiled = fixture.nativeElement;
+    expect(compiled.textContent).toContain('Enter a valid 6-digit verification code.');
+  });
+
+  it('should show profile validation errors when inputs are touched and invalid', () => {
+    component['currentStep'].set('info');
+    component['step3Form'].firstName().markAsTouched();
+    component['step3Form'].lastName().markAsTouched();
+    component['step3Form'].displayName().markAsTouched();
+    component['step3Model'].set({ firstName: '', lastName: '', displayName: '' });
+    fixture.detectChanges();
+    const compiled = fixture.nativeElement;
+    expect(compiled.textContent).toContain('First name is required.');
+    expect(compiled.textContent).toContain('Last name is required.');
+    expect(compiled.textContent).toContain('Display name is required.');
+  });
+
+  it('should show sending code loader when submittingStep1 is true', () => {
+    component['submittingStep1'].set(true);
+    fixture.detectChanges();
+    const compiled = fixture.nativeElement;
+    expect(compiled.textContent).toContain('Sending Code...');
+  });
+
+  it('should show verifying loader when submittingStep2 is true', () => {
+    component['currentStep'].set('otp');
+    component['submittingStep2'].set(true);
+    fixture.detectChanges();
+    const compiled = fixture.nativeElement;
+    expect(compiled.textContent).toContain('Verifying...');
+  });
+
+  it('should show completing registration loader when submittingStep3 is true', () => {
+    component['currentStep'].set('info');
+    component['submittingStep3'].set(true);
+    fixture.detectChanges();
+    const compiled = fixture.nativeElement;
+    expect(compiled.textContent).toContain('Completing Registration...');
+  });
+
+  it('should trigger loginWithDescopeGoogle when google sign-in button is clicked', () => {
+    const spy = vi
+      .spyOn(
+        component as unknown as { loginWithDescopeGoogle: () => Promise<unknown> },
+        'loginWithDescopeGoogle',
+      )
+      .mockResolvedValue(null);
+    const btn = fixture.nativeElement.querySelector('#descope-google-btn');
+    expect(btn).toBeTruthy();
+    btn.click();
+    expect(spy).toHaveBeenCalled();
+  });
+
+  it('should trigger resendOtp when resend button is clicked', () => {
+    component['currentStep'].set('otp');
+    fixture.detectChanges();
+    const spy = vi
+      .spyOn(component as unknown as { resendOtp: () => Promise<unknown> }, 'resendOtp')
+      .mockResolvedValue(null);
+    const buttons = Array.from(fixture.nativeElement.querySelectorAll('button'));
+    const resendBtn = buttons.find((b) =>
+      (b as HTMLButtonElement).textContent?.includes('Send a new code'),
+    );
+    expect(resendBtn).toBeTruthy();
+    (resendBtn as HTMLButtonElement).click();
+    expect(spy).toHaveBeenCalled();
+  });
+
+  it('should trigger goBackToEmail when back to email button is clicked', () => {
+    component['currentStep'].set('otp');
+    fixture.detectChanges();
+    const spy = vi.spyOn(component as unknown as { goBackToEmail: () => void }, 'goBackToEmail');
+    const buttons = Array.from(fixture.nativeElement.querySelectorAll('button'));
+    const backBtn = buttons.find((b) =>
+      (b as HTMLButtonElement).textContent?.includes('Back to Email'),
+    );
+    expect(backBtn).toBeTruthy();
+    (backBtn as HTMLButtonElement).click();
+    expect(spy).toHaveBeenCalled();
+  });
+
+  it('should trigger goBackFromProfile when back from profile button is clicked', () => {
+    component['currentStep'].set('info');
+    fixture.detectChanges();
+    const spy = vi.spyOn(
+      component as unknown as { goBackFromProfile: () => void },
+      'goBackFromProfile',
+    );
+    const buttons = Array.from(fixture.nativeElement.querySelectorAll('button'));
+    const backBtn = buttons.find((b) => (b as HTMLButtonElement).textContent?.includes('Back'));
+    expect(backBtn).toBeTruthy();
+    (backBtn as HTMLButtonElement).click();
+    expect(spy).toHaveBeenCalled();
+  });
+
+  it('should do nothing in ngOnInit if platform is not browser', async () => {
+    TestBed.resetTestingModule();
+    await TestBed.configureTestingModule({
+      imports: [LoginComponent],
+      providers: [
+        provideRouter([]),
+        { provide: ActivatedRoute, useValue: fakeActivatedRoute },
+        { provide: AuthService, useValue: fakeAuthService },
+        { provide: BRAND_TITLE_TOKEN, useValue: 'Test Brand' },
+        { provide: MatSnackBar, useValue: fakeSnackBar },
+        { provide: PLATFORM_ID, useValue: 'server' },
+      ],
+    })
+      .overrideProvider(MatSnackBar, { useValue: fakeSnackBar })
+      .compileComponents();
+
+    const fix = TestBed.createComponent(LoginComponent);
+    const comp = fix.componentInstance;
+    const waitSpy = vi.spyOn(fakeAuthService, 'waitForSessionInit');
+    waitSpy.mockClear();
+
+    comp.ngOnInit();
+    expect(waitSpy).not.toHaveBeenCalled();
+  });
+
+  it('should not show google login button if descope is not available', () => {
+    (fakeAuthService.isDescopeAvailable as WritableSignal<boolean>).set(false);
+    fixture.detectChanges();
+    const btn = fixture.nativeElement.querySelector('#descope-google-btn');
+    expect(btn).toBeFalsy();
+  });
+
+  it('should show default snackbar error if exchange fails and authError is empty', async () => {
+    vi.mocked(fakeAuthService.waitForSessionInit).mockResolvedValue(undefined);
+    fakeIsAuthenticated.set(false);
+    queryParams = { code: 'code123' };
+    vi.mocked(fakeAuthService.exchangeDescopeOAuthCode).mockResolvedValue(false);
+    fakeAuthError.set(null);
+
+    component.ngOnInit();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(snackBar.open).toHaveBeenCalledWith('Google sign in failed.', 'Close', {
+      duration: 5000,
+    });
+  });
+
+  it('should do nothing in ngAfterViewInit if currentStep is not email', () => {
+    component['currentStep'].set('otp');
+    expect(() => component.ngAfterViewInit()).not.toThrow();
+  });
+
+  it('should show default error in resendOtp when sending fails and authError is null', async () => {
+    component['userEmail'].set('john@example.com');
+    component['currentStep'].set('otp');
+    fixture.detectChanges();
+
+    fakeAuthService.sendOtp.mockResolvedValue({ success: false, isNewUser: false });
+    fakeAuthError.set(null);
+
+    await component['resendOtp']();
+
+    expect(snackBar.open).toHaveBeenCalledWith(
+      'Failed to send new OTP. Please try again.',
+      'Close',
+      { duration: 5000 },
+    );
+  });
+
+  it('should handle unmatched currentStep in switch block', () => {
+    component['currentStep'].set('unmatched_step' as unknown as 'email');
+    fixture.detectChanges();
+    const compiled = fixture.nativeElement;
+    // When currentStep is unmatched, none of the step forms are rendered.
+    expect(compiled.querySelector('form')).toBeNull();
+  });
+
+  it('should exercise all disabled states for verify-otp submit button', () => {
+    component['currentStep'].set('otp');
+    fixture.detectChanges();
+
+    // Case 1: invalid code, not submitting (should be disabled)
+    component['step2Model'].set({ code: '123' });
+    component['submittingStep2'].set(false);
+    fixture.detectChanges();
+    const btn = fixture.nativeElement.querySelector('button[type="submit"]');
+    expect(btn.disabled).toBe(true);
+
+    // Case 2: valid code, submitting (should be disabled)
+    component['step2Model'].set({ code: '123456' });
+    component['submittingStep2'].set(true);
+    fixture.detectChanges();
+    expect(btn.disabled).toBe(true);
+
+    // Case 3: valid code, not submitting (should NOT be disabled)
+    component['step2Model'].set({ code: '123456' });
+    component['submittingStep2'].set(false);
+    fixture.detectChanges();
+    expect(btn.disabled).toBe(false);
   });
 });
