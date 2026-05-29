@@ -980,5 +980,237 @@ describe('Auth Router API', () => {
       expect(res.status).toBe(200);
       expect(mockRpc).toHaveBeenCalledTimes(3);
     });
+
+    it('should cover raw string errors thrown from signUp, signInWithPassword, signOut, and RPC calls', async () => {
+      // 1. signUp raw string throw in POST /auth/signup
+      vi.mocked(mockSignUp).mockRejectedValueOnce('raw string signup error');
+      let res = await request(app)
+        .post('/auth/signup')
+        .send({ email: 'test@example.com', password: 'password' });
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe('raw string signup error');
+
+      // 2. signInWithPassword raw string throw in POST /auth/login
+      vi.mocked(mockSignInWithPassword).mockRejectedValueOnce('raw string login error');
+      res = await request(app)
+        .post('/auth/login')
+        .send({ username: 'test@example.com', password: 'password' });
+      expect(res.status).toBe(401);
+      expect(res.body.error).toBe('raw string login error');
+
+      // 3. signOut raw string throw in POST /auth/signout
+      vi.mocked(mockSignOut).mockRejectedValueOnce('raw string signout error');
+      res = await request(app).post('/auth/signout').send();
+      expect(res.status).toBe(500);
+      expect(res.body.error).toBe('raw string signout error');
+
+      // 4. isUsernameAvailable raw string throw in GET /auth/check-username
+      vi.mocked(mockRpc).mockRejectedValueOnce('raw string rpc error');
+      res = await request(app).get('/auth/check-username?username=john').send();
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe('raw string rpc error');
+
+      // 5. isEmailAvailable raw string throw in GET /auth/check-email
+      vi.mocked(mockRpc).mockRejectedValueOnce('raw string rpc error');
+      res = await request(app).get('/auth/check-email?email=test@test.com').send();
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe('raw string rpc error');
+
+      // 6. getEmailByUsername raw string throw in POST /auth/login
+      vi.mocked(mockRpc).mockRejectedValueOnce('raw string rpc error');
+      res = await request(app)
+        .post('/auth/login')
+        .send({ username: 'username_no_at', password: 'password' });
+      expect(res.status).toBe(401);
+      expect(res.body.error).toBe('raw string rpc error');
+    });
+
+    it('should cover database linkError, sessionError, and createError throws', async () => {
+      // 1. linkError throw in signInPasswordlessly
+      vi.mocked(mockGenerateLink).mockResolvedValueOnce({
+        data: null,
+        error: new Error('Link generation failed'),
+      } as unknown as Awaited<
+        ReturnType<typeof backendService.supabaseAdmin.auth.admin.generateLink>
+      >);
+      vi.mocked(mockOtpVerify.email).mockResolvedValueOnce({
+        ok: true,
+        data: { sessionJwt: 'jwt' },
+      } as unknown as Awaited<
+        ReturnType<ReturnType<typeof DescopeClient>['otp']['verify']['email']>
+      >);
+      vi.mocked(mockListUsers).mockResolvedValueOnce({
+        data: { users: [{ id: 'user-id', email: 'john@example.com' }] },
+        error: null,
+      } as unknown as Awaited<
+        ReturnType<typeof backendService.supabaseAdmin.auth.admin.listUsers>
+      >);
+      let res = await request(app)
+        .post('/auth/descope/verify-otp')
+        .send({ email: 'john@example.com', code: '123456' });
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe('Link generation failed');
+
+      // 2. sessionError throw in signInPasswordlessly
+      vi.mocked(mockGenerateLink).mockResolvedValueOnce({
+        data: { properties: { hashed_token: 'hash' } },
+        error: null,
+      } as unknown as Awaited<
+        ReturnType<typeof backendService.supabaseAdmin.auth.admin.generateLink>
+      >);
+      vi.mocked(mockVerifyOtp).mockResolvedValueOnce({
+        data: null,
+        error: new Error('Session verification failed'),
+      } as unknown as Awaited<ReturnType<typeof backendService.supabase.auth.verifyOtp>>);
+      vi.mocked(mockOtpVerify.email).mockResolvedValueOnce({
+        ok: true,
+        data: { sessionJwt: 'jwt' },
+      } as unknown as Awaited<
+        ReturnType<ReturnType<typeof DescopeClient>['otp']['verify']['email']>
+      >);
+      vi.mocked(mockListUsers).mockResolvedValueOnce({
+        data: { users: [{ id: 'user-id', email: 'john@example.com' }] },
+        error: null,
+      } as unknown as Awaited<
+        ReturnType<typeof backendService.supabaseAdmin.auth.admin.listUsers>
+      >);
+      res = await request(app)
+        .post('/auth/descope/verify-otp')
+        .send({ email: 'john@example.com', code: '123456' });
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe('Session verification failed');
+
+      // 3. createError throw in /auth/descope/register
+      vi.mocked(mockCreateUser).mockResolvedValueOnce({
+        data: null,
+        error: new Error('Supabase create user error'),
+      } as unknown as Awaited<
+        ReturnType<typeof backendService.supabaseAdmin.auth.admin.createUser>
+      >);
+      res = await request(app).post('/auth/descope/register').send({
+        email: 'john@example.com',
+        descopeToken: 'valid.token.signature',
+        firstName: 'John',
+        lastName: 'Doe',
+        displayName: 'John',
+      });
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe('Supabase create user error');
+    });
+
+    it('should cover cases with empty/falsy session returns across endpoints', async () => {
+      // 1. signUp returning null session in POST /auth/signup
+      vi.mocked(mockSignUp).mockResolvedValueOnce({
+        data: { user: { id: 'u1' }, session: null },
+        error: null,
+      } as unknown as Awaited<ReturnType<typeof backendService.supabase.auth.signUp>>);
+      let res = await request(app)
+        .post('/auth/signup')
+        .send({ email: 'test@example.com', password: 'password' });
+      expect(res.status).toBe(200);
+      expect(res.body.session).toBeNull();
+
+      // 2. signInWithPassword returning null session in POST /auth/login
+      vi.mocked(mockSignInWithPassword).mockResolvedValueOnce({
+        data: { user: { id: 'u1' }, session: null },
+        error: null,
+      } as unknown as Awaited<ReturnType<typeof backendService.supabase.auth.signInWithPassword>>);
+      res = await request(app)
+        .post('/auth/login')
+        .send({ username: 'test@example.com', password: 'password' });
+      expect(res.status).toBe(200);
+      expect(res.body.session).toBeNull();
+
+      // 3. register returning null session in POST /auth/descope/register
+      vi.mocked(mockCreateUser).mockResolvedValueOnce({
+        data: { user: { id: 'u1' } },
+        error: null,
+      } as unknown as Awaited<
+        ReturnType<typeof backendService.supabaseAdmin.auth.admin.createUser>
+      >);
+      vi.mocked(mockGenerateLink).mockResolvedValueOnce({
+        data: { properties: { hashed_token: 'hash' } },
+        error: null,
+      } as unknown as Awaited<
+        ReturnType<typeof backendService.supabaseAdmin.auth.admin.generateLink>
+      >);
+      vi.mocked(mockVerifyOtp).mockResolvedValueOnce({
+        data: { user: { id: 'u1' }, session: null },
+        error: null,
+      } as unknown as Awaited<ReturnType<typeof backendService.supabase.auth.verifyOtp>>);
+      res = await request(app).post('/auth/descope/register').send({
+        email: 'john@example.com',
+        descopeToken: 'valid.token.signature',
+        firstName: 'John',
+        lastName: 'Doe',
+        displayName: 'John',
+      });
+      expect(res.status).toBe(200);
+      expect(res.body.session).toBeNull();
+
+      // 4. verify-oauth returning null session in POST /auth/descope/verify-oauth
+      vi.mocked(mockListUsers).mockResolvedValueOnce({
+        data: { users: [{ id: 'user-id', email: 'john@example.com' }] },
+        error: null,
+      } as unknown as Awaited<
+        ReturnType<typeof backendService.supabaseAdmin.auth.admin.listUsers>
+      >);
+      vi.mocked(mockGenerateLink).mockResolvedValueOnce({
+        data: { properties: { hashed_token: 'hash' } },
+        error: null,
+      } as unknown as Awaited<
+        ReturnType<typeof backendService.supabaseAdmin.auth.admin.generateLink>
+      >);
+      vi.mocked(mockVerifyOtp).mockResolvedValueOnce({
+        data: { user: { id: 'u1' }, session: null },
+        error: null,
+      } as unknown as Awaited<ReturnType<typeof backendService.supabase.auth.verifyOtp>>);
+      res = await request(app).post('/auth/descope/verify-oauth').send({
+        email: 'john@example.com',
+        descopeToken: 'valid.token.signature',
+      });
+      expect(res.status).toBe(200);
+      expect(res.body.session).toBeNull();
+    });
+
+    it('should cover other miscellaneous branch error string throws in descope endpoints', async () => {
+      // 1. send-otp catch block string error
+      vi.mocked(mockRpc).mockRejectedValueOnce('send-otp rpc failure');
+      let res = await request(app)
+        .post('/auth/descope/send-otp')
+        .send({ email: 'test@example.com' });
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe('send-otp rpc failure');
+
+      // 2. verify-otp catch block string error
+      vi.mocked(mockOtpVerify.email).mockRejectedValueOnce('verify-otp otp failure');
+      res = await request(app)
+        .post('/auth/descope/verify-otp')
+        .send({ email: 'john@example.com', code: '123456' });
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe('verify-otp otp failure');
+
+      // 3. register catch block string error
+      vi.mocked(mockCreateUser).mockRejectedValueOnce('register create user failure');
+      res = await request(app).post('/auth/descope/register').send({
+        email: 'john@example.com',
+        descopeToken: 'valid.token.signature',
+        firstName: 'John',
+        lastName: 'Doe',
+        displayName: 'John',
+      });
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe('register create user failure');
+
+      // 4. verify-oauth catch block string error
+      vi.mocked(mockValidateSession).mockResolvedValueOnce(undefined);
+      vi.mocked(mockListUsers).mockRejectedValueOnce('verify-oauth listUsers failure');
+      res = await request(app).post('/auth/descope/verify-oauth').send({
+        email: 'john@example.com',
+        descopeToken: 'valid.token.signature',
+      });
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe('verify-oauth listUsers failure');
+    });
   });
 });

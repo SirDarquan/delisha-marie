@@ -575,5 +575,209 @@ describe('AuthService', () => {
       expect(res).toBe(false);
       expect(service.authError()).toBe('OAuth verification with backend failed.');
     });
+
+    // Coverage Boosters: AuthService fallback and catch branches
+    it('should return null in startDescopeGoogleOAuth when response ok but url is missing in data', async () => {
+      fakeDescopeAuthService.descopeSdk.oauth.start.mockReturnValue(
+        of({ ok: true, data: { otherField: 'val' } }),
+      );
+      const url = await service.startDescopeGoogleOAuth('http://localhost/login');
+      expect(url).toBeNull();
+    });
+
+    it('should fallback to default error message in exchangeDescopeOAuthCode when errorDescription is missing', async () => {
+      fakeDescopeAuthService.descopeSdk.oauth.exchange.mockReturnValue(
+        of({
+          ok: false,
+          error: {},
+        }),
+      );
+      const res = await service.exchangeDescopeOAuthCode('code123');
+      expect(res).toBe(false);
+      expect(service.authError()).toBe('Failed to exchange OAuth code.');
+    });
+
+    it('should fallback to empty descopeToken in exchangeDescopeOAuthCode when sessionJwt is missing', async () => {
+      fakeDescopeAuthService.descopeSdk.oauth.exchange.mockReturnValue(
+        of({
+          ok: true,
+          data: {
+            user: { email: 'e@e.com' },
+          },
+        }),
+      );
+      apiMock.post.mockResolvedValue({ success: true, isNewUser: true });
+
+      const res = await service.exchangeDescopeOAuthCode('code123');
+      expect(res).toBe(true);
+      expect(apiMock.post).toHaveBeenCalledWith('/auth/descope/verify-oauth', {
+        email: 'e@e.com',
+        descopeToken: '',
+      });
+    });
+
+    it('should fallback to generic error in exchangeDescopeOAuthCode when catch block receives empty object or non-object', async () => {
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+      fakeDescopeAuthService.descopeSdk.oauth.exchange.mockReturnValue(
+        of({
+          ok: true,
+          data: {
+            sessionJwt: 't',
+            user: { email: 'e@e.com' },
+          },
+        }),
+      );
+      // Reject with empty object
+      apiMock.post.mockRejectedValueOnce({});
+      let res = await service.exchangeDescopeOAuthCode('code123');
+      expect(res).toBe(false);
+      expect(service.authError()).toBe('OAuth verification failed');
+
+      // Reject with non-object
+      apiMock.post.mockRejectedValueOnce('raw string error');
+      res = await service.exchangeDescopeOAuthCode('code123');
+      expect(res).toBe(false);
+      expect(service.authError()).toBe('OAuth verification failed');
+
+      consoleSpy.mockRestore();
+    });
+
+    it('should fallback to generic error in sendOtp when catch block receives empty object', async () => {
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+      apiMock.post.mockRejectedValueOnce({});
+      const res = await service.sendOtp('john@example.com');
+      expect(res.success).toBe(false);
+      expect(service.authError()).toBe('Failed to send OTP');
+      consoleSpy.mockRestore();
+    });
+
+    it('should fallback to generic error in verifyOtp when catch block receives empty object or non-object', async () => {
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+      apiMock.post.mockRejectedValueOnce({});
+      let res = await service.verifyOtp('john@example.com', '123456');
+      expect(res).toBe(false);
+      expect(service.authError()).toBe('Verification failed');
+
+      apiMock.post.mockRejectedValueOnce('string error');
+      res = await service.verifyOtp('john@example.com', '123456');
+      expect(res).toBe(false);
+      expect(service.authError()).toBe('Verification failed');
+      consoleSpy.mockRestore();
+    });
+
+    it('should fallback to generic error in registerDescope when catch block receives empty object', async () => {
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+      apiMock.post.mockRejectedValueOnce({});
+      const res = await service.registerDescope('e@e.com', 't', 'F', 'L', 'D');
+      expect(res).toBe(false);
+      expect(service.authError()).toBe('Registration failed');
+      consoleSpy.mockRestore();
+    });
+
+    it('should fallback to empty descopeToken in handleAuthResponse when resp.descopeToken is missing', async () => {
+      apiMock.post.mockResolvedValue({
+        success: true,
+        isNewUser: true,
+        // descopeToken is missing
+      });
+      const res = await service.verifyOtp('john@e.com', '123456');
+      expect(res).toBe(true);
+      expect(service.descopeToken()).toBe('');
+    });
+
+    it('should return false in handleAuthResponse when session is present but user is missing', async () => {
+      apiMock.post.mockResolvedValue({
+        success: true,
+        isNewUser: false,
+        session: { access_token: 'token' },
+        // user is missing
+      });
+      const res = await service.verifyOtp('john@e.com', '123456');
+      expect(res).toBe(false);
+    });
+
+    it('should return false in handleAuthResponse when session is missing but user is present', async () => {
+      apiMock.post.mockResolvedValue({
+        success: true,
+        isNewUser: false,
+        // session is missing
+        user: { username: 'john', email: 'john@e.com' },
+      });
+      const res = await service.verifyOtp('john@e.com', '123456');
+      expect(res).toBe(false);
+    });
+
+    it('should fallback to default error in sendOtp when catch block receives object with null or empty error field', async () => {
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+      // Case 1: { error: null }
+      apiMock.post.mockRejectedValueOnce({ error: null });
+      let res = await service.sendOtp('john@example.com');
+      expect(res.success).toBe(false);
+      expect(service.authError()).toBe('Failed to send OTP');
+
+      // Case 2: { error: {} } (nested error is missing/empty)
+      apiMock.post.mockRejectedValueOnce({ error: {} });
+      res = await service.sendOtp('john@example.com');
+      expect(res.success).toBe(false);
+      expect(service.authError()).toBe('Failed to send OTP');
+      consoleSpy.mockRestore();
+    });
+
+    it('should fallback to default error in verifyOtp when catch block receives object with null or empty error field', async () => {
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+      // Case 1: { error: null }
+      apiMock.post.mockRejectedValueOnce({ error: null });
+      let res = await service.verifyOtp('john@example.com', '123456');
+      expect(res).toBe(false);
+      expect(service.authError()).toBe('Verification failed');
+
+      // Case 2: { error: {} }
+      apiMock.post.mockRejectedValueOnce({ error: {} });
+      res = await service.verifyOtp('john@example.com', '123456');
+      expect(res).toBe(false);
+      expect(service.authError()).toBe('Verification failed');
+      consoleSpy.mockRestore();
+    });
+
+    it('should fallback to default error in registerDescope when catch block receives object with null or empty error field', async () => {
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+      // Case 1: { error: null }
+      apiMock.post.mockRejectedValueOnce({ error: null });
+      let res = await service.registerDescope('e@e.com', 't', 'F', 'L', 'D');
+      expect(res).toBe(false);
+      expect(service.authError()).toBe('Registration failed');
+
+      // Case 2: { error: {} }
+      apiMock.post.mockRejectedValueOnce({ error: {} });
+      res = await service.registerDescope('e@e.com', 't', 'F', 'L', 'D');
+      expect(res).toBe(false);
+      expect(service.authError()).toBe('Registration failed');
+      consoleSpy.mockRestore();
+    });
+
+    it('should fallback to default error in exchangeDescopeOAuthCode when catch block receives object with null or empty error field', async () => {
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+      fakeDescopeAuthService.descopeSdk.oauth.exchange.mockReturnValue(
+        of({
+          ok: true,
+          data: {
+            sessionJwt: 't',
+            user: { email: 'e@e.com' },
+          },
+        }),
+      );
+      // Case 1: { error: null }
+      apiMock.post.mockRejectedValueOnce({ error: null });
+      let res = await service.exchangeDescopeOAuthCode('code123');
+      expect(res).toBe(false);
+      expect(service.authError()).toBe('OAuth verification failed');
+
+      // Case 2: { error: {} }
+      apiMock.post.mockRejectedValueOnce({ error: {} });
+      res = await service.exchangeDescopeOAuthCode('code123');
+      expect(res).toBe(false);
+      expect(service.authError()).toBe('OAuth verification failed');
+      consoleSpy.mockRestore();
+    });
   });
 });
