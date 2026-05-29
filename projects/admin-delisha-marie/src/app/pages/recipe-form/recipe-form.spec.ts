@@ -93,6 +93,8 @@ describe('RecipeFormComponent', () => {
       totalTime: '',
       yield: '',
       author: 'Delisha Marie',
+      status: 'published',
+      preview_token: 'secret-123',
     };
 
     fixture.detectChanges();
@@ -133,6 +135,8 @@ describe('RecipeFormComponent', () => {
       totalTime: '',
       yield: '',
       author: 'Delisha Marie',
+      status: 'draft',
+      preview_token: '',
     };
 
     fixture.detectChanges();
@@ -177,6 +181,7 @@ describe('RecipeFormComponent', () => {
       totalTime: '',
       yield: '',
       author: '',
+      status: 'draft',
       // Omitted ingredients and instructions purposefully to trigger fallback branches
     } as unknown as Recipe;
 

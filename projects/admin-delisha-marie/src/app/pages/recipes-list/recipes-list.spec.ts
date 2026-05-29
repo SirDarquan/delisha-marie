@@ -25,6 +25,7 @@ describe('RecipesListComponent', () => {
       totalTime: '',
       yield: '',
       author: 'Delisha Marie',
+      status: 'published',
     },
   ]);
 
@@ -56,6 +57,7 @@ describe('RecipesListComponent', () => {
         totalTime: '',
         yield: '',
         author: 'Delisha Marie',
+        status: 'published',
       },
     ]);
 
@@ -92,6 +94,7 @@ describe('RecipesListComponent', () => {
         yield: '',
         author: 'Delisha Marie',
         category: 'Dinner',
+        status: 'published',
       },
     ]);
 
@@ -143,6 +146,7 @@ describe('RecipesListComponent', () => {
         totalTime: '',
         yield: '',
         author: 'Delisha Marie',
+        status: 'published',
       },
     ]);
     fixture.detectChanges();

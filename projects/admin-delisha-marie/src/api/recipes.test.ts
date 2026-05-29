@@ -186,4 +186,34 @@ describe('Recipes Router API', () => {
       expect(res.body.error).toBe('Delete forbidden');
     });
   });
+
+  describe('Non-Error Error Handling Catch-block Boosters', () => {
+    it('should return 500 when GET /recipes receives a non-Error string exception', async () => {
+      mockOrder.mockRejectedValue('Raw GET string exception');
+      const res = await request(app).get('/recipes');
+      expect(res.status).toBe(500);
+      expect(res.body.error).toBe('Raw GET string exception');
+    });
+
+    it('should return 400 when POST /recipes receives a non-Error string exception', async () => {
+      mockSingle.mockRejectedValue('Raw POST string exception');
+      const res = await request(app).post('/recipes').send({ title: 'Test' });
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe('Raw POST string exception');
+    });
+
+    it('should return 400 when PUT /recipes/:id receives a non-Error string exception', async () => {
+      mockSingle.mockRejectedValue('Raw PUT string exception');
+      const res = await request(app).put('/recipes/recipe-3').send({ title: 'Update' });
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe('Raw PUT string exception');
+    });
+
+    it('should return 400 when DELETE /recipes/:id receives a non-Error string exception', async () => {
+      mockEq.mockRejectedValue('Raw DELETE string exception');
+      const res = await request(app).delete('/recipes/recipe-3');
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe('Raw DELETE string exception');
+    });
+  });
 });
