@@ -261,7 +261,6 @@ describe('schemaResolver', () => {
         description: 'Desc',
         image: '/img.jpg',
         category: 'Cat',
-        subcategory: 'Sub',
         prepTime: 'unknown',
         cookTime: '',
         totalTime: '10 mins',

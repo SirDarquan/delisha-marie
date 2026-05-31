@@ -22,6 +22,7 @@ export class RecipeService {
       if (stored) {
         try {
           this._recipes.set(JSON.parse(stored));
+          console.log('Recipes loaded from local storage', JSON.parse(stored));
           return;
         } catch {
           // fallback to fetching if JSON is malformed
@@ -106,8 +107,10 @@ export class RecipeService {
     this._recipes.set(nextRecipes);
     this.saveToStorage(nextRecipes);
 
+    const payloadWithoutId = { ...updated } as Partial<Recipe>;
+    delete payloadWithoutId.id;
     this.api
-      .put<Recipe>(`/recipes/${id}`, updated)
+      .put<Recipe>(`/recipes/${id}`, payloadWithoutId)
       .then((res) => console.log('Recipe updated on backend', res))
       .catch((err: unknown) => console.error('Backend updateRecipe error:', err));
 

@@ -21,7 +21,6 @@ describe('RecipeDetail', () => {
     description: 'A delicious test recipe',
     image: 'test.jpg',
     category: 'Desserts',
-    subcategory: 'Cakes',
     prepTime: '10 mins',
     cookTime: '20 mins',
     totalTime: '30 mins',

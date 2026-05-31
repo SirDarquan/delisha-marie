@@ -36,9 +36,12 @@ recipesRouter.post('/recipes', async (req: AuthRequest, res: Response) => {
 recipesRouter.put('/recipes/:id', async (req: AuthRequest, res: Response) => {
   try {
     const client = backendService.getClient(req.token);
+    const updateBody = { ...req.body };
+    delete updateBody.id; // Prevent trying to update the primary key id column
+
     const { data, error } = await client
       .from('recipes')
-      .update(req.body)
+      .update(updateBody)
       .eq('id', req.params['id'])
       .select()
       .single();
