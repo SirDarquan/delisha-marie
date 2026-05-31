@@ -5,7 +5,7 @@ import { Breadcrumbs } from '../types/recipe';
  */
 export function trimLeadingSlashes(str: string): string {
   let start = 0;
-  while (start < str.length && str.charCodeAt(start) === 47 /* '/' */) {
+  while (start < str.length && str.codePointAt(start) === 47 /* '/' */) {
     start++;
   }
   return str.substring(start);
@@ -16,7 +16,7 @@ export function trimLeadingSlashes(str: string): string {
  */
 export function trimTrailingSlashes(str: string): string {
   let end = str.length;
-  while (end > 0 && str.charCodeAt(end - 1) === 47 /* '/' */) {
+  while (end > 0 && str.codePointAt(end - 1) === 47 /* '/' */) {
     end--;
   }
   return str.substring(0, end);

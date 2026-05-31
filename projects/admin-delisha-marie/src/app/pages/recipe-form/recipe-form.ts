@@ -720,13 +720,11 @@ export class RecipeFormComponent implements OnInit {
       required(fields.slug, { message: 'Slug is required' });
       if (this.currentStatus() !== 'draft') {
         required(fields.category, { message: 'Category is required' });
-        // required(fields.subcategory, { message: 'Subcategory is required' });
         required(fields.difficulty, { message: 'Difficulty is required' });
         required(fields.prepTime, { message: 'Prep time is required' });
         required(fields.cookTime, { message: 'Cook time is required' });
         required(fields.totalTime, { message: 'Total time is required' });
         required(fields.yield, { message: 'Yield is required' });
-        // required(fields.status, { message: 'Status is required' });
         required(fields.image, { message: 'Image is required' });
         required(fields.description, { message: 'Description is required' });
         required(fields.content, { message: 'Content is required' });
@@ -757,52 +755,56 @@ export class RecipeFormComponent implements OnInit {
       this.idToEdit.set(id);
       const recipe = this.recipeService.getRecipeByIdOrSlug(id);
       if (recipe) {
-        this.recipeModel.set({
-          title: recipe.title || '',
-          slug: recipe.slug || '',
-          author: recipe.author || 'Delisha Marie',
-          category: recipe.category || '',
-          difficulty: recipe.difficulty || 'Easy',
-          prepTime: recipe.prepTime || '',
-          cookTime: recipe.cookTime || '',
-          totalTime: recipe.totalTime || '',
-          yield: recipe.yield || '',
-          status: (recipe.status as 'draft' | 'scheduled' | 'published' | 'updated') || 'draft',
-          preview_token: recipe.preview_token || '',
-          image: recipe.image || '',
-          imageWidth: recipe.imageWidth || '',
-          imageHeight: recipe.imageHeight || '',
-          imageType: recipe.imageType || '',
-          description: recipe.description || '',
-          content: recipe.content || '',
-          ingredients: recipe.ingredients ? recipe.ingredients.join('\n') : '',
-          instructions: recipe.instructions ? recipe.instructions.join('\n') : '',
-          method: recipe.method || '',
-          theBest: recipe.theBest || false,
-          holidays: recipe.holidays && recipe.holidays[0] ? recipe.holidays[0] : '',
-          specialDiets: recipe.specialDiets || [],
-          breadcrumbs: recipe.breadcrumbs || null,
-          cuisine: recipe.cuisine || '',
-          course: recipe.course || '',
-          keywords: recipe.keywords ? recipe.keywords.join(', ') : '',
-          equipment: recipe.equipment ? recipe.equipment.join('\n') : '',
-          notes: recipe.notes ? recipe.notes.join('\n') : '',
-          servingSize: recipe.nutrition?.servingSize || '',
-          calories: recipe.nutrition?.calories || '',
-          fat: recipe.nutrition?.fat || '',
-          carbohydrates: recipe.nutrition?.carbohydrates || '',
-          protein: recipe.nutrition?.protein || '',
-          fiber: recipe.nutrition?.fiber || '',
-          sugar: recipe.nutrition?.sugar || '',
-          sodium: recipe.nutrition?.sodium || '',
-          cholesterol: recipe.nutrition?.cholesterol || '',
-          saturatedFat: recipe.nutrition?.saturatedFat || '',
-        });
+        this.recipeModel.set(this.mapRecipeToForm(recipe));
       }
     }
     setTimeout(() => {
       this.isInitialized = true;
     }, 0);
+  }
+
+  private mapRecipeToForm(recipe: Recipe): RecipeFormModel {
+    return {
+      title: recipe.title || '',
+      slug: recipe.slug || '',
+      author: recipe.author || 'Delisha Marie',
+      category: recipe.category || '',
+      difficulty: recipe.difficulty || 'Easy',
+      prepTime: recipe.prepTime || '',
+      cookTime: recipe.cookTime || '',
+      totalTime: recipe.totalTime || '',
+      yield: recipe.yield || '',
+      status: recipe.status || 'draft',
+      preview_token: recipe.preview_token || '',
+      image: recipe.image || '',
+      imageWidth: recipe.imageWidth || '',
+      imageHeight: recipe.imageHeight || '',
+      imageType: recipe.imageType || '',
+      description: recipe.description || '',
+      content: recipe.content || '',
+      ingredients: recipe.ingredients ? recipe.ingredients.join('\n') : '',
+      instructions: recipe.instructions ? recipe.instructions.join('\n') : '',
+      method: recipe.method || '',
+      theBest: recipe.theBest || false,
+      holidays: recipe.holidays && recipe.holidays[0] ? recipe.holidays[0] : '',
+      specialDiets: recipe.specialDiets || [],
+      breadcrumbs: recipe.breadcrumbs || null,
+      cuisine: recipe.cuisine || '',
+      course: recipe.course || '',
+      keywords: recipe.keywords ? recipe.keywords.join(', ') : '',
+      equipment: recipe.equipment ? recipe.equipment.join('\n') : '',
+      notes: recipe.notes ? recipe.notes.join('\n') : '',
+      servingSize: recipe.nutrition?.servingSize || '',
+      calories: recipe.nutrition?.calories || '',
+      fat: recipe.nutrition?.fat || '',
+      carbohydrates: recipe.nutrition?.carbohydrates || '',
+      protein: recipe.nutrition?.protein || '',
+      fiber: recipe.nutrition?.fiber || '',
+      sugar: recipe.nutrition?.sugar || '',
+      sodium: recipe.nutrition?.sodium || '',
+      cholesterol: recipe.nutrition?.cholesterol || '',
+      saturatedFat: recipe.nutrition?.saturatedFat || '',
+    };
   }
 
   markDirty(): void {
@@ -957,7 +959,7 @@ export class RecipeFormComponent implements OnInit {
       }
     } else {
       const created = this.recipeService.createRecipe(payload);
-      if (created && created.id) {
+      if (created?.id) {
         this.router.navigate(['/recipes/edit', created.id]);
       }
     }
@@ -1028,16 +1030,15 @@ export class RecipeFormComponent implements OnInit {
       }
 
       const isLast = i === standardTrail.length - 1;
-      const label = isLast
-        ? b.label
-        : b.label.startsWith('The Best ')
-          ? b.label
-          : `The Best ${b.label}`;
+      let label = b.label;
+      if (!isLast && !b.label.startsWith('The Best ')) {
+        label = `The Best ${b.label}`;
+      }
 
       const parentUrl = bestTrail[i - 1].url || '';
       const rawUrl = b.url || '';
       const segments = rawUrl.split('/').filter(Boolean);
-      let slug = segments[segments.length - 1] || '';
+      let slug = segments.at(segments.length - 1) || '';
 
       if (!isLast && !slug.startsWith('the-best-')) {
         slug = `the-best-${slug}`;
@@ -1075,7 +1076,7 @@ export class RecipeFormComponent implements OnInit {
       });
     }
 
-    if (method && method.trim()) {
+    if (method?.trim()) {
       const methodName = method.trim();
       finalItems.push([
         { label: 'Method', url: '/method' },

@@ -166,7 +166,7 @@ export class SpecialDietsSelectorComponent {
     recipes.forEach((r) => {
       if (r.specialDiets && Array.isArray(r.specialDiets)) {
         r.specialDiets.forEach((d) => {
-          if (d && d.trim()) {
+          if (d?.trim()) {
             dietsSet.add(d.trim());
           }
         });
@@ -175,7 +175,7 @@ export class SpecialDietsSelectorComponent {
 
     // 2. Add local custom additions
     this.localCustomDiets().forEach((d) => {
-      if (d && d.trim()) {
+      if (d?.trim()) {
         dietsSet.add(d.trim());
       }
     });
@@ -184,7 +184,7 @@ export class SpecialDietsSelectorComponent {
     const initial = this.initialDiets();
     if (initial && Array.isArray(initial)) {
       initial.forEach((d) => {
-        if (d && d.trim()) {
+        if (d?.trim()) {
           dietsSet.add(d.trim());
         }
       });

@@ -162,21 +162,21 @@ export class CookingMethodSelectorComponent {
 
     // 1. Extract all methods present in the recipes database
     recipes.forEach((r) => {
-      if (r.method && r.method.trim()) {
+      if (r.method?.trim()) {
         methodsSet.add(r.method.trim());
       }
     });
 
     // 2. Add local custom methods added during this session
     this.localCustomMethods().forEach((m) => {
-      if (m && m.trim()) {
+      if (m?.trim()) {
         methodsSet.add(m.trim());
       }
     });
 
     // 3. Ensure initial incoming method is in the set
     const initial = this.initialMethod();
-    if (initial && initial.trim()) {
+    if (initial?.trim()) {
       methodsSet.add(initial.trim());
     }
 

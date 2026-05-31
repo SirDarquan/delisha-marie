@@ -289,12 +289,7 @@ export class BreadcrumbBoardComponent {
         r.breadcrumbs.items.forEach((trail) => {
           if (isStandardTrail(trail) && trail.length > 2) {
             const catPiece = trail[2];
-            if (
-              catPiece &&
-              catPiece.label &&
-              catPiece.url &&
-              catPiece.url.startsWith('/recipes/')
-            ) {
+            if (catPiece?.label && catPiece?.url?.startsWith('/recipes/')) {
               const catName = catPiece.label.trim();
               const catUrl = catPiece.url.trim();
 
@@ -306,14 +301,9 @@ export class BreadcrumbBoardComponent {
 
               if (trail.length > 3) {
                 const subPiece = trail[3];
-                if (
-                  subPiece &&
-                  subPiece.label &&
-                  subPiece.url &&
-                  !subPiece.url.startsWith('/recipe/')
-                ) {
+                if (subPiece?.label && !subPiece?.url?.startsWith('/recipe/')) {
                   const subName = subPiece.label.trim();
-                  const subUrl = subPiece.url.trim();
+                  const subUrl = subPiece?.url?.trim() ?? '';
                   catData.subs.set(subName, subUrl);
                 }
               }
@@ -515,7 +505,7 @@ export class BreadcrumbBoardComponent {
     // Dynamically clean redundancy matching the current prefix
     const prefixNoSlashes = trimSlashes(prefix);
     if (prefixNoSlashes) {
-      const regex = new RegExp(`^\\/?${prefixNoSlashes}\\/?`, 'i');
+      const regex = new RegExp('^/?' + prefixNoSlashes + '/?', 'i');
       urlPart = urlPart.replace(regex, '');
     }
 
@@ -564,7 +554,7 @@ export class BreadcrumbBoardComponent {
     // Strip redundant active prefix if matching
     const prefixNoSlashes = trimSlashes(prefix);
     if (prefixNoSlashes) {
-      const regex = new RegExp(`^\\/?${prefixNoSlashes}\\/?`, 'i');
+      const regex = new RegExp('^/?' + prefixNoSlashes + '/?', 'i');
       value = value.replace(regex, '');
     }
 
@@ -602,8 +592,8 @@ export class BreadcrumbBoardComponent {
     const nonRecipe = pieces.filter((p) => !p.url.startsWith('/recipe/'));
     if (nonRecipe.length === 0) return '/';
 
-    const last = nonRecipe[nonRecipe.length - 1];
-    const base = last.url;
+    const last = nonRecipe.at(nonRecipe.length - 1);
+    const base = last?.url || '';
     return base.endsWith('/') ? base : `${base}/`;
   });
 
@@ -615,11 +605,11 @@ export class BreadcrumbBoardComponent {
     const nonRecipe = pieces.filter((p) => !p.url.startsWith('/recipe/'));
     if (nonRecipe.length === 0) return false;
 
-    const last = nonRecipe[nonRecipe.length - 1];
+    const last = nonRecipe.at(nonRecipe.length - 1);
 
     // Check if the last piece matches a predefined subcategory URL
     const isPredefinedSub = this.categories().some((c) =>
-      c.children?.some((sub) => sub.url === last.url),
+      c.children?.some((sub) => sub.url === last?.url),
     );
 
     return !isPredefinedSub;

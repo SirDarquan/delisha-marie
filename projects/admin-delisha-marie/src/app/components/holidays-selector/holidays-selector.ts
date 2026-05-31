@@ -166,7 +166,7 @@ export class HolidaysSelectorComponent {
     recipes.forEach((r) => {
       if (r.holidays && Array.isArray(r.holidays)) {
         r.holidays.forEach((h) => {
-          if (h && h.trim()) {
+          if (h?.trim()) {
             holidaysSet.add(h.trim());
           }
         });
@@ -175,14 +175,14 @@ export class HolidaysSelectorComponent {
 
     // 2. Add local custom additions
     this.localCustomHolidays().forEach((h) => {
-      if (h && h.trim()) {
+      if (h?.trim()) {
         holidaysSet.add(h.trim());
       }
     });
 
     // 3. Ensure initial incoming holiday is in the set
     const initial = this.initialHoliday();
-    if (initial && initial.trim()) {
+    if (initial?.trim()) {
       holidaysSet.add(initial.trim());
     }
 
