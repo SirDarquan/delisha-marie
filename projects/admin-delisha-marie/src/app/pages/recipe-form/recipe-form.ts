@@ -1013,6 +1013,42 @@ export class RecipeFormComponent implements OnInit {
     this.router.navigate(['/recipes']);
   }
 
+  private getBestTrail(
+    standardTrail: { label: string; url?: string }[],
+  ): { label: string; url?: string }[] {
+    const bestTrail: { label: string; url?: string }[] = [];
+    standardTrail.forEach((b, i) => {
+      if (i === 0) {
+        bestTrail.push({ label: b.label, url: b.url });
+        return;
+      }
+      if (i === 1) {
+        bestTrail.push({ label: 'The Best Recipes', url: '/the-best-recipes' });
+        return;
+      }
+
+      const isLast = i === standardTrail.length - 1;
+      const label = isLast
+        ? b.label
+        : b.label.startsWith('The Best ')
+          ? b.label
+          : `The Best ${b.label}`;
+
+      const parentUrl = bestTrail[i - 1].url || '';
+      const rawUrl = b.url || '';
+      const segments = rawUrl.split('/').filter(Boolean);
+      let slug = segments[segments.length - 1] || '';
+
+      if (!isLast && !slug.startsWith('the-best-')) {
+        slug = `the-best-${slug}`;
+      }
+
+      const computedUrl = `${parentUrl.endsWith('/') ? parentUrl : parentUrl + '/'}${slug}`;
+      bestTrail.push({ label, url: computedUrl });
+    });
+    return bestTrail;
+  }
+
   private getBreadcrumbsPayload(
     breadcrumbs: Breadcrumbs | null | undefined,
     theBest: boolean,
@@ -1025,10 +1061,7 @@ export class RecipeFormComponent implements OnInit {
     }
 
     const items = [...breadcrumbs.items];
-
-    // Extract standard trails (starts with Home and Recipes, url not matching auto-generated paths)
     const standardTrails = items.filter(isStandardTrail);
-
     const finalItems: { label: string; url?: string }[][] = [];
 
     // Add all standard trails
@@ -1038,61 +1071,26 @@ export class RecipeFormComponent implements OnInit {
 
     if (theBest) {
       standardTrails.forEach((standardTrail) => {
-        const bestTrail: { label: string; url?: string }[] = [];
-        standardTrail.forEach((b, i) => {
-          if (i === 0) {
-            bestTrail.push({ label: b.label, url: b.url });
-            return;
-          }
-          if (i === 1) {
-            bestTrail.push({ label: 'The Best Recipes', url: '/the-best-recipes' });
-            return;
-          }
-
-          const isLast = i === standardTrail.length - 1;
-          const label = isLast
-            ? b.label
-            : b.label.startsWith('The Best ')
-              ? b.label
-              : `The Best ${b.label}`;
-
-          const parentUrl = bestTrail[i - 1].url || '';
-          const rawUrl = b.url || '';
-          const segments = rawUrl.split('/').filter(Boolean);
-          let slug = segments[segments.length - 1] || '';
-
-          if (!isLast) {
-            if (!slug.startsWith('the-best-')) {
-              slug = `the-best-${slug}`;
-            }
-          }
-
-          const computedUrl = `${parentUrl.endsWith('/') ? parentUrl : parentUrl + '/'}${slug}`;
-          bestTrail.push({ label, url: computedUrl });
-        });
-
-        finalItems.push(bestTrail);
+        finalItems.push(this.getBestTrail(standardTrail));
       });
     }
 
     if (method && method.trim()) {
       const methodName = method.trim();
-      const methodTrail = [
+      finalItems.push([
         { label: 'Method', url: '/method' },
         { label: methodName, url: `/method/${slugify(methodName)}` },
-      ];
-      finalItems.push(methodTrail);
+      ]);
     }
 
     if (specialDiets && specialDiets.length > 0) {
       specialDiets.forEach((diet) => {
         const dietName = diet.trim();
         if (dietName) {
-          const dietTrail = [
+          finalItems.push([
             { label: 'Special Diets', url: '/special-diets' },
             { label: dietName, url: `/special-diets/${slugify(dietName)}` },
-          ];
-          finalItems.push(dietTrail);
+          ]);
         }
       });
     }
@@ -1101,11 +1099,10 @@ export class RecipeFormComponent implements OnInit {
       holidays.forEach((holiday) => {
         const holidayName = holiday.trim();
         if (holidayName) {
-          const holidayTrail = [
+          finalItems.push([
             { label: 'Holidays', url: '/holidays' },
             { label: holidayName, url: `/holidays/${slugify(holidayName)}` },
-          ];
-          finalItems.push(holidayTrail);
+          ]);
         }
       });
     }
