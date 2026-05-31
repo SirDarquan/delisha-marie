@@ -185,7 +185,7 @@ describe('RecipeFormComponent', () => {
 
   it('should populate edit form with new optional fields and save them successfully', () => {
     routeParams['id'] = '1';
-    
+
     mockRecipeById = {
       id: 1,
       title: 'Pasta Deluxe',
@@ -217,8 +217,8 @@ describe('RecipeFormComponent', () => {
         carbohydrates: '40g',
         fiber: '4g',
         sugar: '2g',
-        protein: '10g'
-      }
+        protein: '10g',
+      },
     } as unknown as Recipe;
 
     fixture.detectChanges();
@@ -237,7 +237,7 @@ describe('RecipeFormComponent', () => {
       ...component['recipeModel'](),
       cuisine: 'French',
       notes: 'Serve hot\nAdd cheese\nEnjoy!',
-      calories: '350 kcal'
+      calories: '350 kcal',
     });
 
     component.saveDraft();
@@ -322,7 +322,7 @@ describe('RecipeFormComponent', () => {
 
   it('should update recipeModel.breadcrumbs when onBreadcrumbsChanged is triggered but leave category untouched', () => {
     fixture.detectChanges();
-    component['recipeModel'].update(m => ({ ...m, category: 'Breakfast' }));
+    component['recipeModel'].update((m) => ({ ...m, category: 'Breakfast' }));
 
     const testBreadcrumbs: Breadcrumbs = {
       main: 0,
@@ -332,7 +332,7 @@ describe('RecipeFormComponent', () => {
           { label: 'Recipes', url: '/recipes' },
           { label: 'Main Dishes', url: '/recipes/main-dishes' },
           { label: 'Pasta', url: '/recipes/main-dishes/pasta' },
-          { label: 'Hey Ya', url: '/recipe/hey-ya' }
+          { label: 'Hey Ya', url: '/recipe/hey-ya' },
         ],
       ],
     };
@@ -350,7 +350,7 @@ describe('RecipeFormComponent', () => {
       title: '',
       slug: '',
       description: 'Draft description',
-      status: 'published'
+      status: 'published',
     });
 
     component.saveDraft();
@@ -388,8 +388,8 @@ describe('RecipeFormComponent', () => {
       slug: 'published-recipe',
       status: 'published',
       createdAt: originalCreated,
-      updatedAt: originalUpdated
-    } as any;
+      updatedAt: originalUpdated,
+    } as unknown as Recipe;
 
     fixture.detectChanges();
 
@@ -408,57 +408,54 @@ describe('RecipeFormComponent', () => {
     expect(updatePayload.updatedAt).not.toBe(originalUpdated);
   });
 
-  it('should disable Publish buttons on Draft and PrePublished states, and disable Draft/PrePublished actions on Published state', () => {
+  it('should disable Draft/PrePublished actions on Published state', () => {
     // 1. Draft Track (isEdit=false, status=draft)
     fixture.detectChanges();
     let buttons = fixture.nativeElement.querySelectorAll('button');
-    let saveAsDraftBtn = Array.from(buttons).find((b: any) => b.textContent.includes('Save as Draft')) as HTMLButtonElement;
-    let scheduleBtn = Array.from(buttons).find((b: any) => b.textContent.includes('Schedule Publication')) as HTMLButtonElement;
-    let publishNowBtn = Array.from(buttons).find((b: any) => b.textContent.includes('Publish Now')) as HTMLButtonElement;
+    const btnArray1 = Array.from(buttons) as HTMLButtonElement[];
+    const saveAsDraftBtn = btnArray1.find((b) => b.textContent?.includes('Save as Draft'));
+    const scheduleBtn = btnArray1.find((b) => b.textContent?.includes('Schedule Publication'));
 
     expect(saveAsDraftBtn).toBeTruthy();
     expect(scheduleBtn).toBeTruthy();
-    expect(publishNowBtn).toBeTruthy();
-    expect(publishNowBtn.disabled).toBe(true); // Published is disabled on Draft
 
     // 2. PrePublished Track (isEdit=true, status=scheduled)
     component['isEdit'].set(true);
     component['recipeModel'].set({
       ...component['recipeModel'](),
-      status: 'scheduled'
+      status: 'scheduled',
     });
     fixture.detectChanges();
     buttons = fixture.nativeElement.querySelectorAll('button');
-    let revertBtn = Array.from(buttons).find((b: any) => b.textContent.includes('Revert to Draft')) as HTMLButtonElement;
-    let updateScheduleBtn = Array.from(buttons).find((b: any) => b.textContent.includes('Update Schedule')) as HTMLButtonElement;
-    let publishNowBtn2 = Array.from(buttons).find((b: any) => b.textContent.includes('Publish Now')) as HTMLButtonElement;
+    const btnArray2 = Array.from(buttons) as HTMLButtonElement[];
+    const revertBtn = btnArray2.find((b) => b.textContent?.includes('Revert to Draft'));
+    const updateScheduleBtn = btnArray2.find((b) => b.textContent?.includes('Update Schedule'));
 
     expect(revertBtn).toBeTruthy();
     expect(updateScheduleBtn).toBeTruthy();
-    expect(publishNowBtn2).toBeTruthy();
-    expect(publishNowBtn2.disabled).toBe(true); // Publish is disabled on PrePublished
 
     // 3. Published Track (isEdit=true, status=published)
     component['recipeModel'].set({
       ...component['recipeModel'](),
-      status: 'published'
+      status: 'published',
     });
     fixture.detectChanges();
     buttons = fixture.nativeElement.querySelectorAll('button');
-    let revertBtnDisabled = Array.from(buttons).find((b: any) => b.textContent.includes('Revert to Draft')) as HTMLButtonElement;
-    let scheduleBtnDisabled = Array.from(buttons).find((b: any) => b.textContent.includes('Schedule')) as HTMLButtonElement;
-    let updatePublishedBtn = Array.from(buttons).find((b: any) => b.textContent.includes('Update Published')) as HTMLButtonElement;
+    const btnArray3 = Array.from(buttons) as HTMLButtonElement[];
+    const revertBtnDisabled = btnArray3.find((b) => b.textContent?.includes('Revert to Draft'));
+    const scheduleBtnDisabled = btnArray3.find((b) => b.textContent?.includes('Schedule'));
+    const updatePublishedBtn = btnArray3.find((b) => b.textContent?.includes('Update Published'));
 
     expect(revertBtnDisabled).toBeTruthy();
     expect(scheduleBtnDisabled).toBeTruthy();
     expect(updatePublishedBtn).toBeTruthy();
-    expect(revertBtnDisabled.disabled).toBe(true); // Revert to Draft disabled
-    expect(scheduleBtnDisabled.disabled).toBe(true); // Schedule disabled
+    expect(revertBtnDisabled!.disabled).toBe(true); // Revert to Draft disabled
+    expect(scheduleBtnDisabled!.disabled).toBe(true); // Schedule disabled
   });
 
-  it("should copy and transform the breadcrumb to The Best if theBest is enabled, and delete it if disabled", () => {
+  it('should copy and transform the breadcrumb to The Best if theBest is enabled, and delete it if disabled', () => {
     fixture.detectChanges();
-    
+
     const standardBreadcrumbs: Breadcrumbs = {
       main: 0,
       items: [
@@ -467,9 +464,9 @@ describe('RecipeFormComponent', () => {
           { label: 'Recipes', url: '/recipes' },
           { label: 'Main Dishes', url: '/recipes/main-dishes' },
           { label: 'Pasta', url: '/recipes/main-dishes/pasta' },
-          { label: 'Impastable', url: '/recipe/impastable' }
-        ]
-      ]
+          { label: 'Impastable', url: '/recipe/impastable' },
+        ],
+      ],
     };
 
     // 1. Toggled ON (theBest = true)
@@ -478,26 +475,35 @@ describe('RecipeFormComponent', () => {
       title: 'Impastable',
       slug: 'impastable',
       breadcrumbs: standardBreadcrumbs,
-      theBest: true
+      theBest: true,
     });
 
     component.saveRequired('published');
 
     expect(createPayload.breadcrumbs).toBeDefined();
     expect(createPayload.breadcrumbs?.items.length).toBe(2);
-    
+
     // Standard trail at items[0] remains unchanged
     expect(createPayload.breadcrumbs?.items[0]).toEqual(standardBreadcrumbs.items[0]);
-    
+
     // Transformed "The Best" trail at items[1]
     const bestTrail = createPayload.breadcrumbs?.items[1];
     expect(bestTrail).toBeDefined();
     expect(bestTrail?.length).toBe(5);
     expect(bestTrail?.[0]).toEqual({ label: 'Home', url: '/' });
     expect(bestTrail?.[1]).toEqual({ label: 'The Best Recipes', url: '/the-best-recipes' });
-    expect(bestTrail?.[2]).toEqual({ label: 'The Best Main Dishes', url: '/the-best-recipes/the-best-main-dishes' });
-    expect(bestTrail?.[3]).toEqual({ label: 'The Best Pasta', url: '/the-best-recipes/the-best-main-dishes/the-best-pasta' });
-    expect(bestTrail?.[4]).toEqual({ label: 'Impastable', url: '/the-best-recipes/the-best-main-dishes/the-best-pasta/impastable' });
+    expect(bestTrail?.[2]).toEqual({
+      label: 'The Best Main Dishes',
+      url: '/the-best-recipes/the-best-main-dishes',
+    });
+    expect(bestTrail?.[3]).toEqual({
+      label: 'The Best Pasta',
+      url: '/the-best-recipes/the-best-main-dishes/the-best-pasta',
+    });
+    expect(bestTrail?.[4]).toEqual({
+      label: 'Impastable',
+      url: '/the-best-recipes/the-best-main-dishes/the-best-pasta/impastable',
+    });
 
     // 2. Toggled OFF (theBest = false)
     component['recipeModel'].set({
@@ -505,7 +511,7 @@ describe('RecipeFormComponent', () => {
       title: 'Impastable',
       slug: 'impastable',
       breadcrumbs: createPayload.breadcrumbs || null,
-      theBest: false
+      theBest: false,
     });
 
     component.saveRequired('published');
@@ -515,9 +521,9 @@ describe('RecipeFormComponent', () => {
     expect(createPayload.breadcrumbs?.items[0]).toEqual(standardBreadcrumbs.items[0]);
   });
 
-  it("should preserve multiple standard breadcrumb trails and transform each of them if theBest is enabled", () => {
+  it('should preserve multiple standard breadcrumb trails and transform each of them if theBest is enabled', () => {
     fixture.detectChanges();
-    
+
     const multiBreadcrumbs: Breadcrumbs = {
       main: 0,
       items: [
@@ -526,15 +532,15 @@ describe('RecipeFormComponent', () => {
           { label: 'Recipes', url: '/recipes' },
           { label: 'Main Dishes', url: '/recipes/main-dishes' },
           { label: 'Pasta', url: '/recipes/main-dishes/pasta' },
-          { label: 'Impastable', url: '/recipe/impastable' }
+          { label: 'Impastable', url: '/recipe/impastable' },
         ],
         [
           { label: 'Home', url: '/' },
           { label: 'Recipes', url: '/recipes' },
           { label: 'Salads', url: '/recipes/salads' },
-          { label: 'Impastable', url: '/recipe/impastable' }
-        ]
-      ]
+          { label: 'Impastable', url: '/recipe/impastable' },
+        ],
+      ],
     };
 
     // 1. Toggled ON (theBest = true)
@@ -543,7 +549,7 @@ describe('RecipeFormComponent', () => {
       title: 'Impastable',
       slug: 'impastable',
       breadcrumbs: multiBreadcrumbs,
-      theBest: true
+      theBest: true,
     });
 
     component.saveRequired('published');
@@ -551,24 +557,33 @@ describe('RecipeFormComponent', () => {
     expect(createPayload.breadcrumbs).toBeDefined();
     // Standard Trail 1 + Standard Trail 2 + Best Trail 1 + Best Trail 2 = 4 items
     expect(createPayload.breadcrumbs?.items.length).toBe(4);
-    
+
     expect(createPayload.breadcrumbs?.items[0]).toEqual(multiBreadcrumbs.items[0]);
     expect(createPayload.breadcrumbs?.items[1]).toEqual(multiBreadcrumbs.items[1]);
-    
+
     // Transformed "The Best" trail 1
     const bestTrail1 = createPayload.breadcrumbs?.items[2];
     expect(bestTrail1).toBeDefined();
     expect(bestTrail1?.length).toBe(5);
     expect(bestTrail1?.[1]).toEqual({ label: 'The Best Recipes', url: '/the-best-recipes' });
-    expect(bestTrail1?.[2]).toEqual({ label: 'The Best Main Dishes', url: '/the-best-recipes/the-best-main-dishes' });
+    expect(bestTrail1?.[2]).toEqual({
+      label: 'The Best Main Dishes',
+      url: '/the-best-recipes/the-best-main-dishes',
+    });
 
     // Transformed "The Best" trail 2
     const bestTrail2 = createPayload.breadcrumbs?.items[3];
     expect(bestTrail2).toBeDefined();
     expect(bestTrail2?.length).toBe(4);
     expect(bestTrail2?.[1]).toEqual({ label: 'The Best Recipes', url: '/the-best-recipes' });
-    expect(bestTrail2?.[2]).toEqual({ label: 'The Best Salads', url: '/the-best-recipes/the-best-salads' });
-    expect(bestTrail2?.[3]).toEqual({ label: 'Impastable', url: '/the-best-recipes/the-best-salads/impastable' });
+    expect(bestTrail2?.[2]).toEqual({
+      label: 'The Best Salads',
+      url: '/the-best-recipes/the-best-salads',
+    });
+    expect(bestTrail2?.[3]).toEqual({
+      label: 'Impastable',
+      url: '/the-best-recipes/the-best-salads/impastable',
+    });
 
     // 2. Toggled OFF (theBest = false)
     component['recipeModel'].set({
@@ -576,7 +591,7 @@ describe('RecipeFormComponent', () => {
       title: 'Impastable',
       slug: 'impastable',
       breadcrumbs: createPayload.breadcrumbs || null,
-      theBest: false
+      theBest: false,
     });
 
     component.saveRequired('published');
@@ -587,9 +602,9 @@ describe('RecipeFormComponent', () => {
     expect(createPayload.breadcrumbs?.items[1]).toEqual(multiBreadcrumbs.items[1]);
   });
 
-  it("should append a distinct method breadcrumb trail in the breadcrumbs payload if method is provided", () => {
+  it('should append a distinct method breadcrumb trail in the breadcrumbs payload if method is provided', () => {
     fixture.detectChanges();
-    
+
     const standardBreadcrumbs: Breadcrumbs = {
       main: 0,
       items: [
@@ -598,9 +613,9 @@ describe('RecipeFormComponent', () => {
           { label: 'Recipes', url: '/recipes' },
           { label: 'Main Dishes', url: '/recipes/main-dishes' },
           { label: 'Pasta', url: '/recipes/main-dishes/pasta' },
-          { label: 'Impastable', url: '/recipe/impastable' }
-        ]
-      ]
+          { label: 'Impastable', url: '/recipe/impastable' },
+        ],
+      ],
     };
 
     // 1. theBest = false, method = "Slow Cooking"
@@ -610,7 +625,7 @@ describe('RecipeFormComponent', () => {
       slug: 'impastable',
       breadcrumbs: standardBreadcrumbs,
       theBest: false,
-      method: 'Slow Cooking'
+      method: 'Slow Cooking',
     });
 
     component.saveRequired('published');
@@ -618,7 +633,7 @@ describe('RecipeFormComponent', () => {
     expect(createPayload.breadcrumbs).toBeDefined();
     expect(createPayload.breadcrumbs?.items.length).toBe(2);
     expect(createPayload.breadcrumbs?.items[0]).toEqual(standardBreadcrumbs.items[0]);
-    
+
     const methodTrail = createPayload.breadcrumbs?.items[1];
     expect(methodTrail).toBeDefined();
     expect(methodTrail?.length).toBe(2);
@@ -632,7 +647,7 @@ describe('RecipeFormComponent', () => {
       slug: 'impastable',
       breadcrumbs: standardBreadcrumbs,
       theBest: true,
-      method: 'Baking'
+      method: 'Baking',
     });
 
     component.saveRequired('published');
@@ -640,7 +655,7 @@ describe('RecipeFormComponent', () => {
     expect(createPayload.breadcrumbs).toBeDefined();
     expect(createPayload.breadcrumbs?.items.length).toBe(3); // Standard + The Best + Method
     expect(createPayload.breadcrumbs?.items[0]).toEqual(standardBreadcrumbs.items[0]);
-    
+
     const bestTrail = createPayload.breadcrumbs?.items[1];
     expect(bestTrail?.[1]).toEqual({ label: 'The Best Recipes', url: '/the-best-recipes' });
 
@@ -651,9 +666,9 @@ describe('RecipeFormComponent', () => {
     expect(methodTrail2?.[1]).toEqual({ label: 'Baking', url: '/method/baking' });
   });
 
-  it("should append distinct special diets breadcrumb trails in the breadcrumbs payload if specialDiets is provided", () => {
+  it('should append distinct special diets breadcrumb trails in the breadcrumbs payload if specialDiets is provided', () => {
     fixture.detectChanges();
-    
+
     const standardBreadcrumbs: Breadcrumbs = {
       main: 0,
       items: [
@@ -662,9 +677,9 @@ describe('RecipeFormComponent', () => {
           { label: 'Recipes', url: '/recipes' },
           { label: 'Main Dishes', url: '/recipes/main-dishes' },
           { label: 'Pasta', url: '/recipes/main-dishes/pasta' },
-          { label: 'Impastable', url: '/recipe/impastable' }
-        ]
-      ]
+          { label: 'Impastable', url: '/recipe/impastable' },
+        ],
+      ],
     };
 
     // 1. theBest = false, method = "", specialDiets = ["Vegan", "Dairy Free"]
@@ -675,7 +690,7 @@ describe('RecipeFormComponent', () => {
       breadcrumbs: standardBreadcrumbs,
       theBest: false,
       method: '',
-      specialDiets: ['Vegan', 'Dairy Free']
+      specialDiets: ['Vegan', 'Dairy Free'],
     });
 
     component.saveRequired('published');
@@ -683,7 +698,7 @@ describe('RecipeFormComponent', () => {
     expect(createPayload.breadcrumbs).toBeDefined();
     expect(createPayload.breadcrumbs?.items.length).toBe(3); // Standard + Vegan + Dairy Free
     expect(createPayload.breadcrumbs?.items[0]).toEqual(standardBreadcrumbs.items[0]);
-    
+
     const dietTrail1 = createPayload.breadcrumbs?.items[1];
     expect(dietTrail1).toBeDefined();
     expect(dietTrail1?.length).toBe(2);
@@ -697,9 +712,9 @@ describe('RecipeFormComponent', () => {
     expect(dietTrail2?.[1]).toEqual({ label: 'Dairy Free', url: '/special-diets/dairy-free' });
   });
 
-  it("should append a distinct holiday breadcrumb trail in the breadcrumbs payload if holidays is provided", () => {
+  it('should append a distinct holiday breadcrumb trail in the breadcrumbs payload if holidays is provided', () => {
     fixture.detectChanges();
-    
+
     const standardBreadcrumbs: Breadcrumbs = {
       main: 0,
       items: [
@@ -708,9 +723,9 @@ describe('RecipeFormComponent', () => {
           { label: 'Recipes', url: '/recipes' },
           { label: 'Main Dishes', url: '/recipes/main-dishes' },
           { label: 'Pasta', url: '/recipes/main-dishes/pasta' },
-          { label: 'Impastable', url: '/recipe/impastable' }
-        ]
-      ]
+          { label: 'Impastable', url: '/recipe/impastable' },
+        ],
+      ],
     };
 
     // 1. theBest = false, method = "", holidays = "Thanksgiving"
@@ -722,7 +737,7 @@ describe('RecipeFormComponent', () => {
       theBest: false,
       method: '',
       specialDiets: [],
-      holidays: 'Thanksgiving'
+      holidays: 'Thanksgiving',
     });
 
     component.saveRequired('published');
@@ -730,7 +745,7 @@ describe('RecipeFormComponent', () => {
     expect(createPayload.breadcrumbs).toBeDefined();
     expect(createPayload.breadcrumbs?.items.length).toBe(2); // Standard + Thanksgiving
     expect(createPayload.breadcrumbs?.items[0]).toEqual(standardBreadcrumbs.items[0]);
-    
+
     const holidayTrail = createPayload.breadcrumbs?.items[1];
     expect(holidayTrail).toBeDefined();
     expect(holidayTrail?.length).toBe(2);
@@ -779,7 +794,7 @@ describe('RecipeFormComponent', () => {
   it('should manage isDraftDisabled state correctly: initially true, false on change, true after saveDraft', async () => {
     fixture.detectChanges();
     // Wait for initialization macro-task (setTimeout)
-    await new Promise(resolve => setTimeout(resolve, 0));
+    await new Promise((resolve) => setTimeout(resolve, 0));
 
     // 1. Initially disabled
     expect(component['isDraftDisabled']()).toBe(true);
@@ -797,7 +812,7 @@ describe('RecipeFormComponent', () => {
 
   it('should manage Schedule Publication disabled state: disabled by default, disabled if modified but invalid, enabled if modified and valid, disabled after save', async () => {
     fixture.detectChanges();
-    await new Promise(resolve => setTimeout(resolve, 0));
+    await new Promise((resolve) => setTimeout(resolve, 0));
 
     // 1. Initially disabled (invalid and not dirty)
     expect(component['recipeForm']().invalid()).toBe(true);

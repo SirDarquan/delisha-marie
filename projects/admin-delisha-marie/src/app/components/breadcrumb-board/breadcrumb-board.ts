@@ -30,8 +30,8 @@ interface CategoryConfig {
       <!-- 1. THE BOARD (Capsules Trail) -->
       <div class="flex flex-col gap-2">
         <div class="flex justify-between items-center flex-wrap gap-3">
-          <label class="text-xs font-semibold text-slate-300">Active Breadcrumb Board</label>
-          
+          <span class="text-xs font-semibold text-slate-300">Active Breadcrumb Board</span>
+
           <!-- Trail Selector Tabs -->
           <div class="flex flex-wrap gap-2 items-center">
             @for (trail of boardPiecesList(); track $index; let i = $index) {
@@ -51,7 +51,10 @@ interface CategoryConfig {
                   @if (i > 0) {
                     <span
                       class="material-icons text-xs hover:text-rose-400 cursor-pointer ml-1 leading-none"
-                      (click)="deleteTrail(i, $event)">
+                      role="button"
+                      tabindex="0"
+                      (click)="deleteTrail(i, $event)"
+                      (keydown.enter)="deleteTrail(i, $event)">
                       close
                     </span>
                   }
@@ -79,7 +82,9 @@ interface CategoryConfig {
                 >
 
                 <!-- Can only remove items past base Home & Recipes pieces, and not the recipe leaf node -->
-                @if (piece.url !== '/' && piece.url !== '/recipes' && !piece.url.startsWith('/recipe/')) {
+                @if (
+                  piece.url !== '/' && piece.url !== '/recipes' && !piece.url.startsWith('/recipe/')
+                ) {
                   <button
                     type="button"
                     (click)="removePiece(i)"
@@ -160,10 +165,11 @@ interface CategoryConfig {
       <div
         [class.opacity-50]="!isCustomPanelActive()"
         class="bg-slate-800/20 border border-slate-700/40 rounded-2xl p-5 flex flex-col gap-4 transition relative">
-
         @if (!isCustomPanelActive()) {
-          <div class="absolute inset-0 z-10 flex items-center justify-center bg-slate-950/65 backdrop-blur-[1.5px] rounded-2xl">
-            <span class="text-xs font-bold text-slate-300 bg-slate-900 border border-slate-800/80 px-4 py-2.5 rounded-2xl shadow-lg uppercase tracking-wide">
+          <div
+            class="absolute inset-0 z-10 flex items-center justify-center bg-slate-950/65 backdrop-blur-[1.5px] rounded-2xl">
+            <span
+              class="text-xs font-bold text-slate-300 bg-slate-900 border border-slate-800/80 px-4 py-2.5 rounded-2xl shadow-lg uppercase tracking-wide">
               No further subpaths allowed under subcategories
             </span>
           </div>
@@ -199,7 +205,10 @@ interface CategoryConfig {
             <div
               [class.opacity-50]="!isCustomPanelActive()"
               class="flex items-center bg-slate-800/40 border border-slate-700/60 rounded-xl px-4 py-2 text-xs focus-within:border-purple-400 transition">
-              <span class="text-slate-500 select-none whitespace-nowrap">{{ currentUrlPrefix() }}</span><input
+              <span class="text-slate-500 select-none whitespace-nowrap">{{
+                currentUrlPrefix()
+              }}</span
+              ><input
                 id="custom-url"
                 type="text"
                 [value]="customUrl()"
@@ -216,7 +225,9 @@ interface CategoryConfig {
           <button
             type="button"
             (click)="addCustomPiece()"
-            [disabled]="!isCustomPanelActive() || !customName().trim() || customUrl().trim().length < 3"
+            [disabled]="
+              !isCustomPanelActive() || !customName().trim() || customUrl().trim().length < 3
+            "
             class="px-5 py-2 rounded-xl text-xs font-bold text-white bg-purple-600 hover:bg-purple-500 disabled:opacity-40 disabled:cursor-not-allowed transition shadow-md cursor-pointer border-0 flex items-center gap-1">
             <span class="material-icons text-sm">add</span>
             Add to Board
@@ -226,8 +237,8 @@ interface CategoryConfig {
 
       <!-- 4. READONLY PREVIEW -->
       <div class="flex flex-col gap-1.5">
-        <label class="text-xs font-semibold text-slate-400 uppercase"
-          >Compiled Breadcrumb Pathway Preview</label
+        <span class="text-xs font-semibold text-slate-400 uppercase"
+          >Compiled Breadcrumb Pathway Preview</span
         >
         <input
           type="text"
@@ -270,7 +281,12 @@ export class BreadcrumbBoardComponent {
         r.breadcrumbs.items.forEach((trail) => {
           if (trail.length > 2 && trail[0]?.url === '/' && trail[1]?.url === '/recipes') {
             const catPiece = trail[2];
-            if (catPiece && catPiece.label && catPiece.url && catPiece.url.startsWith('/recipes/')) {
+            if (
+              catPiece &&
+              catPiece.label &&
+              catPiece.url &&
+              catPiece.url.startsWith('/recipes/')
+            ) {
               const catName = catPiece.label.trim();
               const catUrl = catPiece.url.trim();
 
@@ -282,7 +298,12 @@ export class BreadcrumbBoardComponent {
 
               if (trail.length > 3) {
                 const subPiece = trail[3];
-                if (subPiece && subPiece.label && subPiece.url && !subPiece.url.startsWith('/recipe/')) {
+                if (
+                  subPiece &&
+                  subPiece.label &&
+                  subPiece.url &&
+                  !subPiece.url.startsWith('/recipe/')
+                ) {
                   const subName = subPiece.label.trim();
                   const subUrl = subPiece.url.trim();
                   catData.subs.set(subName, subUrl);
@@ -321,10 +342,12 @@ export class BreadcrumbBoardComponent {
   breadcrumbsChange = output<Breadcrumbs>();
 
   // Board reactive pieces state (defaults to Home & Recipes)
-  boardPiecesList = signal<{ name: string; url: string }[][]>([[
-    { name: 'Home', url: '/' },
-    { name: 'Recipes', url: '/recipes' },
-  ]]);
+  boardPiecesList = signal<{ name: string; url: string }[][]>([
+    [
+      { name: 'Home', url: '/' },
+      { name: 'Recipes', url: '/recipes' },
+    ],
+  ]);
 
   activeTrailIndex = signal<number>(0);
 
@@ -332,10 +355,11 @@ export class BreadcrumbBoardComponent {
   readonly boardPieces = computed(() => {
     const idx = this.activeTrailIndex();
     const list = this.boardPiecesList();
-    const trail = list[idx] || list[0] || [
-      { name: 'Home', url: '/' },
-      { name: 'Recipes', url: '/recipes' },
-    ];
+    const trail = list[idx] ||
+      list[0] || [
+        { name: 'Home', url: '/' },
+        { name: 'Recipes', url: '/recipes' },
+      ];
 
     const title = this.recipeTitle() || 'Untitled';
     const slug = this.recipeSlug();
@@ -364,12 +388,13 @@ export class BreadcrumbBoardComponent {
           const isHome = trail[0]?.url === '/';
           const isRecipes = trail[1]?.url === '/recipes';
           // Check if it is NOT "The Best" trail
-          const isBest = trail.some(t => t.url?.includes('/the-best-recipes'));
+          const isBest = trail.some((t) => t.url?.includes('/the-best-recipes'));
           // Check if it is NOT cooking method, special diets, or holidays trail
-          const isAutoGenerated = trail.some(t => 
-            t.url?.includes('/method') || 
-            t.url?.includes('/special-diets') || 
-            t.url?.includes('/holidays')
+          const isAutoGenerated = trail.some(
+            (t) =>
+              t.url?.includes('/method') ||
+              t.url?.includes('/special-diets') ||
+              t.url?.includes('/holidays'),
           );
           return isHome && isRecipes && !isBest && !isAutoGenerated;
         });
@@ -377,19 +402,21 @@ export class BreadcrumbBoardComponent {
         if (standardTrails.length > 0) {
           // Clean recipe leaf nodes before serialization comparison
           const cleanedInputTrails = standardTrails.map((trail) =>
-            trail.filter(t => t.url && !t.url.startsWith('/recipe/'))
+            trail.filter((t) => t.url && !t.url.startsWith('/recipe/')),
           );
 
-          const inputStr = JSON.stringify(cleanedInputTrails.map(t => t.map(b => b.url)));
-          const currentStr = JSON.stringify(this.boardPiecesList().map(t => t.map(p => p.url)));
+          const inputStr = JSON.stringify(cleanedInputTrails.map((t) => t.map((b) => b.url)));
+          const currentStr = JSON.stringify(this.boardPiecesList().map((t) => t.map((p) => p.url)));
 
           // Only reload and reset active index if there is an external data change
           if (inputStr !== currentStr) {
             const mappedList = standardTrails.map((trail) =>
-              trail.filter(b => b.url && !b.url.startsWith('/recipe/')).map((b) => ({
-                name: b.label,
-                url: b.url || '',
-              }))
+              trail
+                .filter((b) => b.url && !b.url.startsWith('/recipe/'))
+                .map((b) => ({
+                  name: b.label,
+                  url: b.url || '',
+                })),
             );
             this.boardPiecesList.set(mappedList);
             this.activeTrailIndex.set(0);
@@ -445,7 +472,7 @@ export class BreadcrumbBoardComponent {
     if (idx === 0 || list.length <= 1) return;
 
     this.boardPiecesList.update((l) => l.filter((_, i) => i !== idx));
-    
+
     // Shift active index if it was deleted or out of bounds
     if (this.activeTrailIndex() >= this.boardPiecesList().length) {
       this.activeTrailIndex.set(this.boardPiecesList().length - 1);
@@ -467,9 +494,7 @@ export class BreadcrumbBoardComponent {
       // Toggle off: remove this category and any predefined subcategory
       const filtered = all.filter((p) => {
         const isCat = p.url === cat.url;
-        const isSub = this.categories().some((c) =>
-          c.children?.some((sub) => sub.url === p.url)
-        );
+        const isSub = this.categories().some((c) => c.children?.some((sub) => sub.url === p.url));
         return !isCat && !isSub;
       });
       this.updateBoard(filtered);
@@ -478,7 +503,7 @@ export class BreadcrumbBoardComponent {
       const filtered = all.filter((p) => {
         const isAnyCat = this.categories().some((c) => c.url === p.url);
         const isAnySub = this.categories().some((c) =>
-          c.children?.some((sub) => sub.url === p.url)
+          c.children?.some((sub) => sub.url === p.url),
         );
         return !isAnyCat && !isAnySub;
       });
@@ -497,9 +522,7 @@ export class BreadcrumbBoardComponent {
     } else {
       // Selecting a new subcategory: replace any existing subcategory first
       const filtered = all.filter((p) => {
-        const isAnySub = this.categories().some((c) =>
-          c.children?.some((s) => s.url === p.url)
-        );
+        const isAnySub = this.categories().some((c) => c.children?.some((s) => s.url === p.url));
         return !isAnySub;
       });
       this.updateBoard([...filtered, { name: sub.name, url: sub.url }]);
@@ -510,20 +533,20 @@ export class BreadcrumbBoardComponent {
     const name = this.customName().trim();
     let urlPart = this.customUrl().trim();
     const prefix = this.currentUrlPrefix();
-    
+
     // Dynamically clean redundancy matching the current prefix
     const prefixNoSlashes = prefix.replace(/^\/+/, '').replace(/\/+$/, '');
     if (prefixNoSlashes) {
       const regex = new RegExp(`^\\/?${prefixNoSlashes}\\/?`, 'i');
       urlPart = urlPart.replace(regex, '');
     }
-    
+
     // Clean of general "/recipes", leading/trailing slashes
     urlPart = urlPart
       .replace(/^\/?recipes\/?/i, '')
       .replace(/^\/+/, '')
       .replace(/\/+$/, '');
-      
+
     if (!name || urlPart.length < 3) return;
 
     const fullUrl = `${prefix}${urlPart}`;
@@ -546,9 +569,7 @@ export class BreadcrumbBoardComponent {
       // If we remove the category capsule directly, also remove the subcategory
       const filtered = all.filter((p, i) => {
         if (i === idx) return false;
-        const isSub = this.categories().some((c) =>
-          c.children?.some((sub) => sub.url === p.url)
-        );
+        const isSub = this.categories().some((c) => c.children?.some((sub) => sub.url === p.url));
         return !isSub;
       });
       this.updateBoard(filtered);
@@ -564,19 +585,17 @@ export class BreadcrumbBoardComponent {
   updateCustomUrl(event: Event): void {
     let value = (event.target as HTMLInputElement).value;
     const prefix = this.currentUrlPrefix();
-    
+
     // Strip redundant active prefix if matching
     const prefixNoSlashes = prefix.replace(/^\/+/, '').replace(/\/+$/, '');
     if (prefixNoSlashes) {
       const regex = new RegExp(`^\\/?${prefixNoSlashes}\\/?`, 'i');
       value = value.replace(regex, '');
     }
-    
+
     // Strip leading "/recipes", "recipes", and any leading slashes
-    value = value
-      .replace(/^\/?recipes\/?/i, '')
-      .replace(/^\/+/, '');
-      
+    value = value.replace(/^\/?recipes\/?/i, '').replace(/^\/+/, '');
+
     this.customUrl.set(value);
     (event.target as HTMLInputElement).value = value;
   }
@@ -640,7 +659,7 @@ export class BreadcrumbBoardComponent {
 
     // Check if the last piece matches a predefined subcategory URL
     const isPredefinedSub = this.categories().some((c) =>
-      c.children?.some((sub) => sub.url === last.url)
+      c.children?.some((sub) => sub.url === last.url),
     );
 
     return !isPredefinedSub;

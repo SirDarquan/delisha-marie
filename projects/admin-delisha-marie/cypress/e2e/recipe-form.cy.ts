@@ -77,8 +77,10 @@ describe('Admin Recipe Form Flow', () => {
     cy.get('#instructions').should('not.be.disabled').type(mockRecipe.instructions.join('\n'));
     cy.get('#instructions').blur();
 
-    cy.get('#category').should('not.be.disabled').select('Dinner');
     cy.get('#difficulty').should('not.be.disabled').select('Easy');
+
+    cy.contains('button', 'Where is it').click();
+    cy.get('#category').should('not.be.disabled').select('Dinner');
 
     cy.get('button[type="submit"]').click({ force: true });
     cy.wait('@createRecipe');

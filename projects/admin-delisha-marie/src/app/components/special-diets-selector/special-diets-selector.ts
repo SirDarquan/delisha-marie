@@ -21,9 +21,7 @@ import { RecipeService } from '../../services/recipe.service';
   imports: [CommonModule, MatFormFieldModule, MatSelectModule],
   template: `
     <div class="flex flex-col gap-2">
-      <label class="text-xs font-semibold text-slate-300">
-        Special Dietary Profile
-      </label>
+      <span class="text-xs font-semibold text-slate-300"> Special Dietary Profile </span>
       <div class="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
         <!-- 1. The Material Multi-Select Dropdown -->
         <div class="relative flex-1">
@@ -130,7 +128,9 @@ import { RecipeService } from '../../services/recipe.service';
         color: #e2e8f0 !important; /* slate-200 */
         font-size: 14px !important;
       }
-      .custom-select-panel .mat-mdc-option.mdc-list-item--selected:not(.mdc-list-item--disabled) .mdc-list-item__primary-text {
+      .custom-select-panel
+        .mat-mdc-option.mdc-list-item--selected:not(.mdc-list-item--disabled)
+        .mdc-list-item__primary-text {
         color: #c084fc !important; /* purple-400 */
       }
       .custom-select-panel .mat-mdc-option:hover:not(.mdc-list-item--disabled) {

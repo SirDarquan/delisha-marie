@@ -8,14 +8,14 @@ describe('CookingMethodSelectorComponent', () => {
   let fixture: ComponentFixture<CookingMethodSelectorComponent>;
   let emittedValue: string | null = null;
 
-  const mockRecipesSignal = signal<any[]>([
+  const mockRecipesSignal = signal<unknown[]>([
     { title: 'A', slug: 'a', method: 'Smoking', status: 'published' },
     { title: 'B', slug: 'b', method: 'Sous Vide', status: 'published' },
-    { title: 'C', slug: 'c', method: 'Baking', status: 'published' }
+    { title: 'C', slug: 'c', method: 'Baking', status: 'published' },
   ]);
 
   const fakeRecipeService = {
-    recipes: mockRecipesSignal
+    recipes: mockRecipesSignal,
   };
 
   beforeEach(async () => {
@@ -23,14 +23,12 @@ describe('CookingMethodSelectorComponent', () => {
 
     await TestBed.configureTestingModule({
       imports: [CookingMethodSelectorComponent],
-      providers: [
-        { provide: RecipeService, useValue: fakeRecipeService }
-      ]
+      providers: [{ provide: RecipeService, useValue: fakeRecipeService }],
     }).compileComponents();
 
     fixture = TestBed.createComponent(CookingMethodSelectorComponent);
     component = fixture.componentInstance;
-    
+
     component.methodChange.subscribe((val) => {
       emittedValue = val;
     });
@@ -44,16 +42,16 @@ describe('CookingMethodSelectorComponent', () => {
   it('should compile existing methods from database', () => {
     fixture.detectChanges();
     const compiled = component.compiledMethods();
-    
+
     // Custom database methods
     expect(compiled).toContain('Smoking');
     expect(compiled).toContain('Sous Vide');
     expect(compiled).toContain('Baking');
-    
+
     // Seed defaults no longer included
     expect(compiled).not.toContain('Grilling');
     expect(compiled).not.toContain('Sautéing');
-    
+
     // Sorted alphabetically
     expect(compiled[0] <= compiled[1]).toBe(true);
   });
@@ -67,7 +65,7 @@ describe('CookingMethodSelectorComponent', () => {
   it('should emit select changes for predefined methods', () => {
     fixture.detectChanges();
     component.onMethodSelect('Smoking');
-    
+
     expect(component.selectedMethod()).toBe('Smoking');
     expect(emittedValue).toBe('Smoking');
     expect(component.showCustomInput()).toBe(false);
@@ -76,7 +74,7 @@ describe('CookingMethodSelectorComponent', () => {
   it('should open custom method input when custom option is selected', () => {
     fixture.detectChanges();
     component.onMethodSelect('custom');
-    
+
     expect(component.showCustomInput()).toBe(true);
     expect(component.customMethodText()).toBe('');
   });
@@ -86,11 +84,11 @@ describe('CookingMethodSelectorComponent', () => {
     // 1. Select custom option
     component.onMethodSelect('custom');
     expect(component.showCustomInput()).toBe(true);
-    
+
     // 2. Type text
-    component.onCustomTextChange({ target: { value: 'Dehydrating' } } as any);
+    component.onCustomTextChange({ target: { value: 'Dehydrating' } } as unknown as Event);
     expect(component.customMethodText()).toBe('Dehydrating');
-    
+
     // 3. Click add
     component.addCustomMethod();
     expect(component.selectedMethod()).toBe('Dehydrating');
@@ -102,11 +100,11 @@ describe('CookingMethodSelectorComponent', () => {
   it('should support canceling custom method entry', () => {
     fixture.componentRef.setInput('initialMethod', 'Sous Vide');
     fixture.detectChanges();
-    
+
     // 1. Select custom
     component.onMethodSelect('custom');
-    component.onCustomTextChange({ target: { value: 'Smoking' } } as any);
-    
+    component.onCustomTextChange({ target: { value: 'Smoking' } } as unknown as Event);
+
     // 2. Cancel
     component.cancelCustomMethod();
     expect(component.showCustomInput()).toBe(false);

@@ -8,14 +8,14 @@ describe('SpecialDietsSelectorComponent', () => {
   let fixture: ComponentFixture<SpecialDietsSelectorComponent>;
   let emittedValues: string[] | null = null;
 
-  const mockRecipesSignal = signal<any[]>([
+  const mockRecipesSignal = signal<unknown[]>([
     { title: 'A', slug: 'a', specialDiets: ['Gluten Free', 'Vegan'], status: 'published' },
     { title: 'B', slug: 'b', specialDiets: ['Low Carb'], status: 'published' },
-    { title: 'C', slug: 'c', specialDiets: ['Gluten Free'], status: 'published' }
+    { title: 'C', slug: 'c', specialDiets: ['Gluten Free'], status: 'published' },
   ]);
 
   const fakeRecipeService = {
-    recipes: mockRecipesSignal
+    recipes: mockRecipesSignal,
   };
 
   beforeEach(async () => {
@@ -23,14 +23,12 @@ describe('SpecialDietsSelectorComponent', () => {
 
     await TestBed.configureTestingModule({
       imports: [SpecialDietsSelectorComponent],
-      providers: [
-        { provide: RecipeService, useValue: fakeRecipeService }
-      ]
+      providers: [{ provide: RecipeService, useValue: fakeRecipeService }],
     }).compileComponents();
 
     fixture = TestBed.createComponent(SpecialDietsSelectorComponent);
     component = fixture.componentInstance;
-    
+
     component.dietsChange.subscribe((val) => {
       emittedValues = val;
     });
@@ -44,11 +42,11 @@ describe('SpecialDietsSelectorComponent', () => {
   it('should compile existing diets from database alphabetically', () => {
     fixture.detectChanges();
     const compiled = component.compiledDiets();
-    
+
     expect(compiled).toContain('Gluten Free');
     expect(compiled).toContain('Vegan');
     expect(compiled).toContain('Low Carb');
-    
+
     // Check sorting
     expect(compiled.indexOf('Gluten Free')).toBeLessThan(compiled.indexOf('Low Carb'));
     expect(compiled.indexOf('Low Carb')).toBeLessThan(compiled.indexOf('Vegan'));
@@ -64,7 +62,7 @@ describe('SpecialDietsSelectorComponent', () => {
   it('should emit changes when select is changed', () => {
     fixture.detectChanges();
     component.onSelectionChange(['Vegan', 'Low Carb']);
-    
+
     expect(component.selectedDiets()).toEqual(['Vegan', 'Low Carb']);
     expect(emittedValues).toEqual(['Vegan', 'Low Carb']);
     expect(component.showCustomInput()).toBe(false);
@@ -73,7 +71,7 @@ describe('SpecialDietsSelectorComponent', () => {
   it('should open custom diet input when custom is in values and strip custom from choice list', () => {
     fixture.detectChanges();
     component.onSelectionChange(['Vegan', 'custom']);
-    
+
     expect(component.showCustomInput()).toBe(true);
     expect(component.selectedDiets()).toEqual(['Vegan']);
     expect(emittedValues).toEqual(['Vegan']);
@@ -85,11 +83,11 @@ describe('SpecialDietsSelectorComponent', () => {
     // 1. Intercept custom select
     component.onSelectionChange(['Vegan', 'custom']);
     expect(component.showCustomInput()).toBe(true);
-    
+
     // 2. Type text
-    component.onCustomTextChange({ target: { value: 'Nut Free' } } as any);
+    component.onCustomTextChange({ target: { value: 'Nut Free' } } as unknown as Event);
     expect(component.customDietText()).toBe('Nut Free');
-    
+
     // 3. Add custom diet
     component.addCustomDiet();
     expect(component.selectedDiets()).toEqual(['Vegan', 'Nut Free']);
@@ -101,10 +99,10 @@ describe('SpecialDietsSelectorComponent', () => {
   it('should support canceling custom method entry', () => {
     fixture.componentRef.setInput('initialDiets', ['Gluten Free']);
     fixture.detectChanges();
-    
+
     component.onSelectionChange(['Gluten Free', 'custom']);
-    component.onCustomTextChange({ target: { value: 'Dairy Free' } } as any);
-    
+    component.onCustomTextChange({ target: { value: 'Dairy Free' } } as unknown as Event);
+
     component.cancelCustomDiet();
     expect(component.showCustomInput()).toBe(false);
     expect(component.selectedDiets()).toEqual(['Gluten Free']);

@@ -8,14 +8,14 @@ describe('HolidaysSelectorComponent', () => {
   let fixture: ComponentFixture<HolidaysSelectorComponent>;
   let emittedValue: string | null = null;
 
-  const mockRecipesSignal = signal<any[]>([
+  const mockRecipesSignal = signal<unknown[]>([
     { title: 'A', slug: 'a', holidays: ['Thanksgiving', 'Christmas'], status: 'published' },
     { title: 'B', slug: 'b', holidays: ['Sunday Roast'], status: 'published' },
-    { title: 'C', slug: 'c', holidays: ['Thanksgiving'], status: 'published' }
+    { title: 'C', slug: 'c', holidays: ['Thanksgiving'], status: 'published' },
   ]);
 
   const fakeRecipeService = {
-    recipes: mockRecipesSignal
+    recipes: mockRecipesSignal,
   };
 
   beforeEach(async () => {
@@ -23,14 +23,12 @@ describe('HolidaysSelectorComponent', () => {
 
     await TestBed.configureTestingModule({
       imports: [HolidaysSelectorComponent],
-      providers: [
-        { provide: RecipeService, useValue: fakeRecipeService }
-      ]
+      providers: [{ provide: RecipeService, useValue: fakeRecipeService }],
     }).compileComponents();
 
     fixture = TestBed.createComponent(HolidaysSelectorComponent);
     component = fixture.componentInstance;
-    
+
     component.holidayChange.subscribe((val) => {
       emittedValue = val;
     });
@@ -44,11 +42,11 @@ describe('HolidaysSelectorComponent', () => {
   it('should compile existing holidays from database alphabetically', () => {
     fixture.detectChanges();
     const compiled = component.compiledHolidays();
-    
+
     expect(compiled).toContain('Thanksgiving');
     expect(compiled).toContain('Christmas');
     expect(compiled).toContain('Sunday Roast');
-    
+
     // Check sorting
     expect(compiled.indexOf('Christmas')).toBeLessThan(compiled.indexOf('Sunday Roast'));
     expect(compiled.indexOf('Sunday Roast')).toBeLessThan(compiled.indexOf('Thanksgiving'));
@@ -64,7 +62,7 @@ describe('HolidaysSelectorComponent', () => {
   it('should emit changes when select is changed', () => {
     fixture.detectChanges();
     component.onHolidaySelect('Christmas');
-    
+
     expect(component.selectedHoliday()).toBe('Christmas');
     expect(emittedValue).toBe('Christmas');
     expect(component.showCustomInput()).toBe(false);
@@ -73,7 +71,7 @@ describe('HolidaysSelectorComponent', () => {
   it('should open custom holiday input when custom is selected', () => {
     fixture.detectChanges();
     component.onHolidaySelect('custom');
-    
+
     expect(component.showCustomInput()).toBe(true);
     expect(component.customHolidayText()).toBe('');
   });
@@ -83,11 +81,11 @@ describe('HolidaysSelectorComponent', () => {
     // 1. Select custom option
     component.onHolidaySelect('custom');
     expect(component.showCustomInput()).toBe(true);
-    
+
     // 2. Type text
-    component.onCustomTextChange({ target: { value: 'New Year' } } as any);
+    component.onCustomTextChange({ target: { value: 'New Year' } } as unknown as Event);
     expect(component.customHolidayText()).toBe('New Year');
-    
+
     // 3. Add custom holiday
     component.addCustomHoliday();
     expect(component.selectedHoliday()).toBe('New Year');
@@ -99,10 +97,10 @@ describe('HolidaysSelectorComponent', () => {
   it('should support canceling custom method entry', () => {
     fixture.componentRef.setInput('initialHoliday', 'Thanksgiving');
     fixture.detectChanges();
-    
+
     component.onHolidaySelect('custom');
-    component.onCustomTextChange({ target: { value: 'Fourth of July' } } as any);
-    
+    component.onCustomTextChange({ target: { value: 'Fourth of July' } } as unknown as Event);
+
     component.cancelCustomHoliday();
     expect(component.showCustomInput()).toBe(false);
     expect(component.selectedHoliday()).toBe('Thanksgiving');

@@ -100,14 +100,14 @@ interface RecipeFormModel {
 
       <!-- Tab bar -->
       <div class="flex justify-center mb-6 max-w-4xl mx-auto">
-        <div class="relative bg-slate-800 border border-slate-700 rounded-full p-1.5 flex gap-2 shadow-inner backdrop-blur-md">
+        <div
+          class="relative bg-slate-800 border border-slate-700 rounded-full p-1.5 flex gap-2 shadow-inner backdrop-blur-md">
           <!-- Sliding background pill -->
           <div
             class="absolute top-1.5 bottom-1.5 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all duration-300 ease-out"
             [style.left.px]="activeTab() === 'what' ? 6 : 146"
-            [style.width.px]="140">
-          </div>
-          
+            [style.width.px]="140"></div>
+
           <!-- Tab 1 Button -->
           <button
             type="button"
@@ -118,7 +118,7 @@ interface RecipeFormModel {
             <span class="material-icons text-sm">restaurant_menu</span>
             What is it
           </button>
-          
+
           <!-- Tab 2 Button -->
           <button
             type="button"
@@ -140,7 +140,6 @@ interface RecipeFormModel {
           (input)="markDirty()"
           aria-label="Recipe details form"
           class="flex flex-col gap-6">
-
           <!-- 1. WHAT IS IT Tab -->
           @if (activeTab() === 'what') {
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5 animate-fadeIn">
@@ -196,8 +195,6 @@ interface RecipeFormModel {
                 </select>
               </div>
 
-
-
               <div class="flex flex-col gap-1">
                 <label for="prepTime" class="text-xs font-semibold text-slate-300">Prep Time</label>
                 <input
@@ -219,7 +216,9 @@ interface RecipeFormModel {
               </div>
 
               <div class="flex flex-col gap-1">
-                <label for="totalTime" class="text-xs font-semibold text-slate-300">Total Time</label>
+                <label for="totalTime" class="text-xs font-semibold text-slate-300"
+                  >Total Time</label
+                >
                 <input
                   id="totalTime"
                   type="text"
@@ -269,7 +268,9 @@ interface RecipeFormModel {
               </div>
 
               <div class="flex flex-col gap-1 md:col-span-2">
-                <label for="keywords" class="text-xs font-semibold text-slate-300">Keywords (Comma separated)</label>
+                <label for="keywords" class="text-xs font-semibold text-slate-300"
+                  >Keywords (Comma separated)</label
+                >
                 <input
                   id="keywords"
                   type="text"
@@ -365,44 +366,116 @@ interface RecipeFormModel {
                 <h4 class="text-sm font-semibold text-white">Nutritional Information</h4>
                 <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
                   <div class="flex flex-col gap-1">
-                    <label for="servingSize" class="text-[10px] font-bold text-slate-400 uppercase">Serving Size</label>
-                    <input id="servingSize" type="text" [formField]="recipeForm.servingSize" placeholder="e.g., 1 slice" class="bg-slate-800/40 border border-slate-700/60 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-purple-400" />
+                    <label for="servingSize" class="text-[10px] font-bold text-slate-400 uppercase"
+                      >Serving Size</label
+                    >
+                    <input
+                      id="servingSize"
+                      type="text"
+                      [formField]="recipeForm.servingSize"
+                      placeholder="e.g., 1 slice"
+                      class="bg-slate-800/40 border border-slate-700/60 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-purple-400" />
                   </div>
                   <div class="flex flex-col gap-1">
-                    <label for="calories" class="text-[10px] font-bold text-slate-400 uppercase">Calories</label>
-                    <input id="calories" type="text" [formField]="recipeForm.calories" placeholder="e.g., 250 kcal" class="bg-slate-800/40 border border-slate-700/60 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-purple-400" />
+                    <label for="calories" class="text-[10px] font-bold text-slate-400 uppercase"
+                      >Calories</label
+                    >
+                    <input
+                      id="calories"
+                      type="text"
+                      [formField]="recipeForm.calories"
+                      placeholder="e.g., 250 kcal"
+                      class="bg-slate-800/40 border border-slate-700/60 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-purple-400" />
                   </div>
                   <div class="flex flex-col gap-1">
-                    <label for="fat" class="text-[10px] font-bold text-slate-400 uppercase">Fat</label>
-                    <input id="fat" type="text" [formField]="recipeForm.fat" placeholder="e.g., 12g" class="bg-slate-800/40 border border-slate-700/60 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-purple-400" />
+                    <label for="fat" class="text-[10px] font-bold text-slate-400 uppercase"
+                      >Fat</label
+                    >
+                    <input
+                      id="fat"
+                      type="text"
+                      [formField]="recipeForm.fat"
+                      placeholder="e.g., 12g"
+                      class="bg-slate-800/40 border border-slate-700/60 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-purple-400" />
                   </div>
                   <div class="flex flex-col gap-1">
-                    <label for="saturatedFat" class="text-[10px] font-bold text-slate-400 uppercase">Saturated Fat</label>
-                    <input id="saturatedFat" type="text" [formField]="recipeForm.saturatedFat" placeholder="e.g., 4g" class="bg-slate-800/40 border border-slate-700/60 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-purple-400" />
+                    <label for="saturatedFat" class="text-[10px] font-bold text-slate-400 uppercase"
+                      >Saturated Fat</label
+                    >
+                    <input
+                      id="saturatedFat"
+                      type="text"
+                      [formField]="recipeForm.saturatedFat"
+                      placeholder="e.g., 4g"
+                      class="bg-slate-800/40 border border-slate-700/60 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-purple-400" />
                   </div>
                   <div class="flex flex-col gap-1">
-                    <label for="cholesterol" class="text-[10px] font-bold text-slate-400 uppercase">Cholesterol</label>
-                    <input id="cholesterol" type="text" [formField]="recipeForm.cholesterol" placeholder="e.g., 15mg" class="bg-slate-800/40 border border-slate-700/60 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-purple-400" />
+                    <label for="cholesterol" class="text-[10px] font-bold text-slate-400 uppercase"
+                      >Cholesterol</label
+                    >
+                    <input
+                      id="cholesterol"
+                      type="text"
+                      [formField]="recipeForm.cholesterol"
+                      placeholder="e.g., 15mg"
+                      class="bg-slate-800/40 border border-slate-700/60 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-purple-400" />
                   </div>
                   <div class="flex flex-col gap-1">
-                    <label for="sodium" class="text-[10px] font-bold text-slate-400 uppercase">Sodium</label>
-                    <input id="sodium" type="text" [formField]="recipeForm.sodium" placeholder="e.g., 120mg" class="bg-slate-800/40 border border-slate-700/60 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-purple-400" />
+                    <label for="sodium" class="text-[10px] font-bold text-slate-400 uppercase"
+                      >Sodium</label
+                    >
+                    <input
+                      id="sodium"
+                      type="text"
+                      [formField]="recipeForm.sodium"
+                      placeholder="e.g., 120mg"
+                      class="bg-slate-800/40 border border-slate-700/60 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-purple-400" />
                   </div>
                   <div class="flex flex-col gap-1">
-                    <label for="carbohydrates" class="text-[10px] font-bold text-slate-400 uppercase">Carbohydrates</label>
-                    <input id="carbohydrates" type="text" [formField]="recipeForm.carbohydrates" placeholder="e.g., 30g" class="bg-slate-800/40 border border-slate-700/60 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-purple-400" />
+                    <label
+                      for="carbohydrates"
+                      class="text-[10px] font-bold text-slate-400 uppercase"
+                      >Carbohydrates</label
+                    >
+                    <input
+                      id="carbohydrates"
+                      type="text"
+                      [formField]="recipeForm.carbohydrates"
+                      placeholder="e.g., 30g"
+                      class="bg-slate-800/40 border border-slate-700/60 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-purple-400" />
                   </div>
                   <div class="flex flex-col gap-1">
-                    <label for="fiber" class="text-[10px] font-bold text-slate-400 uppercase">Fiber</label>
-                    <input id="fiber" type="text" [formField]="recipeForm.fiber" placeholder="e.g., 3g" class="bg-slate-800/40 border border-slate-700/60 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-purple-400" />
+                    <label for="fiber" class="text-[10px] font-bold text-slate-400 uppercase"
+                      >Fiber</label
+                    >
+                    <input
+                      id="fiber"
+                      type="text"
+                      [formField]="recipeForm.fiber"
+                      placeholder="e.g., 3g"
+                      class="bg-slate-800/40 border border-slate-700/60 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-purple-400" />
                   </div>
                   <div class="flex flex-col gap-1">
-                    <label for="sugar" class="text-[10px] font-bold text-slate-400 uppercase">Sugar</label>
-                    <input id="sugar" type="text" [formField]="recipeForm.sugar" placeholder="e.g., 5g" class="bg-slate-800/40 border border-slate-700/60 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-purple-400" />
+                    <label for="sugar" class="text-[10px] font-bold text-slate-400 uppercase"
+                      >Sugar</label
+                    >
+                    <input
+                      id="sugar"
+                      type="text"
+                      [formField]="recipeForm.sugar"
+                      placeholder="e.g., 5g"
+                      class="bg-slate-800/40 border border-slate-700/60 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-purple-400" />
                   </div>
                   <div class="flex flex-col gap-1">
-                    <label for="protein" class="text-[10px] font-bold text-slate-400 uppercase">Protein</label>
-                    <input id="protein" type="text" [formField]="recipeForm.protein" placeholder="e.g., 8g" class="bg-slate-800/40 border border-slate-700/60 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-purple-400" />
+                    <label for="protein" class="text-[10px] font-bold text-slate-400 uppercase"
+                      >Protein</label
+                    >
+                    <input
+                      id="protein"
+                      type="text"
+                      [formField]="recipeForm.protein"
+                      placeholder="e.g., 8g"
+                      class="bg-slate-800/40 border border-slate-700/60 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-purple-400" />
                   </div>
                 </div>
               </div>
@@ -439,11 +512,14 @@ interface RecipeFormModel {
               </div>
 
               <!-- Slide Toggle: Marked The Best -->
-              <div class="flex flex-col gap-2 md:col-span-2 p-4 bg-slate-800/20 border border-slate-700/40 rounded-2xl">
+              <div
+                class="flex flex-col gap-2 md:col-span-2 p-4 bg-slate-800/20 border border-slate-700/40 rounded-2xl">
                 <div class="flex items-center justify-between">
                   <div>
                     <h4 class="text-sm font-semibold text-white">Mark as "The Best"</h4>
-                    <p class="text-xs text-slate-400 font-medium">Include this recipe in the premium "The Best Recipes" collection</p>
+                    <p class="text-xs text-slate-400 font-medium">
+                      Include this recipe in the premium "The Best Recipes" collection
+                    </p>
                   </div>
                   <mat-slide-toggle
                     [formField]="recipeForm.theBest"
@@ -476,7 +552,8 @@ interface RecipeFormModel {
             </div>
           }
 
-          <div class="flex flex-wrap justify-end items-center gap-3 pt-5 border-t border-slate-800/60 mt-2">
+          <div
+            class="flex flex-wrap justify-end items-center gap-3 pt-5 border-t border-slate-800/60 mt-2">
             <button
               matButton="outlined"
               type="button"
@@ -497,11 +574,11 @@ interface RecipeFormModel {
               </button>
               <button
                 mat-stroked-button
-                type="button"
+                type="submit"
                 [disabled]="recipeForm().invalid() || !isDirty()"
                 (click)="saveRequired('scheduled')"
                 class="px-5 py-2.5 rounded-xl font-bold text-slate-900 bg-amber-400 hover:bg-amber-300 transition shadow-md cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed border-0">
-                PrePublish
+                Schedule Publication
               </button>
             }
 
@@ -517,11 +594,11 @@ interface RecipeFormModel {
               </button>
               <button
                 mat-stroked-button
-                type="button"
+                type="submit"
                 [disabled]="recipeForm().invalid() || !isDirty()"
                 (click)="saveRequired('scheduled')"
                 class="px-5 py-2.5 rounded-xl font-bold text-slate-900 bg-amber-400 hover:bg-amber-300 transition shadow-md cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed border-0">
-                PrePublish
+                Update Schedule
               </button>
             }
 
@@ -530,6 +607,20 @@ interface RecipeFormModel {
               <button
                 mat-stroked-button
                 type="button"
+                [disabled]="true"
+                class="px-5 py-2.5 rounded-xl font-bold text-slate-500 bg-slate-800/40 border border-slate-700/30 opacity-40 cursor-not-allowed">
+                Revert to Draft
+              </button>
+              <button
+                mat-stroked-button
+                type="button"
+                [disabled]="true"
+                class="px-5 py-2.5 rounded-xl font-bold text-slate-500 bg-slate-800/40 border border-slate-700/30 opacity-40 cursor-not-allowed">
+                Schedule
+              </button>
+              <button
+                mat-stroked-button
+                type="submit"
                 [disabled]="recipeForm().invalid() || !isDirty()"
                 (click)="saveRequired('published')"
                 class="px-5 py-2.5 rounded-xl font-bold text-white bg-gradient-to-r from-purple-500 to-pink-500 hover:brightness-110 transition shadow-lg cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed border-0">
@@ -627,7 +718,7 @@ export class RecipeFormComponent implements OnInit {
     (fields) => {
       required(fields.title, { message: 'Title is required' });
       required(fields.slug, { message: 'Slug is required' });
-      if(this.currentStatus() !== 'draft') {
+      if (this.currentStatus() !== 'draft') {
         required(fields.category, { message: 'Category is required' });
         // required(fields.subcategory, { message: 'Subcategory is required' });
         required(fields.difficulty, { message: 'Difficulty is required' });
@@ -648,12 +739,15 @@ export class RecipeFormComponent implements OnInit {
     },
     {
       submission: {
-        action: async (f) => {
-          const targetStatus = this.currentStatus() === 'published' || this.currentStatus() === 'updated' ? 'published' : 'scheduled';
+        action: async () => {
+          const targetStatus =
+            this.currentStatus() === 'published' || this.currentStatus() === 'updated'
+              ? 'published'
+              : 'scheduled';
           this.saveRequired(targetStatus);
         },
       },
-    }
+    },
   );
 
   ngOnInit(): void {
@@ -748,7 +842,7 @@ export class RecipeFormComponent implements OnInit {
     }));
     this.markDirty();
   }
-  
+
   saveDraft(): void {
     const formValue = this.recipeModel();
 
@@ -785,7 +879,7 @@ export class RecipeFormComponent implements OnInit {
     const holidays = formValue.holidays ? [formValue.holidays] : [];
     const specialDiets = formValue.specialDiets || [];
 
-    const nutrition: Nutrition | undefined = (
+    const nutrition: Nutrition | undefined =
       formValue.servingSize ||
       formValue.calories ||
       formValue.fat ||
@@ -796,18 +890,19 @@ export class RecipeFormComponent implements OnInit {
       formValue.sodium ||
       formValue.cholesterol ||
       formValue.saturatedFat
-    ) ? {
-      servingSize: formValue.servingSize || '',
-      calories: formValue.calories || '',
-      fat: formValue.fat || '',
-      carbohydrates: formValue.carbohydrates || '',
-      protein: formValue.protein || '',
-      fiber: formValue.fiber || '',
-      sugar: formValue.sugar || '',
-      sodium: formValue.sodium || '',
-      cholesterol: formValue.cholesterol || '',
-      saturatedFat: formValue.saturatedFat || '',
-    } : undefined;
+        ? {
+            servingSize: formValue.servingSize || '',
+            calories: formValue.calories || '',
+            fat: formValue.fat || '',
+            carbohydrates: formValue.carbohydrates || '',
+            protein: formValue.protein || '',
+            fiber: formValue.fiber || '',
+            sugar: formValue.sugar || '',
+            sodium: formValue.sodium || '',
+            cholesterol: formValue.cholesterol || '',
+            saturatedFat: formValue.saturatedFat || '',
+          }
+        : undefined;
 
     const payload: Omit<Recipe, 'id'> = {
       title: formValue.title || '',
@@ -830,7 +925,13 @@ export class RecipeFormComponent implements OnInit {
       theBest: formValue.theBest || false,
       holidays,
       specialDiets,
-      breadcrumbs: this.getBreadcrumbsPayload(this.recipeModel().breadcrumbs, this.recipeModel().theBest, this.recipeModel().method, specialDiets, holidays),
+      breadcrumbs: this.getBreadcrumbsPayload(
+        this.recipeModel().breadcrumbs,
+        this.recipeModel().theBest,
+        this.recipeModel().method,
+        specialDiets,
+        holidays,
+      ),
       cuisine: formValue.cuisine || '',
       course: formValue.course || '',
       nutrition,
@@ -919,7 +1020,7 @@ export class RecipeFormComponent implements OnInit {
     const holidays = formValue.holidays ? [formValue.holidays] : [];
     const specialDiets = formValue.specialDiets || [];
 
-    const nutrition: Nutrition | undefined = (
+    const nutrition: Nutrition | undefined =
       formValue.servingSize ||
       formValue.calories ||
       formValue.fat ||
@@ -930,18 +1031,19 @@ export class RecipeFormComponent implements OnInit {
       formValue.sodium ||
       formValue.cholesterol ||
       formValue.saturatedFat
-    ) ? {
-      servingSize: formValue.servingSize || '',
-      calories: formValue.calories || '',
-      fat: formValue.fat || '',
-      carbohydrates: formValue.carbohydrates || '',
-      protein: formValue.protein || '',
-      fiber: formValue.fiber || '',
-      sugar: formValue.sugar || '',
-      sodium: formValue.sodium || '',
-      cholesterol: formValue.cholesterol || '',
-      saturatedFat: formValue.saturatedFat || '',
-    } : undefined;
+        ? {
+            servingSize: formValue.servingSize || '',
+            calories: formValue.calories || '',
+            fat: formValue.fat || '',
+            carbohydrates: formValue.carbohydrates || '',
+            protein: formValue.protein || '',
+            fiber: formValue.fiber || '',
+            sugar: formValue.sugar || '',
+            sodium: formValue.sodium || '',
+            cholesterol: formValue.cholesterol || '',
+            saturatedFat: formValue.saturatedFat || '',
+          }
+        : undefined;
 
     const payload: Omit<Recipe, 'id'> = {
       title: formValue.title || '',
@@ -964,7 +1066,13 @@ export class RecipeFormComponent implements OnInit {
       theBest: formValue.theBest || false,
       holidays,
       specialDiets,
-      breadcrumbs: this.getBreadcrumbsPayload(this.recipeModel().breadcrumbs, this.recipeModel().theBest, this.recipeModel().method, specialDiets, holidays),
+      breadcrumbs: this.getBreadcrumbsPayload(
+        this.recipeModel().breadcrumbs,
+        this.recipeModel().theBest,
+        this.recipeModel().method,
+        specialDiets,
+        holidays,
+      ),
       cuisine: formValue.cuisine || '',
       course: formValue.course || '',
       nutrition,
@@ -992,29 +1100,30 @@ export class RecipeFormComponent implements OnInit {
     theBest: boolean,
     method: string,
     specialDiets: string[],
-    holidays: string[]
+    holidays: string[],
   ): Breadcrumbs | undefined {
     if (!breadcrumbs || !breadcrumbs.items || breadcrumbs.items.length === 0) {
       return undefined;
     }
 
     const items = [...breadcrumbs.items];
-    
+
     // Extract standard trails (starts with Home and Recipes, url not matching auto-generated paths)
     const standardTrails = items.filter((trail) => {
       if (trail.length === 0) return false;
       const isHome = trail[0]?.url === '/';
       const isRecipes = trail[1]?.url === '/recipes';
-      const isBest = trail.some(t => t.url?.includes('/the-best-recipes'));
-      const isAutoGenerated = trail.some(t => 
-        t.url?.includes('/method') || 
-        t.url?.includes('/special-diets') || 
-        t.url?.includes('/holidays')
+      const isBest = trail.some((t) => t.url?.includes('/the-best-recipes'));
+      const isAutoGenerated = trail.some(
+        (t) =>
+          t.url?.includes('/method') ||
+          t.url?.includes('/special-diets') ||
+          t.url?.includes('/holidays'),
       );
       return isHome && isRecipes && !isBest && !isAutoGenerated;
     });
 
-    const finalItems: any[][] = [];
+    const finalItems: { label: string; url?: string }[][] = [];
 
     // Add all standard trails
     standardTrails.forEach((trail) => {
@@ -1027,12 +1136,12 @@ export class RecipeFormComponent implements OnInit {
         .toLowerCase()
         .trim()
         .replace(/\s+/g, '-')
-        .replace(/[^\w\-]+/g, '')
-        .replace(/\-\-+/g, '-');
+        .replace(/[^\w-]+/g, '')
+        .replace(/--+/g, '-');
 
     if (theBest) {
       standardTrails.forEach((standardTrail) => {
-        const bestTrail: any[] = [];
+        const bestTrail: { label: string; url?: string }[] = [];
         standardTrail.forEach((b, i) => {
           if (i === 0) {
             bestTrail.push({ label: b.label, url: b.url });
@@ -1043,10 +1152,12 @@ export class RecipeFormComponent implements OnInit {
             return;
           }
 
-          const isLast = (i === standardTrail.length - 1);
+          const isLast = i === standardTrail.length - 1;
           const label = isLast
             ? b.label
-            : (b.label.startsWith('The Best ') ? b.label : `The Best ${b.label}`);
+            : b.label.startsWith('The Best ')
+              ? b.label
+              : `The Best ${b.label}`;
 
           const parentUrl = bestTrail[i - 1].url || '';
           const rawUrl = b.url || '';
@@ -1071,7 +1182,7 @@ export class RecipeFormComponent implements OnInit {
       const methodName = method.trim();
       const methodTrail = [
         { label: 'Method', url: '/method' },
-        { label: methodName, url: `/method/${slugify(methodName)}` }
+        { label: methodName, url: `/method/${slugify(methodName)}` },
       ];
       finalItems.push(methodTrail);
     }
@@ -1082,7 +1193,7 @@ export class RecipeFormComponent implements OnInit {
         if (dietName) {
           const dietTrail = [
             { label: 'Special Diets', url: '/special-diets' },
-            { label: dietName, url: `/special-diets/${slugify(dietName)}` }
+            { label: dietName, url: `/special-diets/${slugify(dietName)}` },
           ];
           finalItems.push(dietTrail);
         }
@@ -1095,7 +1206,7 @@ export class RecipeFormComponent implements OnInit {
         if (holidayName) {
           const holidayTrail = [
             { label: 'Holidays', url: '/holidays' },
-            { label: holidayName, url: `/holidays/${slugify(holidayName)}` }
+            { label: holidayName, url: `/holidays/${slugify(holidayName)}` },
           ];
           finalItems.push(holidayTrail);
         }

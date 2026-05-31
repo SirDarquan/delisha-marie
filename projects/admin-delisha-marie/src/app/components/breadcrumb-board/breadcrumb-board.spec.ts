@@ -5,7 +5,7 @@ import { Breadcrumbs } from '@dm/library';
 import { RecipeService } from '../../services/recipe.service';
 
 const mockRecipeService = {
-  recipes: signal<any[]>([
+  recipes: signal<unknown[]>([
     {
       id: 1,
       title: 'Appetizers Dips',
@@ -17,10 +17,10 @@ const mockRecipeService = {
             { label: 'Home', url: '/' },
             { label: 'Recipes', url: '/recipes' },
             { label: 'Appetizers', url: '/recipes/appetizers' },
-            { label: 'Dips', url: '/recipes/appetizers/dips' }
-          ]
-        ]
-      }
+            { label: 'Dips', url: '/recipes/appetizers/dips' },
+          ],
+        ],
+      },
     },
     {
       id: 4,
@@ -33,10 +33,10 @@ const mockRecipeService = {
             { label: 'Home', url: '/' },
             { label: 'Recipes', url: '/recipes' },
             { label: 'Breakfast', url: '/recipes/breakfast' },
-            { label: 'Eggs', url: '/recipes/breakfast/eggs' }
-          ]
-        ]
-      }
+            { label: 'Eggs', url: '/recipes/breakfast/eggs' },
+          ],
+        ],
+      },
     },
     {
       id: 7,
@@ -49,10 +49,10 @@ const mockRecipeService = {
             { label: 'Home', url: '/' },
             { label: 'Recipes', url: '/recipes' },
             { label: 'Main Dishes', url: '/recipes/main-dishes' },
-            { label: 'Beef', url: '/recipes/main-dishes/beef' }
-          ]
-        ]
-      }
+            { label: 'Beef', url: '/recipes/main-dishes/beef' },
+          ],
+        ],
+      },
     },
     {
       id: 8,
@@ -65,10 +65,10 @@ const mockRecipeService = {
             { label: 'Home', url: '/' },
             { label: 'Recipes', url: '/recipes' },
             { label: 'Main Dishes', url: '/recipes/main-dishes' },
-            { label: 'Chicken', url: '/recipes/main-dishes/chicken' }
-          ]
-        ]
-      }
+            { label: 'Chicken', url: '/recipes/main-dishes/chicken' },
+          ],
+        ],
+      },
     },
     {
       id: 9,
@@ -81,10 +81,10 @@ const mockRecipeService = {
             { label: 'Home', url: '/' },
             { label: 'Recipes', url: '/recipes' },
             { label: 'Main Dishes', url: '/recipes/main-dishes' },
-            { label: 'Pasta', url: '/recipes/main-dishes/pasta' }
-          ]
-        ]
-      }
+            { label: 'Pasta', url: '/recipes/main-dishes/pasta' },
+          ],
+        ],
+      },
     },
     {
       id: 10,
@@ -97,10 +97,10 @@ const mockRecipeService = {
             { label: 'Home', url: '/' },
             { label: 'Recipes', url: '/recipes' },
             { label: 'Main Dishes', url: '/recipes/main-dishes' },
-            { label: 'Pork', url: '/recipes/main-dishes/pork' }
-          ]
-        ]
-      }
+            { label: 'Pork', url: '/recipes/main-dishes/pork' },
+          ],
+        ],
+      },
     },
     {
       id: 11,
@@ -113,10 +113,10 @@ const mockRecipeService = {
             { label: 'Home', url: '/' },
             { label: 'Recipes', url: '/recipes' },
             { label: 'Main Dishes', url: '/recipes/main-dishes' },
-            { label: 'Seafood', url: '/recipes/main-dishes/seafood' }
-          ]
-        ]
-      }
+            { label: 'Seafood', url: '/recipes/main-dishes/seafood' },
+          ],
+        ],
+      },
     },
     {
       id: 12,
@@ -128,10 +128,10 @@ const mockRecipeService = {
           [
             { label: 'Home', url: '/' },
             { label: 'Recipes', url: '/recipes' },
-            { label: 'Sides', url: '/recipes/sides' }
-          ]
-        ]
-      }
+            { label: 'Sides', url: '/recipes/sides' },
+          ],
+        ],
+      },
     },
     {
       id: 13,
@@ -143,10 +143,10 @@ const mockRecipeService = {
           [
             { label: 'Home', url: '/' },
             { label: 'Recipes', url: '/recipes' },
-            { label: 'Salads', url: '/recipes/salads' }
-          ]
-        ]
-      }
+            { label: 'Salads', url: '/recipes/salads' },
+          ],
+        ],
+      },
     },
     {
       id: 14,
@@ -158,10 +158,10 @@ const mockRecipeService = {
           [
             { label: 'Home', url: '/' },
             { label: 'Recipes', url: '/recipes' },
-            { label: 'Soups', url: '/recipes/soups' }
-          ]
-        ]
-      }
+            { label: 'Soups', url: '/recipes/soups' },
+          ],
+        ],
+      },
     },
     {
       id: 15,
@@ -173,10 +173,10 @@ const mockRecipeService = {
           [
             { label: 'Home', url: '/' },
             { label: 'Recipes', url: '/recipes' },
-            { label: 'Breads', url: '/recipes/breads' }
-          ]
-        ]
-      }
+            { label: 'Breads', url: '/recipes/breads' },
+          ],
+        ],
+      },
     },
     {
       id: 16,
@@ -188,12 +188,12 @@ const mockRecipeService = {
           [
             { label: 'Home', url: '/' },
             { label: 'Recipes', url: '/recipes' },
-            { label: 'Desserts', url: '/recipes/desserts' }
-          ]
-        ]
-      }
-    }
-  ])
+            { label: 'Desserts', url: '/recipes/desserts' },
+          ],
+        ],
+      },
+    },
+  ]),
 };
 
 describe('BreadcrumbBoardComponent', () => {
@@ -203,9 +203,7 @@ describe('BreadcrumbBoardComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [BreadcrumbBoardComponent],
-      providers: [
-        { provide: RecipeService, useValue: mockRecipeService }
-      ]
+      providers: [{ provide: RecipeService, useValue: mockRecipeService }],
     }).compileComponents();
 
     fixture = TestBed.createComponent(BreadcrumbBoardComponent);
@@ -296,22 +294,22 @@ describe('BreadcrumbBoardComponent', () => {
     // 2. Should clean prefix/slashes and prepend /recipes/
     component.customName.set('Custom Pathway');
     component.customUrl.set('/recipes/summer-cookout/');
-    
+
     // Simulate updating via event to check input cleaning
-    const event = { target: { value: '/recipes/summer-cookout/' } } as any;
+    const event = { target: { value: '/recipes/summer-cookout/' } } as unknown as Event;
     component.updateCustomUrl(event);
     expect(component.customUrl()).toBe('summer-cookout/'); // Redundant prefix and leading slashes removed
 
     // Verify salads variations always sanitize correctly
-    const eventSalads1 = { target: { value: 'recipes/salads' } } as any;
+    const eventSalads1 = { target: { value: 'recipes/salads' } } as unknown as Event;
     component.updateCustomUrl(eventSalads1);
     expect(component.customUrl()).toBe('salads');
 
-    const eventSalads2 = { target: { value: '/recipes/salads' } } as any;
+    const eventSalads2 = { target: { value: '/recipes/salads' } } as unknown as Event;
     component.updateCustomUrl(eventSalads2);
     expect(component.customUrl()).toBe('salads');
 
-    const eventSalads3 = { target: { value: 'salads' } } as any;
+    const eventSalads3 = { target: { value: 'salads' } } as unknown as Event;
     component.updateCustomUrl(eventSalads3);
     expect(component.customUrl()).toBe('salads');
 
@@ -339,12 +337,12 @@ describe('BreadcrumbBoardComponent', () => {
 
     // 3. Select a different category (e.g. Appetizers)
     component.toggleCategory({ name: 'Appetizers', url: '/recipes/appetizers' });
-    
+
     // Category should be replaced, and subcategory must be removed
     expect(component.boardPieces().length).toBe(3);
     expect(component.boardPieces()[2].name).toBe('Appetizers');
     // Pasta subcategory should no longer be on the board
-    expect(component.boardPieces().some(p => p.name === 'Pasta')).toBe(false);
+    expect(component.boardPieces().some((p) => p.name === 'Pasta')).toBe(false);
   });
 
   it('should enforce single-choice for subcategories', () => {
@@ -360,7 +358,7 @@ describe('BreadcrumbBoardComponent', () => {
     // The subcategory should be replaced, keeping only the new one
     expect(component.boardPieces().length).toBe(4);
     expect(component.boardPieces()[3].name).toBe('Beef');
-    expect(component.boardPieces().some(p => p.name === 'Pasta')).toBe(false);
+    expect(component.boardPieces().some((p) => p.name === 'Pasta')).toBe(false);
   });
 
   it('should remove subcategory when category capsule is removed directly', () => {
@@ -375,8 +373,8 @@ describe('BreadcrumbBoardComponent', () => {
 
     // Both category and subcategory capsules should be gone
     expect(component.boardPieces().length).toBe(2);
-    expect(component.boardPieces().some(p => p.name === 'Main Dishes')).toBe(false);
-    expect(component.boardPieces().some(p => p.name === 'Pasta')).toBe(false);
+    expect(component.boardPieces().some((p) => p.name === 'Main Dishes')).toBe(false);
+    expect(component.boardPieces().some((p) => p.name === 'Pasta')).toBe(false);
   });
 
   it('should dynamically update Navigation URL prefix based on active trail and disable panel for subcategories', () => {
@@ -393,7 +391,7 @@ describe('BreadcrumbBoardComponent', () => {
 
     // 3. Select Pasta subcategory (Home > Recipes > Main Dishes > Pasta)
     component.toggleSubcategory({ name: 'Pasta', url: '/recipes/main-dishes/pasta' });
-    
+
     // Prefix should update to /recipes/main-dishes/pasta/
     expect(component.currentUrlPrefix()).toBe('/recipes/main-dishes/pasta/');
     // Panel should be disabled because Pasta is a predefined subcategory

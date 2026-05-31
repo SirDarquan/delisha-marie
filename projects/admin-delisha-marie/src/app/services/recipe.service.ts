@@ -107,7 +107,8 @@ export class RecipeService {
     this._recipes.set(nextRecipes);
     this.saveToStorage(nextRecipes);
 
-    const { id: _, ...payloadWithoutId } = updated;
+    const payloadWithoutId = { ...updated } as Partial<Recipe>;
+    delete payloadWithoutId.id;
     this.api
       .put<Recipe>(`/recipes/${id}`, payloadWithoutId)
       .then((res) => console.log('Recipe updated on backend', res))
