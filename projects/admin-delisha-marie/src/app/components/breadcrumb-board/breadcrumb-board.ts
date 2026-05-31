@@ -22,6 +22,7 @@ import {
   trimTrailingSlashes,
   mapTrailsToBreadcrumbs,
 } from '@dm/library';
+import { Recipe } from '../../models/recipe.model';
 import { RecipeService } from '../../services/recipe.service';
 
 interface CategoryConfig {
@@ -284,34 +285,7 @@ export class BreadcrumbBoardComponent {
     const recipes = this.recipeService.recipes();
     const map = new Map<string, { url: string; subs: Map<string, string> }>();
 
-    recipes.forEach((r) => {
-      if (r.breadcrumbs?.items) {
-        r.breadcrumbs.items.forEach((trail) => {
-          if (isStandardTrail(trail) && trail.length > 2) {
-            const catPiece = trail[2];
-            if (catPiece?.label && catPiece?.url?.startsWith('/recipes/')) {
-              const catName = catPiece.label.trim();
-              const catUrl = catPiece.url.trim();
-
-              if (!map.has(catName)) {
-                map.set(catName, { url: catUrl, subs: new Map<string, string>() });
-              }
-
-              const catData = map.get(catName)!;
-
-              if (trail.length > 3) {
-                const subPiece = trail[3];
-                if (subPiece?.label && !subPiece?.url?.startsWith('/recipe/')) {
-                  const subName = subPiece.label.trim();
-                  const subUrl = subPiece?.url?.trim() ?? '';
-                  catData.subs.set(subName, subUrl);
-                }
-              }
-            }
-          }
-        });
-      }
-    });
+    this.extractBreadcrumbsToMap(recipes, map);
 
     const result: CategoryConfig[] = [];
     map.forEach((data, catName) => {
@@ -330,6 +304,41 @@ export class BreadcrumbBoardComponent {
     // Sort categories alphabetically for a premium UI presentation
     return result.sort((a, b) => a.name.localeCompare(b.name));
   });
+
+  private extractBreadcrumbsToMap(
+    recipes: Recipe[],
+    map: Map<string, { url: string; subs: Map<string, string> }>,
+  ): void {
+    recipes.forEach((r) => {
+      const items = r.breadcrumbs?.items;
+      if (!items) return;
+
+      items.forEach((trail) => {
+        if (!isStandardTrail(trail) || trail.length <= 2) return;
+
+        const catPiece = trail[2];
+        if (!catPiece?.label || !catPiece?.url?.startsWith('/recipes/')) return;
+
+        const catName = catPiece.label.trim();
+        const catUrl = catPiece.url.trim();
+
+        if (!map.has(catName)) {
+          map.set(catName, { url: catUrl, subs: new Map<string, string>() });
+        }
+
+        const catData = map.get(catName)!;
+
+        if (trail.length > 3) {
+          const subPiece = trail[3];
+          if (subPiece?.label && !subPiece?.url?.startsWith('/recipe/')) {
+            const subName = subPiece.label.trim();
+            const subUrl = subPiece.url?.trim() ?? '';
+            catData.subs.set(subName, subUrl);
+          }
+        }
+      });
+    });
+  }
 
   // Standalone Inputs
   initialBreadcrumbs = input<Breadcrumbs | null>(null);
@@ -378,7 +387,7 @@ export class BreadcrumbBoardComponent {
     // Automatically load incoming breadcrumb structures when initialized
     effect(() => {
       const initial = this.initialBreadcrumbs();
-      if (initial && initial.items) {
+      if (initial?.items) {
         // Extract standard trails (starts with Home and Recipes, url not matching auto-generated paths)
         const standardTrails = initial.items.filter(isStandardTrail);
 
@@ -592,7 +601,7 @@ export class BreadcrumbBoardComponent {
     const nonRecipe = pieces.filter((p) => !p.url.startsWith('/recipe/'));
     if (nonRecipe.length === 0) return '/';
 
-    const last = nonRecipe.at(nonRecipe.length - 1);
+    const last = nonRecipe.at(-1);
     const base = last?.url || '';
     return base.endsWith('/') ? base : `${base}/`;
   });
@@ -605,7 +614,7 @@ export class BreadcrumbBoardComponent {
     const nonRecipe = pieces.filter((p) => !p.url.startsWith('/recipe/'));
     if (nonRecipe.length === 0) return false;
 
-    const last = nonRecipe.at(nonRecipe.length - 1);
+    const last = nonRecipe.at(-1);
 
     // Check if the last piece matches a predefined subcategory URL
     const isPredefinedSub = this.categories().some((c) =>

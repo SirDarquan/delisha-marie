@@ -786,7 +786,7 @@ export class RecipeFormComponent implements OnInit {
       instructions: recipe.instructions ? recipe.instructions.join('\n') : '',
       method: recipe.method || '',
       theBest: recipe.theBest || false,
-      holidays: recipe.holidays && recipe.holidays[0] ? recipe.holidays[0] : '',
+      holidays: recipe.holidays?.[0] || '',
       specialDiets: recipe.specialDiets || [],
       breadcrumbs: recipe.breadcrumbs || null,
       cuisine: recipe.cuisine || '',
@@ -1038,7 +1038,7 @@ export class RecipeFormComponent implements OnInit {
       const parentUrl = bestTrail[i - 1].url || '';
       const rawUrl = b.url || '';
       const segments = rawUrl.split('/').filter(Boolean);
-      let slug = segments.at(segments.length - 1) || '';
+      let slug = segments.at(-1) || '';
 
       if (!isLast && !slug.startsWith('the-best-')) {
         slug = `the-best-${slug}`;
@@ -1057,7 +1057,7 @@ export class RecipeFormComponent implements OnInit {
     specialDiets: string[],
     holidays: string[],
   ): Breadcrumbs | undefined {
-    if (!breadcrumbs || !breadcrumbs.items || breadcrumbs.items.length === 0) {
+    if (!breadcrumbs?.items?.length) {
       return undefined;
     }
 
