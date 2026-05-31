@@ -6,7 +6,6 @@ export interface NavigationLink {
 }
 
 export interface Recipe extends BaseRecipe {
-  featured?: boolean;
-  status: 'draft' | 'scheduled' | 'published';
+  status: 'draft' | 'scheduled' | 'published' | 'updated';
   preview_token?: string;
 }
