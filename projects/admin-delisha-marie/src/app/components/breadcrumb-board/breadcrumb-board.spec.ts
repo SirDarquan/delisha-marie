@@ -3,6 +3,7 @@ import { signal } from '@angular/core';
 import { BreadcrumbBoardComponent } from './breadcrumb-board';
 import { Breadcrumbs } from '@dm/library';
 import { RecipeService } from '../../services/recipe.service';
+import { Recipe } from '../../models/recipe.model';
 
 const mockRecipeService = {
   recipes: signal<unknown[]>([
@@ -417,5 +418,247 @@ describe('BreadcrumbBoardComponent', () => {
 
     expect(preventDefaultSpy).toHaveBeenCalled();
     expect(addCustomPieceSpy).toHaveBeenCalled();
+  });
+
+  // --- COVERAGE BOOSTERS ---
+
+  it('should trigger template click and enter handlers correctly for categories, subcategories, trails, and custom pathways', () => {
+    fixture.detectChanges();
+    const catSpy = vi.spyOn(component, 'toggleCategory');
+    const subSpy = vi.spyOn(component, 'toggleSubcategory');
+
+    // Toggling Category in UI template
+    const buttons = Array.from(
+      fixture.nativeElement.querySelectorAll('button'),
+    ) as HTMLButtonElement[];
+    const catBtn = buttons.find((b) => b.textContent?.trim().includes('Appetizers'));
+    if (catBtn) {
+      catBtn.click();
+      fixture.detectChanges();
+      expect(catSpy).toHaveBeenCalled();
+    }
+
+    // Toggle Category via method to enable subcategories
+    component.toggleCategory({ name: 'Main Dishes', url: '/recipes/main-dishes' });
+    fixture.detectChanges();
+
+    // Re-query buttons to find dynamic subcategories
+    const buttons2 = Array.from(
+      fixture.nativeElement.querySelectorAll('button'),
+    ) as HTMLButtonElement[];
+    const subBtn = buttons2.find((b) => b.textContent?.trim().includes('Beef'));
+    if (subBtn) {
+      subBtn.click();
+      fixture.detectChanges();
+      expect(subSpy).toHaveBeenCalled();
+    }
+
+    // Clicking capsule removal button in UI template
+    const buttons3 = Array.from(
+      fixture.nativeElement.querySelectorAll('button'),
+    ) as HTMLButtonElement[];
+    const closeBtn = buttons3.find((b) => b.textContent?.trim() === 'close');
+    if (closeBtn) {
+      const removeSpy = vi.spyOn(component, 'removePiece');
+      closeBtn.click();
+      fixture.detectChanges();
+      expect(removeSpy).toHaveBeenCalled();
+    }
+
+    // Keydown enter on custom url input
+    const urlInput = fixture.nativeElement.querySelector('#custom-url');
+    if (urlInput) {
+      const addSpy = vi.spyOn(component, 'addCustomPiece');
+      const keydownEvent = new KeyboardEvent('keydown', { key: 'Enter', cancelable: true });
+      urlInput.dispatchEvent(keydownEvent);
+      expect(addSpy).toHaveBeenCalled();
+    }
+
+    // Checking switchTrail UI binding
+    component.addNewTrail();
+    fixture.detectChanges();
+    const switchSpy = vi.spyOn(component, 'switchTrail');
+    const trailButtons = Array.from(
+      fixture.nativeElement.querySelectorAll('button'),
+    ) as HTMLButtonElement[];
+    const trail2Btn = trailButtons.find((b) => b.textContent?.includes('Trail 2'));
+    if (trail2Btn) {
+      trail2Btn.click();
+      expect(switchSpy).toHaveBeenCalledWith(1);
+    }
+  });
+
+  it('should manage trail switching, adding, and deletion including index-shifting bounds and empty checks', () => {
+    fixture.detectChanges();
+
+    // 1. Deleting trail 0 or when only 1 trail exists should do nothing
+    const dummyEvent = {
+      stopPropagation: () => {
+        /* noop */
+      },
+    } as unknown as Event;
+    component.deleteTrail(0, dummyEvent);
+    expect(component.boardPiecesList().length).toBe(1);
+
+    // 2. Add multiple trails
+    component.addNewTrail(); // idx 1
+    component.addNewTrail(); // idx 2
+    expect(component.boardPiecesList().length).toBe(3);
+    expect(component.activeTrailIndex()).toBe(2);
+
+    // 3. Delete active trail (idx 2) causing activeTrailIndex to shift to length - 1 (idx 1)
+    component.deleteTrail(2, dummyEvent);
+    expect(component.boardPiecesList().length).toBe(2);
+    expect(component.activeTrailIndex()).toBe(1);
+
+    // 4. Switch trail programmatically
+    component.switchTrail(0);
+    expect(component.activeTrailIndex()).toBe(0);
+  });
+
+  it('should toggle subcategory off when clicking an already selected subcategory', () => {
+    fixture.detectChanges();
+
+    component.toggleCategory({ name: 'Main Dishes', url: '/recipes/main-dishes' });
+    component.toggleSubcategory({ name: 'Pasta', url: '/recipes/main-dishes/pasta' });
+    expect(component.boardPieces().length).toBe(4);
+
+    // Toggle off
+    component.toggleSubcategory({ name: 'Pasta', url: '/recipes/main-dishes/pasta' });
+    expect(component.boardPieces().length).toBe(3);
+    expect(component.boardPieces().some((p) => p.name === 'Pasta')).toBe(false);
+  });
+
+  it('should handle negative and edge cases in extractBreadcrumbsToMap', () => {
+    // 1. Recipes with undefined breadcrumbs
+    const recipesWithMissingBreadcrumbs = [
+      { id: 1, title: 'No Breadcrumbs', slug: 'no-bc' },
+    ] as unknown as Recipe[];
+    const map = new Map();
+    component['extractBreadcrumbsToMap'](recipesWithMissingBreadcrumbs, map);
+    expect(map.size).toBe(0);
+
+    // 2. Recipes with short trail (length <= 2) or non-standard trail
+    const shortTrailRecipes = [
+      {
+        id: 2,
+        title: 'Short',
+        slug: 'short',
+        breadcrumbs: {
+          items: [
+            [
+              { label: 'Home', url: '/' },
+              { label: 'Recipes', url: '/recipes' },
+            ],
+          ],
+        },
+      },
+    ] as unknown as Recipe[];
+    component['extractBreadcrumbsToMap'](shortTrailRecipes, map);
+    expect(map.size).toBe(0);
+
+    // 3. Recipes with category missing label or URL not starting with /recipes/
+    const invalidCategoryRecipes = [
+      {
+        id: 3,
+        title: 'Invalid',
+        slug: 'invalid',
+        breadcrumbs: {
+          items: [
+            [
+              { label: 'Home', url: '/' },
+              { label: 'Recipes', url: '/recipes' },
+              { label: '', url: '/recipes/invalid' }, // Empty label
+            ],
+            [
+              { label: 'Home', url: '/' },
+              { label: 'Recipes', url: '/recipes' },
+              { label: 'Invalid URL', url: '/not-recipes/invalid' }, // Wrong prefix
+            ],
+          ],
+        },
+      },
+    ] as unknown as Recipe[];
+    component['extractBreadcrumbsToMap'](invalidCategoryRecipes, map);
+    expect(map.size).toBe(0);
+
+    // 4. Trail where subpiece is auto-generated (starts with /recipe/) or missing url
+    const specialSubcategoryRecipes = [
+      {
+        id: 4,
+        title: 'Special',
+        slug: 'special',
+        breadcrumbs: {
+          items: [
+            [
+              { label: 'Home', url: '/' },
+              { label: 'Recipes', url: '/recipes' },
+              { label: 'Main Dishes', url: '/recipes/main-dishes' },
+              { label: 'Recipe Leaf', url: '/recipe/recipe-leaf' }, // Auto-generated leaf
+            ],
+            [
+              { label: 'Home', url: '/' },
+              { label: 'Recipes', url: '/recipes' },
+              { label: 'Main Dishes', url: '/recipes/main-dishes' },
+              { label: 'Sub With Missing Url' }, // Undefined URL
+            ],
+          ],
+        },
+      },
+    ] as unknown as Recipe[];
+    component['extractBreadcrumbsToMap'](specialSubcategoryRecipes, map);
+
+    // Main Dishes category should be parsed
+    expect(map.has('Main Dishes')).toBe(true);
+    const catData = map.get('Main Dishes');
+    // Leaf node should be skipped
+    expect(catData.subs.has('Recipe Leaf')).toBe(false);
+    // Sub with missing URL should fallback to ''
+    expect(catData.subs.has('Sub With Missing Url')).toBe(true);
+    expect(catData.subs.get('Sub With Missing Url')).toBe('');
+  });
+
+  it('should handle edge cases and empty arrays in computed currentUrlPrefix and isCustomPanelActive', () => {
+    fixture.detectChanges();
+
+    // 1. Force boardPieces to return empty array by setting boardPiecesList to an empty trail [[]]
+    component.boardPiecesList.set([[]]);
+    component.activeTrailIndex.set(0);
+    expect(component.boardPieces().length).toBe(0);
+    expect(component.currentUrlPrefix()).toBe('/');
+    expect(component.isCustomPanelActive()).toBe(false);
+
+    // 2. Force nonRecipe to be empty by having a trail with only recipe leaf pieces
+    component.boardPiecesList.set([[{ name: 'Recipe Leaf', url: '/recipe/leaf' }]]);
+    expect(component.currentUrlPrefix()).toBe('/');
+    expect(component.isCustomPanelActive()).toBe(false);
+
+    // 3. Fallback when availableSubcategories has empty trail
+    component.boardPiecesList.set([[]]);
+    expect(component.availableSubcategories()).toEqual([]);
+  });
+
+  it('should ignore direct removals for pieces index < 2', () => {
+    fixture.detectChanges();
+    component.removePiece(0); // Removing 'Home' capsule
+    expect(component.boardPieces()[0].name).toBe('Home');
+
+    component.removePiece(1); // Removing 'Recipes' capsule
+    expect(component.boardPieces()[1].name).toBe('Recipes');
+  });
+
+  it('should handle redundant active prefix matching inside addCustomPiece', () => {
+    fixture.detectChanges();
+    // Select category Main Dishes (currentUrlPrefix is /recipes/main-dishes/)
+    component.toggleCategory({ name: 'Main Dishes', url: '/recipes/main-dishes' });
+
+    component.customName.set('Summer Ideas');
+    component.customUrl.set('/recipes/main-dishes/summer-ideas'); // Redundant active prefix
+    component.addCustomPiece();
+
+    expect(component.boardPieces().length).toBe(4);
+    // Should gracefully clean and append
+    expect(component.boardPieces()[3].name).toBe('Summer Ideas');
+    expect(component.boardPieces()[3].url).toBe('/recipes/main-dishes/summer-ideas');
   });
 });

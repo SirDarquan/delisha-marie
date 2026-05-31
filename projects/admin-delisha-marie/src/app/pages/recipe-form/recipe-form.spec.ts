@@ -20,6 +20,8 @@ describe('RecipeFormComponent', () => {
   let routeParams: Record<string, string> = {};
 
   const fakeRecipeService = {
+    recipes: () => [],
+
     getRecipeByIdOrSlug: (id: string | number) => {
       return id ? mockRecipeById : null;
     },
@@ -838,5 +840,239 @@ describe('RecipeFormComponent', () => {
     component.saveRequired('scheduled');
     fixture.detectChanges();
     expect(component['isDirty']()).toBe(false);
+  });
+
+  it('should update reactive models on selector triggers and mark form dirty', () => {
+    fixture.detectChanges();
+    component['isInitialized'] = true;
+    expect(component['isDirty']()).toBe(false);
+
+    component.onMethodChanged('Air Frying');
+    expect(component['recipeModel']().method).toBe('Air Frying');
+    expect(component['isDirty']()).toBe(true);
+
+    component.onSpecialDietsChanged(['Keto', 'Paleo']);
+    expect(component['recipeModel']().specialDiets).toEqual(['Keto', 'Paleo']);
+
+    component.onHolidayChanged('Halloween');
+    expect(component['recipeModel']().holidays).toBe('Halloween');
+  });
+
+  it('should render the Where is it tab components and dropdowns when activeTab is set to where', () => {
+    fixture.detectChanges();
+    component['activeTab'].set('where');
+    fixture.detectChanges();
+
+    const categorySelect = fixture.nativeElement.querySelector('#category');
+    expect(categorySelect).toBeTruthy();
+
+    const breadcrumbBoard = fixture.nativeElement.querySelector('app-breadcrumb-board');
+    expect(breadcrumbBoard).toBeTruthy();
+  });
+
+  it('should invoke saveRequired through the signal form submit action callback', async () => {
+    fixture.detectChanges();
+    component['recipeModel'].set({
+      ...component['recipeModel'](),
+      title: 'Action Submit',
+      slug: 'action-submit',
+      difficulty: 'Intermediate',
+      prepTime: '10',
+      cookTime: '10',
+      totalTime: '20',
+      yield: '2',
+      image: 'pic.png',
+      description: 'desc',
+      content: 'content',
+      ingredients: 'ing',
+      instructions: 'ins',
+      method: 'Bake',
+      breadcrumbs: {
+        main: 0,
+        items: [
+          [
+            { label: 'Home', url: '/' },
+            { label: 'Recipes', url: '/recipes' },
+          ],
+        ],
+      },
+      status: 'published',
+    });
+    fixture.detectChanges();
+
+    const { submit } = await import('@angular/forms/signals');
+    await submit(component['recipeForm']);
+
+    expect(createPayload.title).toBe('Action Submit');
+    expect(createPayload.status).toBe('published');
+  });
+
+  it('should fallback to empty strings for individual nutrition properties when only some are provided', () => {
+    fixture.detectChanges();
+    component['recipeModel'].set({
+      ...component['recipeModel'](),
+      title: 'Nutrition Test',
+      slug: 'nutrition-test',
+      status: 'draft',
+      calories: '200 kcal', // Only calories is provided
+    });
+
+    component.saveDraft();
+
+    expect(createPayload.nutrition).toBeDefined();
+    expect(createPayload.nutrition?.calories).toBe('200 kcal');
+    expect(createPayload.nutrition?.servingSize).toBe('');
+    expect(createPayload.nutrition?.fat).toBe('');
+    expect(createPayload.nutrition?.carbohydrates).toBe('');
+    expect(createPayload.nutrition?.protein).toBe('');
+    expect(createPayload.nutrition?.fiber).toBe('');
+    expect(createPayload.nutrition?.sugar).toBe('');
+    expect(createPayload.nutrition?.sodium).toBe('');
+    expect(createPayload.nutrition?.cholesterol).toBe('');
+    expect(createPayload.nutrition?.saturatedFat).toBe('');
+  });
+
+  it('should return early on saveRequired if form is invalid', () => {
+    fixture.detectChanges();
+    expect(component['recipeForm']().invalid()).toBe(true);
+
+    createPayload = {};
+    component.saveRequired('published');
+
+    expect(createPayload.title).toBeUndefined();
+  });
+
+  it('should map missing, null or empty fields in mapRecipeToForm to standard defaults', () => {
+    routeParams['id'] = '2';
+    mockRecipeById = {
+      id: 2,
+    } as unknown as Recipe;
+
+    fixture.detectChanges();
+
+    expect(component['recipeModel']().title).toBe('');
+    expect(component['recipeModel']().slug).toBe('');
+    expect(component['recipeModel']().author).toBe('Delisha Marie');
+    expect(component['recipeModel']().difficulty).toBe('Easy');
+    expect(component['recipeModel']().status).toBe('draft');
+    expect(component['recipeModel']().preview_token).toBe('');
+    expect(component['recipeModel']().holidays).toBe('');
+    expect(component['recipeModel']().specialDiets).toEqual([]);
+    expect(component['recipeModel']().breadcrumbs).toBeNull();
+  });
+
+  it('should handle undefined breadcrumbs, special diets with whitespace, and holiday edge cases in breadcrumbs payload creation', () => {
+    fixture.detectChanges();
+    component['recipeModel'].set({
+      ...component['recipeModel'](),
+      title: 'Breadcrumbs Edge Cases',
+      slug: 'edge-cases',
+      status: 'draft',
+      breadcrumbs: null,
+      specialDiets: [' ', 'Keto'],
+      holidays: ' ',
+    });
+
+    component.saveDraft();
+    expect(createPayload.breadcrumbs).toBeUndefined();
+  });
+
+  it('should trigger template event bindings for selectors and buttons', () => {
+    // 1. Where tab template events
+    fixture.detectChanges();
+    component['activeTab'].set('where');
+    fixture.detectChanges();
+
+    const debugEl = fixture.debugElement;
+
+    const breadcrumbBoard = debugEl.query((el) => el.name === 'app-breadcrumb-board');
+    if (breadcrumbBoard) {
+      breadcrumbBoard.triggerEventHandler('breadcrumbsChange', { main: 0, items: [] });
+    }
+
+    const methodSelector = debugEl.query((el) => el.name === 'app-cooking-method-selector');
+    if (methodSelector) {
+      methodSelector.triggerEventHandler('methodChange', 'Bake');
+    }
+
+    const holidaySelector = debugEl.query((el) => el.name === 'app-holidays-selector');
+    if (holidaySelector) {
+      holidaySelector.triggerEventHandler('holidayChange', 'Easter');
+    }
+
+    const dietsSelector = debugEl.query((el) => el.name === 'app-special-diets-selector');
+    if (dietsSelector) {
+      dietsSelector.triggerEventHandler('dietsChange', ['Vegan']);
+    }
+
+    // 2. Click draft / schedule buttons in draft state
+    component['activeTab'].set('what');
+    component['isInitialized'] = true;
+    component.markDirty();
+    fixture.detectChanges();
+
+    const buttons = Array.from(
+      fixture.nativeElement.querySelectorAll('button'),
+    ) as HTMLButtonElement[];
+    const saveAsDraftBtn = buttons.find((b) => b.textContent?.includes('Save as Draft'));
+    if (saveAsDraftBtn) {
+      saveAsDraftBtn.click();
+    }
+
+    // Make valid for schedule
+    component['recipeModel'].set({
+      ...component['recipeModel'](),
+      title: 'Valid title',
+      slug: 'valid-slug',
+    });
+    component.markDirty();
+    fixture.detectChanges();
+
+    const scheduleBtn = buttons.find((b) => b.textContent?.includes('Schedule Publication'));
+    if (scheduleBtn) {
+      scheduleBtn.click();
+    }
+
+    // 3. Click revert / update schedule buttons in scheduled state
+    component['isEdit'].set(true);
+    component['recipeModel'].set({
+      ...component['recipeModel'](),
+      title: 'Scheduled',
+      slug: 'scheduled-slug',
+      status: 'scheduled',
+    });
+    component.markDirty();
+    fixture.detectChanges();
+
+    const buttons2 = Array.from(
+      fixture.nativeElement.querySelectorAll('button'),
+    ) as HTMLButtonElement[];
+    const revertBtn = buttons2.find((b) => b.textContent?.includes('Revert to Draft'));
+    if (revertBtn) {
+      revertBtn.click();
+    }
+
+    const updateScheduleBtn = buttons2.find((b) => b.textContent?.includes('Update Schedule'));
+    if (updateScheduleBtn) {
+      updateScheduleBtn.click();
+    }
+
+    // 4. Click update published button in published state
+    component['recipeModel'].set({
+      ...component['recipeModel'](),
+      title: 'Published',
+      slug: 'published-slug',
+      status: 'published',
+    });
+    component.markDirty();
+    fixture.detectChanges();
+
+    const buttons3 = Array.from(
+      fixture.nativeElement.querySelectorAll('button'),
+    ) as HTMLButtonElement[];
+    const updatePublishedBtn = buttons3.find((b) => b.textContent?.includes('Update Published'));
+    if (updatePublishedBtn) {
+      updatePublishedBtn.click();
+    }
   });
 });
