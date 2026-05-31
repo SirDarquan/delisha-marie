@@ -20,7 +20,7 @@ import { BreadcrumbBoardComponent } from '../../components/breadcrumb-board/brea
 import { CookingMethodSelectorComponent } from '../../components/cooking-method-selector/cooking-method-selector';
 import { SpecialDietsSelectorComponent } from '../../components/special-diets-selector/special-diets-selector';
 import { HolidaysSelectorComponent } from '../../components/holidays-selector/holidays-selector';
-import { Breadcrumbs, Nutrition, isStandardTrail } from '@dm/library';
+import { Breadcrumbs, Nutrition, isStandardTrail, slugify } from '@dm/library';
 
 interface RecipeFormModel {
   title: string;
@@ -1117,15 +1117,6 @@ export class RecipeFormComponent implements OnInit {
     standardTrails.forEach((trail) => {
       finalItems.push([...trail]);
     });
-
-    const slugify = (text: string) =>
-      text
-        .toString()
-        .toLowerCase()
-        .trim()
-        .replace(/\s+/g, '-')
-        .replace(/[^\w-]+/g, '')
-        .replace(/--+/g, '-');
 
     if (theBest) {
       standardTrails.forEach((standardTrail) => {

@@ -286,7 +286,7 @@ export class BreadcrumbBoardComponent {
     recipes.forEach((r) => {
       if (r.breadcrumbs?.items) {
         r.breadcrumbs.items.forEach((trail) => {
-          if (trail.length > 2 && trail[0]?.url === '/' && trail[1]?.url === '/recipes') {
+          if (isStandardTrail(trail) && trail.length > 2) {
             const catPiece = trail[2];
             if (
               catPiece &&
