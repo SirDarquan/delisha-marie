@@ -1,3 +1,5 @@
+import { Breadcrumbs } from '../types/recipe';
+
 /**
  * Safely removes leading slashes from a string without using regex (preventing ReDoS).
  */
@@ -108,4 +110,32 @@ export function deslugify(slug: string): string {
 export function generateUrl(basePath: string, name: string): string {
   const cleanBase = basePath.endsWith('/') ? basePath : `${basePath}/`;
   return `${cleanBase}${slugify(name)}`;
+}
+
+/**
+ * Formats multiple trails of board pieces into a unified Breadcrumbs structure.
+ * Eliminates duplicate breadcrumb mapping logic in breadcrumb-board.ts.
+ */
+export function mapTrailsToBreadcrumbs(
+  boardPiecesList: { name: string; url: string }[][],
+  recipeTitle: string,
+  recipeSlug: string,
+): Breadcrumbs {
+  const mappedItems = boardPiecesList.map((trail) => {
+    const title = recipeTitle || 'Untitled';
+    let finalTrail = trail;
+    if (recipeSlug) {
+      const recipeUrl = getCleanRecipeUrl(recipeSlug);
+      finalTrail = [...trail, { name: title, url: recipeUrl }];
+    }
+    return finalTrail.map((p) => ({
+      label: p.name,
+      url: p.url,
+    }));
+  });
+
+  return {
+    main: 0,
+    items: mappedItems,
+  };
 }

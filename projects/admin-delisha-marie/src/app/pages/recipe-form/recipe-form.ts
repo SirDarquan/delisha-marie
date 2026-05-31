@@ -843,9 +843,10 @@ export class RecipeFormComponent implements OnInit {
     this.markDirty();
   }
 
-  saveDraft(): void {
-    const formValue = this.recipeModel();
-
+  private serializeRecipe(
+    formValue: RecipeFormModel,
+    status: 'draft' | 'scheduled' | 'published',
+  ): Omit<Recipe, 'id'> {
     const ingredients = formValue.ingredients
       ? formValue.ingredients
           .split('\n')
@@ -904,10 +905,10 @@ export class RecipeFormComponent implements OnInit {
           }
         : undefined;
 
-    const payload: Omit<Recipe, 'id'> = {
+    return {
       title: formValue.title || '',
       slug: formValue.slug || '',
-      category: this.recipeModel().category || '',
+      category: formValue.category || '',
       difficulty: formValue.difficulty || 'Easy',
       prepTime: formValue.prepTime || '',
       cookTime: formValue.cookTime || '',
@@ -919,7 +920,7 @@ export class RecipeFormComponent implements OnInit {
       ingredients,
       instructions,
       author: formValue.author || 'Delisha Marie',
-      status: 'draft',
+      status,
       preview_token: formValue.preview_token || '',
       method: formValue.method || '',
       theBest: formValue.theBest || false,
@@ -938,7 +939,14 @@ export class RecipeFormComponent implements OnInit {
       keywords,
       equipment,
       notes,
-      createdAt: undefined, // Draft nullifies date stamps
+    };
+  }
+
+  saveDraft(): void {
+    const formValue = this.recipeModel();
+    const payload: Omit<Recipe, 'id'> = {
+      ...this.serializeRecipe(formValue, 'draft'),
+      createdAt: undefined,
       updatedAt: undefined,
     };
 
@@ -987,98 +995,8 @@ export class RecipeFormComponent implements OnInit {
       }
     }
 
-    const ingredients = formValue.ingredients
-      ? formValue.ingredients
-          .split('\n')
-          .map((i) => i.trim())
-          .filter(Boolean)
-      : [];
-    const instructions = formValue.instructions
-      ? formValue.instructions
-          .split('\n')
-          .map((i) => i.trim())
-          .filter(Boolean)
-      : [];
-    const equipment = formValue.equipment
-      ? formValue.equipment
-          .split('\n')
-          .map((e) => e.trim())
-          .filter(Boolean)
-      : [];
-    const notes = formValue.notes
-      ? formValue.notes
-          .split('\n')
-          .map((n) => n.trim())
-          .filter(Boolean)
-      : [];
-    const keywords = formValue.keywords
-      ? formValue.keywords
-          .split(',')
-          .map((k) => k.trim())
-          .filter(Boolean)
-      : [];
-    const holidays = formValue.holidays ? [formValue.holidays] : [];
-    const specialDiets = formValue.specialDiets || [];
-
-    const nutrition: Nutrition | undefined =
-      formValue.servingSize ||
-      formValue.calories ||
-      formValue.fat ||
-      formValue.carbohydrates ||
-      formValue.protein ||
-      formValue.fiber ||
-      formValue.sugar ||
-      formValue.sodium ||
-      formValue.cholesterol ||
-      formValue.saturatedFat
-        ? {
-            servingSize: formValue.servingSize || '',
-            calories: formValue.calories || '',
-            fat: formValue.fat || '',
-            carbohydrates: formValue.carbohydrates || '',
-            protein: formValue.protein || '',
-            fiber: formValue.fiber || '',
-            sugar: formValue.sugar || '',
-            sodium: formValue.sodium || '',
-            cholesterol: formValue.cholesterol || '',
-            saturatedFat: formValue.saturatedFat || '',
-          }
-        : undefined;
-
     const payload: Omit<Recipe, 'id'> = {
-      title: formValue.title || '',
-      slug: formValue.slug || '',
-      category: this.recipeModel().category || '',
-      difficulty: formValue.difficulty || 'Easy',
-      prepTime: formValue.prepTime || '',
-      cookTime: formValue.cookTime || '',
-      totalTime: formValue.totalTime || '',
-      yield: formValue.yield || '',
-      image: formValue.image || '',
-      description: formValue.description || '',
-      content: formValue.content || '',
-      ingredients,
-      instructions,
-      author: formValue.author || 'Delisha Marie',
-      status,
-      preview_token: formValue.preview_token || '',
-      method: formValue.method || '',
-      theBest: formValue.theBest || false,
-      holidays,
-      specialDiets,
-      breadcrumbs: this.getBreadcrumbsPayload(
-        this.recipeModel().breadcrumbs,
-        this.recipeModel().theBest,
-        this.recipeModel().method,
-        specialDiets,
-        holidays,
-      ),
-      cuisine: formValue.cuisine || '',
-      course: formValue.course || '',
-      nutrition,
-      keywords,
-      equipment,
-      notes,
+      ...this.serializeRecipe(formValue, status),
       createdAt: createdAt || undefined,
       updatedAt: updatedAt || undefined,
     };

@@ -20,6 +20,7 @@ import {
   trimSlashes,
   trimLeadingSlashes,
   trimTrailingSlashes,
+  mapTrailsToBreadcrumbs,
 } from '@dm/library';
 import { RecipeService } from '../../services/recipe.service';
 
@@ -435,26 +436,11 @@ export class BreadcrumbBoardComponent {
     // Append the new trail to the list
     this.boardPiecesList.update((list) => [...list, baseTrail]);
 
-    // Map all trails in boardPiecesList (including the new trail) to notify parent
-    const mappedItems = this.boardPiecesList().map((trail) => {
-      const title = this.recipeTitle() || 'Untitled';
-      const slug = this.recipeSlug();
-      let finalTrail = trail;
-      if (slug) {
-        const recipeUrl = getCleanRecipeUrl(slug);
-        finalTrail = [...trail, { name: title, url: recipeUrl }];
-      }
-      return finalTrail.map((p) => ({
-        label: p.name,
-        url: p.url,
-      }));
-    });
-
-    const result: Breadcrumbs = {
-      main: 0,
-      items: mappedItems,
-    };
-
+    const result = mapTrailsToBreadcrumbs(
+      this.boardPiecesList(),
+      this.recipeTitle(),
+      this.recipeSlug(),
+    );
     this.breadcrumbsChange.emit(result);
   }
 
@@ -600,26 +586,11 @@ export class BreadcrumbBoardComponent {
       return newList;
     });
 
-    // Map all trails in boardPiecesList, automatically appending recipe piece for each trail
-    const mappedItems = this.boardPiecesList().map((trail) => {
-      const title = this.recipeTitle() || 'Untitled';
-      const slug = this.recipeSlug();
-      let finalTrail = trail;
-      if (slug) {
-        const recipeUrl = getCleanRecipeUrl(slug);
-        finalTrail = [...trail, { name: title, url: recipeUrl }];
-      }
-      return finalTrail.map((p) => ({
-        label: p.name,
-        url: p.url,
-      }));
-    });
-
-    const result: Breadcrumbs = {
-      main: 0,
-      items: mappedItems,
-    };
-
+    const result = mapTrailsToBreadcrumbs(
+      this.boardPiecesList(),
+      this.recipeTitle(),
+      this.recipeSlug(),
+    );
     this.breadcrumbsChange.emit(result);
   }
 
