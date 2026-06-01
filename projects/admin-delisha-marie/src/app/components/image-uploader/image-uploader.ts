@@ -383,10 +383,14 @@ export class ImageUploaderComponent {
     try {
       // Attempt full URL parse
       const url = new URL(urlStr);
-      const pathname = url.pathname;
-      const lastSegment = pathname.split('/').filter(Boolean).at(-1) || '';
+      const lastSegment =
+        (
+          url.pathname.split('/') as string[] & {
+            findLast(predicate: (s: string) => boolean): string | undefined;
+          }
+        ).findLast((s: string) => !!s) || '';
 
-      if (lastSegment && lastSegment.includes('.')) {
+      if (lastSegment?.includes('.')) {
         const parts = lastSegment.split('.');
         const ext = parts.pop() || 'jpg';
         const name = parts.join('.');
@@ -394,8 +398,13 @@ export class ImageUploaderComponent {
       }
     } catch {
       // Simple path string parsing fallback
-      const lastSegment = urlStr.split('/').filter(Boolean).at(-1) || '';
-      if (lastSegment && lastSegment.includes('.')) {
+      const lastSegment =
+        (
+          urlStr.split('/') as string[] & {
+            findLast(predicate: (s: string) => boolean): string | undefined;
+          }
+        ).findLast((s: string) => !!s) || '';
+      if (lastSegment?.includes('.')) {
         const parts = lastSegment.split('.');
         const ext = parts.pop() || 'jpg';
         const name = parts.join('.');
