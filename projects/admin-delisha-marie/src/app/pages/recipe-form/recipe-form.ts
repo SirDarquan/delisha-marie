@@ -20,6 +20,7 @@ import { BreadcrumbBoardComponent } from '../../components/breadcrumb-board/brea
 import { CookingMethodSelectorComponent } from '../../components/cooking-method-selector/cooking-method-selector';
 import { SpecialDietsSelectorComponent } from '../../components/special-diets-selector/special-diets-selector';
 import { HolidaysSelectorComponent } from '../../components/holidays-selector/holidays-selector';
+import { ImageUploaderComponent } from '../../components/image-uploader/image-uploader';
 import { Breadcrumbs, Nutrition, isStandardTrail, slugify } from '@dm/library';
 
 interface RecipeFormModel {
@@ -79,6 +80,7 @@ interface RecipeFormModel {
     CookingMethodSelectorComponent,
     SpecialDietsSelectorComponent,
     HolidaysSelectorComponent,
+    ImageUploaderComponent,
   ],
   template: `
     <div class="p-4 md:p-8">
@@ -280,13 +282,14 @@ interface RecipeFormModel {
               </div>
 
               <div class="flex flex-col gap-1 md:col-span-2">
-                <label for="image" class="text-xs font-semibold text-slate-300">Image URL</label>
-                <input
-                  id="image"
-                  type="text"
-                  [formField]="recipeForm.image"
-                  placeholder="e.g., /images/recipes/pasta.png"
-                  class="bg-slate-800/40 border border-slate-700/60 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-400/20 text-white placeholder-slate-500 transition" />
+                <app-image-uploader
+                  [initialImage]="recipeModel().image"
+                  [initialWidth]="recipeModel().imageWidth"
+                  [initialHeight]="recipeModel().imageHeight"
+                  [initialType]="recipeModel().imageType"
+                  [recipeSlug]="recipeModel().slug"
+                  (imageChange)="onImageUploaded($event)">
+                </app-image-uploader>
               </div>
 
               <div class="flex flex-col gap-1 md:col-span-2">
@@ -726,6 +729,9 @@ export class RecipeFormComponent implements OnInit {
         required(fields.totalTime, { message: 'Total time is required' });
         required(fields.yield, { message: 'Yield is required' });
         required(fields.image, { message: 'Image is required' });
+        required(fields.imageWidth, { message: 'Image width is required' });
+        required(fields.imageHeight, { message: 'Image height is required' });
+        required(fields.imageType, { message: 'Image type is required' });
         required(fields.description, { message: 'Description is required' });
         required(fields.content, { message: 'Content is required' });
         required(fields.ingredients, { message: 'Ingredients is required' });
@@ -817,6 +823,22 @@ export class RecipeFormComponent implements OnInit {
     this.recipeModel.update((model) => ({
       ...model,
       breadcrumbs: b,
+    }));
+    this.markDirty();
+  }
+
+  onImageUploaded(event: {
+    image: string;
+    imageWidth: string;
+    imageHeight: string;
+    imageType: string;
+  }): void {
+    this.recipeModel.update((model) => ({
+      ...model,
+      image: event.image,
+      imageWidth: event.imageWidth,
+      imageHeight: event.imageHeight,
+      imageType: event.imageType,
     }));
     this.markDirty();
   }
@@ -917,6 +939,9 @@ export class RecipeFormComponent implements OnInit {
       totalTime: formValue.totalTime || '',
       yield: formValue.yield || '',
       image: formValue.image || '',
+      imageWidth: formValue.imageWidth || '',
+      imageHeight: formValue.imageHeight || '',
+      imageType: formValue.imageType || '',
       description: formValue.description || '',
       content: formValue.content || '',
       ingredients,
