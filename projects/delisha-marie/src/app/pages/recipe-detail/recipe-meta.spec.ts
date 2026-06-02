@@ -117,4 +117,22 @@ describe('RecipeMeta', () => {
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.querySelector('.recipe-meta')?.textContent).toContain('Author: Delisha Marie');
   });
+
+  it('should fall back to current ISO date if both updatedAt and createdAt are missing', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 5, 1)); // June 1, 2026
+
+    fixture.componentRef.setInput('recipe', {
+      ...mockRecipe,
+      createdAt: '',
+      updatedAt: '',
+    });
+    fixture.detectChanges();
+    // It should render the fallback date, which is today's date formatted (June 1, 2026)
+    const compiled = fixture.nativeElement as HTMLElement;
+    const dateText = compiled.querySelector('.recipe-meta')?.textContent;
+    expect(dateText).toContain('Published: Jun 1, 2026');
+
+    vi.useRealTimers();
+  });
 });
