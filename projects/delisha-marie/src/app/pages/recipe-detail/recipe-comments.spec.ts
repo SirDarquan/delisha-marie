@@ -383,7 +383,8 @@ describe('RecipeComments', () => {
     component.onPageChange(1);
 
     await new Promise((resolve) => setTimeout(resolve, 150));
-    // Verify no exceptions thrown
+    // Verify no exceptions thrown and appropriate scroll target is checked
+    expect(windowMock.document.getElementById).toHaveBeenCalledWith('comments');
   });
 
   it('should handle falsy getReplies branch in template', async () => {
@@ -421,7 +422,9 @@ describe('RecipeComments', () => {
     windowMock.document.getElementById.mockReturnValue(null);
     component.replyToComment(comment);
     await new Promise((resolve) => setTimeout(resolve, 150));
-    // No errors
+    // Assert target element check was attempted and signal state updated
+    expect(component.replyTo()).toBe(comment);
+    expect(windowMock.document.getElementById).toHaveBeenCalledWith('respond');
   });
 
   it('should handle missing scroll target in addComment', async () => {
@@ -448,6 +451,8 @@ describe('RecipeComments', () => {
     formEl.dispatchEvent(new Event('submit'));
     await fixture.whenStable();
     await new Promise((resolve) => setTimeout(resolve, 150));
-    // No errors
+    // Assert comment was saved successfully and getElementById was called
+    expect(component.comments()).toContain(saved);
+    expect(windowMock.document.getElementById).toHaveBeenCalledWith('comments');
   });
 });
