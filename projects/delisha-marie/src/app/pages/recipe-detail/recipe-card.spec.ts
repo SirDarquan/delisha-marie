@@ -155,4 +155,18 @@ describe('RecipeCard', () => {
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.textContent).toContain('Note 1');
   });
+
+  it('should not render nutrition section if not provided', () => {
+    fixture.componentRef.setInput('recipe', { ...mockRecipe, nutrition: undefined });
+    fixture.detectChanges();
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.textContent).not.toContain('Nutritional Information');
+  });
+
+  it('should handle rating with missing ratingCount', () => {
+    fixture.componentRef.setInput('recipe', { ...mockRecipe, rating: 5, ratingCount: undefined });
+    fixture.detectChanges();
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.querySelector('.rating-text')?.textContent).toContain('(0)');
+  });
 });

@@ -107,5 +107,39 @@ describe('Recipe Resolvers', () => {
 
       expect(result).toBe('Recipe');
     });
+
+    it('should return default title if recipe has no title or is null', async () => {
+      vi.mocked(recipeService.getRecipeBySlug).mockResolvedValueOnce(null);
+      const route = {
+        paramMap: { get: vi.fn().mockReturnValue('test-slug') },
+      } as unknown as ActivatedRouteSnapshot;
+
+      const result = await TestBed.runInInjectionContext(() => {
+        return recipeTitleResolver(route, {} as RouterStateSnapshot);
+      });
+
+      expect(result).toBe('Recipe');
+    });
+  });
+
+  describe('recipeListTitleResolver fallback', () => {
+    it('should handle undefined routeConfig, category, subcategory, page parameters', () => {
+      const route = {
+        paramMap: {
+          get: vi.fn().mockReturnValue(null),
+        },
+      } as unknown as ActivatedRouteSnapshot;
+
+      TestBed.runInInjectionContext(() => {
+        recipeListTitleResolver(route, {} as RouterStateSnapshot);
+      });
+
+      expect(recipeListService.getTitle).toHaveBeenCalledWith({
+        url: '',
+        category: undefined,
+        subCategory: undefined,
+        page: undefined,
+      });
+    });
   });
 });

@@ -1,5 +1,4 @@
 import { TestBed, ComponentFixture } from '@angular/core/testing';
-import * as angularCore from '@angular/core';
 import { FormRoot, FormField } from '@angular/forms/signals';
 import { Router, ActivatedRoute } from '@angular/router';
 import { RecipeFormComponent } from './recipe-form';
@@ -1123,11 +1122,11 @@ describe('RecipeFormComponent', () => {
       ...component['recipeModel'](),
       title: 'Fallback Test',
       slug: 'fallback-test',
-      specialDiets: undefined as any, // line 905 fallback
-      difficulty: undefined as any, // line 936 fallback
-      author: undefined as any, // line 949 fallback
+      specialDiets: undefined as unknown as string[], // line 905 fallback
+      difficulty: undefined as unknown as 'Easy' | 'Intermediate' | 'Advanced', // line 936 fallback
+      author: undefined as unknown as string, // line 949 fallback
       fat: '10g', // truthy to enter nutrition block
-      calories: undefined as any, // line 920 fallback
+      calories: undefined as unknown as string, // line 920 fallback
     });
 
     component.saveDraft();
@@ -1144,8 +1143,8 @@ describe('RecipeFormComponent', () => {
       title: 'Published Recipe',
       slug: 'published-recipe',
       status: 'published',
-      createdAt: undefined as any, // missing
-      updatedAt: undefined as any,
+      createdAt: undefined as unknown as string, // missing
+      updatedAt: undefined as unknown as string,
     } as unknown as Recipe;
 
     fixture.detectChanges();
@@ -1197,7 +1196,12 @@ describe('RecipeFormComponent', () => {
       status: 'draft',
       breadcrumbs: {
         main: 0,
-        items: [[{ label: 'Home', url: '/' }, { label: 'Recipes', url: '/recipes' }]],
+        items: [
+          [
+            { label: 'Home', url: '/' },
+            { label: 'Recipes', url: '/recipes' },
+          ],
+        ],
       },
       holidays: ' ', // trimmed to empty
     });
@@ -1210,13 +1214,27 @@ describe('RecipeFormComponent', () => {
   it('should run required validations for published status when initialized as published (line 724)', () => {
     // Intercept Object.defineProperty to modify recipeModel status during constructor property initialization
     const originalDefineProperty = Object.defineProperty;
-    
-    (Object as any).defineProperty = function(obj: any, prop: any, descriptor: any) {
+
+    const ObjectWithAny = Object as unknown as {
+      defineProperty: (
+        o: unknown,
+        p: PropertyKey,
+        attributes: PropertyDescriptor & ThisType<unknown>,
+      ) => unknown;
+    };
+    ObjectWithAny.defineProperty = function (
+      obj: unknown,
+      prop: PropertyKey,
+      descriptor: PropertyDescriptor,
+    ) {
       if (prop === 'recipeModel' && descriptor && descriptor.value) {
-        const signalVal = descriptor.value;
+        const signalVal = descriptor.value as {
+          set: (val: unknown) => void;
+          (): Record<string, unknown>;
+        };
         signalVal.set({
           ...signalVal(),
-          status: 'published'
+          status: 'published',
         });
       }
       return originalDefineProperty.call(Object, obj, prop, descriptor);
@@ -1225,11 +1243,18 @@ describe('RecipeFormComponent', () => {
     try {
       const newFixture = TestBed.createComponent(RecipeFormComponent);
       newFixture.detectChanges();
-      
+
       // Ensure the structural published validations are executed
       expect(newFixture.componentInstance['recipeForm']().invalid()).toBe(true);
     } finally {
-      (Object as any).defineProperty = originalDefineProperty;
+      const ObjectWithAny = Object as unknown as {
+        defineProperty: (
+          o: unknown,
+          p: PropertyKey,
+          attributes: PropertyDescriptor & ThisType<unknown>,
+        ) => unknown;
+      };
+      ObjectWithAny.defineProperty = originalDefineProperty;
     }
   });
 
@@ -1241,7 +1266,7 @@ describe('RecipeFormComponent', () => {
       image: '/images/recipes/2026/06/test.jpg',
       imageWidth: '100',
       imageHeight: '100',
-      imageType: 'image/jpeg'
+      imageType: 'image/jpeg',
     });
     expect(component['recipeModel']().image).toBe('/images/recipes/2026/06/test.jpg');
     expect(component['isDirty']()).toBe(true);
@@ -1256,9 +1281,11 @@ describe('RecipeFormComponent', () => {
       difficulty: 'Easy',
       status: 'draft',
     });
-    
+
     // Mock createRecipe to return an object without ID
-    const spy = vi.spyOn(fakeRecipeService, 'createRecipe').mockReturnValue({} as any);
+    const spy = vi
+      .spyOn(fakeRecipeService, 'createRecipe')
+      .mockReturnValue({} as unknown as Recipe);
 
     component.saveDraft();
     expect(navigated).toEqual([]);
@@ -1272,9 +1299,9 @@ describe('RecipeFormComponent', () => {
       title: 'Draft Save Test',
       slug: 'draft-save-test',
     });
-    
+
     // Call saveRequired with 'draft' as any to bypass scheduled/published blocks
-    component.saveRequired('draft' as any);
+    component.saveRequired('draft' as unknown as 'published');
     expect(createPayload.createdAt).toBeUndefined();
     expect(createPayload.updatedAt).toBeUndefined();
   });
@@ -1282,9 +1309,9 @@ describe('RecipeFormComponent', () => {
   it('should hit fallback branches in getBestTrail using prototype override (line 1063)', () => {
     fixture.detectChanges();
     const originalPush = Array.prototype.push;
-    
+
     // Override push to intercept the pushed objects and clear the url
-    Array.prototype.push = function(...args) {
+    Array.prototype.push = function (...args) {
       if (args[0] && args[0].label === 'The Best Recipes') {
         args[0].url = '';
       }
@@ -1295,7 +1322,7 @@ describe('RecipeFormComponent', () => {
       const best = component['getBestTrail']([
         { label: 'Home', url: '/' },
         { label: 'Recipes', url: '/recipes' },
-        { label: 'Pasta', url: '/recipes/pasta' }
+        { label: 'Pasta', url: '/recipes/pasta' },
       ]);
       expect(best[2].url).toBe('/pasta');
     } finally {
@@ -1306,9 +1333,9 @@ describe('RecipeFormComponent', () => {
   it('should hit parentUrl endsWith branch in getBestTrail (line 1072)', () => {
     fixture.detectChanges();
     const originalPush = Array.prototype.push;
-    
+
     // Override push to intercept and append trailing slash
-    Array.prototype.push = function(...args) {
+    Array.prototype.push = function (...args) {
       if (args[0] && args[0].label === 'The Best Recipes') {
         args[0].url = '/the-best-recipes/';
       }
@@ -1319,7 +1346,7 @@ describe('RecipeFormComponent', () => {
       const best = component['getBestTrail']([
         { label: 'Home', url: '/' },
         { label: 'Recipes', url: '/recipes' },
-        { label: 'Pasta', url: '/recipes/pasta' }
+        { label: 'Pasta', url: '/recipes/pasta' },
       ]);
       expect(best[2].url).toBe('/the-best-recipes/pasta');
     } finally {
@@ -1336,7 +1363,12 @@ describe('RecipeFormComponent', () => {
       status: 'draft',
       breadcrumbs: {
         main: 0,
-        items: [[{ label: 'Home', url: '/' }, { label: 'Recipes', url: '/recipes' }]],
+        items: [
+          [
+            { label: 'Home', url: '/' },
+            { label: 'Recipes', url: '/recipes' },
+          ],
+        ],
       },
       specialDiets: ['Vegan', ' ', 'Keto'], // empty/space item
     });

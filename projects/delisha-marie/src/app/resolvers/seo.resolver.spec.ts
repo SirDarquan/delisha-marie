@@ -95,6 +95,22 @@ describe('Seo Resolvers', () => {
       expect(seoService.setSEO).toHaveBeenCalledWith(expect.objectContaining({ image: '' }));
     });
 
+    it('should handle truthy image correctly', () => {
+      const route = {
+        data: { image: '/assets/img.jpg' },
+        title: 'With Image',
+      } as unknown as ActivatedRouteSnapshot;
+      const state = { url: '/with-image' } as RouterStateSnapshot;
+
+      TestBed.runInInjectionContext(() => {
+        seoResolver(route, state);
+      });
+
+      expect(seoService.setSEO).toHaveBeenCalledWith(
+        expect.objectContaining({ image: 'http://localhost:4200/assets/img.jpg' }),
+      );
+    });
+
     it('should resolve origin in arrays', () => {
       const route = {
         data: {
@@ -228,6 +244,33 @@ describe('Seo Resolvers', () => {
       });
 
       expect((result as SeoContent).content).toBe('noindex,nofollow');
+    });
+
+    it('should handle missing description and image in seoRecipeResolver', async () => {
+      const mockRecipe = {
+        title: 'Title',
+        description: undefined as unknown as string,
+        image: undefined as unknown as string,
+        keywords: [],
+      } as unknown as Recipe;
+
+      vi.mocked(recipeService.getRecipeBySlug).mockResolvedValue(mockRecipe);
+
+      const route = {
+        paramMap: { get: () => 'no-desc-no-img' },
+      } as unknown as ActivatedRouteSnapshot;
+      const state = { url: '/recipe/no-desc-no-img' } as RouterStateSnapshot;
+
+      await TestBed.runInInjectionContext(() => {
+        return seoRecipeResolver(route, state);
+      });
+
+      expect(seoService.setSEO).toHaveBeenCalledWith(
+        expect.objectContaining({
+          description: '',
+          image: '',
+        }),
+      );
     });
   });
 });

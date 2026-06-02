@@ -103,4 +103,22 @@ describe('Stars', () => {
     const activeStars = fixture.debugElement.queryAll(By.css('.star-icon.active'));
     expect(activeStars.length).toBe(4); // 1, 2, 3 (full) + 4 (half)
   });
+
+  it('should do nothing in mouse/click handlers if not interactive', () => {
+    fixture.componentRef.setInput('interactive', false);
+    fixture.detectChanges();
+
+    const initialHover = component['hoverRating']();
+
+    // Call protected handlers directly to cover early-return false branches
+    component['onMouseEnter'](4);
+    expect(component['hoverRating']()).toBe(initialHover);
+
+    component['onMouseLeave']();
+    expect(component['hoverRating']()).toBe(initialHover);
+
+    const ratingChangeSpy = vi.spyOn(component.ratingChange, 'emit');
+    component['handleRating'](4);
+    expect(ratingChangeSpy).not.toHaveBeenCalled();
+  });
 });

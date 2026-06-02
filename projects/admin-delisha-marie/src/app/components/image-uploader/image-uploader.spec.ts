@@ -511,10 +511,10 @@ describe('ImageUploaderComponent', () => {
   });
 
   it('should handle onFileSelected when files array is empty or undefined (line 260 falsy)', () => {
-    component.onFileSelected({ target: { files: null } } as any);
+    component.onFileSelected({ target: { files: null } } as unknown as Event);
     expect(component['currentPath']()).toBe('');
 
-    component.onFileSelected({ target: { files: [] } } as any);
+    component.onFileSelected({ target: { files: [] as unknown as FileList } } as unknown as Event);
     expect(component['currentPath']()).toBe('');
   });
 
@@ -565,8 +565,12 @@ describe('ImageUploaderComponent', () => {
     fixture.detectChanges();
     const dropzoneDe = fixture.debugElement.query(By.css('[role="button"]'));
     dropzoneDe.triggerEventHandler('dragleave', {
-      preventDefault: () => {},
-      stopPropagation: () => {}
+      preventDefault: () => {
+        /* noop */
+      },
+      stopPropagation: () => {
+        /* noop */
+      },
     });
     fixture.detectChanges();
 
@@ -588,7 +592,7 @@ describe('ImageUploaderComponent', () => {
 
     // Pre-set the internal currentPath to the same value
     component['currentPath'].set('/images/recipes/2026/06/rooster.jpg');
-    
+
     // Set a different width to trigger effect re-run, keeping the image path identical
     fixture.componentRef.setInput('initialWidth', '900');
     fixture.detectChanges();

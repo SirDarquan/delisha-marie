@@ -294,4 +294,53 @@ describe('RecipeService', () => {
     expect(consoleSpy).toHaveBeenCalled();
     consoleSpy.mockRestore();
   });
+
+  // --- NEW ADDITIONAL BOOSTERS ---
+  it('should fall back to 0 when recipe.id is not a number in createRecipe', async () => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(
+        'admin_recipes',
+        JSON.stringify([{ ...mockRecipes[0], id: 'pasta-id' }]),
+      );
+    }
+    service = TestBed.inject(RecipeService);
+    httpMock = TestBed.inject(HttpTestingController);
+
+    // Swallow constructor load
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    const created = service.createRecipe({
+      title: 'New Salad',
+      slug: 'new-salad',
+      description: '',
+      content: '',
+      ingredients: [],
+      instructions: [],
+      image: '',
+      prepTime: '',
+      cookTime: '',
+      difficulty: 'Easy',
+      totalTime: '',
+      yield: '',
+      author: 'Chef',
+      status: 'draft',
+    });
+    // Max of [0] + 1 -> 1
+    expect(created.id).toBe(1);
+
+    const req = httpMock.expectOne('/api/recipes');
+    req.flush(created);
+  });
+
+  it('should skip storage loads and saves if window is undefined', async () => {
+    vi.stubGlobal('window', undefined);
+
+    try {
+      const localService = TestBed.runInInjectionContext(() => new RecipeService());
+      expect(localService).toBeTruthy();
+      localService['saveToStorage']([]);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
 });

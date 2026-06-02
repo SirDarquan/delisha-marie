@@ -22,7 +22,6 @@ export class RecipeService {
       if (stored) {
         try {
           this._recipes.set(JSON.parse(stored));
-          console.log('Recipes loaded from local storage', JSON.parse(stored));
           return;
         } catch {
           // fallback to fetching if JSON is malformed

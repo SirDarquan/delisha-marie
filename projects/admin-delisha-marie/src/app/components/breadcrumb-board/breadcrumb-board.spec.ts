@@ -661,4 +661,113 @@ describe('BreadcrumbBoardComponent', () => {
     expect(component.boardPieces()[3].name).toBe('Summer Ideas');
     expect(component.boardPieces()[3].url).toBe('/recipes/main-dishes/summer-ideas');
   });
+
+  // --- NEW ADDITIONAL BOOSTERS ---
+  it('should fall back to default pieces list if boardPiecesList is completely empty', () => {
+    component.boardPiecesList.set([] as unknown as { name: string; url: string }[][]); // Set to empty list
+    fixture.detectChanges();
+    expect(component.boardPieces()).toEqual([
+      { name: 'Home', url: '/' },
+      { name: 'Recipes', url: '/recipes' },
+    ]);
+  });
+
+  it('should handle falsy standardTrails length in effect', () => {
+    // items contains only non-standard trails
+    const testBreadcrumbs: Breadcrumbs = {
+      main: 0,
+      items: [[{ label: 'NotHome', url: '/not-home' }]],
+    };
+    fixture.componentRef.setInput('initialBreadcrumbs', testBreadcrumbs);
+    fixture.detectChanges();
+    // Verify no exceptions and boardPiecesList remains default
+    expect(component.boardPiecesList().length).toBe(1);
+  });
+
+  it('should handle missing URL in initial breadcrumb list (url fallback to "")', () => {
+    const testBreadcrumbs: Breadcrumbs = {
+      main: 0,
+      items: [
+        [
+          { label: 'Home', url: '/' },
+          { label: 'Recipes', url: '/recipes' },
+          { label: 'MissingURL', url: undefined as unknown as string },
+        ],
+      ],
+    };
+    fixture.componentRef.setInput('initialBreadcrumbs', testBreadcrumbs);
+    fixture.detectChanges();
+    // Since MissingURL has no URL, it is filtered out of mappedList (due to b.url filter)
+    expect(component.boardPieces().length).toBe(2);
+  });
+
+  it('should hit falsy branch of active index shift when deleting a non-active trail', () => {
+    const dummyEvent = {
+      stopPropagation: () => {
+        /* noop */
+      },
+    } as unknown as Event;
+    component.addNewTrail(); // idx 1 (active)
+    component.switchTrail(0); // active is 0, list length is 2
+    expect(component.activeTrailIndex()).toBe(0);
+
+    // Delete trail index 1 (non-active)
+    component.deleteTrail(1, dummyEvent);
+    // activeTrailIndex (0) is NOT >= length (1) -> falsy branch of shift check hit
+    expect(component.activeTrailIndex()).toBe(0);
+    expect(component.boardPiecesList().length).toBe(1);
+  });
+
+  it('should handle empty or slash URL prefix inside addCustomPiece and updateCustomUrl', () => {
+    // Clear list to force currentUrlPrefix to return "/"
+    component.boardPiecesList.set([[]]);
+    fixture.detectChanges();
+    expect(component.currentUrlPrefix()).toBe('/');
+
+    // updateCustomUrl with "/" prefix
+    component.customName.set('Test');
+    const event = { target: { value: 'my-custom-path' } } as unknown as Event;
+    component.updateCustomUrl(event);
+    expect(component.customUrl()).toBe('my-custom-path');
+
+    // addCustomPiece with "/" prefix
+    component.addCustomPiece();
+    // url should be "/my-custom-path"
+    const pieces = component.boardPieces();
+    expect(pieces.length).toBe(1);
+    expect(pieces[0].url).toBe('/my-custom-path');
+  });
+
+  it('should exercise all combinations of disabled state for add-to-board button', () => {
+    fixture.detectChanges();
+    // Set isCustomPanelActive to true by default path
+    expect(component.isCustomPanelActive()).toBe(true);
+
+    // 1. both customName and customUrl empty -> disabled
+    component.customName.set('');
+    component.customUrl.set('');
+    fixture.detectChanges();
+
+    // 2. customName set, customUrl too short -> disabled
+    component.customName.set('Summer');
+    component.customUrl.set('ab');
+    fixture.detectChanges();
+
+    // 3. customName set, customUrl valid -> enabled
+    component.customName.set('Summer');
+    component.customUrl.set('summer-ideas');
+    fixture.detectChanges();
+  });
+
+  it('should cover endsWith and empty url fallback in currentUrlPrefix (lines 605, 606)', () => {
+    // 1. last.url ends with '/'
+    component.boardPiecesList.set([[{ name: 'Home', url: '/recipes/' }]]);
+    fixture.detectChanges();
+    expect(component.currentUrlPrefix()).toBe('/recipes/');
+
+    // 2. last.url is empty
+    component.boardPiecesList.set([[{ name: 'Home', url: '' }]]);
+    fixture.detectChanges();
+    expect(component.currentUrlPrefix()).toBe('/');
+  });
 });

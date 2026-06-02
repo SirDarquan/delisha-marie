@@ -78,21 +78,19 @@ export const schemaResolver: ResolveFn<SchemaObject[]> = (route, state) => {
   const breadcrumbs = getBaseBreadcrumbs(path);
   schema.push(generateBreadcrumbSchema(breadcrumbs, origin, path));
 
-  if (schema) {
-    const schemaObj = {
-      '@context': 'https://schema.org',
-      '@graph': schema,
-    };
+  const schemaObj = {
+    '@context': 'https://schema.org',
+    '@graph': schema,
+  };
 
-    let script = document.querySelector('script#dynamic-schema');
-    if (!script) {
-      script = document.createElement('script');
-      script.setAttribute('id', 'dynamic-schema');
-      script.setAttribute('type', 'application/ld+json');
-      document.head.appendChild(script);
-    }
-    script.textContent = JSON.stringify(schemaObj);
+  let script = document.querySelector('script#dynamic-schema');
+  if (!script) {
+    script = document.createElement('script');
+    script.setAttribute('id', 'dynamic-schema');
+    script.setAttribute('type', 'application/ld+json');
+    document.head.appendChild(script);
   }
+  script.textContent = JSON.stringify(schemaObj);
 
   return schema;
 };
@@ -141,21 +139,19 @@ export const schemaRecipeResolver: ResolveFn<SchemaObject[]> = async (route) => 
     generateBreadcrumbSchema(getRecipeBreadcrumbs(recipe), origin, recipe.slug),
   );
 
-  if (schema) {
-    const schemaObj = {
-      '@context': 'https://schema.org',
-      '@graph': schema,
-    };
+  const schemaObj = {
+    '@context': 'https://schema.org',
+    '@graph': schema,
+  };
 
-    let script = document.querySelector('script#dynamic-schema');
-    if (!script) {
-      script = document.createElement('script');
-      script.setAttribute('id', 'dynamic-schema');
-      script.setAttribute('type', 'application/ld+json');
-      document.head.appendChild(script);
-    }
-    script.textContent = JSON.stringify(schemaObj);
+  let script = document.querySelector('script#dynamic-schema');
+  if (!script) {
+    script = document.createElement('script');
+    script.setAttribute('id', 'dynamic-schema');
+    script.setAttribute('type', 'application/ld+json');
+    document.head.appendChild(script);
   }
+  script.textContent = JSON.stringify(schemaObj);
 
   return schema;
 };

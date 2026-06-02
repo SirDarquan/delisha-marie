@@ -354,4 +354,114 @@ describe('schemaResolver', () => {
       expect(result).toEqual([]);
     });
   });
+
+  describe('schemaResolver extra coverage', () => {
+    it('should return only Home breadcrumb if path is empty', () => {
+      const route = {
+        data: { description: 'desc' },
+        paramMap: { get: () => '' },
+      } as unknown as ActivatedRouteSnapshot;
+      const state = { url: '' } as RouterStateSnapshot;
+
+      const result = TestBed.runInInjectionContext(() => schemaResolver(route, state)) as Record<
+        string,
+        unknown
+      >[];
+      const breadcrumbList = result.find((s) => s['@type'] === 'BreadcrumbList') as Record<
+        string,
+        unknown
+      >;
+      const items = breadcrumbList['itemListElement'] as { name: string }[];
+      expect(items.length).toBe(1);
+      expect(items[0].name).toBe('Home');
+    });
+
+    it('should return empty array in getRecipeBreadcrumbs if breadcrumbs is missing or invalid', () => {
+      const recipe1 = createMockRecipe({ breadcrumbs: undefined });
+      expect(getRecipeBreadcrumbs(recipe1)).toEqual([]);
+
+      const recipe2 = createMockRecipe({
+        breadcrumbs: { main: undefined as unknown as number, items: [] },
+      });
+      expect(getRecipeBreadcrumbs(recipe2)).toEqual([]);
+    });
+
+    it('should handle recipe rating and reviewCount fallbacks in generateRecipeSchema', async () => {
+      const mockRecipe = createMockRecipe({
+        title: 'No Rating Recipe',
+        slug: 'no-rating',
+        rating: undefined,
+        ratingCount: undefined,
+        reviewCount: undefined,
+      });
+
+      vi.mocked(recipeService.getRecipeBySlug).mockResolvedValue(mockRecipe);
+
+      const route = {
+        paramMap: { get: () => 'no-rating' },
+        queryParamMap: { get: () => null },
+      } as unknown as ActivatedRouteSnapshot;
+      const state = { url: '/recipe/no-rating' } as RouterStateSnapshot;
+
+      const result = (await TestBed.runInInjectionContext(() =>
+        schemaRecipeResolver(route, state),
+      )) as Record<string, unknown>[];
+
+      const recipeSchema = result.find((s) => s['@type'] === ('Recipe' as unknown)) as Record<
+        string,
+        unknown
+      >;
+      const aggregateRating = recipeSchema['aggregateRating'] as Record<string, number>;
+      expect(aggregateRating['ratingValue']).toBe(5);
+      expect(aggregateRating['reviewCount']).toBe(1);
+    });
+
+    it('should reuse existing script tag if present in schemaRecipeResolver', async () => {
+      const mockRecipe = createMockRecipe({
+        title: 'Recipe',
+        slug: 'recipe',
+        author: 'Author',
+      });
+      vi.mocked(recipeService.getRecipeBySlug).mockResolvedValue(mockRecipe);
+
+      const existingScript = { setAttribute: vi.fn(), textContent: '' };
+      mockDocument.querySelector = vi.fn().mockReturnValue(existingScript);
+
+      const route = {
+        paramMap: { get: () => 'recipe' },
+        queryParamMap: { get: () => null },
+      } as unknown as ActivatedRouteSnapshot;
+      const state = { url: '/recipe/recipe' } as RouterStateSnapshot;
+
+      await TestBed.runInInjectionContext(() => schemaRecipeResolver(route, state));
+
+      expect(mockDocument.createElement).not.toHaveBeenCalled();
+      expect(existingScript.textContent).toContain('@context');
+    });
+
+    it('should fall back to Recipe course in generateRecipeSchema when course is missing', async () => {
+      const mockRecipe = createMockRecipe({
+        title: 'No Course Recipe',
+        slug: 'no-course',
+        course: undefined,
+      });
+
+      vi.mocked(recipeService.getRecipeBySlug).mockResolvedValue(mockRecipe);
+
+      const route = {
+        paramMap: { get: () => 'no-course' },
+        queryParamMap: { get: () => null },
+      } as unknown as ActivatedRouteSnapshot;
+      const state = { url: '/recipe/no-course' } as RouterStateSnapshot;
+
+      const result = (await TestBed.runInInjectionContext(() =>
+        schemaRecipeResolver(route, state),
+      )) as Record<string, unknown>[];
+      const articleSchema = result.find((s) => s['@type'] === ('Article' as unknown)) as Record<
+        string,
+        unknown
+      >;
+      expect(articleSchema['articleSection'] as string[]).toEqual(['Recipe']);
+    });
+  });
 });
