@@ -71,6 +71,7 @@ describe('HolidaysSelectorComponent', () => {
   it('should open custom holiday input when custom is selected', () => {
     fixture.detectChanges();
     component.onHolidaySelect('custom');
+    fixture.detectChanges();
 
     expect(component.showCustomInput()).toBe(true);
     expect(component.customHolidayText()).toBe('');
@@ -80,14 +81,17 @@ describe('HolidaysSelectorComponent', () => {
     fixture.detectChanges();
     // 1. Select custom option
     component.onHolidaySelect('custom');
+    fixture.detectChanges();
     expect(component.showCustomInput()).toBe(true);
 
     // 2. Type text
     component.onCustomTextChange({ target: { value: 'New Year' } } as unknown as Event);
+    fixture.detectChanges();
     expect(component.customHolidayText()).toBe('New Year');
 
     // 3. Add custom holiday
     component.addCustomHoliday();
+    fixture.detectChanges();
     expect(component.selectedHoliday()).toBe('New Year');
     expect(emittedValue).toBe('New Year');
     expect(component.compiledHolidays()).toContain('New Year');
@@ -99,10 +103,102 @@ describe('HolidaysSelectorComponent', () => {
     fixture.detectChanges();
 
     component.onHolidaySelect('custom');
+    fixture.detectChanges();
     component.onCustomTextChange({ target: { value: 'Fourth of July' } } as unknown as Event);
+    fixture.detectChanges();
 
     component.cancelCustomHoliday();
+    fixture.detectChanges();
     expect(component.showCustomInput()).toBe(false);
     expect(component.selectedHoliday()).toBe('Thanksgiving');
+  });
+
+  it('should not duplicate custom holiday in compiledHolidays if added again', () => {
+    fixture.detectChanges();
+    component.onHolidaySelect('custom');
+    fixture.detectChanges();
+
+    // Add once
+    component.onCustomTextChange({ target: { value: 'New Year' } } as unknown as Event);
+    component.addCustomHoliday();
+    fixture.detectChanges();
+
+    // Add again
+    component.onHolidaySelect('custom');
+    fixture.detectChanges();
+    component.onCustomTextChange({ target: { value: 'New Year' } } as unknown as Event);
+    component.addCustomHoliday();
+    fixture.detectChanges();
+
+    const matches = component.compiledHolidays().filter((h) => h === 'New Year');
+    expect(matches.length).toBe(1);
+  });
+
+  // --- NEW ADDITIONAL BOOSTERS ---
+  it('should ignore empty or null holidays in database or localCustomHolidays lists', () => {
+    mockRecipesSignal.set([
+      { title: 'A', slug: 'a', holidays: ['Thanksgiving', ''] }, // empty string
+      { title: 'B', slug: 'b', holidays: null as unknown as string[] }, // null list
+      { title: 'C', slug: 'c', holidays: ['Christmas', null as unknown as string] }, // null item
+    ]);
+    component.localCustomHolidays.set(['', null as unknown as string, '  ', 'Easter']);
+    fixture.detectChanges();
+
+    const compiled = component.compiledHolidays();
+    expect(compiled).toContain('Thanksgiving');
+    expect(compiled).toContain('Christmas');
+    expect(compiled).toContain('Easter');
+    expect(compiled.includes('')).toBe(false);
+  });
+
+  it('should return early in addCustomHoliday if trimmed value is empty', () => {
+    component.customHolidayText.set('   ');
+    const spy = vi.spyOn(component.localCustomHolidays, 'update');
+    component.addCustomHoliday();
+    expect(spy).not.toHaveBeenCalled();
+  });
+
+  it('should click template Add and Cancel buttons', () => {
+    fixture.detectChanges();
+    component.onHolidaySelect('custom');
+    fixture.detectChanges();
+
+    // 1. Enter text
+    component.onCustomTextChange({ target: { value: 'Labor Day' } } as unknown as Event);
+    fixture.detectChanges();
+
+    // Find and click Add button in UI
+    const addBtn = fixture.nativeElement.querySelector(
+      'button[type="button"]',
+    ) as HTMLButtonElement;
+    expect(addBtn).toBeTruthy();
+    addBtn.click();
+    fixture.detectChanges();
+
+    expect(component.selectedHoliday()).toBe('Labor Day');
+    expect(component.showCustomInput()).toBe(false);
+
+    // 2. Select custom again, then click Cancel button in UI
+    component.onHolidaySelect('custom');
+    fixture.detectChanges();
+
+    const cancelBtn = (
+      Array.from(fixture.nativeElement.querySelectorAll('button')) as HTMLButtonElement[]
+    ).find((b) => b.textContent?.includes('Cancel')) as HTMLButtonElement;
+    expect(cancelBtn).toBeTruthy();
+    cancelBtn.click();
+    fixture.detectChanges();
+
+    expect(component.showCustomInput()).toBe(false);
+  });
+
+  it('should handle onHolidaySelect when selectField is undefined (line 207)', () => {
+    fixture.detectChanges();
+    // @ts-expect-error - mock the selectField signal to return undefined
+    component.selectField = (() => undefined) as unknown as typeof component.selectField;
+
+    // Call the method
+    component.onHolidaySelect('custom');
+    expect(component.showCustomInput()).toBe(true);
   });
 });

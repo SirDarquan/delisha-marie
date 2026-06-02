@@ -74,6 +74,7 @@ describe('CookingMethodSelectorComponent', () => {
   it('should open custom method input when custom option is selected', () => {
     fixture.detectChanges();
     component.onMethodSelect('custom');
+    fixture.detectChanges();
 
     expect(component.showCustomInput()).toBe(true);
     expect(component.customMethodText()).toBe('');
@@ -83,14 +84,17 @@ describe('CookingMethodSelectorComponent', () => {
     fixture.detectChanges();
     // 1. Select custom option
     component.onMethodSelect('custom');
+    fixture.detectChanges();
     expect(component.showCustomInput()).toBe(true);
 
     // 2. Type text
     component.onCustomTextChange({ target: { value: 'Dehydrating' } } as unknown as Event);
+    fixture.detectChanges();
     expect(component.customMethodText()).toBe('Dehydrating');
 
     // 3. Click add
     component.addCustomMethod();
+    fixture.detectChanges();
     expect(component.selectedMethod()).toBe('Dehydrating');
     expect(emittedValue).toBe('Dehydrating');
     expect(component.showCustomInput()).toBe(false);
@@ -103,11 +107,93 @@ describe('CookingMethodSelectorComponent', () => {
 
     // 1. Select custom
     component.onMethodSelect('custom');
+    fixture.detectChanges();
     component.onCustomTextChange({ target: { value: 'Smoking' } } as unknown as Event);
+    fixture.detectChanges();
 
     // 2. Cancel
     component.cancelCustomMethod();
+    fixture.detectChanges();
     expect(component.showCustomInput()).toBe(false);
     expect(emittedValue).toBe('Sous Vide'); // Reverts to previous
+  });
+
+  it('should not duplicate custom method in compiledMethods if added again', () => {
+    fixture.detectChanges();
+    component.onMethodSelect('custom');
+    fixture.detectChanges();
+
+    // Add once
+    component.onCustomTextChange({ target: { value: 'Smoking' } } as unknown as Event);
+    component.addCustomMethod();
+    fixture.detectChanges();
+
+    // Add again
+    component.onMethodSelect('custom');
+    fixture.detectChanges();
+    component.onCustomTextChange({ target: { value: 'Smoking' } } as unknown as Event);
+    component.addCustomMethod();
+    fixture.detectChanges();
+
+    // Smoking is in the list only once
+    const matches = component.compiledMethods().filter((m) => m === 'Smoking');
+    expect(matches.length).toBe(1);
+  });
+
+  // --- NEW ADDITIONAL BOOSTERS ---
+  it('should ignore empty or null methods in database or localCustomMethods lists', () => {
+    mockRecipesSignal.set([
+      { title: 'A', slug: 'a', method: 'Smoking' },
+      { title: 'B', slug: 'b', method: '' }, // empty
+      { title: 'C', slug: 'c', method: null as unknown as string }, // null
+    ]);
+    component.localCustomMethods.set(['', null as unknown as string, '  ', 'Baking']);
+    fixture.detectChanges();
+
+    const compiled = component.compiledMethods();
+    expect(compiled).toContain('Smoking');
+    expect(compiled).toContain('Baking');
+    expect(compiled.includes('')).toBe(false);
+  });
+
+  it('should return early in addCustomMethod if trimmed value is empty', () => {
+    component.customMethodText.set('   ');
+    const spy = vi.spyOn(component.localCustomMethods, 'update');
+    component.addCustomMethod();
+    expect(spy).not.toHaveBeenCalled();
+  });
+
+  it('should click template Add and Cancel buttons', () => {
+    fixture.detectChanges();
+    component.onMethodSelect('custom');
+    fixture.detectChanges();
+
+    // 1. Enter text
+    component.onCustomTextChange({ target: { value: 'Grilling' } } as unknown as Event);
+    fixture.detectChanges();
+
+    // Find and click Add button in UI
+    const addBtn = fixture.nativeElement.querySelector(
+      'button[type="button"]',
+    ) as HTMLButtonElement;
+    expect(addBtn).toBeTruthy();
+    addBtn.click();
+    fixture.detectChanges();
+
+    expect(component.selectedMethod()).toBe('Grilling');
+    expect(component.showCustomInput()).toBe(false);
+
+    // 2. Select custom again, then click Cancel button in UI
+    component.onMethodSelect('custom');
+    fixture.detectChanges();
+
+    const cancelBtn = (
+      Array.from(fixture.nativeElement.querySelectorAll('button')) as HTMLButtonElement[]
+    ).find((b) => b.textContent?.includes('Cancel')) as HTMLButtonElement;
+    expect(cancelBtn).toBeTruthy();
+    cancelBtn.click();
+    fixture.detectChanges();
+
+    expect(component.showCustomInput()).toBe(false);
   });
 });

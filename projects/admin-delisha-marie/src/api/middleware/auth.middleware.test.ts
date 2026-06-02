@@ -150,4 +150,15 @@ describe('Auth Middleware', () => {
     expect(res.status).toBe(401);
     expect(res.body.error).toBe('Token missing or invalid');
   });
+
+  it('should return 401 with raw string error when verifyToken throws a non-Error object', async () => {
+    vi.mocked(backendService.verifyToken).mockRejectedValue('Fatal non-Error raw string');
+
+    const res = await request(app)
+      .get('/test-secure')
+      .set('Cookie', ['admin_access_token=bad-token']);
+
+    expect(res.status).toBe(401);
+    expect(res.body.error).toBe('Unauthorized: Fatal non-Error raw string');
+  });
 });

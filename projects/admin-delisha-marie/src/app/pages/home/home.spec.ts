@@ -65,4 +65,16 @@ describe('HomeComponent', () => {
     expect(recent[1].id).toBe('3');
     expect(recent[2].id).toBe('2');
   });
+
+  it('should fallback to Chef when author is missing or falsy', () => {
+    const mockList = [
+      { id: '1', title: 'Recipe One', category: 'Dinner', prepTime: '10m', author: '' },
+    ];
+    fakeRecipes.set(mockList);
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    const authorText = compiled.querySelector('p.text-slate-400')?.textContent;
+    expect(authorText).toBe('By Chef');
+  });
 });

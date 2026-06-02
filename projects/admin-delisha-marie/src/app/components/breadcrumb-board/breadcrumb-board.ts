@@ -407,7 +407,7 @@ export class BreadcrumbBoardComponent {
                 .filter((b) => b.url && !b.url.startsWith('/recipe/'))
                 .map((b) => ({
                   name: b.label,
-                  url: b.url || '',
+                  url: b.url as string,
                 })),
             );
             this.boardPiecesList.set(mappedList);

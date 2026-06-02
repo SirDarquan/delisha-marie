@@ -580,6 +580,25 @@ describe('Auth Router API', () => {
       expect(res.body.error).toBe('Descope OTP failure');
     });
 
+    it('should return 400 with fallback error message if Descope OTP dispatch fails without errorDescription', async () => {
+      vi.mocked(backendService.supabase.rpc).mockResolvedValue({
+        data: false,
+        error: null,
+      } as unknown as Awaited<ReturnType<typeof backendService.supabase.rpc>>);
+
+      vi.mocked(mockOtpSignUpOrIn.email).mockResolvedValue({
+        ok: false,
+        error: {},
+      } as unknown as Awaited<ReturnType<typeof mockOtpSignUpOrIn.email>>);
+
+      const res = await request(app)
+        .post('/auth/descope/send-otp')
+        .send({ email: 'fail@example.com' });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe('Failed to send OTP');
+    });
+
     it('should return 400 if internal call throws an error', async () => {
       vi.mocked(backendService.supabase.rpc).mockRejectedValue(new Error('Database error'));
 
@@ -1211,6 +1230,153 @@ describe('Auth Router API', () => {
       });
       expect(res.status).toBe(400);
       expect(res.body.error).toBe('verify-oauth listUsers failure');
+    });
+
+    it('should cover all remaining unhit branches in auth.ts', async () => {
+      // 1. Supabase RPC / Auth error propagation (Lines 58, 66, 74, 84, 93, 99, 223)
+      // Line 58 check-username RPC error:
+      vi.mocked(mockRpc).mockResolvedValueOnce({
+        data: null,
+        error: new Error('RPC check_username error'),
+      } as unknown);
+      let res = await request(app).get('/auth/check-username?username=john');
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe('RPC check_username error');
+
+      // Line 66 check-email RPC error:
+      vi.mocked(mockRpc).mockResolvedValueOnce({
+        data: null,
+        error: new Error('RPC check_email error'),
+      } as unknown);
+      res = await request(app).get('/auth/check-email?email=test@test.com');
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe('RPC check_email error');
+
+      // Line 74 getEmailByUsername RPC error:
+      vi.mocked(mockRpc).mockResolvedValueOnce({
+        data: null,
+        error: new Error('RPC get_email_by_username error'),
+      } as unknown);
+      res = await request(app).post('/auth/login').send({ username: 'john', password: 'pwd' });
+      expect(res.status).toBe(401);
+      expect(res.body.error).toBe('RPC get_email_by_username error');
+
+      // Line 84 signUp error:
+      vi.mocked(mockSignUp).mockResolvedValueOnce({
+        data: { user: null, session: null },
+        error: new Error('SignUp error'),
+      } as unknown);
+      res = await request(app)
+        .post('/auth/signup')
+        .send({ email: 'test@example.com', password: 'password' });
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe('SignUp error');
+
+      // Line 93 signInWithPassword error:
+      vi.mocked(mockSignInWithPassword).mockResolvedValueOnce({
+        data: { user: null, session: null },
+        error: new Error('SignIn error'),
+      } as unknown);
+      res = await request(app)
+        .post('/auth/login')
+        .send({ username: 'test@example.com', password: 'password' });
+      expect(res.status).toBe(401);
+      expect(res.body.error).toBe('SignIn error');
+
+      // Line 99 signOut error:
+      vi.mocked(mockSignOut).mockResolvedValueOnce({
+        error: new Error('SignOut error'),
+      } as unknown);
+      res = await request(app).post('/auth/signout');
+      expect(res.status).toBe(500);
+      expect(res.body.error).toBe('SignOut error');
+
+      // Line 223 listUsers error:
+      vi.mocked(mockListUsers).mockResolvedValueOnce({
+        data: { users: [] },
+        error: new Error('ListUsers error'),
+      } as unknown);
+      vi.mocked(mockOtpVerify.email).mockResolvedValueOnce({
+        ok: true,
+        data: { sessionJwt: 'jwt' },
+      } as unknown);
+      res = await request(app)
+        .post('/auth/descope/verify-otp')
+        .send({ email: 'john@example.com', code: '123456' });
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe('ListUsers error');
+
+      // 2. Line 262: verifyResp.error?.errorDescription fallback to 'Invalid OTP code'
+      vi.mocked(mockOtpVerify.email).mockResolvedValueOnce({ ok: false, error: {} } as unknown);
+      res = await request(app)
+        .post('/auth/descope/verify-otp')
+        .send({ email: 'john@example.com', code: '123456' });
+      expect(res.status).toBe(401);
+      expect(res.body.error).toBe('Invalid OTP code');
+
+      // 3. Line 265: verifyResp.data?.sessionJwt fallback to ''
+      vi.mocked(mockOtpVerify.email).mockResolvedValueOnce({ ok: true, data: {} } as unknown);
+      vi.mocked(mockListUsers).mockResolvedValueOnce({
+        data: { users: [] },
+        error: null,
+      } as unknown);
+      res = await request(app)
+        .post('/auth/descope/verify-otp')
+        .send({ email: 'john@example.com', code: '123456' });
+      expect(res.status).toBe(200);
+      expect(res.body.descopeToken).toBe('');
+
+      // 4. Line 324: displayName has no alphanumeric characters, email has no alphanumeric username
+      vi.mocked(mockRpc).mockResolvedValueOnce({ data: true, error: null } as unknown);
+      vi.mocked(mockCreateUser).mockResolvedValueOnce({
+        data: { user: { id: 'u1' } },
+        error: null,
+      } as unknown);
+      vi.mocked(mockGenerateLink).mockResolvedValueOnce({
+        data: { properties: { hashed_token: 'hash' } },
+        error: null,
+      } as unknown);
+      vi.mocked(mockVerifyOtp).mockResolvedValueOnce({
+        data: { user: { id: 'u1' }, session: null },
+        error: null,
+      } as unknown);
+      res = await request(app).post('/auth/descope/register').send({
+        email: '!!!@example.com',
+        descopeToken: 'valid.token.signature',
+        firstName: 'John',
+        lastName: 'Doe',
+        displayName: '!!!',
+      });
+      expect(res.status).toBe(200);
+
+      // 5. Line 357: validateDescopeSession throws a non-Error string in /auth/descope/register
+      vi.mocked(mockValidateSession).mockRejectedValueOnce(new Error('Validation error'));
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementationOnce(() => {
+        throw 'Raw Descope Validation Failure';
+      });
+      res = await request(app).post('/auth/descope/register').send({
+        email: 'john@example.com',
+        descopeToken: 'valid.token.signature',
+        firstName: 'John',
+        lastName: 'Doe',
+        displayName: 'John',
+      });
+      expect(res.status).toBe(401);
+      expect(res.body.error).toBe('Raw Descope Validation Failure');
+      consoleErrorSpy.mockRestore();
+
+      // 6. Line 405: validateDescopeSession throws a non-Error string in /auth/descope/verify-oauth
+      vi.mocked(mockValidateSession).mockRejectedValueOnce(new Error('Validation error'));
+      const consoleErrorSpy2 = vi.spyOn(console, 'error').mockImplementationOnce(() => {
+        throw 'Raw Descope Validation Failure1';
+      });
+      res = await request(app).post('/auth/descope/verify-oauth').send({
+        email: 'john@example.com',
+        descopeToken: 'valid.token.signature',
+      });
+      expect(res.status).toBe(401);
+      expect(res.body.error).toBe('Raw Descope Validation Failure1');
+      consoleErrorSpy2.mockRestore();
     });
   });
 });

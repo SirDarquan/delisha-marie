@@ -154,4 +154,46 @@ describe('RecipesListComponent', () => {
     expect(img).toBeTruthy();
     expect(img.getAttribute('src')).toBe('https://example.com/pasta.jpg');
   });
+
+  // --- NEW ADDITIONAL BOOSTERS ---
+  it('should click the delete button in the DOM and trigger onDelete', () => {
+    const originalConfirm = window.confirm;
+    window.confirm = () => true;
+
+    const deleteBtn = fixture.nativeElement.querySelector(
+      'button[aria-label="Delete recipe"]',
+    ) as HTMLButtonElement;
+    expect(deleteBtn).toBeTruthy();
+    deleteBtn.click();
+    fixture.detectChanges();
+
+    expect(deletedId).toBe(1);
+    window.confirm = originalConfirm;
+  });
+
+  it('should fallback difficulty to Easy if not provided', () => {
+    mockRecipesSignal.set([
+      {
+        id: 1,
+        title: 'Pasta',
+        slug: 'pasta',
+        description: 'Tasty',
+        content: 'Sample',
+        ingredients: [],
+        instructions: [],
+        image: '',
+        prepTime: '',
+        cookTime: '',
+        difficulty: '', // empty (falsy)
+        totalTime: '',
+        yield: '',
+        author: 'Delisha Marie',
+        status: 'published',
+      },
+    ]);
+    fixture.detectChanges();
+    const badge = fixture.nativeElement.querySelector('span.capitalize');
+    expect(badge).toBeTruthy();
+    expect(badge.textContent?.trim()).toBe('Easy');
+  });
 });

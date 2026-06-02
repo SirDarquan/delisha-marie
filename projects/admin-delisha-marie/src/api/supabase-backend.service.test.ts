@@ -79,5 +79,38 @@ describe('BackendSupabaseService', () => {
       expect(freshService.supabase).toBeDefined();
       expect(freshService.supabaseAdmin).toBeDefined();
     });
+
+    it('should fall back to class instance properties when environment variables are deleted', () => {
+      const freshService = new BackendSupabaseService();
+
+      const origUrl = process.env['SUPABASE_URL'];
+      const origKey = process.env['SUPABASE_KEY'];
+      const origRoleKey = process.env['SUPABASE_SERVICE_ROLE_KEY'];
+
+      delete process.env['SUPABASE_URL'];
+      delete process.env['SUPABASE_KEY'];
+      delete process.env['SUPABASE_SERVICE_ROLE_KEY'];
+
+      try {
+        expect(freshService.supabase).toBeDefined();
+        expect(freshService.supabaseAdmin).toBeDefined();
+      } finally {
+        process.env['SUPABASE_URL'] = origUrl;
+        process.env['SUPABASE_KEY'] = origKey;
+        process.env['SUPABASE_SERVICE_ROLE_KEY'] = origRoleKey;
+      }
+    });
+
+    it('should fall back to SUPABASE_KEY when SUPABASE_SERVICE_ROLE_KEY is deleted', () => {
+      const freshService = new BackendSupabaseService();
+      const origRoleKey = process.env['SUPABASE_SERVICE_ROLE_KEY'];
+      delete process.env['SUPABASE_SERVICE_ROLE_KEY'];
+
+      try {
+        expect(freshService.supabaseAdmin).toBeDefined();
+      } finally {
+        process.env['SUPABASE_SERVICE_ROLE_KEY'] = origRoleKey;
+      }
+    });
   });
 });

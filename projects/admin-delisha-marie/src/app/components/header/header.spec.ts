@@ -72,4 +72,20 @@ describe('HeaderComponent', () => {
     expect(fakeAuthService.logout).toHaveBeenCalled();
     expect(router.navigate).toHaveBeenCalledWith(['/login']);
   });
+
+  it('should display blank/undefined username if user_metadata is missing', () => {
+    fakeCurrentUser.set({
+      username: 'sirda',
+      email: 'sirda@example.com',
+      user_metadata: null,
+    });
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    const welcomeText = compiled
+      .querySelector('span.text-slate-400')
+      ?.textContent?.replace(/\s+/g, ' ')
+      .trim();
+    expect(welcomeText).toBe('Welcome back, !');
+  });
 });

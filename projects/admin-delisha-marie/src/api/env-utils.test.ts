@@ -126,6 +126,58 @@ describe('Environment Utilities Service', () => {
       expect(dir).toBeTruthy();
     });
 
+    it('should handle matching source path but file does not exist on disk', () => {
+      const mockUri = 'file:///C:/project/src/api/index.ts';
+      const mockMap: MockSourceMap = { payload: { sources: [mockUri] } };
+      vi.mocked(findSourceMap).mockReturnValue(
+        mockMap as unknown as ReturnType<typeof findSourceMap>,
+      );
+
+      existsSpy.mockReturnValue(false);
+
+      const dir = getSourceDir('/api');
+      expect(dir).toBeTruthy();
+    });
+
+    it('should fall back to using fileURLToPath when import.meta properties are undefined/overridden', () => {
+      // We test if import.meta properties are overridden/absent.
+      // If we are in a transpiled CommonJS environment or if we can define them:
+      const originalDirname = import.meta.dirname;
+      const originalFilename = import.meta.filename;
+      try {
+        Object.defineProperty(import.meta, 'dirname', {
+          value: undefined,
+          writable: true,
+          configurable: true,
+        });
+        Object.defineProperty(import.meta, 'filename', {
+          value: undefined,
+          writable: true,
+          configurable: true,
+        });
+      } catch {
+        // Safe catch if import.meta is read-only
+      }
+
+      const dir = getSourceDir('/api');
+      expect(dir).toBeTruthy();
+
+      try {
+        Object.defineProperty(import.meta, 'dirname', {
+          value: originalDirname,
+          writable: true,
+          configurable: true,
+        });
+        Object.defineProperty(import.meta, 'filename', {
+          value: originalFilename,
+          writable: true,
+          configurable: true,
+        });
+      } catch {
+        // Safe catch
+      }
+    });
+
     it('should safely handle the internal API throwing an exception', () => {
       vi.mocked(findSourceMap).mockImplementation(() => {
         throw new Error('Internal Crash');
