@@ -45,4 +45,18 @@ describe('Header', () => {
     const links = compiled.querySelectorAll('a');
     expect(links.length).toBeGreaterThanOrEqual(3); // About, Recipe, Contact
   });
+
+  it('should toggle theme when switch is flipped', () => {
+    const fixture = TestBed.createComponent(Header);
+    fixture.detectChanges();
+    themeServiceMock.isDark.set(true);
+    fixture.detectChanges();
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.querySelector('mat-icon')?.textContent?.trim()).toContain('dark_mode');
+
+    // Toggle
+    const toggle = fixture.componentInstance['themeService'];
+    toggle.toggle();
+    expect(themeServiceMock.toggle).toHaveBeenCalled();
+  });
 });

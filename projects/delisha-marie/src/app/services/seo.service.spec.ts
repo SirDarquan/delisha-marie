@@ -66,4 +66,68 @@ describe('SeoService', () => {
     expect(mockDocument.createElement).toHaveBeenCalledWith('link');
     expect(mockLink.setAttribute).toHaveBeenCalledWith('href', 'https://test.com/canonical');
   });
+
+  it('should handle setSEO with default fallbacks and no image/keywords', () => {
+    service.setSEO({
+      title: '',
+      image: '',
+      description: 'Desc',
+      url: 'https://test.com/page',
+      siteName: 'Site',
+    });
+
+    expect(metaService.addTag).toHaveBeenCalledWith({
+      property: 'og:title',
+      content: 'From my kitchen to yours | Delisha Marie ',
+    });
+    expect(metaService.addTag).toHaveBeenCalledWith({ property: 'og:type', content: 'website' });
+    expect(metaService.addTag).toHaveBeenCalledWith({
+      name: 'twitter:card',
+      content: 'summary_large_image',
+    });
+    expect(metaService.addTag).toHaveBeenCalledWith({ name: 'robots', content: 'index,follow' });
+
+    expect(metaService.addTag).not.toHaveBeenCalledWith(
+      expect.objectContaining({ property: 'og:image' }),
+    );
+    expect(metaService.addTag).not.toHaveBeenCalledWith(
+      expect.objectContaining({ name: 'keywords' }),
+    );
+  });
+
+  it('should add image meta tags when image and optional sizes/types are present', () => {
+    service.setSEO({
+      title: 'Title',
+      description: 'Desc',
+      url: 'https://test.com/page',
+      siteName: 'Site',
+      image: 'https://test.com/img.jpg',
+      imageWidth: '800',
+      imageHeight: '600',
+      imageType: 'image/jpeg',
+    });
+
+    expect(metaService.addTag).toHaveBeenCalledWith({
+      property: 'og:image:width',
+      content: '800',
+    });
+    expect(metaService.addTag).toHaveBeenCalledWith({
+      property: 'og:image:height',
+      content: '600',
+    });
+    expect(metaService.addTag).toHaveBeenCalledWith({
+      property: 'og:image:type',
+      content: 'image/jpeg',
+    });
+  });
+
+  it('should reuse existing canonical link element if present', () => {
+    const mockLink = { setAttribute: vi.fn() };
+    mockDocument.querySelector.mockReturnValue(mockLink);
+
+    service.updateCanonicalUrl('https://test.com/new-canonical');
+
+    expect(mockDocument.createElement).not.toHaveBeenCalled();
+    expect(mockLink.setAttribute).toHaveBeenCalledWith('href', 'https://test.com/new-canonical');
+  });
 });

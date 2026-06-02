@@ -375,4 +375,84 @@ describe('RecipeList', () => {
     await fixture.whenStable();
     expect(component.subCategories().length).toBe(1);
   });
+
+  it('should compute breadcrumbs with page > 1', async () => {
+    Object.defineProperty(router, 'url', { value: '/recipes/page/2' });
+    paramsSubject.next({ page: '2' });
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const breadcrumbs = component.breadcrumbItems();
+    expect(breadcrumbs.length).toBe(3);
+    expect(breadcrumbs[1].label).toBe('Recipes');
+    expect(breadcrumbs[1].url).toBe('/recipes');
+    expect(breadcrumbs[2].label).toBe('Page 2');
+    expect(breadcrumbs[2].url).toBeUndefined();
+  });
+
+  it('should fall back to recipes method if url segments are empty', async () => {
+    Object.defineProperty(router, 'url', { value: '/' });
+    paramsSubject.next({ page: '2' });
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(component.displayTitle()).toBe('Recipes');
+  });
+
+  it('should handle category that does not exist in the list', async () => {
+    Object.defineProperty(router, 'url', { value: '/recipes' });
+    paramsSubject.next({ category: 'nonexistent' });
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(component.subCategories().length).toBe(0);
+  });
+
+  it('should return correct page URL', async () => {
+    Object.defineProperty(router, 'url', { value: '/recipes' });
+    paramsSubject.next({});
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(component.getPageUrl(1)).toBe('/recipes');
+    expect(component.getPageUrl(3)).toBe('/recipes/page/3');
+  });
+
+  it('should return empty array if subcategories list is undefined/falsy', async () => {
+    recipeIndexServiceMock.getData.mockResolvedValueOnce(
+      {} as unknown as {
+        categories?: unknown[];
+        subcategories?: unknown[];
+        specialDiets?: unknown[];
+        holidays?: unknown[];
+      },
+    ); // empty object, lists undefined
+    fixture = TestBed.createComponent(RecipeList);
+    component = fixture.componentInstance;
+    Object.defineProperty(router, 'url', { value: '/recipes' });
+    paramsSubject.next({});
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(component.subCategories()).toEqual([]);
+  });
+
+  it('should hit the falsy tags branch when rootType returns an unknown type', async () => {
+    vi.spyOn(component, 'rootType').mockReturnValue('UnknownType' as unknown as 'Recipes');
+    paramsSubject.next({ category: 'desserts' });
+    fixture.detectChanges();
+    expect(component.subCategories()).toEqual([]);
+  });
+
+  it('should handle undefined lastItem in breadcrumb items when page > 1', async () => {
+    Object.defineProperty(router, 'url', { value: '/recipes/page/2' });
+
+    const originalAt = Array.prototype.at;
+    Array.prototype.at = vi.fn().mockReturnValue(undefined);
+
+    try {
+      paramsSubject.next({ page: '2' });
+      fixture.detectChanges();
+      await fixture.whenStable();
+      const breadcrumbs = component.breadcrumbItems();
+      expect(breadcrumbs.length).toBe(3);
+    } finally {
+      Array.prototype.at = originalAt;
+    }
+  });
 });

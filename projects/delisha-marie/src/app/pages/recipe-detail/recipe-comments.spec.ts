@@ -19,6 +19,7 @@ describe('RecipeComments', () => {
     author: `Author ${i + 1}`,
     email: `author${i + 1}@example.com`,
     content: `Comment ${i + 1}`,
+    rating: i === 101 ? 5 : undefined,
     createdAt: new Date(2024, 0, i + 1).toISOString(), // Incremental dates
   }));
 
@@ -318,5 +319,135 @@ describe('RecipeComments', () => {
 
     expect(consoleSpy).toHaveBeenCalledWith('Failed to post comment', expect.any(Error));
     consoleSpy.mockRestore();
+  });
+
+  it('should show form validation errors when inputs are touched and invalid', () => {
+    const compiled = fixture.nativeElement as HTMLElement;
+
+    // Trigger touched state
+    const authorCtrl = component['commentForm'].author();
+    authorCtrl.markAsTouched();
+    const emailCtrl = component['commentForm'].email();
+    emailCtrl.markAsTouched();
+    const contentCtrl = component['commentForm'].content();
+    contentCtrl.markAsTouched();
+
+    fixture.detectChanges();
+
+    expect(compiled.textContent).toContain('Name is required');
+    expect(compiled.textContent).toContain('Email is required');
+    expect(compiled.textContent).toContain('Comment is required');
+
+    // Test invalid email format
+    component['formModel'].set({
+      author: 'Author',
+      email: 'invalid-email',
+      website: '',
+      content: 'Comment',
+      rating: null,
+    });
+    fixture.detectChanges();
+    expect(compiled.textContent).toContain('Enter a valid email');
+  });
+
+  it('should add comment to empty list (commentsResource undefined)', async () => {
+    component['commentsResource'].set(undefined);
+    fixture.detectChanges();
+
+    const saved = {
+      id: 'first',
+      author: 'User',
+      content: 'hello',
+      createdAt: new Date().toISOString(),
+      recipeId: '1',
+    };
+    recipeServiceMock.addComment.mockResolvedValueOnce(saved);
+
+    component['formModel'].set({
+      author: 'User',
+      email: 'user@example.com',
+      website: '',
+      content: 'hello',
+      rating: null,
+    });
+    fixture.detectChanges();
+
+    const formEl = fixture.nativeElement.querySelector('form');
+    formEl.dispatchEvent(new Event('submit'));
+    await fixture.whenStable();
+    expect(component.comments()).toEqual([saved]);
+  });
+
+  it('should not throw if scroll targets are missing', async () => {
+    windowMock.document.getElementById.mockReturnValue(null);
+    component.onPageChange(1);
+
+    await new Promise((resolve) => setTimeout(resolve, 150));
+    // Verify no exceptions thrown
+  });
+
+  it('should handle falsy getReplies branch in template', async () => {
+    const spy = vi
+      .spyOn(component, 'getReplies')
+      .mockReturnValue(undefined as unknown as Comment[]);
+    fixture.componentRef.setInput('recipe', {
+      id: 12345,
+      title: 'New Recipe',
+      slug: 'new-recipe-slug',
+    });
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(spy).toHaveBeenCalled();
+  });
+
+  it('should explicitly trigger template pageChange binding', () => {
+    const controls = fixture.debugElement.query(By.css('pagination-controls'));
+    expect(controls).toBeTruthy();
+    controls.triggerEventHandler('pageChange', 2);
+    fixture.detectChanges();
+  });
+
+  it('should execute timer scroll logic when replyToComment is called', async () => {
+    const comment = mockComments[0];
+    windowMock.document.getElementById.mockReturnValue({ scrollIntoView: vi.fn() });
+    component.replyToComment(comment);
+    await new Promise((resolve) => setTimeout(resolve, 150));
+    expect(windowMock.document.getElementById).toHaveBeenCalledWith('respond');
+  });
+
+  it('should handle missing scroll target in replyToComment', async () => {
+    const comment = mockComments[0];
+    windowMock.document.getElementById.mockReturnValue(null);
+    component.replyToComment(comment);
+    await new Promise((resolve) => setTimeout(resolve, 150));
+    // No errors
+  });
+
+  it('should handle missing scroll target in addComment', async () => {
+    windowMock.document.getElementById.mockReturnValue(null);
+    const saved = {
+      id: 'new-scroll-test',
+      author: 'User',
+      content: 'hello',
+      createdAt: new Date().toISOString(),
+      recipeId: '1',
+    };
+    recipeServiceMock.addComment.mockResolvedValueOnce(saved);
+
+    component['formModel'].set({
+      author: 'User',
+      email: 'user@example.com',
+      website: '',
+      content: 'hello',
+      rating: null,
+    });
+    fixture.detectChanges();
+
+    const formEl = fixture.nativeElement.querySelector('form');
+    formEl.dispatchEvent(new Event('submit'));
+    await fixture.whenStable();
+    await new Promise((resolve) => setTimeout(resolve, 150));
+    // No errors
   });
 });

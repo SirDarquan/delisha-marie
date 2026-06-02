@@ -16,8 +16,13 @@ describe('RecipeIndexIngredients', () => {
       children: [
         { name: 'Apple Cider', url: '/ingredients/apple-cider', count: 6 },
         { name: 'Apple Cider Vinegar', url: '/ingredients/apple-cider-vinegar', count: 40 },
+        { name: 'Apple Sauce', url: '/ingredients/apple-sauce' } as unknown as Ingredient, // No count to test child.count || 0
       ],
     },
+    {
+      name: 'Apricot', // Starts with 'A' to test !groups[letter] else branch
+      url: '/ingredients/apricot',
+    } as unknown as Ingredient,
     { name: 'Banana', url: '/ingredients/banana', count: 15 },
   ];
 
