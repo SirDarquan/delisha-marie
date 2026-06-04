@@ -2,6 +2,8 @@
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-nodejs
 
 name: Delisha-Marie CI
+env:
+  NODE_VERSION: 26.x
 
 on:
   push:
@@ -20,10 +22,10 @@ jobs:
     - uses: actions/checkout@v6
       with:
         fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
-    - name: Use Node.js 24.x
+    - name: Use Node.js
       uses: actions/setup-node@v6
       with:
-        node-version: 24.x
+        node-version: ${{ env.NODE_VERSION }}
         cache: 'npm'
     - name: Cache node modules
       uses: actions/cache@v3
@@ -55,10 +57,10 @@ jobs:
         app: [admin, blog]
     steps:
     - uses: actions/checkout@v6
-    - name: Use Node.js 24.x
+    - name: Use Node.js
       uses: actions/setup-node@v6
       with:
-        node-version: 24.x
+        node-version: ${{ env.NODE_VERSION }}
         cache: 'npm'
     - name: Run Cypress E2E Parallel Matrix
       uses: cypress-io/github-action@v6
@@ -74,10 +76,10 @@ jobs:
       SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
     steps:
     - uses: actions/checkout@v6
-    - name: Use Node.js 24.x
+    - name: Use Node.js
       uses: actions/setup-node@v6
       with:
-        node-version: 24.x
+        node-version: ${{ env.NODE_VERSION }}
         cache: 'npm'
     - name: Cache node modules
       uses: actions/cache@v3
