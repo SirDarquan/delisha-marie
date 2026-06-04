@@ -724,11 +724,8 @@ export class RecipeFormComponent implements OnInit {
   private readonly initialModel = signal<RecipeFormModel | null>(null);
   private isInitialized = false;
 
-  private getFieldValue(key: keyof RecipeFormModel): unknown {
-    const formFields = this.recipeForm as unknown as Record<
-      string,
-      () => { controlValue: () => unknown }
-    >;
+  private getFieldValue(key: keyof RecipeFormModel) {
+    const formFields = this.recipeForm;
     const fieldFn = formFields[key];
     if (fieldFn && typeof fieldFn === 'function') {
       try {
@@ -754,7 +751,11 @@ export class RecipeFormComponent implements OnInit {
     return current;
   }
 
-  private valuesAreEqual(key: keyof RecipeFormModel, a: unknown, b: unknown): boolean {
+  private valuesAreEqual(
+    key: keyof RecipeFormModel,
+    a: string | boolean | string[] | Breadcrumbs | null,
+    b: string | boolean | string[] | Breadcrumbs | null,
+  ): boolean {
     if (key === 'breadcrumbs') {
       const breadcrumbsA = a as Breadcrumbs | null;
       const breadcrumbsB = b as Breadcrumbs | null;
@@ -768,9 +769,13 @@ export class RecipeFormComponent implements OnInit {
       return arrA.length === b.length && arrA.every((v, i) => v === b[i]);
     }
 
-    const normA = a ?? '';
-    const normB = b ?? '';
-    return String(normA).trim() === String(normB).trim();
+    if ((a !== null && typeof a === 'object') || (b !== null && typeof b === 'object')) {
+      return JSON.stringify(a) === JSON.stringify(b);
+    }
+
+    const normA = typeof a === 'string' || typeof a === 'boolean' ? String(a) : '';
+    const normB = typeof b === 'string' || typeof b === 'boolean' ? String(b) : '';
+    return normA.trim() === normB.trim();
   }
 
   protected readonly isDirty = computed(() => {
@@ -817,9 +822,6 @@ export class RecipeFormComponent implements OnInit {
       isMissing(this.getFieldValue('method')) ||
       isMissing(this.getFieldValue('cuisine')) ||
       isMissing(this.getFieldValue('course')) ||
-      isMissing(this.getFieldValue('keywords')) ||
-      isMissing(this.getFieldValue('equipment')) ||
-      isMissing(this.getFieldValue('notes')) ||
       isMissing(this.getFieldValue('servingSize')) ||
       isMissing(this.getFieldValue('calories')) ||
       isMissing(this.getFieldValue('fat')) ||
