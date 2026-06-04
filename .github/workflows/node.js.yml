@@ -3,7 +3,7 @@
 
 name: Delisha-Marie CI
 env:
-  NODE_VERSION: 26.x
+  NODE_VERSION: 24.x
 
 on:
   push:
