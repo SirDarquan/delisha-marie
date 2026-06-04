@@ -2,6 +2,8 @@ import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { CookingMethodSelectorComponent } from './cooking-method-selector';
 import { RecipeService } from '../../services/recipe.service';
 import { signal } from '@angular/core';
+import { By } from '@angular/platform-browser';
+import { MatSelect } from '@angular/material/select';
 
 describe('CookingMethodSelectorComponent', () => {
   let component: CookingMethodSelectorComponent;
@@ -195,5 +197,14 @@ describe('CookingMethodSelectorComponent', () => {
     fixture.detectChanges();
 
     expect(component.showCustomInput()).toBe(false);
+  });
+
+  it('should bind the required input to the mat-select required property', () => {
+    fixture.componentRef.setInput('required', true);
+    fixture.detectChanges();
+    const selectDebug = fixture.debugElement.query(By.css('mat-select'));
+    expect(selectDebug).toBeTruthy();
+    const selectInstance = selectDebug.componentInstance as MatSelect;
+    expect(selectInstance.required).toBe(true);
   });
 });

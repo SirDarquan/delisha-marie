@@ -145,144 +145,126 @@ interface RecipeFormModel {
           <!-- 1. WHAT IS IT Tab -->
           @if (activeTab() === 'what') {
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5 animate-fadeIn">
-              <div class="flex flex-col gap-1 md:col-span-2">
-                <label for="title" class="text-xs font-semibold text-slate-300"
-                  >Title <span class="text-rose-400">*</span></label
-                >
+              <mat-form-field appearance="outline" class="w-full md:col-span-2">
+                <mat-label>Title</mat-label>
                 <input
+                  matInput
                   id="title"
                   type="text"
                   [formField]="recipeForm.title"
                   placeholder="e.g., Creamy Tuscan Pasta"
-                  aria-required="true"
-                  class="bg-slate-800/40 border border-slate-700/60 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-400/20 text-white placeholder-slate-500 transition" />
+                  aria-required="true" />
                 @for (error of recipeForm.title().errors(); track error) {
-                  <span class="text-rose-400 text-xs font-semibold mt-1 flex items-center gap-1">
-                    <span class="material-icons text-[14px]">error_outline</span>
-                    {{ error.message }}
-                  </span>
+                  <mat-error>{{ error.message }}</mat-error>
                 }
-              </div>
+              </mat-form-field>
 
-              <div class="flex flex-col gap-1 md:col-span-2">
-                <label for="slug" class="text-xs font-semibold text-slate-300"
-                  >Slug <span class="text-rose-400">*</span></label
-                >
+              <mat-form-field appearance="outline" class="w-full md:col-span-2">
+                <mat-label>Slug</mat-label>
                 <input
+                  matInput
                   id="slug"
                   type="text"
                   [formField]="recipeForm.slug"
                   placeholder="e.g., creamy-tuscan-pasta"
-                  aria-required="true"
-                  class="bg-slate-800/40 border border-slate-700/60 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-400/20 text-white placeholder-slate-500 transition" />
+                  aria-required="true" />
                 @for (error of recipeForm.slug().errors(); track error) {
-                  <span class="text-rose-400 text-xs font-semibold mt-1 flex items-center gap-1">
-                    <span class="material-icons text-[14px]">error_outline</span>
-                    {{ error.message }}
-                  </span>
+                  <mat-error>{{ error.message }}</mat-error>
                 }
-              </div>
+              </mat-form-field>
 
-              <div class="flex flex-col gap-1">
-                <label for="difficulty" class="text-xs font-semibold text-slate-300"
-                  >Difficulty</label
-                >
-                <select
-                  id="difficulty"
-                  [formField]="recipeForm.difficulty"
-                  class="bg-slate-800/40 border border-slate-700/60 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-400/20 text-white transition">
-                  <option value="Easy" class="bg-slate-900">Easy</option>
-                  <option value="Intermediate" class="bg-slate-900">Intermediate</option>
-                  <option value="Advanced" class="bg-slate-900">Advanced</option>
-                </select>
-              </div>
+              <mat-form-field appearance="outline" class="w-full">
+                <mat-label>Difficulty</mat-label>
+                <mat-select id="difficulty" [formField]="recipeForm.difficulty">
+                  <mat-option value="Easy">Easy</mat-option>
+                  <mat-option value="Intermediate">Intermediate</mat-option>
+                  <mat-option value="Advanced">Advanced</mat-option>
+                </mat-select>
+              </mat-form-field>
 
-              <div class="flex flex-col gap-1">
-                <label for="prepTime" class="text-xs font-semibold text-slate-300">Prep Time</label>
+              <mat-form-field appearance="outline" class="w-full">
+                <mat-label>Prep Time</mat-label>
                 <input
+                  matInput
                   id="prepTime"
                   type="text"
                   [formField]="recipeForm.prepTime"
-                  placeholder="e.g., 15 mins"
-                  class="bg-slate-800/40 border border-slate-700/60 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-400/20 text-white placeholder-slate-500 transition" />
-              </div>
+                  placeholder="e.g., 15 mins" />
+              </mat-form-field>
 
-              <div class="flex flex-col gap-1">
-                <label for="cookTime" class="text-xs font-semibold text-slate-300">Cook Time</label>
+              <mat-form-field appearance="outline" class="w-full">
+                <mat-label>Cook Time</mat-label>
                 <input
+                  matInput
                   id="cookTime"
                   type="text"
                   [formField]="recipeForm.cookTime"
-                  placeholder="e.g., 20 mins"
-                  class="bg-slate-800/40 border border-slate-700/60 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-400/20 text-white placeholder-slate-500 transition" />
-              </div>
+                  placeholder="e.g., 20 mins" />
+              </mat-form-field>
 
-              <div class="flex flex-col gap-1">
-                <label for="totalTime" class="text-xs font-semibold text-slate-300"
-                  >Total Time</label
-                >
+              <mat-form-field appearance="outline" class="w-full">
+                <mat-label>Total Time</mat-label>
                 <input
+                  matInput
                   id="totalTime"
                   type="text"
                   [formField]="recipeForm.totalTime"
-                  placeholder="e.g., 35 mins"
-                  class="bg-slate-800/40 border border-slate-700/60 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-400/20 text-white placeholder-slate-500 transition" />
-              </div>
+                  placeholder="e.g., 35 mins" />
+              </mat-form-field>
 
-              <div class="flex flex-col gap-1">
-                <label for="yield" class="text-xs font-semibold text-slate-300">Yield</label>
+              <mat-form-field appearance="outline" class="w-full">
+                <mat-label>Yield</mat-label>
                 <input
+                  matInput
                   id="yield"
                   type="text"
                   [formField]="recipeForm.yield"
-                  placeholder="e.g., 4 servings"
-                  class="bg-slate-800/40 border border-slate-700/60 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-400/20 text-white placeholder-slate-500 transition" />
-              </div>
+                  placeholder="e.g., 4 servings" />
+              </mat-form-field>
 
-              <div class="flex flex-col gap-1">
-                <label for="author" class="text-xs font-semibold text-slate-300">Author</label>
+              <mat-form-field appearance="outline" class="w-full">
+                <mat-label>Author</mat-label>
                 <input
+                  matInput
                   id="author"
                   type="text"
                   [formField]="recipeForm.author"
-                  placeholder="e.g., Delisha Marie"
-                  class="bg-slate-800/40 border border-slate-700/60 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-400/20 text-white placeholder-slate-500 transition" />
-              </div>
+                  placeholder="e.g., Delisha Marie" />
+              </mat-form-field>
 
-              <div class="flex flex-col gap-1">
-                <label for="cuisine" class="text-xs font-semibold text-slate-300">Cuisine</label>
+              <mat-form-field appearance="outline" class="w-full">
+                <mat-label>Cuisine</mat-label>
                 <input
+                  matInput
                   id="cuisine"
                   type="text"
                   [formField]="recipeForm.cuisine"
-                  placeholder="e.g., Italian, Mexican"
-                  class="bg-slate-800/40 border border-slate-700/60 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-400/20 text-white placeholder-slate-500 transition" />
-              </div>
+                  placeholder="e.g., Italian, Mexican" />
+              </mat-form-field>
 
-              <div class="flex flex-col gap-1">
-                <label for="course" class="text-xs font-semibold text-slate-300">Course</label>
+              <mat-form-field appearance="outline" class="w-full">
+                <mat-label>Course</mat-label>
                 <input
+                  matInput
                   id="course"
                   type="text"
                   [formField]="recipeForm.course"
-                  placeholder="e.g., Dinner, Breakfast"
-                  class="bg-slate-800/40 border border-slate-700/60 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-400/20 text-white placeholder-slate-500 transition" />
-              </div>
+                  placeholder="e.g., Dinner, Breakfast" />
+              </mat-form-field>
 
-              <div class="flex flex-col gap-1 md:col-span-2">
-                <label for="keywords" class="text-xs font-semibold text-slate-300"
-                  >Keywords (Comma separated)</label
-                >
+              <mat-form-field appearance="outline" class="w-full md:col-span-2">
+                <mat-label>Keywords (Comma separated)</mat-label>
                 <input
+                  matInput
                   id="keywords"
                   type="text"
                   [formField]="recipeForm.keywords"
-                  placeholder="e.g., easy, pasta, dinner"
-                  class="bg-slate-800/40 border border-slate-700/60 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-400/20 text-white placeholder-slate-500 transition" />
-              </div>
+                  placeholder="e.g., easy, pasta, dinner" />
+              </mat-form-field>
 
               <div class="flex flex-col gap-1 md:col-span-2">
                 <app-image-uploader
+                  [formField]="recipeForm.image"
                   [initialImage]="recipeModel().image"
                   [initialWidth]="recipeModel().imageWidth"
                   [initialHeight]="recipeModel().imageHeight"
@@ -292,194 +274,175 @@ interface RecipeFormModel {
                 </app-image-uploader>
               </div>
 
-              <div class="flex flex-col gap-1 md:col-span-2">
-                <label for="description" class="text-xs font-semibold text-slate-300"
-                  >Brief Description</label
-                >
+              <mat-form-field appearance="outline" class="w-full md:col-span-2">
+                <mat-label>Brief Description</mat-label>
                 <textarea
+                  matInput
                   id="description"
                   [formField]="recipeForm.description"
                   rows="2"
                   placeholder="Brief summary of the recipe..."
-                  class="bg-slate-800/40 border border-slate-700/60 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-400/20 text-white placeholder-slate-500 transition resize-y"></textarea>
-              </div>
+                  class="resize-y"></textarea>
+              </mat-form-field>
 
-              <div class="flex flex-col gap-1 md:col-span-2">
-                <label for="content" class="text-xs font-semibold text-slate-300"
-                  >Full Content/Story (HTML or Text)</label
-                >
+              <mat-form-field appearance="outline" class="w-full md:col-span-2">
+                <mat-label>Full Content/Story (HTML or Text)</mat-label>
                 <textarea
+                  matInput
                   id="content"
                   [formField]="recipeForm.content"
                   rows="4"
                   placeholder="Detailed story or description..."
-                  class="bg-slate-800/40 border border-slate-700/60 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-400/20 text-white placeholder-slate-500 transition resize-y"></textarea>
-              </div>
+                  class="resize-y"></textarea>
+              </mat-form-field>
 
-              <div class="flex flex-col gap-1 md:col-span-2">
-                <label for="ingredients" class="text-xs font-semibold text-slate-300"
-                  >Ingredients (One per line)</label
-                >
+              <mat-form-field appearance="outline" class="w-full md:col-span-2">
+                <mat-label>Ingredients (One per line)</mat-label>
                 <textarea
+                  matInput
                   id="ingredients"
                   [formField]="recipeForm.ingredients"
                   rows="4"
                   placeholder="Enter ingredients..."
-                  class="bg-slate-800/40 border border-slate-700/60 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-400/20 text-white placeholder-slate-500 transition resize-y"></textarea>
-              </div>
+                  class="resize-y"></textarea>
+              </mat-form-field>
 
-              <div class="flex flex-col gap-1 md:col-span-2">
-                <label for="instructions" class="text-xs font-semibold text-slate-300"
-                  >Instructions (One per line)</label
-                >
+              <mat-form-field appearance="outline" class="w-full md:col-span-2">
+                <mat-label>Instructions (One per line)</mat-label>
                 <textarea
+                  matInput
                   id="instructions"
                   [formField]="recipeForm.instructions"
                   rows="4"
                   placeholder="Enter instructions..."
-                  class="bg-slate-800/40 border border-slate-700/60 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-400/20 text-white placeholder-slate-500 transition resize-y"></textarea>
-              </div>
+                  class="resize-y"></textarea>
+              </mat-form-field>
 
-              <div class="flex flex-col gap-1 md:col-span-2">
-                <label for="equipment" class="text-xs font-semibold text-slate-300"
-                  >Equipment (One per line)</label
-                >
+              <mat-form-field appearance="outline" class="w-full md:col-span-2">
+                <mat-label>Equipment (One per line)</mat-label>
                 <textarea
+                  matInput
                   id="equipment"
                   [formField]="recipeForm.equipment"
                   rows="3"
                   placeholder="Enter equipment..."
-                  class="bg-slate-800/40 border border-slate-700/60 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-400/20 text-white placeholder-slate-500 transition resize-y"></textarea>
-              </div>
+                  class="resize-y"></textarea>
+              </mat-form-field>
 
-              <div class="flex flex-col gap-1 md:col-span-2">
-                <label for="notes" class="text-xs font-semibold text-slate-300"
-                  >Recipe Notes (One per line)</label
-                >
+              <mat-form-field appearance="outline" class="w-full md:col-span-2">
+                <mat-label>Recipe Notes (One per line)</mat-label>
                 <textarea
+                  matInput
                   id="notes"
                   [formField]="recipeForm.notes"
                   rows="3"
                   placeholder="Enter recipe notes..."
-                  class="bg-slate-800/40 border border-slate-700/60 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-400/20 text-white placeholder-slate-500 transition resize-y"></textarea>
-              </div>
+                  class="resize-y"></textarea>
+              </mat-form-field>
 
               <!-- Nutritional Information -->
               <div class="flex flex-col gap-3 md:col-span-2 border-t border-slate-800/60 pt-4 mt-2">
                 <h4 class="text-sm font-semibold text-white">Nutritional Information</h4>
                 <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
-                  <div class="flex flex-col gap-1">
-                    <label for="servingSize" class="text-[10px] font-bold text-slate-400 uppercase"
-                      >Serving Size</label
-                    >
+                  <mat-form-field appearance="outline" class="w-full">
+                    <mat-label>Serving Size</mat-label>
                     <input
+                      matInput
                       id="servingSize"
                       type="text"
                       [formField]="recipeForm.servingSize"
-                      placeholder="e.g., 1 slice"
-                      class="bg-slate-800/40 border border-slate-700/60 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-purple-400" />
-                  </div>
-                  <div class="flex flex-col gap-1">
-                    <label for="calories" class="text-[10px] font-bold text-slate-400 uppercase"
-                      >Calories</label
-                    >
+                      placeholder="e.g., 1 slice" />
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline" class="w-full">
+                    <mat-label>Calories</mat-label>
                     <input
+                      matInput
                       id="calories"
                       type="text"
                       [formField]="recipeForm.calories"
-                      placeholder="e.g., 250 kcal"
-                      class="bg-slate-800/40 border border-slate-700/60 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-purple-400" />
-                  </div>
-                  <div class="flex flex-col gap-1">
-                    <label for="fat" class="text-[10px] font-bold text-slate-400 uppercase"
-                      >Fat</label
-                    >
+                      placeholder="e.g., 250 kcal" />
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline" class="w-full">
+                    <mat-label>Fat</mat-label>
                     <input
+                      matInput
                       id="fat"
                       type="text"
                       [formField]="recipeForm.fat"
-                      placeholder="e.g., 12g"
-                      class="bg-slate-800/40 border border-slate-700/60 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-purple-400" />
-                  </div>
-                  <div class="flex flex-col gap-1">
-                    <label for="saturatedFat" class="text-[10px] font-bold text-slate-400 uppercase"
-                      >Saturated Fat</label
-                    >
+                      placeholder="e.g., 12g" />
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline" class="w-full">
+                    <mat-label>Saturated Fat</mat-label>
                     <input
+                      matInput
                       id="saturatedFat"
                       type="text"
                       [formField]="recipeForm.saturatedFat"
-                      placeholder="e.g., 4g"
-                      class="bg-slate-800/40 border border-slate-700/60 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-purple-400" />
-                  </div>
-                  <div class="flex flex-col gap-1">
-                    <label for="cholesterol" class="text-[10px] font-bold text-slate-400 uppercase"
-                      >Cholesterol</label
-                    >
+                      placeholder="e.g., 4g" />
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline" class="w-full">
+                    <mat-label>Cholesterol</mat-label>
                     <input
+                      matInput
                       id="cholesterol"
                       type="text"
                       [formField]="recipeForm.cholesterol"
-                      placeholder="e.g., 15mg"
-                      class="bg-slate-800/40 border border-slate-700/60 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-purple-400" />
-                  </div>
-                  <div class="flex flex-col gap-1">
-                    <label for="sodium" class="text-[10px] font-bold text-slate-400 uppercase"
-                      >Sodium</label
-                    >
+                      placeholder="e.g., 15mg" />
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline" class="w-full">
+                    <mat-label>Sodium</mat-label>
                     <input
+                      matInput
                       id="sodium"
                       type="text"
                       [formField]="recipeForm.sodium"
-                      placeholder="e.g., 120mg"
-                      class="bg-slate-800/40 border border-slate-700/60 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-purple-400" />
-                  </div>
-                  <div class="flex flex-col gap-1">
-                    <label
-                      for="carbohydrates"
-                      class="text-[10px] font-bold text-slate-400 uppercase"
-                      >Carbohydrates</label
-                    >
+                      placeholder="e.g., 120mg" />
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline" class="w-full">
+                    <mat-label>Carbohydrates</mat-label>
                     <input
+                      matInput
                       id="carbohydrates"
                       type="text"
                       [formField]="recipeForm.carbohydrates"
-                      placeholder="e.g., 30g"
-                      class="bg-slate-800/40 border border-slate-700/60 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-purple-400" />
-                  </div>
-                  <div class="flex flex-col gap-1">
-                    <label for="fiber" class="text-[10px] font-bold text-slate-400 uppercase"
-                      >Fiber</label
-                    >
+                      placeholder="e.g., 30g" />
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline" class="w-full">
+                    <mat-label>Fiber</mat-label>
                     <input
+                      matInput
                       id="fiber"
                       type="text"
                       [formField]="recipeForm.fiber"
-                      placeholder="e.g., 3g"
-                      class="bg-slate-800/40 border border-slate-700/60 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-purple-400" />
-                  </div>
-                  <div class="flex flex-col gap-1">
-                    <label for="sugar" class="text-[10px] font-bold text-slate-400 uppercase"
-                      >Sugar</label
-                    >
+                      placeholder="e.g., 3g" />
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline" class="w-full">
+                    <mat-label>Sugar</mat-label>
                     <input
+                      matInput
                       id="sugar"
                       type="text"
                       [formField]="recipeForm.sugar"
-                      placeholder="e.g., 5g"
-                      class="bg-slate-800/40 border border-slate-700/60 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-purple-400" />
-                  </div>
-                  <div class="flex flex-col gap-1">
-                    <label for="protein" class="text-[10px] font-bold text-slate-400 uppercase"
-                      >Protein</label
-                    >
+                      placeholder="e.g., 5g" />
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline" class="w-full">
+                    <mat-label>Protein</mat-label>
                     <input
+                      matInput
                       id="protein"
                       type="text"
                       [formField]="recipeForm.protein"
-                      placeholder="e.g., 8g"
-                      class="bg-slate-800/40 border border-slate-700/60 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-purple-400" />
-                  </div>
+                      placeholder="e.g., 8g" />
+                  </mat-form-field>
                 </div>
               </div>
             </div>
@@ -488,21 +451,18 @@ interface RecipeFormModel {
           <!-- 2. WHERE IS IT Tab -->
           @if (activeTab() === 'where') {
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5 animate-fadeIn">
-              <div class="flex flex-col gap-1 md:col-span-2">
-                <label for="category" class="text-xs font-semibold text-slate-300">Category</label>
-                <select
-                  id="category"
-                  [formField]="recipeForm.category"
-                  class="bg-slate-800/40 border border-slate-700/60 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-400/20 text-white transition">
-                  <option value="" class="bg-slate-900">Select Category</option>
-                  <option value="Breakfast" class="bg-slate-900">Breakfast</option>
-                  <option value="Lunch" class="bg-slate-900">Lunch</option>
-                  <option value="Dinner" class="bg-slate-900">Dinner</option>
-                  <option value="Appetizer" class="bg-slate-900">Appetizer</option>
-                  <option value="Dessert" class="bg-slate-900">Dessert</option>
-                  <option value="Vegan" class="bg-slate-900">Vegan</option>
-                </select>
-              </div>
+              <mat-form-field appearance="outline" class="w-full md:col-span-2">
+                <mat-label>Category</mat-label>
+                <mat-select id="category" [formField]="recipeForm.category">
+                  <mat-option value="">Select Category</mat-option>
+                  <mat-option value="Breakfast">Breakfast</mat-option>
+                  <mat-option value="Lunch">Lunch</mat-option>
+                  <mat-option value="Dinner">Dinner</mat-option>
+                  <mat-option value="Appetizer">Appetizer</mat-option>
+                  <mat-option value="Dessert">Dessert</mat-option>
+                  <mat-option value="Vegan">Vegan</mat-option>
+                </mat-select>
+              </mat-form-field>
 
               <!-- Dynamic Stackable Breadcrumbs Board -->
               <div class="flex flex-col gap-1 md:col-span-2">
@@ -534,6 +494,7 @@ interface RecipeFormModel {
 
               <div class="flex flex-col gap-1 md:col-span-2">
                 <app-cooking-method-selector
+                  [formField]="recipeForm.method"
                   [initialMethod]="recipeModel().method"
                   (methodChange)="onMethodChanged($event)">
                 </app-cooking-method-selector>
@@ -578,7 +539,7 @@ interface RecipeFormModel {
               <button
                 mat-stroked-button
                 type="submit"
-                [disabled]="recipeForm().invalid() || !isDirty()"
+                [disabled]="isPublicationDisabled()"
                 (click)="saveRequired('scheduled')"
                 class="px-5 py-2.5 rounded-xl font-bold text-slate-900 bg-amber-400 hover:bg-amber-300 transition shadow-md cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed border-0">
                 Schedule Publication
@@ -598,7 +559,7 @@ interface RecipeFormModel {
               <button
                 mat-stroked-button
                 type="submit"
-                [disabled]="recipeForm().invalid() || !isDirty()"
+                [disabled]="isPublicationDisabled() || !isDirty()"
                 (click)="saveRequired('scheduled')"
                 class="px-5 py-2.5 rounded-xl font-bold text-slate-900 bg-amber-400 hover:bg-amber-300 transition shadow-md cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed border-0">
                 Update Schedule
@@ -624,7 +585,7 @@ interface RecipeFormModel {
               <button
                 mat-stroked-button
                 type="submit"
-                [disabled]="recipeForm().invalid() || !isDirty()"
+                [disabled]="isPublicationDisabled() || !isDirty()"
                 (click)="saveRequired('published')"
                 class="px-5 py-2.5 rounded-xl font-bold text-white bg-gradient-to-r from-purple-500 to-pink-500 hover:brightness-110 transition shadow-lg cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed border-0">
                 Update Published
@@ -667,10 +628,6 @@ export class RecipeFormComponent implements OnInit {
   protected readonly activeTab = signal<'what' | 'where'>('what');
 
   // Track draft changes state
-  protected readonly isDirty = signal<boolean>(false);
-  private isInitialized = false;
-  protected readonly isDraftDisabled = computed(() => !this.isDirty());
-
   // Modern Signal-based Form state
   protected readonly recipeModel = signal<RecipeFormModel>({
     title: '',
@@ -721,25 +678,34 @@ export class RecipeFormComponent implements OnInit {
     (fields) => {
       required(fields.title, { message: 'Title is required' });
       required(fields.slug, { message: 'Slug is required' });
-      if (this.currentStatus() !== 'draft') {
-        required(fields.category, { message: 'Category is required' });
-        required(fields.difficulty, { message: 'Difficulty is required' });
-        required(fields.prepTime, { message: 'Prep time is required' });
-        required(fields.cookTime, { message: 'Cook time is required' });
-        required(fields.totalTime, { message: 'Total time is required' });
-        required(fields.yield, { message: 'Yield is required' });
-        required(fields.image, { message: 'Image is required' });
-        required(fields.imageWidth, { message: 'Image width is required' });
-        required(fields.imageHeight, { message: 'Image height is required' });
-        required(fields.imageType, { message: 'Image type is required' });
-        required(fields.description, { message: 'Description is required' });
-        required(fields.content, { message: 'Content is required' });
-        required(fields.ingredients, { message: 'Ingredients is required' });
-        required(fields.instructions, { message: 'Instructions is required' });
-        required(fields.method, { message: 'Method is required' });
-        required(fields.theBest, { message: 'The best is required' });
-        required(fields.breadcrumbs, { message: 'Breadcrumbs is required' });
-      }
+      required(fields.category, { message: 'Category is required' });
+      required(fields.difficulty, { message: 'Difficulty is required' });
+      required(fields.prepTime, { message: 'Prep time is required' });
+      required(fields.cookTime, { message: 'Cook time is required' });
+      required(fields.totalTime, { message: 'Total time is required' });
+      required(fields.yield, { message: 'Yield is required' });
+      required(fields.image, { message: 'Image is required' });
+      required(fields.imageWidth, { message: 'Image width is required' });
+      required(fields.imageHeight, { message: 'Image height is required' });
+      required(fields.imageType, { message: 'Image type is required' });
+      required(fields.description, { message: 'Description is required' });
+      required(fields.content, { message: 'Content is required' });
+      required(fields.ingredients, { message: 'Ingredients is required' });
+      required(fields.instructions, { message: 'Instructions is required' });
+      required(fields.method, { message: 'Method is required' });
+      required(fields.breadcrumbs, { message: 'Breadcrumbs is required' });
+      required(fields.cuisine, { message: 'Cuisine is required' });
+      required(fields.course, { message: 'Course is required' });
+      required(fields.servingSize, { message: 'Serving size is required' });
+      required(fields.calories, { message: 'Calories is required' });
+      required(fields.fat, { message: 'Fat is required' });
+      required(fields.carbohydrates, { message: 'Carbohydrates is required' });
+      required(fields.protein, { message: 'Protein is required' });
+      required(fields.fiber, { message: 'Fiber is required' });
+      required(fields.sugar, { message: 'Sugar is required' });
+      required(fields.sodium, { message: 'Sodium is required' });
+      required(fields.cholesterol, { message: 'Cholesterol is required' });
+      required(fields.saturatedFat, { message: 'Saturated fat is required' });
     },
     {
       submission: {
@@ -754,6 +720,123 @@ export class RecipeFormComponent implements OnInit {
     },
   );
 
+  // Track draft changes state
+  private readonly initialModel = signal<RecipeFormModel | null>(null);
+  private isInitialized = false;
+
+  private getFieldValue(key: keyof RecipeFormModel): unknown {
+    const formFields = this.recipeForm as unknown as Record<
+      string,
+      () => { controlValue: () => unknown }
+    >;
+    const fieldFn = formFields[key];
+    if (fieldFn && typeof fieldFn === 'function') {
+      try {
+        const fieldObj = fieldFn();
+        if (fieldObj && typeof fieldObj.controlValue === 'function') {
+          return fieldObj.controlValue();
+        }
+      } catch {
+        // Fallback to model if form is not fully initialized or throws
+      }
+    }
+    return this.recipeModel()[key];
+  }
+
+  private getCurrentFormValue(): RecipeFormModel {
+    const initial = this.initialModel() || this.recipeModel();
+    const current = { ...this.recipeModel() };
+    const keys = Object.keys(initial) as (keyof RecipeFormModel)[];
+    for (const key of keys) {
+      const currentVal = this.getFieldValue(key);
+      (current as unknown as Record<string, unknown>)[key] = currentVal;
+    }
+    return current;
+  }
+
+  protected readonly isDirty = computed(() => {
+    const initial = this.initialModel();
+    if (!initial) {
+      return false;
+    }
+
+    const breadcrumbsEqual = (a: Breadcrumbs | null, b: Breadcrumbs | null) => {
+      if (a === b) return true;
+      if (!a || !b) return false;
+      return JSON.stringify(a) === JSON.stringify(b);
+    };
+
+    const keys = Object.keys(initial) as (keyof RecipeFormModel)[];
+    for (const key of keys) {
+      const currentVal = this.getFieldValue(key);
+      const initialVal = initial[key];
+
+      if (Array.isArray(initialVal)) {
+        const currentArr = (currentVal as readonly unknown[]) || [];
+        if (
+          currentArr.length !== initialVal.length ||
+          !currentArr.every((v, i) => v === initialVal[i])
+        ) {
+          return true;
+        }
+      } else if (typeof initialVal === 'object' && initialVal !== null) {
+        if (!breadcrumbsEqual(currentVal as Breadcrumbs | null, initialVal as Breadcrumbs | null)) {
+          return true;
+        }
+      } else {
+        const normCurrent = currentVal === null || currentVal === undefined ? '' : currentVal;
+        const normInitial = initialVal === null || initialVal === undefined ? '' : initialVal;
+        if (String(normCurrent).trim() !== String(normInitial).trim()) {
+          return true;
+        }
+      }
+    }
+    return false;
+  });
+
+  protected readonly isDraftDisabled = computed(() => !this.isDirty());
+
+  protected readonly isPublicationDisabled = computed(() => {
+    const isMissing = (val: unknown) => {
+      return val === null || val === undefined || (typeof val === 'string' && val.trim() === '');
+    };
+    return (
+      isMissing(this.getFieldValue('title')) ||
+      isMissing(this.getFieldValue('slug')) ||
+      isMissing(this.getFieldValue('category')) ||
+      isMissing(this.getFieldValue('difficulty')) ||
+      isMissing(this.getFieldValue('prepTime')) ||
+      isMissing(this.getFieldValue('cookTime')) ||
+      isMissing(this.getFieldValue('totalTime')) ||
+      isMissing(this.getFieldValue('yield')) ||
+      isMissing(this.getFieldValue('image')) ||
+      isMissing(this.getFieldValue('imageWidth')) ||
+      isMissing(this.getFieldValue('imageHeight')) ||
+      isMissing(this.getFieldValue('imageType')) ||
+      isMissing(this.getFieldValue('description')) ||
+      isMissing(this.getFieldValue('content')) ||
+      isMissing(this.getFieldValue('ingredients')) ||
+      isMissing(this.getFieldValue('instructions')) ||
+      isMissing(this.getFieldValue('method')) ||
+      isMissing(this.getFieldValue('cuisine')) ||
+      isMissing(this.getFieldValue('course')) ||
+      isMissing(this.getFieldValue('keywords')) ||
+      isMissing(this.getFieldValue('equipment')) ||
+      isMissing(this.getFieldValue('notes')) ||
+      isMissing(this.getFieldValue('servingSize')) ||
+      isMissing(this.getFieldValue('calories')) ||
+      isMissing(this.getFieldValue('fat')) ||
+      isMissing(this.getFieldValue('carbohydrates')) ||
+      isMissing(this.getFieldValue('protein')) ||
+      isMissing(this.getFieldValue('fiber')) ||
+      isMissing(this.getFieldValue('sugar')) ||
+      isMissing(this.getFieldValue('sodium')) ||
+      isMissing(this.getFieldValue('cholesterol')) ||
+      isMissing(this.getFieldValue('saturatedFat')) ||
+      !this.getFieldValue('breadcrumbs')
+    );
+  });
+
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
@@ -761,8 +844,19 @@ export class RecipeFormComponent implements OnInit {
       this.idToEdit.set(id);
       const recipe = this.recipeService.getRecipeByIdOrSlug(id);
       if (recipe) {
-        this.recipeModel.set(this.mapRecipeToForm(recipe));
+        const mapped = this.mapRecipeToForm(recipe);
+        this.recipeModel.set(mapped);
+        this.initialModel.set(mapped);
+
+        // Propagate loaded image metadata values directly to the form controls (targets)
+        this.recipeForm.imageWidth().value.set(mapped.imageWidth);
+        this.recipeForm.imageHeight().value.set(mapped.imageHeight);
+        this.recipeForm.imageType().value.set(mapped.imageType);
+      } else {
+        this.initialModel.set({ ...this.recipeModel() });
       }
+    } else {
+      this.initialModel.set({ ...this.recipeModel() });
     }
     setTimeout(() => {
       this.isInitialized = true;
@@ -814,9 +908,7 @@ export class RecipeFormComponent implements OnInit {
   }
 
   markDirty(): void {
-    if (this.isInitialized) {
-      this.isDirty.set(true);
-    }
+    // No-op since isDirty is computed reactively from form control values
   }
 
   onBreadcrumbsChanged(b: Breadcrumbs): void {
@@ -840,6 +932,12 @@ export class RecipeFormComponent implements OnInit {
       imageHeight: event.imageHeight,
       imageType: event.imageType,
     }));
+
+    // Explicitly set the form control values (targets)
+    this.recipeForm.imageWidth().value.set(event.imageWidth);
+    this.recipeForm.imageHeight().value.set(event.imageHeight);
+    this.recipeForm.imageType().value.set(event.imageType);
+
     this.markDirty();
   }
 
@@ -988,7 +1086,7 @@ export class RecipeFormComponent implements OnInit {
         this.router.navigate(['/recipes/edit', created.id]);
       }
     }
-    this.isDirty.set(false);
+    this.initialModel.set(this.getCurrentFormValue());
   }
 
   saveRequired(status: 'scheduled' | 'published'): void {
@@ -1036,7 +1134,7 @@ export class RecipeFormComponent implements OnInit {
       this.recipeService.createRecipe(payload);
     }
 
-    this.isDirty.set(false);
+    this.initialModel.set(this.getCurrentFormValue());
     this.router.navigate(['/recipes']);
   }
 
@@ -1101,7 +1199,7 @@ export class RecipeFormComponent implements OnInit {
       });
     }
 
-    if (method?.trim()) {
+    if (method?.trim() && method.trim() !== 'None') {
       const methodName = method.trim();
       finalItems.push([
         { label: 'Method', url: '/method' },

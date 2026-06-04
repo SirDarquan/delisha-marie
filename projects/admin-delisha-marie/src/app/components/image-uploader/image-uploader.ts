@@ -4,6 +4,8 @@ import {
   input,
   output,
   signal,
+  computed,
+  model,
   effect,
   untracked,
   ViewEncapsulation,
@@ -11,13 +13,22 @@ import {
   ElementRef,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { MatButtonModule } from '@angular/material/button';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { FormValueControl } from '@angular/forms/signals';
 
 @Component({
   selector: 'app-image-uploader',
-  imports: [CommonModule],
+  imports: [CommonModule, MatButtonModule, MatFormFieldModule, MatInputModule],
   template: `
     <div class="flex flex-col gap-5">
-      <span class="text-xs font-semibold text-slate-300">Recipe Image Uploader</span>
+      <span class="text-xs font-semibold text-slate-300">
+        Recipe Image Uploader
+        @if (required()) {
+          <span class="text-500 font-bold ml-0.5">*</span>
+        }
+      </span>
 
       <!-- 1. DRAG & DROP ZONE / PREVIEW PANEL -->
       <div
@@ -55,18 +66,38 @@ import { CommonModule } from '@angular/common';
             (click)="$event.stopPropagation()">
             <div
               class="relative max-h-[180px] rounded-xl overflow-hidden shadow-lg border border-slate-700/60 bg-slate-900 flex items-center justify-center p-1 group/img">
-              <img
-                [src]="previewUrl()"
-                alt="Recipe preview"
-                class="max-h-[160px] max-w-full rounded-lg object-contain transition duration-300 group-hover/img:brightness-90"
-                (error)="onPreviewError()" />
+              @if (previewError()) {
+                <!-- Beautiful fallback placeholder for broken images -->
+                <div
+                  class="flex flex-col items-center justify-center bg-slate-950/60 text-slate-400 p-6 rounded-lg w-[240px] h-[160px] border border-slate-800/80">
+                  <span class="material-icons text-3xl text-rose-500/80 mb-2">broken_image</span>
+                  <span class="text-[10px] font-bold text-slate-300">Preview Unavailable</span>
+                  @if (hasValue(currentWidth()) && hasValue(currentHeight())) {
+                    <span class="text-[9px] text-slate-500 mt-1 font-mono">
+                      {{ currentWidth() }}x{{ currentHeight() }}
+                      @if (hasValue(currentType())) {
+                        ({{ currentType() }})
+                      }
+                    </span>
+                  } @else {
+                    <span class="text-[9px] text-slate-500 mt-1 font-mono">Image load failed</span>
+                  }
+                </div>
+              } @else {
+                <img
+                  [src]="previewUrl()"
+                  alt="Recipe preview"
+                  class="max-h-[160px] max-w-full rounded-lg object-contain transition duration-300 group-hover/img:brightness-90"
+                  (error)="onPreviewError()" />
+              }
 
               <!-- Remove Image Button -->
               <button
+                mat-icon-button
                 type="button"
                 (click)="removeImage()"
                 aria-label="Remove image"
-                class="absolute top-2 right-2 bg-rose-600/90 hover:bg-rose-500 text-white rounded-full p-1.5 shadow-md transition duration-300 border-0 flex items-center justify-center cursor-pointer group/btn hover:scale-105">
+                class="absolute top-2 right-2 bg-rose-600/90 hover:bg-rose-500 text-white shadow-md transition duration-300 hover:scale-105 flex items-center justify-center w-8 h-8 rounded-full border-0 cursor-pointer">
                 <span class="material-icons text-sm leading-none">close</span>
               </button>
             </div>
@@ -95,51 +126,50 @@ import { CommonModule } from '@angular/common';
       </div>
 
       <!-- 2. AUTO-CALCULATED METADATA READONLY DISPLAY CONTAINER -->
-      @if (currentPath() || currentWidth() || currentHeight()) {
+      @if (hasValue(currentType()) || hasValue(currentWidth()) || hasValue(currentHeight())) {
         <div
-          class="grid grid-cols-1 sm:grid-cols-3 gap-4 p-5 bg-slate-800/20 border border-slate-700/40 rounded-2xl animate-fadeIn">
+          class="grid grid-cols-1 sm:grid-cols-3 gap-4 p-5 bg-slate-800/20 border border-slate-700/40 rounded-2xl animate-fadeIn custom-metadata-fields">
           <!-- MIME Type container -->
-          <div class="flex flex-col gap-1.5">
-            <span
-              class="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
-              <span class="material-icons text-[12px] text-slate-500">lock</span> MIME Type
-            </span>
-            <div
-              class="bg-slate-950/60 border border-slate-800/80 text-slate-300 rounded-xl px-4 py-2.5 text-xs font-semibold cursor-default select-all flex items-center justify-between">
-              <span class="truncate font-mono">{{ currentType() || 'image/jpeg' }}</span>
-              <span class="material-icons text-slate-600 text-sm">label_important</span>
-            </div>
-          </div>
+          @if (hasValue(currentType())) {
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>MIME Type</mat-label>
+              <input
+                matInput
+                type="text"
+                [value]="currentType()"
+                readonly
+                class="font-mono text-slate-300" />
+              <span matSuffix class="material-icons text-slate-500 mr-2">lock</span>
+            </mat-form-field>
+          }
 
           <!-- Image Width container -->
-          <div class="flex flex-col gap-1.5">
-            <span
-              class="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
-              <span class="material-icons text-[12px] text-slate-500">lock</span> Image Width
-            </span>
-            <div
-              class="bg-slate-950/60 border border-slate-800/80 text-slate-300 rounded-xl px-4 py-2.5 text-xs font-semibold cursor-default select-all flex items-center justify-between">
-              <span class="font-mono">{{
-                currentWidth() ? currentWidth() + ' px' : 'Extracting...'
-              }}</span>
-              <span class="material-icons text-slate-600 text-sm">settings_ethernet</span>
-            </div>
-          </div>
+          @if (hasValue(currentWidth())) {
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Image Width</mat-label>
+              <input
+                matInput
+                type="text"
+                [value]="currentWidth() + ' px'"
+                readonly
+                class="font-mono text-slate-300" />
+              <span matSuffix class="material-icons text-slate-500 mr-2">lock</span>
+            </mat-form-field>
+          }
 
           <!-- Image Height container -->
-          <div class="flex flex-col gap-1.5">
-            <span
-              class="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
-              <span class="material-icons text-[12px] text-slate-500">lock</span> Image Height
-            </span>
-            <div
-              class="bg-slate-950/60 border border-slate-800/80 text-slate-300 rounded-xl px-4 py-2.5 text-xs font-semibold cursor-default select-all flex items-center justify-between">
-              <span class="font-mono">{{
-                currentHeight() ? currentHeight() + ' px' : 'Extracting...'
-              }}</span>
-              <span class="material-icons text-slate-600 text-sm">height</span>
-            </div>
-          </div>
+          @if (hasValue(currentHeight())) {
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Image Height</mat-label>
+              <input
+                matInput
+                type="text"
+                [value]="currentHeight() + ' px'"
+                readonly
+                class="font-mono text-slate-300" />
+              <span matSuffix class="material-icons text-slate-500 mr-2">lock</span>
+            </mat-form-field>
+          }
         </div>
       }
     </div>
@@ -159,14 +189,34 @@ import { CommonModule } from '@angular/common';
           transform: translateY(0);
         }
       }
+
+      .custom-metadata-fields .mat-mdc-form-field-subscript-wrapper {
+        display: none !important;
+      }
+      .custom-metadata-fields .mat-mdc-form-field-flex {
+        height: 48px !important;
+        align-items: center !important;
+      }
+      .custom-metadata-fields mat-form-field {
+        --mdc-outlined-text-field-container-shape: 12px;
+        --mdc-outlined-text-field-outline-color: rgba(71, 85, 105, 0.6);
+        --mdc-outlined-text-field-focus-outline-color: #c084fc;
+        --mdc-outlined-text-field-container-color: rgba(30, 41, 59, 0.4);
+        --mat-select-trigger-text-color: #ffffff;
+        --mat-select-placeholder-text-color: #94a3b8;
+      }
     `,
   ],
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ImageUploaderComponent {
+export class ImageUploaderComponent implements FormValueControl<string> {
   // Grab reference to file input in template
   readonly fileInput = viewChild<ElementRef<HTMLInputElement>>('fileInput');
+
+  // FormValueControl contract
+  readonly value = model<string>('');
+  readonly required = input<boolean>(false);
 
   // Direct inputs from the parent form
   initialImage = input<string>('');
@@ -186,10 +236,11 @@ export class ImageUploaderComponent {
   // Internal uploader state signals
   protected readonly dragOver = signal<boolean>(false);
   protected readonly previewUrl = signal<string>('');
-  protected readonly currentPath = signal<string>('');
+  readonly currentPath = computed(() => this.value());
   protected readonly currentWidth = signal<string>('');
   protected readonly currentHeight = signal<string>('');
   protected readonly currentType = signal<string>('');
+  protected readonly previewError = signal<boolean>(false);
 
   constructor() {
     // Automatically load incoming parent model image data reactively
@@ -202,17 +253,16 @@ export class ImageUploaderComponent {
       if (imgPath) {
         // Only update internal state if incoming image path is different from currently processed path
         // (to preserve working local blob preview URLs when the parent form model updates)
-        if (imgPath !== untracked(() => this.currentPath())) {
-          this.currentPath.set(imgPath);
-          this.previewUrl.set(imgPath);
-          this.currentWidth.set(width);
-          this.currentHeight.set(height);
-          this.currentType.set(type);
+        this.value.set(imgPath);
+        this.previewUrl.set(imgPath);
+        this.currentWidth.set(width);
+        this.currentHeight.set(height);
+        this.currentType.set(type);
+        this.previewError.set(false);
 
-          // Edit Mode background dimension sync: if image path is loaded but width/height are blank, extract them
-          if (!width || !height) {
-            this.loadDimensionsFromUrl(imgPath);
-          }
+        // Edit Mode background dimension sync: if image path is loaded but width/height are blank, extract them
+        if (!width || !height) {
+          this.loadDimensionsFromUrl(imgPath);
         }
       } else {
         untracked(() => this.clearInternalState());
@@ -266,12 +316,13 @@ export class ImageUploaderComponent {
   // --- CORE IMAGE PROCESSING LOGIC ---
 
   private processFile(file: File): void {
-    const standardizedPath = this.getStandardizedPath(file.name);
+    const standardizedPath = file.name;
     const objectUrl = URL.createObjectURL(file);
 
-    this.currentPath.set(standardizedPath);
+    this.value.set(standardizedPath);
     this.currentType.set(file.type);
     this.previewUrl.set(objectUrl);
+    this.previewError.set(false);
 
     // Extract natural width and height of the local file
     const img = new Image();
@@ -303,12 +354,13 @@ export class ImageUploaderComponent {
 
   private processUrl(urlStr: string): void {
     const parsed = this.getFilenameAndExtensionFromUrl(urlStr);
-    const standardizedPath = this.getStandardizedPath(`${parsed.name}.${parsed.ext}`);
+    const standardizedPath = `${parsed.name}.${parsed.ext}`;
     const mimeType = this.getMimeTypeFromExtension(parsed.ext);
 
-    this.currentPath.set(standardizedPath);
+    this.value.set(standardizedPath);
     this.currentType.set(mimeType);
     this.previewUrl.set(urlStr);
+    this.previewError.set(false);
 
     // Extract dimensions of the dropped image URL
     const img = new Image();
@@ -347,11 +399,18 @@ export class ImageUploaderComponent {
       this.currentWidth.set(w);
       this.currentHeight.set(h);
 
+      let mimeType = this.currentType();
+      if (!mimeType) {
+        const parsed = this.getFilenameAndExtensionFromUrl(urlStr);
+        mimeType = this.getMimeTypeFromExtension(parsed.ext);
+        this.currentType.set(mimeType);
+      }
+
       this.imageChange.emit({
-        image: this.currentPath(),
+        image: this.value(),
         imageWidth: w,
         imageHeight: h,
-        imageType: this.currentType() || 'image/jpeg',
+        imageType: mimeType,
       });
     };
     img.onerror = () => {
@@ -361,23 +420,6 @@ export class ImageUploaderComponent {
   }
 
   // --- FORMATTING HELPERS ---
-
-  private getStandardizedPath(filename: string): string {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-
-    const trimmed = filename.trim().toLowerCase();
-    // Ensure we do not double-sanitize already cleaned filenames
-    if (trimmed.startsWith('/images/recipes/')) {
-      return trimmed;
-    }
-
-    // Normalize spaces to dashes, lowercase all letters, and sanitize characters
-    const cleanName = trimmed.replace(/\s+/g, '-').replace(/[^a-zA-Z0-9.\-_]/g, '');
-
-    return `/images/recipes/${year}/${month}/${cleanName}`;
-  }
 
   private getFilenameAndExtensionFromUrl(urlStr: string): { name: string; ext: string } {
     try {
@@ -444,14 +486,28 @@ export class ImageUploaderComponent {
 
   private clearInternalState(): void {
     this.previewUrl.set('');
-    this.currentPath.set('');
+    this.value.set('');
     this.currentWidth.set('');
     this.currentHeight.set('');
     this.currentType.set('');
+    this.previewError.set(false);
   }
 
   onPreviewError(): void {
     // If preview fails to load (e.g. local /images/ path not on development assets server), fallback gracefully
-    /* noop */
+    this.previewError.set(true);
+  }
+
+  protected hasValue(val: string | null | undefined): boolean {
+    if (val === null || val === undefined) return false;
+    const clean = val.toString().trim().toLowerCase();
+    return (
+      clean !== '' &&
+      clean !== 'none' &&
+      clean !== '0' &&
+      clean !== '0px' &&
+      clean !== 'null' &&
+      clean !== 'undefined'
+    );
   }
 }

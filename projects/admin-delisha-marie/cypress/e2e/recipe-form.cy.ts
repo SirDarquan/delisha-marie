@@ -14,7 +14,40 @@ describe('Admin Recipe Form Flow', () => {
     ingredients: ['1 lb Chicken breast', '3 cloves garlic', '2 sprigs rosemary'],
     instructions: ['Season chicken', 'Pan-sear on high', 'Simmer with herbs'],
     image: 'chicken.jpg',
+    imageWidth: '800',
+    imageHeight: '600',
+    imageType: 'image/jpeg',
     author: 'Delisha Marie',
+    cuisine: 'American',
+    course: 'Main Course',
+    keywords: ['chicken', 'garlic', 'rosemary'],
+    equipment: ['skillet'],
+    notes: ['good with potatoes'],
+    nutrition: {
+      servingSize: '1 breast',
+      calories: '250',
+      fat: '10g',
+      carbohydrates: '5g',
+      protein: '35g',
+      fiber: '1g',
+      sugar: '0g',
+      sodium: '200mg',
+      cholesterol: '85mg',
+      saturatedFat: '2g',
+    },
+    method: 'Baking',
+    status: 'published',
+    breadcrumbs: {
+      main: 0,
+      items: [
+        [
+          { label: 'Home', url: '/' },
+          { label: 'Recipes', url: '/recipes' },
+          { label: 'Dinner', url: '/recipes/dinner' },
+          { label: 'Garlic Rosemary Chicken' },
+        ],
+      ],
+    },
   };
 
   beforeEach(() => {
@@ -47,40 +80,136 @@ describe('Admin Recipe Form Flow', () => {
     cy.get('h1').should('contain.text', 'New Recipe');
 
     // Ensure the form control signals are fully initialized and bound before typing
-    cy.get('#title').should('not.be.disabled').type(mockRecipe.title);
+    cy.get('#title').should('not.be.disabled').type(mockRecipe.title, { force: true });
     cy.get('#title').blur();
 
-    cy.get('#slug').should('not.be.disabled').type(mockRecipe.slug);
+    cy.get('#slug').should('not.be.disabled').type(mockRecipe.slug, { force: true });
     cy.get('#slug').blur();
 
-    cy.get('#prepTime').should('not.be.disabled').type(mockRecipe.prepTime);
+    cy.get('#prepTime').should('not.be.disabled').type(mockRecipe.prepTime, { force: true });
     cy.get('#prepTime').blur();
 
-    cy.get('#cookTime').should('not.be.disabled').type(mockRecipe.cookTime);
+    cy.get('#cookTime').should('not.be.disabled').type(mockRecipe.cookTime, { force: true });
     cy.get('#cookTime').blur();
 
-    cy.get('#totalTime').should('not.be.disabled').type(mockRecipe.totalTime);
+    cy.get('#totalTime').should('not.be.disabled').type(mockRecipe.totalTime, { force: true });
     cy.get('#totalTime').blur();
 
-    cy.get('#yield').should('not.be.disabled').type(mockRecipe.yield);
+    cy.get('#yield').should('not.be.disabled').type(mockRecipe.yield, { force: true });
     cy.get('#yield').blur();
 
-    cy.get('#description').should('not.be.disabled').type(mockRecipe.description);
+    cy.get('#author').should('not.be.disabled').type(mockRecipe.author, { force: true });
+    cy.get('#author').blur();
+
+    cy.get('#cuisine').should('not.be.disabled').type(mockRecipe.cuisine, { force: true });
+    cy.get('#cuisine').blur();
+
+    cy.get('#course').should('not.be.disabled').type(mockRecipe.course, { force: true });
+    cy.get('#course').blur();
+
+    cy.get('#keywords')
+      .should('not.be.disabled')
+      .type(mockRecipe.keywords.join(', '), { force: true });
+    cy.get('#keywords').blur();
+
+    // Use window.ng to programmatically set the required image, method, and breadcrumb metadata fields to avoid CORS/upload issues in headless E2E
+    cy.window().then((win: unknown) => {
+      const w = win as {
+        ng?: {
+          getComponent: (el: Element) => {
+            recipeForm: Record<string, () => { value: { set: (val: unknown) => void } }>;
+          };
+        };
+        document: Document;
+      };
+      const el = w.document.querySelector('app-recipe-form');
+      if (el && w.ng) {
+        const comp = w.ng.getComponent(el);
+        comp.recipeForm['image']().value.set(mockRecipe.image);
+        comp.recipeForm['imageWidth']().value.set(mockRecipe.imageWidth);
+        comp.recipeForm['imageHeight']().value.set(mockRecipe.imageHeight);
+        comp.recipeForm['imageType']().value.set(mockRecipe.imageType);
+        comp.recipeForm['method']().value.set(mockRecipe.method);
+        comp.recipeForm['breadcrumbs']().value.set(mockRecipe.breadcrumbs);
+      }
+    });
+
+    cy.get('#description').should('not.be.disabled').type(mockRecipe.description, { force: true });
     cy.get('#description').blur();
 
-    cy.get('#content').should('not.be.disabled').type(mockRecipe.content);
+    cy.get('#content').should('not.be.disabled').type(mockRecipe.content, { force: true });
     cy.get('#content').blur();
 
-    cy.get('#ingredients').should('not.be.disabled').type(mockRecipe.ingredients.join('\n'));
+    cy.get('#ingredients')
+      .should('not.be.disabled')
+      .type(mockRecipe.ingredients.join('\n'), { force: true });
     cy.get('#ingredients').blur();
 
-    cy.get('#instructions').should('not.be.disabled').type(mockRecipe.instructions.join('\n'));
+    cy.get('#instructions')
+      .should('not.be.disabled')
+      .type(mockRecipe.instructions.join('\n'), { force: true });
     cy.get('#instructions').blur();
 
-    cy.get('#difficulty').should('not.be.disabled').select('Easy');
+    cy.get('#equipment')
+      .should('not.be.disabled')
+      .type(mockRecipe.equipment.join('\n'), { force: true });
+    cy.get('#equipment').blur();
 
+    cy.get('#notes').should('not.be.disabled').type(mockRecipe.notes.join('\n'), { force: true });
+    cy.get('#notes').blur();
+
+    // Nutritional Info
+    cy.get('#servingSize')
+      .should('not.be.disabled')
+      .type(mockRecipe.nutrition.servingSize, { force: true });
+    cy.get('#servingSize').blur();
+
+    cy.get('#calories')
+      .should('not.be.disabled')
+      .type(mockRecipe.nutrition.calories, { force: true });
+    cy.get('#calories').blur();
+
+    cy.get('#fat').should('not.be.disabled').type(mockRecipe.nutrition.fat, { force: true });
+    cy.get('#fat').blur();
+
+    cy.get('#saturatedFat')
+      .should('not.be.disabled')
+      .type(mockRecipe.nutrition.saturatedFat, { force: true });
+    cy.get('#saturatedFat').blur();
+
+    cy.get('#cholesterol')
+      .should('not.be.disabled')
+      .type(mockRecipe.nutrition.cholesterol, { force: true });
+    cy.get('#cholesterol').blur();
+
+    cy.get('#sodium').should('not.be.disabled').type(mockRecipe.nutrition.sodium, { force: true });
+    cy.get('#sodium').blur();
+
+    cy.get('#carbohydrates')
+      .should('not.be.disabled')
+      .type(mockRecipe.nutrition.carbohydrates, { force: true });
+    cy.get('#carbohydrates').blur();
+
+    cy.get('#fiber').should('not.be.disabled').type(mockRecipe.nutrition.fiber, { force: true });
+    cy.get('#fiber').blur();
+
+    cy.get('#sugar').should('not.be.disabled').type(mockRecipe.nutrition.sugar, { force: true });
+    cy.get('#sugar').blur();
+
+    cy.get('#protein')
+      .should('not.be.disabled')
+      .type(mockRecipe.nutrition.protein, { force: true });
+    cy.get('#protein').blur();
+
+    // Interaction with Mat-Select components on the first tab
+    cy.get('#difficulty').click();
+    cy.get('mat-option').contains('Easy').click();
+
+    // Switch to Where is it tab to interact with categories and cooking methods
     cy.contains('button', 'Where is it').click();
-    cy.get('#category').should('not.be.disabled').select('Dinner');
+
+    cy.get('#category').click();
+    cy.get('mat-option').contains('Dinner').click();
 
     cy.get('button[type="submit"]').click({ force: true });
     cy.wait('@createRecipe');
@@ -108,7 +237,7 @@ describe('Admin Recipe Form Flow', () => {
     // Form values should now be preloaded instantly!
     cy.get('#title').should('have.value', mockRecipe.title);
 
-    cy.get('#title').clear().type('Updated Chicken Title');
+    cy.get('#title').clear({ force: true }).type('Updated Chicken Title', { force: true });
     cy.get('#title').blur();
 
     cy.get('button[type="submit"]').click({ force: true });
