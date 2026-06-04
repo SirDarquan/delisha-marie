@@ -4,6 +4,7 @@ import {
   inject,
   input,
   output,
+  model,
   signal,
   computed,
   effect,
@@ -12,23 +13,26 @@ import {
   ElementRef,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
 import { RecipeService } from '../../services/recipe.service';
+import { FormValueControl } from '@angular/forms/signals';
 
 @Component({
   selector: 'app-cooking-method-selector',
-  imports: [CommonModule, MatFormFieldModule, MatSelectModule],
+  imports: [CommonModule, MatButtonModule, MatFormFieldModule, MatSelectModule],
   template: `
     <div class="flex flex-col gap-2">
-      <span class="text-xs font-semibold text-slate-300"> Cooking Method </span>
       <div class="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
         <!-- 1. The Material Select Dropdown -->
         <div class="relative flex-1">
           <mat-form-field appearance="outline" class="custom-mat-form-field">
+            <mat-label>Cooking Method</mat-label>
             <mat-select
               id="cooking-method-select"
               [value]="selectedMethod()"
+              [required]="required()"
               (selectionChange)="onMethodSelect($event.value)"
               panelClass="custom-select-panel"
               placeholder="Select Cooking Method">
@@ -55,6 +59,7 @@ import { RecipeService } from '../../services/recipe.service';
               placeholder="e.g., Smoking, Dehydrating"
               class="w-full bg-slate-800/40 border border-slate-700/60 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-400/20 text-white placeholder-slate-500 transition" />
             <button
+              matButton="tonal"
               type="button"
               (click)="addCustomMethod()"
               [disabled]="!customMethodText().trim()"
@@ -62,6 +67,7 @@ import { RecipeService } from '../../services/recipe.service';
               Add
             </button>
             <button
+              matButton
               type="button"
               (click)="cancelCustomMethod()"
               class="px-3 py-2.5 rounded-xl font-semibold text-slate-400 hover:text-slate-200 transition cursor-pointer border-0 bg-transparent">
@@ -140,17 +146,22 @@ import { RecipeService } from '../../services/recipe.service';
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class CookingMethodSelectorComponent {
+export class CookingMethodSelectorComponent implements FormValueControl<string> {
   private readonly recipeService = inject(RecipeService);
 
   readonly customInputEl = viewChild<ElementRef<HTMLInputElement>>('customInput');
 
-  // Standalone Inputs & Outputs
+  // Standalone value model for signals form integration
+  readonly value = model<string>('None');
+  readonly required = input<boolean>(false);
+
+  // Backward compatible inputs/outputs for specs and legacy usage
   initialMethod = input<string>('');
   methodChange = output<string>();
 
-  // Component local states
-  selectedMethod = signal<string>('');
+  // Computed property to sync/keep selectedMethod readable
+  readonly selectedMethod = computed(() => this.value());
+
   customMethodText = signal<string>('');
   showCustomInput = signal<boolean>(false);
   localCustomMethods = signal<string[]>([]);
@@ -174,28 +185,35 @@ export class CookingMethodSelectorComponent {
       }
     });
 
-    // 3. Ensure initial incoming method is in the set
-    const initial = this.initialMethod();
-    if (initial?.trim()) {
-      methodsSet.add(initial.trim());
+    // 3. Ensure incoming/current method is in the set
+    const val = this.value();
+    if (val?.trim() && val !== 'None') {
+      methodsSet.add(val.trim());
     }
 
     return Array.from(methodsSet).sort((a, b) => a.localeCompare(b));
   });
 
   constructor() {
-    // Sync incoming initial method when available
+    // 1. Sync initialMethod input -> value model signal
     effect(() => {
       const initial = this.initialMethod();
       if (initial) {
-        this.selectedMethod.set(initial);
+        this.value.set(initial);
+      }
+    });
+
+    // 2. Hide custom input when value updates
+    effect(() => {
+      const val = this.value();
+      if (val) {
         this.showCustomInput.set(false);
       }
     });
   }
 
-  onMethodSelect(value: string): void {
-    if (value === 'custom') {
+  onMethodSelect(val: string): void {
+    if (val === 'custom') {
       this.showCustomInput.set(true);
       this.customMethodText.set('');
       setTimeout(() => {
@@ -203,8 +221,8 @@ export class CookingMethodSelectorComponent {
       }, 50);
     } else {
       this.showCustomInput.set(false);
-      this.selectedMethod.set(value);
-      this.methodChange.emit(value);
+      this.value.set(val);
+      this.methodChange.emit(val);
     }
   }
 
@@ -224,16 +242,15 @@ export class CookingMethodSelectorComponent {
       return list;
     });
 
-    this.selectedMethod.set(val);
-    this.showCustomInput.set(false);
+    this.value.set(val);
     this.methodChange.emit(val);
+    this.showCustomInput.set(false);
     this.customMethodText.set('');
   }
 
   cancelCustomMethod(): void {
     this.showCustomInput.set(false);
     this.customMethodText.set('');
-    // Revert back to original selected value
-    this.methodChange.emit(this.selectedMethod());
+    this.methodChange.emit(this.value());
   }
 }

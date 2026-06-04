@@ -11,6 +11,56 @@ describe('RecipeFormComponent', () => {
   let component: RecipeFormComponent;
   let fixture: ComponentFixture<RecipeFormComponent>;
 
+  const getValidPublishedModel = () => ({
+    title: 'Valid Recipe',
+    slug: 'valid-recipe',
+    author: 'Delisha Marie',
+    category: 'Dinner',
+    difficulty: 'Easy',
+    prepTime: '10 mins',
+    cookTime: '10 mins',
+    totalTime: '20 mins',
+    yield: '4 servings',
+    status: 'published' as const,
+    preview_token: 'token',
+    image: 'pic.png',
+    imageWidth: '100',
+    imageHeight: '100',
+    imageType: 'image/png',
+    description: 'desc',
+    content: 'content',
+    ingredients: 'ing',
+    instructions: 'ins',
+    method: 'None',
+    theBest: false,
+    holidays: '',
+    specialDiets: [] as string[],
+    breadcrumbs: {
+      main: 0,
+      items: [
+        [
+          { label: 'Home', url: '/' },
+          { label: 'Recipes', url: '/recipes' },
+        ],
+      ],
+    },
+    cuisine: 'Italian',
+    course: 'Dinner',
+    keywords: 'key',
+    equipment: 'equip',
+    notes: 'note',
+    servingSize: '1',
+    calories: '100',
+    fat: '5',
+    carbohydrates: '10',
+    protein: '2',
+    fiber: '1',
+    sugar: '1',
+    sodium: '50',
+    cholesterol: '5',
+    saturatedFat: '1',
+  });
+
   let mockRecipeById: Recipe | null = null;
 
   let createPayload: Partial<Recipe> = {};
@@ -130,11 +180,9 @@ describe('RecipeFormComponent', () => {
   it('should submit form and call createRecipe', () => {
     fixture.detectChanges();
     component['recipeModel'].set({
-      ...component['recipeModel'](),
+      ...getValidPublishedModel(),
       title: 'Brand New',
       slug: 'brand-new',
-      difficulty: 'Easy',
-      status: 'published',
     });
 
     component.saveRequired('published');
@@ -168,7 +216,7 @@ describe('RecipeFormComponent', () => {
     fixture.detectChanges();
 
     component['recipeModel'].set({
-      ...component['recipeModel'](),
+      ...getValidPublishedModel(),
       title: 'Pasta v2',
       slug: 'pasta',
     });
@@ -367,9 +415,10 @@ describe('RecipeFormComponent', () => {
   it('should set both timestamps when scheduling a new recipe', () => {
     fixture.detectChanges();
     component['recipeModel'].set({
-      ...component['recipeModel'](),
+      ...getValidPublishedModel(),
       title: 'Scheduled Recipe',
       slug: 'scheduled-recipe',
+      status: 'scheduled',
     });
 
     component.saveRequired('scheduled');
@@ -397,7 +446,7 @@ describe('RecipeFormComponent', () => {
     fixture.detectChanges();
 
     component['recipeModel'].set({
-      ...component['recipeModel'](),
+      ...getValidPublishedModel(),
       title: 'Published Recipe Updated',
       slug: 'published-recipe',
     });
@@ -474,7 +523,7 @@ describe('RecipeFormComponent', () => {
 
     // 1. Toggled ON (theBest = true)
     component['recipeModel'].set({
-      ...component['recipeModel'](),
+      ...getValidPublishedModel(),
       title: 'Impastable',
       slug: 'impastable',
       breadcrumbs: standardBreadcrumbs,
@@ -510,7 +559,7 @@ describe('RecipeFormComponent', () => {
 
     // 2. Toggled OFF (theBest = false)
     component['recipeModel'].set({
-      ...component['recipeModel'](),
+      ...getValidPublishedModel(),
       title: 'Impastable',
       slug: 'impastable',
       breadcrumbs: createPayload.breadcrumbs || null,
@@ -548,7 +597,7 @@ describe('RecipeFormComponent', () => {
 
     // 1. Toggled ON (theBest = true)
     component['recipeModel'].set({
-      ...component['recipeModel'](),
+      ...getValidPublishedModel(),
       title: 'Impastable',
       slug: 'impastable',
       breadcrumbs: multiBreadcrumbs,
@@ -590,7 +639,7 @@ describe('RecipeFormComponent', () => {
 
     // 2. Toggled OFF (theBest = false)
     component['recipeModel'].set({
-      ...component['recipeModel'](),
+      ...getValidPublishedModel(),
       title: 'Impastable',
       slug: 'impastable',
       breadcrumbs: createPayload.breadcrumbs || null,
@@ -623,7 +672,7 @@ describe('RecipeFormComponent', () => {
 
     // 1. theBest = false, method = "Slow Cooking"
     component['recipeModel'].set({
-      ...component['recipeModel'](),
+      ...getValidPublishedModel(),
       title: 'Impastable',
       slug: 'impastable',
       breadcrumbs: standardBreadcrumbs,
@@ -645,7 +694,7 @@ describe('RecipeFormComponent', () => {
 
     // 2. theBest = true, method = "Baking"
     component['recipeModel'].set({
-      ...component['recipeModel'](),
+      ...getValidPublishedModel(),
       title: 'Impastable',
       slug: 'impastable',
       breadcrumbs: standardBreadcrumbs,
@@ -687,12 +736,12 @@ describe('RecipeFormComponent', () => {
 
     // 1. theBest = false, method = "", specialDiets = ["Vegan", "Dairy Free"]
     component['recipeModel'].set({
-      ...component['recipeModel'](),
+      ...getValidPublishedModel(),
       title: 'Impastable',
       slug: 'impastable',
       breadcrumbs: standardBreadcrumbs,
       theBest: false,
-      method: '',
+      method: 'None',
       specialDiets: ['Vegan', 'Dairy Free'],
     });
 
@@ -733,12 +782,12 @@ describe('RecipeFormComponent', () => {
 
     // 1. theBest = false, method = "", holidays = "Thanksgiving"
     component['recipeModel'].set({
-      ...component['recipeModel'](),
+      ...getValidPublishedModel(),
       title: 'Impastable',
       slug: 'impastable',
       breadcrumbs: standardBreadcrumbs,
       theBest: false,
-      method: '',
+      method: 'None',
       specialDiets: [],
       holidays: 'Thanksgiving',
     });
@@ -803,7 +852,7 @@ describe('RecipeFormComponent', () => {
     expect(component['isDraftDisabled']()).toBe(true);
 
     // 2. Simulate user change/input
-    component.markDirty();
+    component['recipeForm'].title().controlValue.set('Draft Title');
     fixture.detectChanges();
     expect(component['isDraftDisabled']()).toBe(false);
 
@@ -814,6 +863,11 @@ describe('RecipeFormComponent', () => {
   });
 
   it('should manage Schedule Publication disabled state: disabled by default, disabled if modified but invalid, enabled if modified and valid, disabled after save', async () => {
+    component['recipeModel'].set({
+      ...getValidPublishedModel(),
+      title: '',
+      slug: '',
+    });
     fixture.detectChanges();
     await new Promise((resolve) => setTimeout(resolve, 0));
 
@@ -822,17 +876,14 @@ describe('RecipeFormComponent', () => {
     expect(component['isDirty']()).toBe(false);
 
     // 2. Change a field to make it dirty but still invalid
-    component.markDirty();
+    component['recipeForm'].cuisine().controlValue.set('Mexican');
     fixture.detectChanges();
     expect(component['isDirty']()).toBe(true);
     expect(component['recipeForm']().invalid()).toBe(true);
 
     // 3. Fill required fields (make form valid)
-    component['recipeModel'].set({
-      ...component['recipeModel'](),
-      title: 'Valid Title',
-      slug: 'valid-slug',
-    });
+    component['recipeForm'].title().controlValue.set('Valid Title');
+    component['recipeForm'].slug().controlValue.set('valid-slug');
     fixture.detectChanges();
     expect(component['recipeForm']().invalid()).toBe(false);
     expect(component['isDirty']()).toBe(true);
@@ -874,7 +925,7 @@ describe('RecipeFormComponent', () => {
   it('should invoke saveRequired through the signal form submit action callback', async () => {
     fixture.detectChanges();
     component['recipeModel'].set({
-      ...component['recipeModel'](),
+      ...getValidPublishedModel(),
       title: 'Action Submit',
       slug: 'action-submit',
       difficulty: 'Intermediate',
@@ -1118,7 +1169,7 @@ describe('RecipeFormComponent', () => {
 
   it('should exercise serializeRecipe default fallback branches (lines 905, 920, 936, 949)', () => {
     fixture.detectChanges();
-    component['recipeModel'].set({
+    const fallbackModel = {
       ...component['recipeModel'](),
       title: 'Fallback Test',
       slug: 'fallback-test',
@@ -1127,13 +1178,13 @@ describe('RecipeFormComponent', () => {
       author: undefined as unknown as string, // line 949 fallback
       fat: '10g', // truthy to enter nutrition block
       calories: undefined as unknown as string, // line 920 fallback
-    });
+    };
 
-    component.saveDraft();
-    expect(createPayload.specialDiets).toEqual([]);
-    expect(createPayload.difficulty).toBe('Easy');
-    expect(createPayload.author).toBe('Delisha Marie');
-    expect(createPayload.nutrition?.calories).toBe('');
+    const result = component['serializeRecipe'](fallbackModel, 'draft');
+    expect(result.specialDiets).toEqual([]);
+    expect(result.difficulty).toBe('Easy');
+    expect(result.author).toBe('Delisha Marie');
+    expect(result.nutrition?.calories).toBe('');
   });
 
   it('should handle timestamp updates when changing a published recipe with missing original createdAt (line 1016)', () => {
@@ -1150,7 +1201,7 @@ describe('RecipeFormComponent', () => {
     fixture.detectChanges();
 
     component['recipeModel'].set({
-      ...component['recipeModel'](),
+      ...getValidPublishedModel(),
       title: 'Published Recipe Updated',
       slug: 'published-recipe',
     });
@@ -1176,7 +1227,7 @@ describe('RecipeFormComponent', () => {
     };
 
     component['recipeModel'].set({
-      ...component['recipeModel'](),
+      ...getValidPublishedModel(),
       title: 'Impastable',
       slug: 'impastable',
       breadcrumbs: standardBreadcrumbs,
@@ -1375,5 +1426,38 @@ describe('RecipeFormComponent', () => {
 
     component.saveDraft();
     expect(createPayload.breadcrumbs?.items.length).toBe(3);
+  });
+
+  it('should enable Save as Draft when typing in any field, and disable it when cleared/reverted to initial value', async () => {
+    fixture.detectChanges();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    // Setup initialModel as clean
+    component['recipeModel'].set({
+      ...component['recipeModel'](),
+      title: 'Initial Title',
+      slug: 'initial-slug',
+    });
+    component['initialModel'].set({
+      ...component['recipeModel'](),
+    });
+    fixture.detectChanges();
+
+    // Initially disabled (no changes)
+    expect(component['isDraftDisabled']()).toBe(true);
+
+    // Type in cuisine field
+    component['recipeForm'].cuisine().controlValue.set('Italian');
+    fixture.detectChanges();
+
+    // Now it is dirty, so Save as Draft is enabled
+    expect(component['isDraftDisabled']()).toBe(false);
+
+    // Revert/clear cuisine field back to empty
+    component['recipeForm'].cuisine().controlValue.set('');
+    fixture.detectChanges();
+
+    // Now it is back to clean initial state, so Save as Draft is disabled again
+    expect(component['isDraftDisabled']()).toBe(true);
   });
 });

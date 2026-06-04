@@ -150,16 +150,12 @@ describe('ImageUploaderComponent', () => {
     component.onDrop(dropEvent);
     await new Promise((resolve) => setTimeout(resolve, 0));
 
-    const today = new Date();
-    const year = today.getFullYear();
-    const month = String(today.getMonth() + 1).padStart(2, '0');
-
-    expect(component['currentPath']()).toBe(`/images/recipes/${year}/${month}/tasty-tacos.jpg`);
+    expect(component['currentPath']()).toBe('tasty-tacos.jpg');
     expect(component['currentType']()).toBe('image/jpeg');
     expect(component['currentWidth']()).toBe('800');
     expect(component['currentHeight']()).toBe('600');
     expect(changePayload).toEqual({
-      image: `/images/recipes/${year}/${month}/tasty-tacos.jpg`,
+      image: 'tasty-tacos.jpg',
       imageWidth: '800',
       imageHeight: '600',
       imageType: 'image/jpeg',
@@ -192,16 +188,12 @@ describe('ImageUploaderComponent', () => {
     component.onDrop(dropEvent);
     await new Promise((resolve) => setTimeout(resolve, 0));
 
-    const today = new Date();
-    const year = today.getFullYear();
-    const month = String(today.getMonth() + 1).padStart(2, '0');
-
-    expect(component['currentPath']()).toBe(`/images/recipes/${year}/${month}/chili.png`);
+    expect(component['currentPath']()).toBe('chili.png');
     expect(component['currentType']()).toBe('image/png');
     expect(component['currentWidth']()).toBe('800');
     expect(component['currentHeight']()).toBe('600');
     expect(changePayload).toEqual({
-      image: `/images/recipes/${year}/${month}/chili.png`,
+      image: 'chili.png',
       imageWidth: '800',
       imageHeight: '600',
       imageType: 'image/png',
@@ -225,11 +217,7 @@ describe('ImageUploaderComponent', () => {
     component.onDrop(dropEvent);
     await new Promise((resolve) => setTimeout(resolve, 0));
 
-    const today = new Date();
-    const year = today.getFullYear();
-    const month = String(today.getMonth() + 1).padStart(2, '0');
-
-    expect(component['currentPath']()).toBe(`/images/recipes/${year}/${month}/premium-lasagna.jpg`);
+    expect(component['currentPath']()).toBe('premium-lasagna.jpg');
     expect(component['currentType']()).toBe('image/jpeg');
   });
 
@@ -387,13 +375,6 @@ describe('ImageUploaderComponent', () => {
     URL.revokeObjectURL = originalRevokeObjectURL;
   });
 
-  it('should keep already standardized paths intact', () => {
-    fixture.detectChanges();
-    const inputPath = '/images/recipes/2026/06/pasta.png';
-    const outPath = component['getStandardizedPath'](inputPath);
-    expect(outPath).toBe(inputPath);
-  });
-
   it('should fall back to URL parser catch segment when URL parsing throws an error', () => {
     fixture.detectChanges();
     const result = component['getFilenameAndExtensionFromUrl'](
@@ -442,6 +423,10 @@ describe('ImageUploaderComponent', () => {
     const errorEv = new CustomEvent('error');
     imgEl.dispatchEvent(errorEv);
     fixture.detectChanges();
+
+    // Assert that placeholder rendered and img is gone
+    expect(fixture.nativeElement.querySelector('img')).toBeFalsy();
+    expect(fixture.nativeElement.textContent).toContain('Preview Unavailable');
 
     // Trigger remove click DOM event
     const removeBtn = fixture.nativeElement.querySelector('button[aria-label="Remove image"]');
@@ -590,13 +575,53 @@ describe('ImageUploaderComponent', () => {
     fixture.componentRef.setInput('initialWidth', '800');
     fixture.detectChanges();
 
-    // Pre-set the internal currentPath to the same value
-    component['currentPath'].set('/images/recipes/2026/06/rooster.jpg');
+    // Pre-set the internal value to the same value
+    component['value'].set('/images/recipes/2026/06/rooster.jpg');
 
     // Set a different width to trigger effect re-run, keeping the image path identical
     fixture.componentRef.setInput('initialWidth', '900');
     fixture.detectChanges();
 
     expect(component['currentPath']()).toBe('/images/recipes/2026/06/rooster.jpg');
+  });
+
+  it('should render a required asterisk in the label when required input is true', () => {
+    fixture.componentRef.setInput('required', true);
+    fixture.detectChanges();
+    const labelSpan = fixture.nativeElement.querySelector('span.text-xs');
+    expect(labelSpan).toBeTruthy();
+    expect(labelSpan.textContent).toContain('*');
+  });
+
+  it('should hide individual metadata form fields when they contain nothing (empty, 0, None)', () => {
+    // 1. Initial State: all are empty/nothing, so metadata container shouldn't even render
+    fixture.detectChanges();
+    let container = fixture.nativeElement.querySelector('.custom-metadata-fields');
+    expect(container).toBeFalsy();
+
+    // 2. Set only type, but width and height to '0' or 'none' (nothing values)
+    fixture.componentRef.setInput('initialImage', '/images/recipes/2026/06/pasta.png');
+    fixture.componentRef.setInput('initialWidth', '0');
+    fixture.componentRef.setInput('initialHeight', 'None');
+    fixture.componentRef.setInput('initialType', 'image/png');
+    fixture.detectChanges();
+
+    container = fixture.nativeElement.querySelector('.custom-metadata-fields');
+    expect(container).toBeTruthy();
+
+    const fields = fixture.nativeElement.querySelectorAll('mat-form-field');
+    // Should only render the MIME type field (1 mat-form-field instead of 3)
+    expect(fields.length).toBe(1);
+    expect(fields[0].textContent).toContain('MIME Type');
+    expect(fields[0].textContent).not.toContain('Width');
+    expect(fields[0].textContent).not.toContain('Height');
+
+    // 3. Set valid width, height and type
+    fixture.componentRef.setInput('initialWidth', '1024');
+    fixture.componentRef.setInput('initialHeight', '768');
+    fixture.detectChanges();
+
+    const allFields = fixture.nativeElement.querySelectorAll('mat-form-field');
+    expect(allFields.length).toBe(3);
   });
 });
