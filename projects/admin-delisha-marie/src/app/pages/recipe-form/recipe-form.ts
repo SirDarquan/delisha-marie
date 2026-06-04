@@ -754,41 +754,38 @@ export class RecipeFormComponent implements OnInit {
     return current;
   }
 
+  private valuesAreEqual(key: keyof RecipeFormModel, a: unknown, b: unknown): boolean {
+    if (key === 'breadcrumbs') {
+      const breadcrumbsA = a as Breadcrumbs | null;
+      const breadcrumbsB = b as Breadcrumbs | null;
+      if (breadcrumbsA === breadcrumbsB) return true;
+      if (!breadcrumbsA || !breadcrumbsB) return false;
+      return JSON.stringify(breadcrumbsA) === JSON.stringify(breadcrumbsB);
+    }
+
+    if (Array.isArray(b)) {
+      const arrA = (a as readonly unknown[]) || [];
+      return arrA.length === b.length && arrA.every((v, i) => v === b[i]);
+    }
+
+    const normA = a ?? '';
+    const normB = b ?? '';
+    return String(normA).trim() === String(normB).trim();
+  }
+
   protected readonly isDirty = computed(() => {
     const initial = this.initialModel();
     if (!initial) {
       return false;
     }
 
-    const breadcrumbsEqual = (a: Breadcrumbs | null, b: Breadcrumbs | null) => {
-      if (a === b) return true;
-      if (!a || !b) return false;
-      return JSON.stringify(a) === JSON.stringify(b);
-    };
-
     const keys = Object.keys(initial) as (keyof RecipeFormModel)[];
     for (const key of keys) {
       const currentVal = this.getFieldValue(key);
       const initialVal = initial[key];
 
-      if (Array.isArray(initialVal)) {
-        const currentArr = (currentVal as readonly unknown[]) || [];
-        if (
-          currentArr.length !== initialVal.length ||
-          !currentArr.every((v, i) => v === initialVal[i])
-        ) {
-          return true;
-        }
-      } else if (typeof initialVal === 'object' && initialVal !== null) {
-        if (!breadcrumbsEqual(currentVal as Breadcrumbs | null, initialVal as Breadcrumbs | null)) {
-          return true;
-        }
-      } else {
-        const normCurrent = currentVal === null || currentVal === undefined ? '' : currentVal;
-        const normInitial = initialVal === null || initialVal === undefined ? '' : initialVal;
-        if (String(normCurrent).trim() !== String(normInitial).trim()) {
-          return true;
-        }
+      if (!this.valuesAreEqual(key, currentVal, initialVal)) {
+        return true;
       }
     }
     return false;
