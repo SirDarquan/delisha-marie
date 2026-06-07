@@ -1221,4 +1221,37 @@ describe('RecipeFormComponent', () => {
     // Now it is back to clean initial state, so Save as Draft is disabled again
     expect(component['isDraftDisabled']()).toBe(true);
   });
+
+  it('should enable Save as Draft when typing in any field, and disable it when cleared/reverted to initial value', async () => {
+    fixture.detectChanges();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    // Setup initialModel as clean
+    component['recipeModel'].set({
+      ...component['recipeModel'](),
+      title: 'Initial Title',
+      slug: 'initial-slug',
+    });
+    component['initialModel'].set({
+      ...component['recipeModel'](),
+    });
+    fixture.detectChanges();
+
+    // Initially disabled (no changes)
+    expect(component['isDraftDisabled']()).toBe(true);
+
+    // Type in cuisine field
+    component['recipeForm'].cuisine().controlValue.set('Italian');
+    fixture.detectChanges();
+
+    // Now it is dirty, so Save as Draft is enabled
+    expect(component['isDraftDisabled']()).toBe(false);
+
+    // Revert/clear cuisine field back to empty
+    component['recipeForm'].cuisine().controlValue.set('');
+    fixture.detectChanges();
+
+    // Now it is back to clean initial state, so Save as Draft is disabled again
+    expect(component['isDraftDisabled']()).toBe(true);
+  });
 });
