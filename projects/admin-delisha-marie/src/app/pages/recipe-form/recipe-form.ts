@@ -8,7 +8,9 @@ import {
   ViewEncapsulation,
 } from '@angular/core';
 import { form, FormRoot, FormField, required } from '@angular/forms/signals';
-import { Router, RouterLink, ActivatedRoute } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
+import { MatDialog } from '@angular/material/dialog';
+import { ConfirmDialogComponent } from '../../components/confirm-dialog/confirm-dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -16,18 +18,18 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { RecipeService } from '../../services/recipe.service';
 import { Recipe } from '../../models/recipe.model';
-import { BreadcrumbBoardComponent } from '../../components/breadcrumb-board/breadcrumb-board';
+import { CategoryBoardComponent } from '../../components/category-board/category-board';
 import { CookingMethodSelectorComponent } from '../../components/cooking-method-selector/cooking-method-selector';
 import { SpecialDietsSelectorComponent } from '../../components/special-diets-selector/special-diets-selector';
 import { HolidaysSelectorComponent } from '../../components/holidays-selector/holidays-selector';
 import { ImageUploaderComponent } from '../../components/image-uploader/image-uploader';
-import { Breadcrumbs, Nutrition, isStandardTrail, slugify } from '@dm/library';
+import { CategoryTrails, Nutrition, BaseTrail } from '@dm/library';
 
 interface RecipeFormModel {
   title: string;
   slug: string;
   author: string;
-  category: string;
+  category: CategoryTrails | null;
   difficulty: string;
   prepTime: string;
   cookTime: string;
@@ -47,7 +49,6 @@ interface RecipeFormModel {
   theBest: boolean;
   holidays: string;
   specialDiets: string[];
-  breadcrumbs: Breadcrumbs | null;
   cuisine: string;
   course: string;
   keywords: string;
@@ -70,13 +71,12 @@ interface RecipeFormModel {
   imports: [
     FormRoot,
     FormField,
-    RouterLink,
     MatButtonModule,
     MatFormFieldModule,
     MatInputModule,
     MatSelectModule,
     MatSlideToggleModule,
-    BreadcrumbBoardComponent,
+    CategoryBoardComponent,
     CookingMethodSelectorComponent,
     SpecialDietsSelectorComponent,
     HolidaysSelectorComponent,
@@ -93,11 +93,12 @@ interface RecipeFormModel {
             Fill in the fields below to publish a recipe
           </p>
         </div>
-        <a
-          routerLink="/recipes"
-          class="text-slate-300 hover:text-purple-400 transition text-sm font-semibold cursor-pointer flex items-center gap-1">
+        <button
+          type="button"
+          (click)="onCancel()"
+          class="text-slate-300 hover:text-purple-400 transition text-sm font-semibold cursor-pointer flex items-center gap-1 bg-transparent border-0 p-0">
           <span class="material-icons text-sm">arrow_back</span> Back to Recipes
-        </a>
+        </button>
       </div>
 
       <!-- Tab bar -->
@@ -451,27 +452,22 @@ interface RecipeFormModel {
           <!-- 2. WHERE IS IT Tab -->
           @if (activeTab() === 'where') {
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5 animate-fadeIn">
-              <mat-form-field appearance="outline" class="w-full md:col-span-2">
-                <mat-label>Category</mat-label>
-                <mat-select id="category" [formField]="recipeForm.category">
-                  <mat-option value="">Select Category</mat-option>
-                  <mat-option value="Breakfast">Breakfast</mat-option>
-                  <mat-option value="Lunch">Lunch</mat-option>
-                  <mat-option value="Dinner">Dinner</mat-option>
-                  <mat-option value="Appetizer">Appetizer</mat-option>
-                  <mat-option value="Dessert">Dessert</mat-option>
-                  <mat-option value="Vegan">Vegan</mat-option>
-                </mat-select>
-              </mat-form-field>
-
-              <!-- Dynamic Stackable Breadcrumbs Board -->
+              <!-- Dynamic Stackable Category Board -->
               <div class="flex flex-col gap-1 md:col-span-2">
-                <app-breadcrumb-board
-                  [initialBreadcrumbs]="recipeModel().breadcrumbs"
+                <app-category-board
+                  [formField]="recipeForm.category"
+                  [initialCategory]="recipeModel().category"
                   [recipeTitle]="recipeModel().title"
                   [recipeSlug]="recipeModel().slug"
-                  (breadcrumbsChange)="onBreadcrumbsChanged($event)">
-                </app-breadcrumb-board>
+                  (categoryChange)="onCategoryChanged($event)">
+                </app-category-board>
+                @if (recipeForm.category().touched() && recipeForm.category().invalid()) {
+                  @for (error of recipeForm.category().errors(); track error) {
+                    <div class="text-rose-400 text-xs font-semibold mt-1 px-1">
+                      {{ error.message }}
+                    </div>
+                  }
+                }
               </div>
 
               <!-- Slide Toggle: Marked The Best -->
@@ -620,6 +616,7 @@ export class RecipeFormComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly recipeService = inject(RecipeService);
+  private readonly dialog = inject(MatDialog);
 
   protected readonly isEdit = signal<boolean>(false);
   private readonly idToEdit = signal<string | number | null>(null);
@@ -633,7 +630,7 @@ export class RecipeFormComponent implements OnInit {
     title: '',
     slug: '',
     author: 'Delisha Marie',
-    category: '',
+    category: null,
     difficulty: 'Easy',
     prepTime: '',
     cookTime: '',
@@ -653,7 +650,6 @@ export class RecipeFormComponent implements OnInit {
     theBest: false,
     holidays: '',
     specialDiets: [],
-    breadcrumbs: null,
     cuisine: '',
     course: '',
     keywords: '',
@@ -693,7 +689,6 @@ export class RecipeFormComponent implements OnInit {
       required(fields.ingredients, { message: 'Ingredients is required' });
       required(fields.instructions, { message: 'Instructions is required' });
       required(fields.method, { message: 'Method is required' });
-      required(fields.breadcrumbs, { message: 'Breadcrumbs is required' });
       required(fields.cuisine, { message: 'Cuisine is required' });
       required(fields.course, { message: 'Course is required' });
       required(fields.servingSize, { message: 'Serving size is required' });
@@ -751,17 +746,13 @@ export class RecipeFormComponent implements OnInit {
     return current;
   }
 
-  private valuesAreEqual(
-    key: keyof RecipeFormModel,
-    a: string | boolean | string[] | Breadcrumbs | null,
-    b: string | boolean | string[] | Breadcrumbs | null,
-  ): boolean {
-    if (key === 'breadcrumbs') {
-      const breadcrumbsA = a as Breadcrumbs | null;
-      const breadcrumbsB = b as Breadcrumbs | null;
-      if (breadcrumbsA === breadcrumbsB) return true;
-      if (!breadcrumbsA || !breadcrumbsB) return false;
-      return JSON.stringify(breadcrumbsA) === JSON.stringify(breadcrumbsB);
+  private valuesAreEqual(key: keyof RecipeFormModel, a: unknown, b: unknown): boolean {
+    if (key === 'category') {
+      const categoryA = a as CategoryTrails | null;
+      const categoryB = b as CategoryTrails | null;
+      if (categoryA === categoryB) return true;
+      if (!categoryA || !categoryB) return false;
+      return JSON.stringify(categoryA) === JSON.stringify(categoryB);
     }
 
     if (Array.isArray(b)) {
@@ -802,10 +793,16 @@ export class RecipeFormComponent implements OnInit {
     const isMissing = (val: unknown) => {
       return val === null || val === undefined || (typeof val === 'string' && val.trim() === '');
     };
+    const categoryVal = this.getFieldValue('category') as CategoryTrails | null;
+    const isCategoryMissing =
+      !categoryVal ||
+      !categoryVal.trails ||
+      categoryVal.trails.length === 0 ||
+      categoryVal.trails.every((t) => t.length <= 2);
     return (
       isMissing(this.getFieldValue('title')) ||
       isMissing(this.getFieldValue('slug')) ||
-      isMissing(this.getFieldValue('category')) ||
+      isCategoryMissing ||
       isMissing(this.getFieldValue('difficulty')) ||
       isMissing(this.getFieldValue('prepTime')) ||
       isMissing(this.getFieldValue('cookTime')) ||
@@ -831,8 +828,7 @@ export class RecipeFormComponent implements OnInit {
       isMissing(this.getFieldValue('sugar')) ||
       isMissing(this.getFieldValue('sodium')) ||
       isMissing(this.getFieldValue('cholesterol')) ||
-      isMissing(this.getFieldValue('saturatedFat')) ||
-      !this.getFieldValue('breadcrumbs')
+      isMissing(this.getFieldValue('saturatedFat'))
     );
   });
 
@@ -842,6 +838,7 @@ export class RecipeFormComponent implements OnInit {
       this.isEdit.set(true);
       this.idToEdit.set(id);
       const recipe = this.recipeService.getRecipeByIdOrSlug(id);
+      console.log(recipe);
       if (recipe) {
         const mapped = this.mapRecipeToForm(recipe);
         this.recipeModel.set(mapped);
@@ -867,7 +864,7 @@ export class RecipeFormComponent implements OnInit {
       title: recipe.title || '',
       slug: recipe.slug || '',
       author: recipe.author || 'Delisha Marie',
-      category: recipe.category || '',
+      category: recipe.category && typeof recipe.category === 'object' ? recipe.category : null,
       difficulty: recipe.difficulty || 'Easy',
       prepTime: recipe.prepTime || '',
       cookTime: recipe.cookTime || '',
@@ -887,7 +884,6 @@ export class RecipeFormComponent implements OnInit {
       theBest: recipe.theBest || false,
       holidays: recipe.holidays?.[0] || '',
       specialDiets: recipe.specialDiets || [],
-      breadcrumbs: recipe.breadcrumbs || null,
       cuisine: recipe.cuisine || '',
       course: recipe.course || '',
       keywords: recipe.keywords ? recipe.keywords.join(', ') : '',
@@ -910,10 +906,10 @@ export class RecipeFormComponent implements OnInit {
     // No-op since isDirty is computed reactively from form control values
   }
 
-  onBreadcrumbsChanged(b: Breadcrumbs): void {
+  onCategoryChanged(c: CategoryTrails): void {
     this.recipeModel.update((model) => ({
       ...model,
-      breadcrumbs: b,
+      category: c,
     }));
     this.markDirty();
   }
@@ -1026,10 +1022,20 @@ export class RecipeFormComponent implements OnInit {
           }
         : undefined;
 
+    const categoryTrails = formValue.category
+      ? formValue.category.trails.filter(
+          (trail) => trail[0]?.url === '/' && trail[1]?.url === '/recipes',
+        )
+      : [];
+    if (formValue.theBest && categoryTrails.length > 0) {
+      const bestTrails = categoryTrails.map((trail) => this.getBestTrail(trail));
+      categoryTrails.push(...bestTrails);
+    }
+
     return {
       title: formValue.title || '',
       slug: formValue.slug || '',
-      category: formValue.category || '',
+      category: { trails: categoryTrails },
       difficulty: formValue.difficulty || 'Easy',
       prepTime: formValue.prepTime || '',
       cookTime: formValue.cookTime || '',
@@ -1050,13 +1056,7 @@ export class RecipeFormComponent implements OnInit {
       theBest: formValue.theBest || false,
       holidays,
       specialDiets,
-      breadcrumbs: this.getBreadcrumbsPayload(
-        this.recipeModel().breadcrumbs,
-        this.recipeModel().theBest,
-        this.recipeModel().method,
-        specialDiets,
-        holidays,
-      ),
+      breadcrumbs: null,
       cuisine: formValue.cuisine || '',
       course: formValue.course || '',
       nutrition,
@@ -1104,16 +1104,13 @@ export class RecipeFormComponent implements OnInit {
     const currentTime = new Date().toISOString();
 
     if (status === 'scheduled') {
-      // PrePublished / scheduled sets both createdAt and updatedAt at the same time
       createdAt = originalRecipe?.createdAt || currentTime;
       updatedAt = currentTime;
     } else if (status === 'published') {
       if (originalRecipe?.status === 'published' || originalRecipe?.status === 'updated') {
-        // Changing something when Published, updatedAt changes but not createdAt
         createdAt = originalRecipe.createdAt || currentTime;
         updatedAt = currentTime;
       } else {
-        // Initial publication sets both
         createdAt = currentTime;
         updatedAt = currentTime;
       }
@@ -1137,24 +1134,22 @@ export class RecipeFormComponent implements OnInit {
     this.router.navigate(['/recipes']);
   }
 
-  private getBestTrail(
-    standardTrail: { label: string; url?: string }[],
-  ): { label: string; url?: string }[] {
-    const bestTrail: { label: string; url?: string }[] = [];
+  private getBestTrail(standardTrail: BaseTrail[]): BaseTrail[] {
+    const bestTrail: BaseTrail[] = [];
     standardTrail.forEach((b, i) => {
       if (i === 0) {
-        bestTrail.push({ label: b.label, url: b.url });
+        bestTrail.push({ name: b.name, url: b.url });
         return;
       }
       if (i === 1) {
-        bestTrail.push({ label: 'The Best Recipes', url: '/the-best-recipes' });
+        bestTrail.push({ name: 'The Best Recipes', url: '/the-best-recipes' });
         return;
       }
 
-      const isLast = i === standardTrail.length - 1;
-      let label = b.label;
-      if (!isLast && !b.label.startsWith('The Best ')) {
-        label = `The Best ${b.label}`;
+      const isRecipe = b.url && (b.url.startsWith('/recipe/') || b.url.startsWith('recipe/'));
+      let name = b.name;
+      if (!isRecipe && !b.name.startsWith('The Best ')) {
+        name = `The Best ${b.name}`;
       }
 
       const parentUrl = bestTrail[i - 1].url || '';
@@ -1162,81 +1157,39 @@ export class RecipeFormComponent implements OnInit {
       const segments = rawUrl.split('/').filter(Boolean);
       let slug = segments.at(-1) || '';
 
-      if (!isLast && !slug.startsWith('the-best-')) {
+      if (!isRecipe && !slug.startsWith('the-best-')) {
         slug = `the-best-${slug}`;
       }
 
-      const computedUrl = `${parentUrl.endsWith('/') ? parentUrl : parentUrl + '/'}${slug}`;
-      bestTrail.push({ label, url: computedUrl });
+      const computedUrl = isRecipe
+        ? rawUrl
+        : `${parentUrl.endsWith('/') ? parentUrl : parentUrl + '/'}${slug}`;
+      bestTrail.push({ name, url: computedUrl });
     });
     return bestTrail;
   }
 
-  private getBreadcrumbsPayload(
-    breadcrumbs: Breadcrumbs | null | undefined,
-    theBest: boolean,
-    method: string,
-    specialDiets: string[],
-    holidays: string[],
-  ): Breadcrumbs | undefined {
-    if (!breadcrumbs?.items?.length) {
-      return undefined;
-    }
-
-    const items = [...breadcrumbs.items];
-    const standardTrails = items.filter(isStandardTrail);
-    const finalItems: { label: string; url?: string }[][] = [];
-
-    // Add all standard trails
-    standardTrails.forEach((trail) => {
-      finalItems.push([...trail]);
-    });
-
-    if (theBest) {
-      standardTrails.forEach((standardTrail) => {
-        finalItems.push(this.getBestTrail(standardTrail));
-      });
-    }
-
-    if (method?.trim() && method.trim() !== 'None') {
-      const methodName = method.trim();
-      finalItems.push([
-        { label: 'Method', url: '/method' },
-        { label: methodName, url: `/method/${slugify(methodName)}` },
-      ]);
-    }
-
-    if (specialDiets && specialDiets.length > 0) {
-      specialDiets.forEach((diet) => {
-        const dietName = diet.trim();
-        if (dietName) {
-          finalItems.push([
-            { label: 'Special Diets', url: '/special-diets' },
-            { label: dietName, url: `/special-diets/${slugify(dietName)}` },
-          ]);
-        }
-      });
-    }
-
-    if (holidays && holidays.length > 0) {
-      holidays.forEach((holiday) => {
-        const holidayName = holiday.trim();
-        if (holidayName) {
-          finalItems.push([
-            { label: 'Holidays', url: '/holidays' },
-            { label: holidayName, url: `/holidays/${slugify(holidayName)}` },
-          ]);
-        }
-      });
-    }
-
-    return {
-      main: 0,
-      items: finalItems,
-    };
-  }
-
   onCancel(): void {
-    this.router.navigate(['/recipes']);
+    if (this.isDirty()) {
+      const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+        width: '400px',
+        data: {
+          title: 'Unsaved Changes',
+          message:
+            'You have unsaved changes. Are you sure you want to leave? Your changes will be deleted.',
+          stayLabel: 'Stay',
+          leaveLabel: 'Leave',
+          icon: 'warning',
+        },
+      });
+
+      dialogRef.afterClosed().subscribe((leave) => {
+        if (leave) {
+          this.router.navigate(['/recipes']);
+        }
+      });
+    } else {
+      this.router.navigate(['/recipes']);
+    }
   }
 }
