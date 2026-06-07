@@ -33,6 +33,15 @@ export interface Comment {
   createdAt: string;
 }
 
+export interface BaseTrail {
+  name: string;
+  url: string;
+}
+
+export interface CategoryTrails {
+  trails: BaseTrail[][];
+}
+
 export interface BaseRecipe {
   id: string | number;
   title: string;
@@ -64,8 +73,8 @@ export interface BaseRecipe {
   cuisine?: string;
   course?: string;
   method?: string;
-  category?: string;
-  breadcrumbs?: Breadcrumbs;
+  category?: string | CategoryTrails;
+  breadcrumbs?: Breadcrumbs | null;
   keywords?: string[];
   specialDiets?: string[];
   holidays?: string[];

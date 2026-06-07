@@ -55,11 +55,6 @@ import { RecipeService } from '../../services/recipe.service';
                 <th
                   scope="col"
                   class="px-4 py-3 text-xs font-bold uppercase tracking-wider text-slate-400 border-b border-slate-800">
-                  Category
-                </th>
-                <th
-                  scope="col"
-                  class="px-4 py-3 text-xs font-bold uppercase tracking-wider text-slate-400 border-b border-slate-800">
                   Prep Time
                 </th>
                 <th
@@ -93,7 +88,6 @@ import { RecipeService } from '../../services/recipe.service';
                       <strong class="text-sm font-semibold text-white">{{ recipe.title }}</strong>
                     </div>
                   </td>
-                  <td class="px-4 py-4 text-sm text-slate-300">{{ recipe.category || 'N/A' }}</td>
                   <td class="px-4 py-4 text-sm text-slate-300">{{ recipe.prepTime || 'N/A' }}</td>
                   <td class="px-4 py-4 text-sm text-slate-300">{{ recipe.cookTime || 'N/A' }}</td>
                   <td class="px-4 py-4 text-sm">
@@ -154,7 +148,7 @@ export class RecipesListComponent {
     const all = this.recipeService.recipes();
     if (!term) return all;
     return all.filter(
-      (r) => r.title.toLowerCase().includes(term) || r.category?.toLowerCase().includes(term),
+      (r) => r.title.toLowerCase().includes(term),
     );
   });
 

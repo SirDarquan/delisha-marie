@@ -8,22 +8,23 @@ import {
   effect,
   ViewEncapsulation,
   inject,
+  model,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import {
-  Breadcrumbs,
+  CategoryTrails,
   isStandardTrail,
   getCleanRecipeUrl,
   trimSlashes,
   trimLeadingSlashes,
   trimTrailingSlashes,
-  mapTrailsToBreadcrumbs,
 } from '@dm/library';
 import { Recipe } from '../../models/recipe.model';
 import { RecipeService } from '../../services/recipe.service';
+import { FormValueControl } from '@angular/forms/signals';
 
 interface CategoryConfig {
   name: string;
@@ -32,14 +33,14 @@ interface CategoryConfig {
 }
 
 @Component({
-  selector: 'app-breadcrumb-board',
+  selector: 'app-category-board',
   imports: [CommonModule, MatButtonModule, MatInputModule, MatFormFieldModule],
   template: `
     <div class="flex flex-col gap-6">
       <!-- 1. THE BOARD (Capsules Trail) -->
       <div class="flex flex-col gap-2">
         <div class="flex justify-between items-center flex-wrap gap-3">
-          <span class="text-xs font-semibold text-slate-300">Active Breadcrumb Board</span>
+          <span class="text-xs font-semibold text-slate-300">Active Category Board</span>
 
           <!-- Trail Selector Tabs -->
           <div class="flex flex-wrap gap-2 items-center">
@@ -247,7 +248,7 @@ interface CategoryConfig {
       <!-- 4. READONLY PREVIEW -->
       <div class="flex flex-col gap-1.5">
         <span class="text-xs font-semibold text-slate-400 uppercase"
-          >Compiled Breadcrumb Pathway Preview</span
+          >Compiled Category Pathway Preview</span
         >
         <input
           type="text"
@@ -277,10 +278,10 @@ interface CategoryConfig {
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class BreadcrumbBoardComponent {
+export class CategoryBoardComponent implements FormValueControl<CategoryTrails | null> {
   private readonly recipeService = inject(RecipeService);
 
-  // Dynamically compile categories and subcategories from the existing recipes' breadcrumbs
+  // Dynamically compile categories and subcategories from the existing recipes' categories and breadcrumbs
   readonly categories = computed<CategoryConfig[]>(() => {
     const recipes = this.recipeService.recipes();
     const map = new Map<string, { url: string; subs: Map<string, string> }>();
@@ -310,6 +311,35 @@ export class BreadcrumbBoardComponent {
     map: Map<string, { url: string; subs: Map<string, string> }>,
   ): void {
     recipes.forEach((r) => {
+      // 1. Try extracting standard trails from the new category property
+      if (r.category && typeof r.category === 'object' && r.category.trails) {
+        r.category.trails.forEach((trail) => {
+          if (trail.length <= 2) return;
+          const catPiece = trail[2];
+          if (!catPiece?.name || !catPiece?.url?.startsWith('/recipes/')) return;
+
+          const catName = catPiece.name.trim();
+          const catUrl = catPiece.url.trim();
+
+          if (!map.has(catName)) {
+            map.set(catName, { url: catUrl, subs: new Map<string, string>() });
+          }
+
+          const catData = map.get(catName)!;
+
+          if (trail.length > 3) {
+            const subPiece = trail[3];
+            if (subPiece?.name && !subPiece?.url?.startsWith('/recipe/')) {
+              const subName = subPiece.name.trim();
+              const subUrl = subPiece.url.trim();
+              catData.subs.set(subName, subUrl);
+            }
+          }
+        });
+        return;
+      }
+
+      // 2. Fallback to extracting from breadcrumbs for compatibility
       const items = r.breadcrumbs?.items;
       if (!items) return;
 
@@ -340,13 +370,17 @@ export class BreadcrumbBoardComponent {
     });
   }
 
+  // Standalone value model for signals form integration
+  readonly value = model<CategoryTrails | null>(null);
+  readonly required = input<boolean>(false);
+
   // Standalone Inputs
-  initialBreadcrumbs = input<Breadcrumbs | null>(null);
+  initialCategory = input<CategoryTrails | null>(null);
   recipeTitle = input<string>('');
   recipeSlug = input<string>('');
 
   // Standalone Outputs
-  breadcrumbsChange = output<Breadcrumbs>();
+  categoryChange = output<CategoryTrails>();
 
   // Board reactive pieces state (defaults to Home & Recipes)
   boardPiecesList = signal<{ name: string; url: string }[][]>([
@@ -384,12 +418,15 @@ export class BreadcrumbBoardComponent {
   customUrl = signal<string>('');
 
   constructor() {
-    // Automatically load incoming breadcrumb structures when initialized
+    // Automatically load incoming category structures when initialized
     effect(() => {
-      const initial = this.initialBreadcrumbs();
-      if (initial?.items) {
+      const initial = this.value() || this.initialCategory();
+      if (initial?.trails) {
         // Extract standard trails (starts with Home and Recipes, url not matching auto-generated paths)
-        const standardTrails = initial.items.filter(isStandardTrail);
+        const standardTrails = initial.trails.filter((trail) => {
+          if (trail.length === 0) return false;
+          return trail[0]?.url === '/' && trail[1]?.url === '/recipes';
+        });
 
         if (standardTrails.length > 0) {
           // Clean recipe leaf nodes before serialization comparison
@@ -406,8 +443,8 @@ export class BreadcrumbBoardComponent {
               trail
                 .filter((b) => b.url && !b.url.startsWith('/recipe/'))
                 .map((b) => ({
-                  name: b.label,
-                  url: b.url as string,
+                  name: b.name,
+                  url: b.url,
                 })),
             );
             this.boardPiecesList.set(mappedList);
@@ -435,12 +472,7 @@ export class BreadcrumbBoardComponent {
     // Append the new trail to the list
     this.boardPiecesList.update((list) => [...list, baseTrail]);
 
-    const result = mapTrailsToBreadcrumbs(
-      this.boardPiecesList(),
-      this.recipeTitle(),
-      this.recipeSlug(),
-    );
-    this.breadcrumbsChange.emit(result);
+    this.syncValueAndEmit();
   }
 
   deleteTrail(idx: number, event: Event): void {
@@ -585,12 +617,28 @@ export class BreadcrumbBoardComponent {
       return newList;
     });
 
-    const result = mapTrailsToBreadcrumbs(
-      this.boardPiecesList(),
-      this.recipeTitle(),
-      this.recipeSlug(),
-    );
-    this.breadcrumbsChange.emit(result);
+    this.syncValueAndEmit();
+  }
+
+  private syncValueAndEmit(): void {
+    const trails = this.boardPiecesList().map((trail) => {
+      const title = this.recipeTitle() || 'Untitled';
+      const slug = this.recipeSlug();
+      if (slug) {
+        const recipeUrl = getCleanRecipeUrl(slug);
+        return [...trail, { name: title, url: recipeUrl }];
+      }
+      return trail;
+    });
+
+    const hasCategory = trails.some((t) => t.length > 2);
+    if (hasCategory) {
+      this.value.set({ trails });
+    } else {
+      this.value.set(null);
+    }
+
+    this.categoryChange.emit({ trails });
   }
 
   // Dynamic navigation url prefix calculation based on active trail
