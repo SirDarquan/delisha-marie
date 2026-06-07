@@ -795,9 +795,7 @@ export class RecipeFormComponent implements OnInit {
     };
     const categoryVal = this.getFieldValue('category') as CategoryTrails | null;
     const isCategoryMissing =
-      !categoryVal ||
-      !categoryVal.trails ||
-      categoryVal.trails.length === 0 ||
+      !categoryVal?.trails ||
       categoryVal.trails.every((t) => t.length <= 2);
     return (
       isMissing(this.getFieldValue('title')) ||
@@ -1161,9 +1159,11 @@ export class RecipeFormComponent implements OnInit {
         slug = `the-best-${slug}`;
       }
 
-      const computedUrl = isRecipe
-        ? rawUrl
-        : `${parentUrl.endsWith('/') ? parentUrl : parentUrl + '/'}${slug}`;
+      let computedUrl = rawUrl;
+      if (!isRecipe) {
+        const prefix = parentUrl.endsWith('/') ? parentUrl : `${parentUrl}/`;
+        computedUrl = `${prefix}${slug}`;
+      }
       bestTrail.push({ name, url: computedUrl });
     });
     return bestTrail;

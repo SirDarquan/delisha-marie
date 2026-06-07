@@ -472,24 +472,7 @@ export class CategoryBoardComponent implements FormValueControl<CategoryTrails |
     // Append the new trail to the list
     this.boardPiecesList.update((list) => [...list, baseTrail]);
 
-    const trails = this.boardPiecesList().map((trail) => {
-      const title = this.recipeTitle() || 'Untitled';
-      const slug = this.recipeSlug();
-      if (slug) {
-        const recipeUrl = getCleanRecipeUrl(slug);
-        return [...trail, { name: title, url: recipeUrl }];
-      }
-      return trail;
-    });
-
-    const hasCategory = trails.some((t) => t.length > 2);
-    if (hasCategory) {
-      this.value.set({ trails });
-    } else {
-      this.value.set(null);
-    }
-
-    this.categoryChange.emit({ trails });
+    this.syncValueAndEmit();
   }
 
   deleteTrail(idx: number, event: Event): void {
@@ -634,6 +617,10 @@ export class CategoryBoardComponent implements FormValueControl<CategoryTrails |
       return newList;
     });
 
+    this.syncValueAndEmit();
+  }
+
+  private syncValueAndEmit(): void {
     const trails = this.boardPiecesList().map((trail) => {
       const title = this.recipeTitle() || 'Untitled';
       const slug = this.recipeSlug();
