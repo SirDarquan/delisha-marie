@@ -6,8 +6,12 @@ import {
 import { provideRouter, withComponentInputBinding, withInMemoryScrolling } from '@angular/router';
 
 import { routes } from './app.routes';
-import { provideClientHydration, withEventReplay } from '@angular/platform-browser';
-import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
+import {
+  provideClientHydration,
+  withEventReplay,
+  withNoIncrementalHydration,
+} from '@angular/platform-browser';
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { TemplatePageTitleStrategy, provideTitleStrategy } from './services/title.strategy';
 
 export const appConfig: ApplicationConfig = {
@@ -23,9 +27,8 @@ export const appConfig: ApplicationConfig = {
       }),
     ),
     provideTitleStrategy(TemplatePageTitleStrategy),
-    provideClientHydration(withEventReplay()),
+    provideClientHydration(withEventReplay(), withNoIncrementalHydration()),
     provideHttpClient(
-      withFetch(),
       withInterceptors([
         (req, next) => {
           if (req.url.includes('/api/recipes')) {
