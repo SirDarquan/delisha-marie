@@ -3,7 +3,15 @@ describe('Admin Recipe Form Flow', () => {
     id: 99,
     title: 'Garlic Rosemary Chicken',
     slug: 'garlic-rosemary-chicken',
-    category: 'Dinner',
+    category: {
+      trails: [
+        [
+          { name: 'Home', url: '/' },
+          { name: 'Recipes', url: '/recipes' },
+          { name: 'Dinner', url: '/recipes/dinner' },
+        ],
+      ],
+    },
     prepTime: '10m',
     cookTime: '30m',
     totalTime: '40m',
@@ -130,7 +138,15 @@ describe('Admin Recipe Form Flow', () => {
         comp.recipeForm['imageHeight']().value.set(mockRecipe.imageHeight);
         comp.recipeForm['imageType']().value.set(mockRecipe.imageType);
         comp.recipeForm['method']().value.set(mockRecipe.method);
-        comp.recipeForm['breadcrumbs']().value.set(mockRecipe.breadcrumbs);
+        comp.recipeForm['category']().value.set({
+          trails: [
+            [
+              { name: 'Home', url: '/' },
+              { name: 'Recipes', url: '/recipes' },
+              { name: 'Dinner', url: '/recipes/dinner' },
+            ],
+          ],
+        });
       }
     });
 
@@ -207,9 +223,6 @@ describe('Admin Recipe Form Flow', () => {
 
     // Switch to Where is it tab to interact with categories and cooking methods
     cy.contains('button', 'Where is it').click();
-
-    cy.get('#category').click();
-    cy.get('mat-option').contains('Dinner').click();
 
     cy.get('button[type="submit"]').click({ force: true });
     cy.wait('@createRecipe');

@@ -76,7 +76,7 @@ describe('RecipesListComponent', () => {
     expect(component).toBeTruthy();
   });
 
-  it('should filter recipes based on search term matching category', () => {
+  it('should filter recipes based on search term matching title', () => {
     mockRecipesSignal.set([
       {
         id: 1,
@@ -93,15 +93,14 @@ describe('RecipesListComponent', () => {
         totalTime: '',
         yield: '',
         author: 'Delisha Marie',
-        category: 'Dinner',
         status: 'published',
       },
     ]);
 
-    component.onSearchChange({ target: { value: 'dinner' } } as unknown as Event);
+    component.onSearchChange({ target: { value: 'pasta' } } as unknown as Event);
     expect(component['filteredRecipes']().length).toBe(1);
 
-    component.onSearchChange({ target: { value: 'lunch' } } as unknown as Event);
+    component.onSearchChange({ target: { value: 'soup' } } as unknown as Event);
     expect(component['filteredRecipes']().length).toBe(0);
   });
 

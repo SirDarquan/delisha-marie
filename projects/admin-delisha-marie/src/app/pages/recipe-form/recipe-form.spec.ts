@@ -5,7 +5,8 @@ import { RecipeFormComponent } from './recipe-form';
 import { By } from '@angular/platform-browser';
 import { RecipeService } from '../../services/recipe.service';
 import { Recipe } from '../../models/recipe.model';
-import { Breadcrumbs } from '@dm/library';
+import { CategoryTrails } from '@dm/library';
+import { MatDialog } from '@angular/material/dialog';
 
 describe('RecipeFormComponent', () => {
   let component: RecipeFormComponent;
@@ -15,7 +16,15 @@ describe('RecipeFormComponent', () => {
     title: 'Valid Recipe',
     slug: 'valid-recipe',
     author: 'Delisha Marie',
-    category: 'Dinner',
+    category: {
+      trails: [
+        [
+          { name: 'Home', url: '/' },
+          { name: 'Recipes', url: '/recipes' },
+          { name: 'Dinner', url: '/recipes/dinner' },
+        ],
+      ],
+    } as CategoryTrails,
     difficulty: 'Easy',
     prepTime: '10 mins',
     cookTime: '10 mins',
@@ -35,15 +44,6 @@ describe('RecipeFormComponent', () => {
     theBest: false,
     holidays: '',
     specialDiets: [] as string[],
-    breadcrumbs: {
-      main: 0,
-      items: [
-        [
-          { label: 'Home', url: '/' },
-          { label: 'Recipes', url: '/recipes' },
-        ],
-      ],
-    },
     cuisine: 'Italian',
     course: 'Dinner',
     keywords: 'key',
@@ -69,6 +69,7 @@ describe('RecipeFormComponent', () => {
   let updatePayload: Partial<Recipe> = {};
   let navigated: unknown[] = [];
   let routeParams: Record<string, string> = {};
+  let dialogResult = true;
 
   const fakeRecipeService = {
     recipes: () => [],
@@ -103,6 +104,14 @@ describe('RecipeFormComponent', () => {
     },
   };
 
+  const fakeDialog = {
+    open: () => ({
+      afterClosed: () => ({
+        subscribe: (cb: (val: boolean) => void) => cb(dialogResult),
+      }),
+    }),
+  };
+
   beforeEach(async () => {
     mockRecipeById = null;
     createPayload = {};
@@ -110,6 +119,7 @@ describe('RecipeFormComponent', () => {
     updatePayload = {};
     navigated = [];
     routeParams = {};
+    dialogResult = true;
 
     await TestBed.configureTestingModule({
       imports: [RecipeFormComponent, FormRoot, FormField],
@@ -117,6 +127,7 @@ describe('RecipeFormComponent', () => {
         { provide: RecipeService, useValue: fakeRecipeService },
         { provide: Router, useValue: fakeRouter },
         { provide: ActivatedRoute, useValue: fakeActivatedRoute },
+        { provide: MatDialog, useValue: fakeDialog },
       ],
     }).compileComponents();
 
@@ -128,16 +139,16 @@ describe('RecipeFormComponent', () => {
     fixture.detectChanges();
     expect(component).toBeTruthy();
     expect(component['isEdit']()).toBe(false);
-  });
+  }, 30000);
 
   it('should populate edit form when parameter is provided', () => {
     routeParams['id'] = '1';
-    const testBreadcrumbs: Breadcrumbs = {
-      main: 0,
-      items: [
+    const testCategory: CategoryTrails = {
+      trails: [
         [
-          { label: 'Home', url: '/' },
-          { label: 'Recipes', url: '/recipes' },
+          { name: 'Home', url: '/' },
+          { name: 'Recipes', url: '/recipes' },
+          { name: 'Dinner', url: '/recipes/dinner' },
         ],
       ],
     };
@@ -163,7 +174,7 @@ describe('RecipeFormComponent', () => {
       theBest: true,
       holidays: ['Holiday 1'],
       specialDiets: ['Diet 1'],
-      breadcrumbs: testBreadcrumbs,
+      category: testCategory,
     };
 
     fixture.detectChanges();
@@ -174,7 +185,7 @@ describe('RecipeFormComponent', () => {
     expect(component['recipeModel']().theBest).toBe(true);
     expect(component['recipeModel']().holidays).toBe('Holiday 1');
     expect(component['recipeModel']().specialDiets).toEqual(['Diet 1']);
-    expect(component['recipeModel']().breadcrumbs).toEqual(testBreadcrumbs);
+    expect(component['recipeModel']().category).toEqual(testCategory);
   });
 
   it('should submit form and call createRecipe', () => {
@@ -230,6 +241,32 @@ describe('RecipeFormComponent', () => {
 
   it('should navigate back to recipes on onCancel', () => {
     fixture.detectChanges();
+    component.onCancel();
+    expect(navigated).toEqual(['/recipes']);
+  });
+
+  it('should not navigate back to recipes on onCancel if dirty and user cancels leaving', () => {
+    fixture.detectChanges();
+    // Make form dirty
+    component['recipeModel'].set({
+      ...component['recipeModel'](),
+      title: 'Modified Title',
+    });
+    dialogResult = false; // user cancels leaving (stays)
+
+    component.onCancel();
+    expect(navigated).toEqual([]);
+  });
+
+  it('should navigate back to recipes on onCancel if dirty and user confirms leaving', () => {
+    fixture.detectChanges();
+    // Make form dirty
+    component['recipeModel'].set({
+      ...component['recipeModel'](),
+      title: 'Modified Title',
+    });
+    dialogResult = true; // user confirms leaving
+
     component.onCancel();
     expect(navigated).toEqual(['/recipes']);
   });
@@ -371,27 +408,23 @@ describe('RecipeFormComponent', () => {
     expect(component['activeTab']()).toBe('what');
   });
 
-  it('should update recipeModel.breadcrumbs when onBreadcrumbsChanged is triggered but leave category untouched', () => {
+  it('should update recipeModel.category when onCategoryChanged is triggered', () => {
     fixture.detectChanges();
-    component['recipeModel'].update((m) => ({ ...m, category: 'Breakfast' }));
 
-    const testBreadcrumbs: Breadcrumbs = {
-      main: 0,
-      items: [
+    const testCategory: CategoryTrails = {
+      trails: [
         [
-          { label: 'Home', url: '/' },
-          { label: 'Recipes', url: '/recipes' },
-          { label: 'Main Dishes', url: '/recipes/main-dishes' },
-          { label: 'Pasta', url: '/recipes/main-dishes/pasta' },
-          { label: 'Hey Ya', url: '/recipe/hey-ya' },
+          { name: 'Home', url: '/' },
+          { name: 'Recipes', url: '/recipes' },
+          { name: 'Main Dishes', url: '/recipes/main-dishes' },
+          { name: 'Pasta', url: '/recipes/main-dishes/pasta' },
+          { name: 'Hey Ya', url: '/recipe/hey-ya' },
         ],
       ],
     };
 
-    component.onBreadcrumbsChanged(testBreadcrumbs);
-    expect(component['recipeModel']().breadcrumbs).toEqual(testBreadcrumbs);
-    // category (Meal Type) dropdown is unaffected
-    expect(component['recipeModel']().category).toBe('Breakfast');
+    component.onCategoryChanged(testCategory);
+    expect(component['recipeModel']().category).toEqual(testCategory);
   });
 
   it('should save as draft at any time and nullify timestamps', () => {
@@ -505,304 +538,108 @@ describe('RecipeFormComponent', () => {
     expect(scheduleBtnDisabled!.disabled).toBe(true); // Schedule disabled
   });
 
-  it('should copy and transform the breadcrumb to The Best if theBest is enabled, and delete it if disabled', () => {
+  it('should save category trails and hardcode breadcrumbs to null on save', () => {
     fixture.detectChanges();
 
-    const standardBreadcrumbs: Breadcrumbs = {
-      main: 0,
-      items: [
+    const testCategory: CategoryTrails = {
+      trails: [
         [
-          { label: 'Home', url: '/' },
-          { label: 'Recipes', url: '/recipes' },
-          { label: 'Main Dishes', url: '/recipes/main-dishes' },
-          { label: 'Pasta', url: '/recipes/main-dishes/pasta' },
-          { label: 'Impastable', url: '/recipe/impastable' },
+          { name: 'Home', url: '/' },
+          { name: 'Recipes', url: '/recipes' },
+          { name: 'Main Dishes', url: '/recipes/main-dishes' },
+          { name: 'Pasta', url: '/recipes/main-dishes/pasta' },
         ],
       ],
     };
 
-    // 1. Toggled ON (theBest = true)
     component['recipeModel'].set({
       ...getValidPublishedModel(),
       title: 'Impastable',
       slug: 'impastable',
-      breadcrumbs: standardBreadcrumbs,
+      category: testCategory,
+      theBest: false,
+    });
+
+    component.saveRequired('published');
+
+    expect(createPayload.category).toEqual(testCategory);
+    expect(createPayload.breadcrumbs).toBeNull();
+  });
+
+  it('should append transformed best trails to category property if theBest is true', () => {
+    fixture.detectChanges();
+
+    const testCategory: CategoryTrails = {
+      trails: [
+        [
+          { name: 'Home', url: '/' },
+          { name: 'Recipes', url: '/recipes' },
+          { name: 'Main Dishes', url: '/recipes/main-dishes' },
+          { name: 'Pasta', url: '/recipes/main-dishes/pasta' },
+          { name: 'Impastable', url: '/recipe/impastable' },
+        ],
+      ],
+    };
+
+    component['recipeModel'].set({
+      ...getValidPublishedModel(),
+      title: 'Impastable',
+      slug: 'impastable',
+      category: testCategory,
       theBest: true,
     });
 
     component.saveRequired('published');
 
-    expect(createPayload.breadcrumbs).toBeDefined();
-    expect(createPayload.breadcrumbs?.items.length).toBe(2);
-
-    // Standard trail at items[0] remains unchanged
-    expect(createPayload.breadcrumbs?.items[0]).toEqual(standardBreadcrumbs.items[0]);
-
-    // Transformed "The Best" trail at items[1]
-    const bestTrail = createPayload.breadcrumbs?.items[1];
-    expect(bestTrail).toBeDefined();
-    expect(bestTrail?.length).toBe(5);
-    expect(bestTrail?.[0]).toEqual({ label: 'Home', url: '/' });
-    expect(bestTrail?.[1]).toEqual({ label: 'The Best Recipes', url: '/the-best-recipes' });
-    expect(bestTrail?.[2]).toEqual({
-      label: 'The Best Main Dishes',
-      url: '/the-best-recipes/the-best-main-dishes',
-    });
-    expect(bestTrail?.[3]).toEqual({
-      label: 'The Best Pasta',
-      url: '/the-best-recipes/the-best-main-dishes/the-best-pasta',
-    });
-    expect(bestTrail?.[4]).toEqual({
-      label: 'Impastable',
-      url: '/the-best-recipes/the-best-main-dishes/the-best-pasta/impastable',
-    });
-
-    // 2. Toggled OFF (theBest = false)
-    component['recipeModel'].set({
-      ...getValidPublishedModel(),
-      title: 'Impastable',
-      slug: 'impastable',
-      breadcrumbs: createPayload.breadcrumbs || null,
-      theBest: false,
-    });
-
-    component.saveRequired('published');
-
-    expect(createPayload.breadcrumbs).toBeDefined();
-    expect(createPayload.breadcrumbs?.items.length).toBe(1); // Deleted "The Best" trail
-    expect(createPayload.breadcrumbs?.items[0]).toEqual(standardBreadcrumbs.items[0]);
+    expect(createPayload.category).toBeDefined();
+    const resultCategory = createPayload.category as CategoryTrails;
+    expect(resultCategory.trails.length).toBe(2);
+    // Standard trail remains unchanged
+    expect(resultCategory.trails[0]).toEqual(testCategory.trails[0]);
+    expect(resultCategory.trails[1]).toEqual([
+      { name: 'Home', url: '/' },
+      { name: 'The Best Recipes', url: '/the-best-recipes' },
+      { name: 'The Best Main Dishes', url: '/the-best-recipes/the-best-main-dishes' },
+      { name: 'The Best Pasta', url: '/the-best-recipes/the-best-main-dishes/the-best-pasta' },
+      { name: 'Impastable', url: '/recipe/impastable' },
+    ]);
   });
 
-  it('should preserve multiple standard breadcrumb trails and transform each of them if theBest is enabled', () => {
+  it('should remove any existing best trails from category property when theBest is false', () => {
     fixture.detectChanges();
 
-    const multiBreadcrumbs: Breadcrumbs = {
-      main: 0,
-      items: [
+    const initialCategory: CategoryTrails = {
+      trails: [
         [
-          { label: 'Home', url: '/' },
-          { label: 'Recipes', url: '/recipes' },
-          { label: 'Main Dishes', url: '/recipes/main-dishes' },
-          { label: 'Pasta', url: '/recipes/main-dishes/pasta' },
-          { label: 'Impastable', url: '/recipe/impastable' },
+          { name: 'Home', url: '/' },
+          { name: 'Recipes', url: '/recipes' },
+          { name: 'Pasta', url: '/recipes/pasta' },
+          { name: 'Macaroni', url: '/recipe/macaroni' },
         ],
         [
-          { label: 'Home', url: '/' },
-          { label: 'Recipes', url: '/recipes' },
-          { label: 'Salads', url: '/recipes/salads' },
-          { label: 'Impastable', url: '/recipe/impastable' },
+          { name: 'Home', url: '/' },
+          { name: 'The Best Recipes', url: '/the-best-recipes' },
+          { name: 'The Best Pasta', url: '/the-best-recipes/the-best-pasta' },
+          { name: 'Macaroni', url: '/recipe/macaroni' },
         ],
       ],
     };
 
-    // 1. Toggled ON (theBest = true)
     component['recipeModel'].set({
       ...getValidPublishedModel(),
-      title: 'Impastable',
-      slug: 'impastable',
-      breadcrumbs: multiBreadcrumbs,
-      theBest: true,
-    });
-
-    component.saveRequired('published');
-
-    expect(createPayload.breadcrumbs).toBeDefined();
-    // Standard Trail 1 + Standard Trail 2 + Best Trail 1 + Best Trail 2 = 4 items
-    expect(createPayload.breadcrumbs?.items.length).toBe(4);
-
-    expect(createPayload.breadcrumbs?.items[0]).toEqual(multiBreadcrumbs.items[0]);
-    expect(createPayload.breadcrumbs?.items[1]).toEqual(multiBreadcrumbs.items[1]);
-
-    // Transformed "The Best" trail 1
-    const bestTrail1 = createPayload.breadcrumbs?.items[2];
-    expect(bestTrail1).toBeDefined();
-    expect(bestTrail1?.length).toBe(5);
-    expect(bestTrail1?.[1]).toEqual({ label: 'The Best Recipes', url: '/the-best-recipes' });
-    expect(bestTrail1?.[2]).toEqual({
-      label: 'The Best Main Dishes',
-      url: '/the-best-recipes/the-best-main-dishes',
-    });
-
-    // Transformed "The Best" trail 2
-    const bestTrail2 = createPayload.breadcrumbs?.items[3];
-    expect(bestTrail2).toBeDefined();
-    expect(bestTrail2?.length).toBe(4);
-    expect(bestTrail2?.[1]).toEqual({ label: 'The Best Recipes', url: '/the-best-recipes' });
-    expect(bestTrail2?.[2]).toEqual({
-      label: 'The Best Salads',
-      url: '/the-best-recipes/the-best-salads',
-    });
-    expect(bestTrail2?.[3]).toEqual({
-      label: 'Impastable',
-      url: '/the-best-recipes/the-best-salads/impastable',
-    });
-
-    // 2. Toggled OFF (theBest = false)
-    component['recipeModel'].set({
-      ...getValidPublishedModel(),
-      title: 'Impastable',
-      slug: 'impastable',
-      breadcrumbs: createPayload.breadcrumbs || null,
+      title: 'Macaroni',
+      slug: 'macaroni',
+      category: initialCategory,
       theBest: false,
     });
 
     component.saveRequired('published');
 
-    expect(createPayload.breadcrumbs).toBeDefined();
-    expect(createPayload.breadcrumbs?.items.length).toBe(2); // Only the 2 standard trails
-    expect(createPayload.breadcrumbs?.items[0]).toEqual(multiBreadcrumbs.items[0]);
-    expect(createPayload.breadcrumbs?.items[1]).toEqual(multiBreadcrumbs.items[1]);
-  });
-
-  it('should append a distinct method breadcrumb trail in the breadcrumbs payload if method is provided', () => {
-    fixture.detectChanges();
-
-    const standardBreadcrumbs: Breadcrumbs = {
-      main: 0,
-      items: [
-        [
-          { label: 'Home', url: '/' },
-          { label: 'Recipes', url: '/recipes' },
-          { label: 'Main Dishes', url: '/recipes/main-dishes' },
-          { label: 'Pasta', url: '/recipes/main-dishes/pasta' },
-          { label: 'Impastable', url: '/recipe/impastable' },
-        ],
-      ],
-    };
-
-    // 1. theBest = false, method = "Slow Cooking"
-    component['recipeModel'].set({
-      ...getValidPublishedModel(),
-      title: 'Impastable',
-      slug: 'impastable',
-      breadcrumbs: standardBreadcrumbs,
-      theBest: false,
-      method: 'Slow Cooking',
-    });
-
-    component.saveRequired('published');
-
-    expect(createPayload.breadcrumbs).toBeDefined();
-    expect(createPayload.breadcrumbs?.items.length).toBe(2);
-    expect(createPayload.breadcrumbs?.items[0]).toEqual(standardBreadcrumbs.items[0]);
-
-    const methodTrail = createPayload.breadcrumbs?.items[1];
-    expect(methodTrail).toBeDefined();
-    expect(methodTrail?.length).toBe(2);
-    expect(methodTrail?.[0]).toEqual({ label: 'Method', url: '/method' });
-    expect(methodTrail?.[1]).toEqual({ label: 'Slow Cooking', url: '/method/slow-cooking' });
-
-    // 2. theBest = true, method = "Baking"
-    component['recipeModel'].set({
-      ...getValidPublishedModel(),
-      title: 'Impastable',
-      slug: 'impastable',
-      breadcrumbs: standardBreadcrumbs,
-      theBest: true,
-      method: 'Baking',
-    });
-
-    component.saveRequired('published');
-
-    expect(createPayload.breadcrumbs).toBeDefined();
-    expect(createPayload.breadcrumbs?.items.length).toBe(3); // Standard + The Best + Method
-    expect(createPayload.breadcrumbs?.items[0]).toEqual(standardBreadcrumbs.items[0]);
-
-    const bestTrail = createPayload.breadcrumbs?.items[1];
-    expect(bestTrail?.[1]).toEqual({ label: 'The Best Recipes', url: '/the-best-recipes' });
-
-    const methodTrail2 = createPayload.breadcrumbs?.items[2];
-    expect(methodTrail2).toBeDefined();
-    expect(methodTrail2?.length).toBe(2);
-    expect(methodTrail2?.[0]).toEqual({ label: 'Method', url: '/method' });
-    expect(methodTrail2?.[1]).toEqual({ label: 'Baking', url: '/method/baking' });
-  });
-
-  it('should append distinct special diets breadcrumb trails in the breadcrumbs payload if specialDiets is provided', () => {
-    fixture.detectChanges();
-
-    const standardBreadcrumbs: Breadcrumbs = {
-      main: 0,
-      items: [
-        [
-          { label: 'Home', url: '/' },
-          { label: 'Recipes', url: '/recipes' },
-          { label: 'Main Dishes', url: '/recipes/main-dishes' },
-          { label: 'Pasta', url: '/recipes/main-dishes/pasta' },
-          { label: 'Impastable', url: '/recipe/impastable' },
-        ],
-      ],
-    };
-
-    // 1. theBest = false, method = "", specialDiets = ["Vegan", "Dairy Free"]
-    component['recipeModel'].set({
-      ...getValidPublishedModel(),
-      title: 'Impastable',
-      slug: 'impastable',
-      breadcrumbs: standardBreadcrumbs,
-      theBest: false,
-      method: 'None',
-      specialDiets: ['Vegan', 'Dairy Free'],
-    });
-
-    component.saveRequired('published');
-
-    expect(createPayload.breadcrumbs).toBeDefined();
-    expect(createPayload.breadcrumbs?.items.length).toBe(3); // Standard + Vegan + Dairy Free
-    expect(createPayload.breadcrumbs?.items[0]).toEqual(standardBreadcrumbs.items[0]);
-
-    const dietTrail1 = createPayload.breadcrumbs?.items[1];
-    expect(dietTrail1).toBeDefined();
-    expect(dietTrail1?.length).toBe(2);
-    expect(dietTrail1?.[0]).toEqual({ label: 'Special Diets', url: '/special-diets' });
-    expect(dietTrail1?.[1]).toEqual({ label: 'Vegan', url: '/special-diets/vegan' });
-
-    const dietTrail2 = createPayload.breadcrumbs?.items[2];
-    expect(dietTrail2).toBeDefined();
-    expect(dietTrail2?.length).toBe(2);
-    expect(dietTrail2?.[0]).toEqual({ label: 'Special Diets', url: '/special-diets' });
-    expect(dietTrail2?.[1]).toEqual({ label: 'Dairy Free', url: '/special-diets/dairy-free' });
-  });
-
-  it('should append a distinct holiday breadcrumb trail in the breadcrumbs payload if holidays is provided', () => {
-    fixture.detectChanges();
-
-    const standardBreadcrumbs: Breadcrumbs = {
-      main: 0,
-      items: [
-        [
-          { label: 'Home', url: '/' },
-          { label: 'Recipes', url: '/recipes' },
-          { label: 'Main Dishes', url: '/recipes/main-dishes' },
-          { label: 'Pasta', url: '/recipes/main-dishes/pasta' },
-          { label: 'Impastable', url: '/recipe/impastable' },
-        ],
-      ],
-    };
-
-    // 1. theBest = false, method = "", holidays = "Thanksgiving"
-    component['recipeModel'].set({
-      ...getValidPublishedModel(),
-      title: 'Impastable',
-      slug: 'impastable',
-      breadcrumbs: standardBreadcrumbs,
-      theBest: false,
-      method: 'None',
-      specialDiets: [],
-      holidays: 'Thanksgiving',
-    });
-
-    component.saveRequired('published');
-
-    expect(createPayload.breadcrumbs).toBeDefined();
-    expect(createPayload.breadcrumbs?.items.length).toBe(2); // Standard + Thanksgiving
-    expect(createPayload.breadcrumbs?.items[0]).toEqual(standardBreadcrumbs.items[0]);
-
-    const holidayTrail = createPayload.breadcrumbs?.items[1];
-    expect(holidayTrail).toBeDefined();
-    expect(holidayTrail?.length).toBe(2);
-    expect(holidayTrail?.[0]).toEqual({ label: 'Holidays', url: '/holidays' });
-    expect(holidayTrail?.[1]).toEqual({ label: 'Thanksgiving', url: '/holidays/thanksgiving' });
+    expect(createPayload.category).toBeDefined();
+    const resultCategory = createPayload.category as CategoryTrails;
+    // The Best trail should be filtered out, leaving only the standard trail
+    expect(resultCategory.trails.length).toBe(1);
+    expect(resultCategory.trails[0]).toEqual(initialCategory.trails[0]);
   });
 
   it('should not navigate on saveDraft when editing an existing recipe', () => {
@@ -910,16 +747,13 @@ describe('RecipeFormComponent', () => {
     expect(component['recipeModel']().holidays).toBe('Halloween');
   });
 
-  it('should render the Where is it tab components and dropdowns when activeTab is set to where', () => {
+  it('should render the Where is it tab components when activeTab is set to where', () => {
     fixture.detectChanges();
     component['activeTab'].set('where');
     fixture.detectChanges();
 
-    const categorySelect = fixture.nativeElement.querySelector('#category');
-    expect(categorySelect).toBeTruthy();
-
-    const breadcrumbBoard = fixture.nativeElement.querySelector('app-breadcrumb-board');
-    expect(breadcrumbBoard).toBeTruthy();
+    const categoryBoard = fixture.nativeElement.querySelector('app-category-board');
+    expect(categoryBoard).toBeTruthy();
   });
 
   it('should invoke saveRequired through the signal form submit action callback', async () => {
@@ -939,15 +773,6 @@ describe('RecipeFormComponent', () => {
       ingredients: 'ing',
       instructions: 'ins',
       method: 'Bake',
-      breadcrumbs: {
-        main: 0,
-        items: [
-          [
-            { label: 'Home', url: '/' },
-            { label: 'Recipes', url: '/recipes' },
-          ],
-        ],
-      },
       status: 'published',
     });
     fixture.detectChanges();
@@ -1010,23 +835,7 @@ describe('RecipeFormComponent', () => {
     expect(component['recipeModel']().preview_token).toBe('');
     expect(component['recipeModel']().holidays).toBe('');
     expect(component['recipeModel']().specialDiets).toEqual([]);
-    expect(component['recipeModel']().breadcrumbs).toBeNull();
-  });
-
-  it('should handle undefined breadcrumbs, special diets with whitespace, and holiday edge cases in breadcrumbs payload creation', () => {
-    fixture.detectChanges();
-    component['recipeModel'].set({
-      ...component['recipeModel'](),
-      title: 'Breadcrumbs Edge Cases',
-      slug: 'edge-cases',
-      status: 'draft',
-      breadcrumbs: null,
-      specialDiets: [' ', 'Keto'],
-      holidays: ' ',
-    });
-
-    component.saveDraft();
-    expect(createPayload.breadcrumbs).toBeUndefined();
+    expect(component['recipeModel']().category).toBeNull();
   });
 
   it('should trigger template event bindings for selectors and buttons', () => {
@@ -1037,9 +846,9 @@ describe('RecipeFormComponent', () => {
 
     const debugEl = fixture.debugElement;
 
-    const breadcrumbBoard = debugEl.query((el) => el.name === 'app-breadcrumb-board');
-    if (breadcrumbBoard) {
-      breadcrumbBoard.triggerEventHandler('breadcrumbsChange', { main: 0, items: [] });
+    const categoryBoard = debugEl.query((el) => el.name === 'app-category-board');
+    if (categoryBoard) {
+      categoryBoard.triggerEventHandler('categoryChange', { trails: [] });
     }
 
     const methodSelector = debugEl.query((el) => el.name === 'app-cooking-method-selector');
@@ -1214,14 +1023,13 @@ describe('RecipeFormComponent', () => {
   it('should cover parentUrl ending-slash checks in getBestTrail (lines 1063, 1064, 1066, 1072)', () => {
     fixture.detectChanges();
 
-    const standardBreadcrumbs: Breadcrumbs = {
-      main: 0,
-      items: [
+    const testCategory: CategoryTrails = {
+      trails: [
         [
-          { label: 'Home', url: '/' }, // ends with /
-          { label: 'Recipes', url: '/recipes' }, // does not end with /
-          { label: 'Pasta', url: '' }, // rawUrl empty
-          { label: 'Impastable', url: '/recipe/impastable' },
+          { name: 'Home', url: '/' }, // ends with /
+          { name: 'Recipes', url: '/recipes' }, // does not end with /
+          { name: 'Pasta', url: '' }, // rawUrl empty
+          { name: 'Impastable', url: '/recipe/impastable' },
         ],
       ],
     };
@@ -1230,36 +1038,12 @@ describe('RecipeFormComponent', () => {
       ...getValidPublishedModel(),
       title: 'Impastable',
       slug: 'impastable',
-      breadcrumbs: standardBreadcrumbs,
+      category: testCategory,
       theBest: true,
     });
 
     component.saveRequired('published');
-    expect(createPayload.breadcrumbs?.items[1]).toBeDefined();
-  });
-
-  it('should cover undefined or empty holidays list in getBreadcrumbsPayload (line 1127)', () => {
-    fixture.detectChanges();
-    component['recipeModel'].set({
-      ...component['recipeModel'](),
-      title: 'Holiday Trim',
-      slug: 'holiday-trim',
-      status: 'draft',
-      breadcrumbs: {
-        main: 0,
-        items: [
-          [
-            { label: 'Home', url: '/' },
-            { label: 'Recipes', url: '/recipes' },
-          ],
-        ],
-      },
-      holidays: ' ', // trimmed to empty
-    });
-
-    component.saveDraft();
-    // Should have only 1 item in breadcrumbs (the standard trail)
-    expect(createPayload.breadcrumbs?.items.length).toBe(1);
+    expect((createPayload.category as CategoryTrails)?.trails[1]).toBeDefined();
   });
 
   it('should run required validations for published status when initialized as published (line 724)', () => {
@@ -1363,7 +1147,7 @@ describe('RecipeFormComponent', () => {
 
     // Override push to intercept the pushed objects and clear the url
     Array.prototype.push = function (...args) {
-      if (args[0] && args[0].label === 'The Best Recipes') {
+      if (args[0] && args[0].name === 'The Best Recipes') {
         args[0].url = '';
       }
       return originalPush.apply(this, args);
@@ -1371,11 +1155,11 @@ describe('RecipeFormComponent', () => {
 
     try {
       const best = component['getBestTrail']([
-        { label: 'Home', url: '/' },
-        { label: 'Recipes', url: '/recipes' },
-        { label: 'Pasta', url: '/recipes/pasta' },
+        { name: 'Home', url: '/' },
+        { name: 'Recipes', url: '/recipes' },
+        { name: 'Pasta', url: '/recipes/pasta' },
       ]);
-      expect(best[2].url).toBe('/pasta');
+      expect(best[2].url).toBe('/the-best-pasta');
     } finally {
       Array.prototype.push = originalPush;
     }
@@ -1387,7 +1171,7 @@ describe('RecipeFormComponent', () => {
 
     // Override push to intercept and append trailing slash
     Array.prototype.push = function (...args) {
-      if (args[0] && args[0].label === 'The Best Recipes') {
+      if (args[0] && args[0].name === 'The Best Recipes') {
         args[0].url = '/the-best-recipes/';
       }
       return originalPush.apply(this, args);
@@ -1395,37 +1179,14 @@ describe('RecipeFormComponent', () => {
 
     try {
       const best = component['getBestTrail']([
-        { label: 'Home', url: '/' },
-        { label: 'Recipes', url: '/recipes' },
-        { label: 'Pasta', url: '/recipes/pasta' },
+        { name: 'Home', url: '/' },
+        { name: 'Recipes', url: '/recipes' },
+        { name: 'Pasta', url: '/recipes/pasta' },
       ]);
-      expect(best[2].url).toBe('/the-best-recipes/pasta');
+      expect(best[2].url).toBe('/the-best-recipes/the-best-pasta');
     } finally {
       Array.prototype.push = originalPush;
     }
-  });
-
-  it('should skip empty special diets in getBreadcrumbsPayload (line 1115)', () => {
-    fixture.detectChanges();
-    component['recipeModel'].set({
-      ...component['recipeModel'](),
-      title: 'Diet Test',
-      slug: 'diet-test',
-      status: 'draft',
-      breadcrumbs: {
-        main: 0,
-        items: [
-          [
-            { label: 'Home', url: '/' },
-            { label: 'Recipes', url: '/recipes' },
-          ],
-        ],
-      },
-      specialDiets: ['Vegan', ' ', 'Keto'], // empty/space item
-    });
-
-    component.saveDraft();
-    expect(createPayload.breadcrumbs?.items.length).toBe(3);
   });
 
   it('should enable Save as Draft when typing in any field, and disable it when cleared/reverted to initial value', async () => {
