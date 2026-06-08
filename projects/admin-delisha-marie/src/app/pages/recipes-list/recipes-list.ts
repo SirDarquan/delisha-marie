@@ -147,9 +147,7 @@ export class RecipesListComponent {
     const term = this.searchTerm().trim().toLowerCase();
     const all = this.recipeService.recipes();
     if (!term) return all;
-    return all.filter(
-      (r) => r.title.toLowerCase().includes(term),
-    );
+    return all.filter((r) => r.title.toLowerCase().includes(term));
   });
 
   onSearchChange(event: Event): void {

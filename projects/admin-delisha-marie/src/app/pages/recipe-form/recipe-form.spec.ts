@@ -46,7 +46,7 @@ describe('RecipeFormComponent', () => {
     specialDiets: [] as string[],
     cuisine: 'Italian',
     course: 'Dinner',
-    keywords: 'key',
+    keyword: ['key'],
     equipment: 'equip',
     notes: 'note',
     servingSize: '1',
@@ -314,7 +314,7 @@ describe('RecipeFormComponent', () => {
     expect(component['recipeModel']().cuisine).toBe('Italian');
     expect(component['recipeModel']().course).toBe('Dinner');
     expect(component['recipeModel']().author).toBe('Chef Delisha');
-    expect(component['recipeModel']().keywords).toBe('easy, quick');
+    expect(component['recipeModel']().keyword).toEqual(['easy', 'quick']);
     expect(component['recipeModel']().equipment).toBe('Stand Mixer\nBaking Sheet');
     expect(component['recipeModel']().notes).toBe('Serve hot\nAdd cheese');
     expect(component['recipeModel']().servingSize).toBe('1 bowl');
@@ -389,6 +389,27 @@ describe('RecipeFormComponent', () => {
     expect(createPayload.instructions).toEqual([]);
     expect(createPayload.holidays).toEqual(['Holiday A']);
     expect(createPayload.specialDiets).toEqual(['Diet A', 'Diet B']);
+  });
+
+  it('should support adding, removing and updating keywords in keyword array', () => {
+    fixture.detectChanges();
+    component['recipeModel'].set({
+      ...component['recipeModel'](),
+      keyword: [],
+    });
+
+    component.addKeyword();
+    expect(component['recipeModel']().keyword).toEqual(['']);
+
+    component.onKeywordInput(0, { target: { value: 'New Keyword' } } as unknown as Event);
+    expect(component['recipeModel']().keyword).toEqual(['New Keyword']);
+
+    component.addKeyword();
+    component.onKeywordInput(1, { target: { value: 'Second' } } as unknown as Event);
+    expect(component['recipeModel']().keyword).toEqual(['New Keyword', 'Second']);
+
+    component.removeKeyword(0);
+    expect(component['recipeModel']().keyword).toEqual(['Second']);
   });
 
   it('should check invalid state of Signal Form', () => {
