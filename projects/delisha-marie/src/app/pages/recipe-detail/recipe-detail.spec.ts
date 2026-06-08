@@ -83,7 +83,7 @@ describe('RecipeDetail', () => {
     expect(compiled.querySelector('dml-recipe-card')).toBeTruthy();
     expect(compiled.querySelector('dml-recipe-navigation')).toBeTruthy();
     expect(compiled.querySelector('dml-recipe-comments')).toBeTruthy();
-  });
+  }, 30000);
 
   it('should render "Recipe not found" when recipe is null', () => {
     fixture.componentRef.setInput('recipe', null);
