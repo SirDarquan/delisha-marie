@@ -115,10 +115,10 @@ describe('Admin Recipe Form Flow', () => {
     cy.get('#course').should('not.be.disabled').type(mockRecipe.course, { force: true });
     cy.get('#course').blur();
 
-    cy.get('#keywords')
-      .should('not.be.disabled')
-      .type(mockRecipe.keywords.join(', '), { force: true });
-    cy.get('#keywords').blur();
+    mockRecipe.keywords.forEach((keyword, index) => {
+      cy.contains('button', 'Add Keyword').click();
+      cy.get(`#keyword-${index}`).type(keyword, { force: true });
+    });
 
     // Use window.ng to programmatically set the required image, method, and breadcrumb metadata fields to avoid CORS/upload issues in headless E2E
     cy.window().then((win: unknown) => {
