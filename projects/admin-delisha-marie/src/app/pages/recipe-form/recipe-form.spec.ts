@@ -397,17 +397,17 @@ describe('RecipeFormComponent', () => {
       ...component['recipeModel'](),
       keyword: [],
     });
-    
+
     component.addKeyword();
     expect(component['recipeModel']().keyword).toEqual(['']);
-    
+
     component.onKeywordInput(0, { target: { value: 'New Keyword' } } as unknown as Event);
     expect(component['recipeModel']().keyword).toEqual(['New Keyword']);
-    
+
     component.addKeyword();
     component.onKeywordInput(1, { target: { value: 'Second' } } as unknown as Event);
     expect(component['recipeModel']().keyword).toEqual(['New Keyword', 'Second']);
-    
+
     component.removeKeyword(0);
     expect(component['recipeModel']().keyword).toEqual(['Second']);
   });

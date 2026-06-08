@@ -257,7 +257,9 @@ interface RecipeFormModel {
 
               <div class="flex flex-col gap-3 md:col-span-2">
                 <div class="flex justify-between items-center">
-                  <span class="text-xs font-bold text-slate-200 uppercase tracking-wider">Keywords</span>
+                  <span class="text-xs font-bold text-slate-200 uppercase tracking-wider"
+                    >Keywords</span
+                  >
                   <button
                     type="button"
                     (click)="addKeyword()"
@@ -266,11 +268,13 @@ interface RecipeFormModel {
                     Add Keyword
                   </button>
                 </div>
-                
-                <div class="flex flex-wrap gap-2.5 items-center min-h-[46px] p-3 bg-slate-950/40 border border-slate-800 rounded-2xl">
+
+                <div
+                  class="flex flex-wrap gap-2.5 items-center min-h-[46px] p-3 bg-slate-950/40 border border-slate-800 rounded-2xl">
                   <mat-chip-set class="flex flex-wrap gap-2 items-center w-full">
                     @for (kw of recipeModel().keyword; track $index; let i = $index) {
-                      <mat-chip class="!bg-purple-500/10 !border !border-purple-500/20 !rounded-xl !h-auto !py-1.5 !px-3">
+                      <mat-chip
+                        class="!bg-purple-500/10 !border !border-purple-500/20 !rounded-xl !h-auto !py-1.5 !px-3">
                         <div class="flex items-center gap-1.5">
                           <input
                             [id]="'keyword-' + i"
@@ -290,7 +294,9 @@ interface RecipeFormModel {
                       </mat-chip>
                     }
                     @if (!recipeModel().keyword || recipeModel().keyword.length === 0) {
-                      <span class="text-slate-500 text-xs italic">No keywords added yet. Click "Add Keyword" to start.</span>
+                      <span class="text-slate-500 text-xs italic"
+                        >No keywords added yet. Click "Add Keyword" to start.</span
+                      >
                     }
                   </mat-chip-set>
                 </div>
@@ -828,8 +834,7 @@ export class RecipeFormComponent implements OnInit {
     };
     const categoryVal = this.getFieldValue('category') as CategoryTrails | null;
     const isCategoryMissing =
-      !categoryVal?.trails ||
-      categoryVal.trails.every((t) => t.length <= 2);
+      !categoryVal?.trails || categoryVal.trails.every((t) => t.length <= 2);
     return (
       isMissing(this.getFieldValue('title')) ||
       isMissing(this.getFieldValue('slug')) ||
