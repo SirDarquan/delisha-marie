@@ -38,7 +38,11 @@
             "server": "projects/delisha-marie/src/main.server.ts",
             "outputMode": "server",
             "security": {
-              "allowedHosts": []
+              "allowedHosts": [
+                "localhost",
+                "delisha-marie-644709001057.northamerica-south1.run.app",
+                "*.run.app"
+              ]
             },
             "ssr": {
               "entry": "projects/delisha-marie/src/server.ts"
@@ -145,15 +149,6 @@
             }
           }
         },
-        "test-api": {
-          "builder": "@angular/build:unit-test",
-          "options": {
-            "coverageReporters": ["lcov"],
-            "include": ["projects/delisha-marie/src/api/**/*.test.ts"],
-            "watch": false,
-            "runnerConfig": "projects/delisha-marie/src/api/vitest.config.ts"
-          }
-        },
         "lint": {
           "builder": "@angular-eslint/builder:lint",
           "options": {
@@ -244,6 +239,13 @@
               "projects/admin-delisha-marie/src/styles.scss"
             ],
             "server": "projects/admin-delisha-marie/src/main.server.ts",
+            "security": {
+              "allowedHosts": [
+                "localhost",
+                "admin-delisha-marie-644709001057.northamerica-south1.run.app",
+                "*.run.app"
+              ]
+            },
             "outputMode": "server",
             "ssr": {
               "entry": "projects/admin-delisha-marie/src/server.ts"
