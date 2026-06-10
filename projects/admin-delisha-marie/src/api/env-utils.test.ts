@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import { findSourceMap } from 'node:module';
 import path from 'node:path';
 import { describe, it, expect, beforeEach, vi, afterEach, type MockInstance } from 'vitest';
-import { loadCascadingEnvs, getSourceDir } from '@dm/backend-shared/env-utils';
+import { loadCascadingEnvs, getSourceDir, metaHelper } from '@dm/backend-shared/env-utils';
 
 vi.mock('node:module', () => ({
   findSourceMap: vi.fn(),
@@ -140,42 +140,11 @@ describe('Environment Utilities Service', () => {
     });
 
     it('should fall back to using fileURLToPath when import.meta properties are undefined/overridden', () => {
-      // We test if import.meta properties are overridden/absent.
-      // If we are in a transpiled CommonJS environment or if we can define them:
-      const originalDirname = import.meta.dirname;
-      const originalFilename = import.meta.filename;
-      try {
-        Object.defineProperty(import.meta, 'dirname', {
-          value: undefined,
-          writable: true,
-          configurable: true,
-        });
-        Object.defineProperty(import.meta, 'filename', {
-          value: undefined,
-          writable: true,
-          configurable: true,
-        });
-      } catch {
-        // Safe catch if import.meta is read-only
-      }
+      vi.spyOn(metaHelper, 'getDirname').mockReturnValue(undefined);
+      vi.spyOn(metaHelper, 'getFilename').mockReturnValue(undefined);
 
       const dir = getSourceDir('/api');
       expect(dir).toBeTruthy();
-
-      try {
-        Object.defineProperty(import.meta, 'dirname', {
-          value: originalDirname,
-          writable: true,
-          configurable: true,
-        });
-        Object.defineProperty(import.meta, 'filename', {
-          value: originalFilename,
-          writable: true,
-          configurable: true,
-        });
-      } catch {
-        // Safe catch
-      }
     });
 
     it('should safely handle the internal API throwing an exception', () => {
