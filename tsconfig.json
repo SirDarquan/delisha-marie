@@ -4,7 +4,8 @@
   "compileOnSave": false,
   "compilerOptions": {
     "paths": {
-      "@dm/library": ["./projects/dm/library/src/public-api.ts"]
+      "@dm/library": ["./projects/dm/library/src/public-api.ts"],
+      "@dm/backend-shared/*": ["./projects/dm/backend-shared/src/*"]
     },
     "strict": true,
     "noImplicitOverride": true,

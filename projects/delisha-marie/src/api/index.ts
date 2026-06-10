@@ -1,9 +1,7 @@
 import '@dm/backend-shared/load-env';
-
 import { Router } from 'express';
 import cookieParser from 'cookie-parser';
-import authRouter from './auth';
-import recipesRouter from './recipes';
+import recipeIndexRouter from './recipe-index';
 
 const apiRouter = Router();
 
@@ -11,7 +9,6 @@ const apiRouter = Router();
 apiRouter.use(cookieParser());
 
 // Register routers
-apiRouter.use('/api', authRouter);
-apiRouter.use('/api', recipesRouter);
+apiRouter.use('/api', recipeIndexRouter);
 
 export default apiRouter;

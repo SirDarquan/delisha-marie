@@ -1,12 +1,30 @@
 import fs from 'node:fs';
-import { findSourceMap } from 'node:module';
 import path from 'node:path';
-import { describe, it, expect, beforeEach, vi, afterEach, type MockInstance } from 'vitest';
-import { loadCascadingEnvs, getSourceDir } from '@dm/backend-shared/env-utils';
+import {
+  describe,
+  it,
+  expect,
+  beforeEach,
+  beforeAll,
+  vi,
+  afterEach,
+  type MockInstance,
+} from 'vitest';
 
-vi.mock('node:module', () => ({
-  findSourceMap: vi.fn(),
-}));
+const mockFindSourceMap = vi.fn();
+
+vi.mock('node:module', () => {
+  const mockObj = {
+    findSourceMap: mockFindSourceMap,
+  };
+  return {
+    ...mockObj,
+    default: mockObj,
+  };
+});
+
+let loadCascadingEnvs: typeof import('./env-utils').loadCascadingEnvs;
+let getSourceDir: typeof import('./env-utils').getSourceDir;
 
 interface SourceMapPayload {
   sources: string[];
@@ -20,11 +38,17 @@ describe('Environment Utilities Service', () => {
   let existsSpy: MockInstance<typeof fs.existsSync>;
   let readSpy: MockInstance<typeof fs.readFileSync>;
 
+  beforeAll(async () => {
+    const envUtils = await import('./env-utils');
+    loadCascadingEnvs = envUtils.loadCascadingEnvs;
+    getSourceDir = envUtils.getSourceDir;
+  });
+
   beforeEach(() => {
     originalEnv = { ...process.env };
     existsSpy = vi.spyOn(fs, 'existsSync').mockReturnValue(false);
     readSpy = vi.spyOn(fs, 'readFileSync').mockReturnValue('');
-    vi.mocked(findSourceMap).mockReturnValue(undefined);
+    mockFindSourceMap.mockReturnValue(undefined);
   });
 
   afterEach(() => {
@@ -41,7 +65,6 @@ describe('Environment Utilities Service', () => {
 
       loadCascadingEnvs(start, target, '.testenv');
 
-      // expect(readSpy).toHaveBeenCalledTimes(3);
       expect(process.env['KEY1']).toBe('val1');
     });
 
@@ -87,23 +110,19 @@ describe('Environment Utilities Service', () => {
     it('should execute internal SourceMap extraction and find match', () => {
       const mockUri = 'file:///C:/project/src/api/index.ts';
       const mockMap: MockSourceMap = { payload: { sources: [mockUri] } };
-      vi.mocked(findSourceMap).mockReturnValue(
-        mockMap as unknown as ReturnType<typeof findSourceMap>,
-      );
+      mockFindSourceMap.mockReturnValue(mockMap as unknown as undefined);
 
       existsSpy.mockImplementation((p) => String(p).includes('index.ts'));
 
       const dir = getSourceDir('/api');
       expect(dir).toBeTruthy();
-      expect(findSourceMap).toHaveBeenCalled();
+      expect(mockFindSourceMap).toHaveBeenCalled();
     });
 
     it('should handle non-file protocol matching path string', () => {
       const mockUri = '/project/src/api/index.ts';
       const mockMap: MockSourceMap = { payload: { sources: [mockUri] } };
-      vi.mocked(findSourceMap).mockReturnValue(
-        mockMap as unknown as ReturnType<typeof findSourceMap>,
-      );
+      mockFindSourceMap.mockReturnValue(mockMap as unknown as undefined);
 
       existsSpy.mockImplementation((p) => String(p) === path.normalize(mockUri));
 
@@ -112,16 +131,14 @@ describe('Environment Utilities Service', () => {
     });
 
     it('should silently fall back to current directory if map is missing', () => {
-      vi.mocked(findSourceMap).mockReturnValue(undefined);
+      mockFindSourceMap.mockReturnValue(undefined);
       const dir = getSourceDir('/fake');
       expect(dir).toBeTruthy();
     });
 
     it('should return current directory if sources exists but target not found', () => {
       const mockMap: MockSourceMap = { payload: { sources: ['/other/path/test.js'] } };
-      vi.mocked(findSourceMap).mockReturnValue(
-        mockMap as unknown as ReturnType<typeof findSourceMap>,
-      );
+      mockFindSourceMap.mockReturnValue(mockMap as unknown as undefined);
       const dir = getSourceDir('/MISSING');
       expect(dir).toBeTruthy();
     });
@@ -129,9 +146,7 @@ describe('Environment Utilities Service', () => {
     it('should handle matching source path but file does not exist on disk', () => {
       const mockUri = 'file:///C:/project/src/api/index.ts';
       const mockMap: MockSourceMap = { payload: { sources: [mockUri] } };
-      vi.mocked(findSourceMap).mockReturnValue(
-        mockMap as unknown as ReturnType<typeof findSourceMap>,
-      );
+      mockFindSourceMap.mockReturnValue(mockMap as unknown as undefined);
 
       existsSpy.mockReturnValue(false);
 
@@ -140,8 +155,6 @@ describe('Environment Utilities Service', () => {
     });
 
     it('should fall back to using fileURLToPath when import.meta properties are undefined/overridden', () => {
-      // We test if import.meta properties are overridden/absent.
-      // If we are in a transpiled CommonJS environment or if we can define them:
       const originalDirname = import.meta.dirname;
       const originalFilename = import.meta.filename;
       try {
@@ -179,7 +192,7 @@ describe('Environment Utilities Service', () => {
     });
 
     it('should safely handle the internal API throwing an exception', () => {
-      vi.mocked(findSourceMap).mockImplementation(() => {
+      mockFindSourceMap.mockImplementation(() => {
         throw new Error('Internal Crash');
       });
       const dir = getSourceDir('/api');
