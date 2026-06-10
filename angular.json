@@ -124,6 +124,15 @@
             "watch": false
           }
         },
+        "test-api": {
+          "builder": "@angular/build:unit-test",
+          "options": {
+            "coverageReporters": ["lcov"],
+            "include": ["projects/delisha-marie/src/api/**/*.test.ts"],
+            "watch": false,
+            "runnerConfig": "projects/delisha-marie/src/api/vitest.config.ts"
+          }
+        },
         "lint": {
           "builder": "@angular-eslint/builder:lint",
           "options": {
@@ -396,6 +405,14 @@
             "tsConfig": "projects/dm/library/tsconfig.spec.json",
             "coverageReporters": ["lcov"],
             "watch": false
+          }
+        },
+        "test-api": {
+          "builder": "@angular/build:unit-test",
+          "options": {
+            "coverageReporters": ["lcov"],
+            "watch": false,
+            "runnerConfig": "projects/dm/backend-shared/src/vitest.config.ts"
           }
         },
         "lint": {

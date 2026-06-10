@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import { findSourceMap } from 'node:module';
 import path from 'node:path';
 import { describe, it, expect, beforeEach, vi, afterEach, type MockInstance } from 'vitest';
-import { loadCascadingEnvs, getSourceDir } from './env-utils';
+import { loadCascadingEnvs, getSourceDir } from '@dm/backend-shared/env-utils';
 
 vi.mock('node:module', () => ({
   findSourceMap: vi.fn(),
