@@ -3,6 +3,6 @@ import './load-env';
 
 describe('load-env side effect', () => {
   it('should load environment successfully on module import', () => {
-    expect(true).toBe(true);
+    expect(typeof process.env['NODE_ENV']).toBe('string');
   });
 });

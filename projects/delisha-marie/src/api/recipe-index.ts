@@ -65,7 +65,7 @@ recipeIndexRouter.get('/recipe-index', async (req: Request, res: Response) => {
         breadcrumbs.forEach((gp) => {
           if (gp && Array.isArray(gp.items)) {
             gp.items.forEach((item) => {
-              if (item && item.url && item.url.startsWith('/recipes/')) {
+              if (item?.url?.startsWith('/recipes/')) {
                 const parts = item.url.split('/');
                 if (parts.length === 3) {
                   const parentSlug = parts[2];
