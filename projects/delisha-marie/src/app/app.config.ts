@@ -35,10 +35,7 @@ export const appConfig: ApplicationConfig = {
             const mockUrl = '/api/recipes.json';
             return next(req.clone({ url: mockUrl }));
           }
-          if (req.url.includes('/api/recipe-index')) {
-            const mockUrl = '/api/recipe-index.json';
-            return next(req.clone({ url: mockUrl }));
-          }
+
           if (req.url.includes('/api/comments')) {
             const mockUrl = '/api/comments.json';
             return next(req.clone({ url: mockUrl }));

@@ -6,6 +6,7 @@ import {
 } from '@angular/ssr/node';
 import express from 'express';
 import { join } from 'node:path';
+import apiRouter from './api';
 
 const browserDistFolder = join(import.meta.dirname, '../browser');
 
@@ -27,6 +28,8 @@ const angularApp = new AngularNodeAppEngine();
 /**
  * Serve static files from /browser
  */
+app.use(apiRouter);
+
 app.use(
   express.static(browserDistFolder, {
     maxAge: '1y',
