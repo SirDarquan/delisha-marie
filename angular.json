@@ -407,10 +407,38 @@
             "watch": false
           }
         },
+        "lint": {
+          "builder": "@angular-eslint/builder:lint",
+          "options": {
+            "fix": true,
+            "lintFilePatterns": ["projects/dm/library/**/*.ts", "projects/dm/library/**/*.html"],
+            "eslintConfig": "projects/dm/library/eslint.config.js"
+          }
+        }
+      }
+    },
+    "@dm/backend-shared": {
+      "projectType": "library",
+      "root": "projects/dm/backend-shared",
+      "sourceRoot": "projects/dm/backend-shared/src",
+      "architect": {
+        "build": {
+          "builder": "@angular/build:application",
+          "options": {
+            "outputPath": "dist/dm/backend-shared",
+            "index": "",
+            "browser": "projects/dm/backend-shared/src/env-utils.ts",
+            "tsConfig": "projects/dm/backend-shared/tsconfig.lib.json",
+            "externalDependencies": ["node:fs", "node:path", "node:util", "node:module", "node:url"]
+          }
+        },
         "test-api": {
           "builder": "@angular/build:unit-test",
           "options": {
+            "buildTarget": "delisha-marie:build",
+            "tsConfig": "projects/dm/backend-shared/tsconfig.spec.json",
             "coverageReporters": ["lcov"],
+            "include": ["projects/dm/backend-shared/src/**/*.test.ts"],
             "watch": false,
             "runnerConfig": "projects/dm/backend-shared/src/vitest.config.ts"
           }
@@ -419,8 +447,8 @@
           "builder": "@angular-eslint/builder:lint",
           "options": {
             "fix": true,
-            "lintFilePatterns": ["projects/dm/library/**/*.ts", "projects/dm/library/**/*.html"],
-            "eslintConfig": "projects/dm/library/eslint.config.js"
+            "lintFilePatterns": ["projects/dm/backend-shared/**/*.ts"],
+            "eslintConfig": "projects/dm/backend-shared/eslint.config.js"
           }
         }
       }
