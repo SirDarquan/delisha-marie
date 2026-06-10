@@ -25,6 +25,7 @@ vi.mock('node:module', () => {
 
 let loadCascadingEnvs: typeof import('./env-utils').loadCascadingEnvs;
 let getSourceDir: typeof import('./env-utils').getSourceDir;
+let metaHelper: typeof import('./env-utils').metaHelper;
 
 interface SourceMapPayload {
   sources: string[];
@@ -42,6 +43,7 @@ describe('Environment Utilities Service', () => {
     const envUtils = await import('./env-utils');
     loadCascadingEnvs = envUtils.loadCascadingEnvs;
     getSourceDir = envUtils.getSourceDir;
+    metaHelper = envUtils.metaHelper;
   });
 
   beforeEach(() => {
@@ -155,40 +157,11 @@ describe('Environment Utilities Service', () => {
     });
 
     it('should fall back to using fileURLToPath when import.meta properties are undefined/overridden', () => {
-      const originalDirname = import.meta.dirname;
-      const originalFilename = import.meta.filename;
-      try {
-        Object.defineProperty(import.meta, 'dirname', {
-          value: undefined,
-          writable: true,
-          configurable: true,
-        });
-        Object.defineProperty(import.meta, 'filename', {
-          value: undefined,
-          writable: true,
-          configurable: true,
-        });
-      } catch {
-        // Safe catch if import.meta is read-only
-      }
+      vi.spyOn(metaHelper, 'getDirname').mockReturnValue(undefined);
+      vi.spyOn(metaHelper, 'getFilename').mockReturnValue(undefined);
 
       const dir = getSourceDir('/api');
       expect(dir).toBeTruthy();
-
-      try {
-        Object.defineProperty(import.meta, 'dirname', {
-          value: originalDirname,
-          writable: true,
-          configurable: true,
-        });
-        Object.defineProperty(import.meta, 'filename', {
-          value: originalFilename,
-          writable: true,
-          configurable: true,
-        });
-      } catch {
-        // Safe catch
-      }
     });
 
     it('should safely handle the internal API throwing an exception', () => {

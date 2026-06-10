@@ -121,7 +121,28 @@
           "options": {
             "coverageReporters": ["lcov"],
             "exclude": ["projects/admin-delisha-marie/src/api/**/*.test.ts"],
-            "watch": false
+            "watch": false,
+            "coverageThresholds": {
+              "statements": 94,
+              "branches": 90,
+              "functions": 94,
+              "lines": 94
+            }
+          }
+        },
+        "test-api": {
+          "builder": "@angular/build:unit-test",
+          "options": {
+            "coverageReporters": ["lcov"],
+            "include": ["projects/delisha-marie/src/api/**/*.test.ts"],
+            "watch": false,
+            "runnerConfig": "projects/delisha-marie/src/api/vitest.config.ts",
+            "coverageThresholds": {
+              "statements": 95,
+              "branches": 95,
+              "functions": 95,
+              "lines": 95
+            }
           }
         },
         "test-api": {
@@ -308,7 +329,13 @@
           "options": {
             "coverageReporters": ["lcov"],
             "exclude": ["projects/admin-delisha-marie/src/api/**/*.test.ts"],
-            "watch": false
+            "watch": false,
+            "coverageThresholds": {
+              "statements": 94,
+              "branches": 92,
+              "functions": 86,
+              "lines": 94
+            }
           }
         },
         "test-api": {
@@ -317,7 +344,13 @@
             "coverageReporters": ["lcov"],
             "include": ["projects/admin-delisha-marie/src/api/**/*.test.ts"],
             "watch": false,
-            "runnerConfig": "projects/admin-delisha-marie/src/api/vitest.config.ts"
+            "runnerConfig": "projects/admin-delisha-marie/src/api/vitest.config.ts",
+            "coverageThresholds": {
+              "statements": 95,
+              "branches": 95,
+              "functions": 95,
+              "lines": 95
+            }
           }
         },
         "lint": {
@@ -404,7 +437,13 @@
           "options": {
             "tsConfig": "projects/dm/library/tsconfig.spec.json",
             "coverageReporters": ["lcov"],
-            "watch": false
+            "watch": false,
+            "coverageThresholds": {
+              "statements": 95,
+              "branches": 95,
+              "functions": 95,
+              "lines": 95
+            }
           }
         },
         "lint": {
@@ -440,7 +479,13 @@
             "coverageReporters": ["lcov"],
             "include": ["projects/dm/backend-shared/src/**/*.test.ts"],
             "watch": false,
-            "runnerConfig": "projects/dm/backend-shared/src/vitest.config.ts"
+            "runnerConfig": "projects/dm/backend-shared/src/vitest.config.ts",
+            "coverageThresholds": {
+              "statements": 95,
+              "branches": 95,
+              "functions": 95,
+              "lines": 95
+            }
           }
         },
         "lint": {

@@ -67,9 +67,15 @@ function resolveMappedPath(sources: string[], target: string): string | null {
  * Leverages the native Node.js findSourceMap API to resolve the runtime
  * bundle back to its origin physical path on disk, without fake errors.
  */
+export const metaHelper = {
+  getDirname: (): string | undefined => import.meta.dirname,
+  getFilename: (): string | undefined => import.meta.filename,
+  getUrl: () => import.meta.url,
+};
+
 export function getSourceDir(targetSourcePath: string): string {
-  const currentDir = import.meta.dirname || path.dirname(fileURLToPath(import.meta.url));
-  const currentFile = import.meta.filename || fileURLToPath(import.meta.url);
+  const currentDir = metaHelper.getDirname() || path.dirname(fileURLToPath(metaHelper.getUrl()));
+  const currentFile = metaHelper.getFilename() || fileURLToPath(metaHelper.getUrl());
 
   try {
     const map = findSourceMap(currentFile);

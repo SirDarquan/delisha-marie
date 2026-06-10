@@ -67,7 +67,14 @@ describe('Recipe Index Router API', () => {
           items: [
             { label: 'Invalid' }, // Test breadcrumb item without url/label match
             null, // Test null item
+            { label: 'About', url: '/about' }, // Test item not starting with /recipes/
+            { label: 'Short', url: '/recipes' }, // Test item with parts.length < 3
+            { label: 'Long', url: '/recipes/a/b/c' }, // Test item with parts.length > 4
           ],
+        },
+        null, // Test null gp
+        {
+          items: null, // Test null items list in gp
         },
       ],
     },
@@ -92,6 +99,8 @@ describe('Recipe Index Router API', () => {
     { recipe_id: 'recipe-1', ingredient_id: '4' },
     { recipe_id: 'recipe-2', ingredient_id: '3' },
     { recipe_id: 'recipe-99', ingredient_id: '1' }, // Test relation to non-published recipe ID
+    { recipe_id: 'recipe-1', ingredient_id: '' }, // Test relation with empty ingredient_id
+    { recipe_id: 'recipe-1', ingredient_id: null as unknown as string }, // Test relation with null ingredient_id
   ];
 
   beforeEach(() => {
@@ -223,6 +232,32 @@ describe('Recipe Index Router API', () => {
       expect(ingredients[0].children[1].name).toBe('Apple Juice');
       expect(ingredients[0].children[1].count).toBe(1);
       expect(ingredients[1].name).toBe('Baking Soda');
+    });
+
+    it('should successfully handle null and empty values from database tables', async () => {
+      // Modify mockFrom temporarily for this test to return null data
+      mockFrom.mockImplementation(() => {
+        return {
+          select: () => {
+            const then = (
+              onfulfilled?: (value: { data: unknown; error: Error | null }) => unknown,
+            ) => {
+              return Promise.resolve({ data: null, error: null }).then(onfulfilled);
+            };
+            return {
+              eq: () => Promise.resolve({ data: null, error: null }),
+              then,
+            };
+          },
+        };
+      });
+
+      const res = await request(app).get('/api/recipe-index');
+      expect(res.status).toBe(200);
+      expect(res.body.cookingMethods).toEqual([]);
+      expect(res.body.holidays).toEqual([]);
+      expect(res.body.specialDiets).toEqual([]);
+      expect(res.body.ingredients).toEqual([]);
     });
   });
 
