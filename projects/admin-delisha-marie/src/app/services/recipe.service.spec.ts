@@ -4,6 +4,28 @@ import { provideHttpClient } from '@angular/common/http';
 import { RecipeService } from './recipe.service';
 import { Recipe } from '../models/recipe.model';
 
+if (typeof localStorage === 'undefined') {
+  const store: Record<string, string> = {};
+  globalThis.localStorage = {
+    clear: () => {
+      for (const key in store) {
+        delete store[key];
+      }
+    },
+    getItem: (key: string) => store[key] || null,
+    key: (index: number) => Object.keys(store)[index] || null,
+    removeItem: (key: string) => {
+      delete store[key];
+    },
+    setItem: (key: string, value: string) => {
+      store[key] = String(value);
+    },
+    get length() {
+      return Object.keys(store).length;
+    },
+  } as unknown as Storage;
+}
+
 describe('RecipeService', () => {
   let service: RecipeService;
   let httpMock: HttpTestingController;

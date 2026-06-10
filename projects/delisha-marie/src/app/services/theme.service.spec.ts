@@ -4,6 +4,28 @@ import { PLATFORM_ID } from '@angular/core';
 import { WINDOW } from './global-tokens';
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 
+if (typeof localStorage === 'undefined') {
+  const store: Record<string, string> = {};
+  globalThis.localStorage = {
+    clear: () => {
+      for (const key in store) {
+        delete store[key];
+      }
+    },
+    getItem: (key: string) => store[key] || null,
+    key: (index: number) => Object.keys(store)[index] || null,
+    removeItem: (key: string) => {
+      delete store[key];
+    },
+    setItem: (key: string, value: string) => {
+      store[key] = String(value);
+    },
+    get length() {
+      return Object.keys(store).length;
+    },
+  } as unknown as Storage;
+}
+
 describe('ThemeService', () => {
   let service: ThemeService;
 
