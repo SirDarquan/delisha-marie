@@ -78,6 +78,16 @@ describe('Recipe Index Router API', () => {
         },
       ],
     },
+    {
+      id: 'recipe-5',
+      breadcrumbs: [
+        {
+          items: [
+            { label: 'Empty Category Slug', url: '/recipes/' },
+          ],
+        },
+      ],
+    },
   ];
 
   const mockMethods = [{ name: 'Air Fryer', slug: 'air-fryer' }];
@@ -91,6 +101,7 @@ describe('Recipe Index Router API', () => {
     { id: '2', name: 'Apple Cider', slug: 'apple-cider' },
     { id: '4', name: 'Apple Juice', slug: 'apple-juice' },
     { id: '3', name: 'Baking Soda', slug: 'baking-soda' },
+    { id: '5', name: 'Unused Ingredient', slug: 'unused-ingredient' },
   ];
 
   const mockRelations = [
@@ -189,6 +200,17 @@ describe('Recipe Index Router API', () => {
 
       process.env['SUPABASE_URL'] = originalUrl;
     });
+
+    it('should throw error when SUPABASE_KEY is missing', async () => {
+      const originalKey = process.env['SUPABASE_KEY'];
+      delete process.env['SUPABASE_KEY'];
+
+      const res = await request(app).get('/api/recipe-index');
+      expect(res.status).toBe(500);
+      expect(res.body.error).toContain('Supabase URL and Key are required');
+
+      process.env['SUPABASE_KEY'] = originalKey;
+    });
   });
 
   describe('GET /recipe-index success flow', () => {
@@ -199,7 +221,7 @@ describe('Recipe Index Router API', () => {
 
       // Verify categoriesList nesting
       const categoryList = res.body.categoriesList;
-      expect(categoryList).toHaveLength(2);
+      expect(categoryList).toHaveLength(3);
       expect(categoryList[0].name).toBe('Appetizers');
       expect(categoryList[0].children).toHaveLength(2);
       expect(categoryList[0].children[0].name).toBe('Dips');
@@ -207,8 +229,11 @@ describe('Recipe Index Router API', () => {
       expect(categoryList[0].children[1].name).toBe('Wings');
       expect(categoryList[0].children[1].url).toBe('/recipes/appetizers/wings');
 
-      expect(categoryList[1].name).toBe('Main Dishes');
-      expect(categoryList[1].children).toBeUndefined(); // Main Dishes has no subcategory level 4 breadcrumbs in mockup
+      expect(categoryList[1].name).toBe('Empty Category Slug');
+      expect(categoryList[1].url).toBe('/recipes/');
+
+      expect(categoryList[2].name).toBe('Main Dishes');
+      expect(categoryList[2].children).toBeUndefined(); // Main Dishes has no subcategory level 4 breadcrumbs in mockup
 
       // Verify cooking methods
       expect(res.body.cookingMethods).toHaveLength(1);
@@ -224,7 +249,7 @@ describe('Recipe Index Router API', () => {
 
       // Verify best recipes
       const theBest = res.body.bestRecipes;
-      expect(theBest).toHaveLength(2);
+      expect(theBest).toHaveLength(3);
       expect(theBest[0].name).toBe('The Best Appetizers');
       expect(theBest[0].url).toBe('/the-best-recipes/the-best-appetizers');
       expect(theBest[0].children).toHaveLength(2);
@@ -232,8 +257,12 @@ describe('Recipe Index Router API', () => {
       expect(theBest[0].children[0].url).toBe(
         '/the-best-recipes/the-best-appetizers/the-best-dips',
       );
-      expect(theBest[1].name).toBe('The Best Main Dishes');
-      expect(theBest[1].url).toBe('/the-best-recipes/the-best-main-dishes');
+
+      expect(theBest[1].name).toBe('The Best Empty Category Slug');
+      expect(theBest[1].url).toBe('/the-best-recipes/the-best-');
+
+      expect(theBest[2].name).toBe('The Best Main Dishes');
+      expect(theBest[2].url).toBe('/the-best-recipes/the-best-main-dishes');
 
       // Verify ingredients prefix matching nesting
       const ingredients = res.body.ingredients;

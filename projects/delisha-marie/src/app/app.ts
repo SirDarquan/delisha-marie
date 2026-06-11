@@ -39,7 +39,7 @@ export class App {
       const ev = scrollEvent();
       if (ev) {
         if (ev.position) {
-          this.viewportScroller.scrollToPosition(ev.position || [0, 0]);
+          this.viewportScroller.scrollToPosition(ev.position);
         } else if (ev.anchor) {
           this.viewportScroller.scrollToAnchor(ev.anchor);
         }

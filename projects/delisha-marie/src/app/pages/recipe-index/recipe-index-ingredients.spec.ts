@@ -96,4 +96,37 @@ describe('RecipeIndexIngredients', () => {
     expect(compiled.textContent).toContain('(46)');
     expect(compiled.textContent).toContain('(15)');
   });
+
+  it('should do nothing in scrollToSection if platform is server', () => {
+    const spy = vi.spyOn(document, 'getElementById');
+    const compAny = component as any;
+    const originalPlatformId = compAny.platformId;
+    compAny.platformId = 'server';
+    component.scrollToSection('A');
+    compAny.platformId = originalPlatformId;
+    expect(spy).not.toHaveBeenCalled();
+  });
+
+  it('should do nothing in scrollToSection if element is not found', () => {
+    const originalGetElementById = document.getElementById;
+    const spy = vi.spyOn(document, 'getElementById').mockImplementation(function (id) {
+      if (id === 'NonExistent') return null;
+      return originalGetElementById.call(document, id);
+    });
+    component.scrollToSection('NonExistent');
+    expect(spy).toHaveBeenCalledWith('NonExistent');
+    spy.mockRestore();
+  });
+
+  it('should do nothing in scrollToSection if scrollIntoView is not a function', () => {
+    const originalGetElementById = document.getElementById;
+    const mockElement = { scrollIntoView: undefined } as unknown as HTMLElement;
+    const spy = vi.spyOn(document, 'getElementById').mockImplementation(function (id) {
+      if (id === 'A') return mockElement;
+      return originalGetElementById.call(document, id);
+    });
+    component.scrollToSection('A');
+    expect(spy).toHaveBeenCalledWith('A');
+    spy.mockRestore();
+  });
 });
