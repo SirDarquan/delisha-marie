@@ -45,57 +45,11 @@ interface IngredientListItem {
   children?: IngredientListItem[];
 }
 
-async function getFeaturedCategories(supabase: SupabaseClient) {
-  const { data: recipes, error: recipesError } = await supabase
-    .from('recipes')
-    .select('id, breadcrumbs')
-    .eq('status', 'published');
-
-  if (recipesError) throw recipesError;
-
-  const parentNames = new Map<string, string>();
-
-  (recipes as RecipeRow[] | null)?.forEach((r) => {
-    const breadcrumbs = r.breadcrumbs as Breadcrumb[] | null;
-    if (Array.isArray(breadcrumbs)) {
-      breadcrumbs.forEach((gp) => {
-        if (gp && Array.isArray(gp.items)) {
-          gp.items.forEach((item) => {
-            if (item?.url?.startsWith('/recipes/')) {
-              const parts = item.url.split('/');
-              if (parts.length === 3) {
-                const parentSlug = parts[2];
-                parentNames.set(parentSlug, item.label);
-              }
-            }
-          });
-        }
-      });
-    }
-  });
-
-  return Array.from(parentNames.entries())
-    .map(([parentSlug, name]) => ({
-      name,
-      url: `/recipes/${parentSlug}`,
-      image: `/images/categories/${parentSlug}.png`,
-    }))
-    .sort((a, b) => a.name.localeCompare(b.name))
-    .slice(0, 8);
-}
-
-async function getCategoriesList(supabase: SupabaseClient): Promise<CategoryItem[]> {
-  const { data: recipes, error: recipesError } = await supabase
-    .from('recipes')
-    .select('id, breadcrumbs')
-    .eq('status', 'published');
-
-  if (recipesError) throw recipesError;
-
+function parseRecipeCategories(recipes: RecipeRow[] | null) {
   const parentNames = new Map<string, string>();
   const parentToChildren = new Map<string, Map<string, string>>();
 
-  (recipes as RecipeRow[] | null)?.forEach((r) => {
+  recipes?.forEach((r) => {
     const breadcrumbs = r.breadcrumbs as Breadcrumb[] | null;
     if (Array.isArray(breadcrumbs)) {
       breadcrumbs.forEach((gp) => {
@@ -121,6 +75,39 @@ async function getCategoriesList(supabase: SupabaseClient): Promise<CategoryItem
       });
     }
   });
+
+  return { parentNames, parentToChildren };
+}
+
+async function getFeaturedCategories(supabase: SupabaseClient) {
+  const { data: recipes, error: recipesError } = await supabase
+    .from('recipes')
+    .select('id, breadcrumbs')
+    .eq('status', 'published');
+
+  if (recipesError) throw recipesError;
+
+  const { parentNames } = parseRecipeCategories(recipes as RecipeRow[] | null);
+
+  return Array.from(parentNames.entries())
+    .map(([parentSlug, name]) => ({
+      name,
+      url: `/recipes/${parentSlug}`,
+      image: `/images/categories/${parentSlug}.png`,
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .slice(0, 8);
+}
+
+async function getCategoriesList(supabase: SupabaseClient): Promise<CategoryItem[]> {
+  const { data: recipes, error: recipesError } = await supabase
+    .from('recipes')
+    .select('id, breadcrumbs')
+    .eq('status', 'published');
+
+  if (recipesError) throw recipesError;
+
+  const { parentNames, parentToChildren } = parseRecipeCategories(recipes as RecipeRow[] | null);
 
   return Array.from(parentNames.entries())
     .map(([parentSlug, name]) => {
