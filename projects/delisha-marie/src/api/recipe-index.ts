@@ -45,7 +45,7 @@ interface IngredientListItem {
   children?: IngredientListItem[];
 }
 
-function parseRecipeCategories(recipes: RecipeRow[] | null) {
+function parseRecipeCategories(recipes: any[] | null) {
   const parentNames = new Map<string, string>();
   const parentToChildren = new Map<string, Map<string, string>>();
 
@@ -87,7 +87,7 @@ async function getFeaturedCategories(supabase: SupabaseClient) {
 
   if (recipesError) throw recipesError;
 
-  const { parentNames } = parseRecipeCategories(recipes as RecipeRow[] | null);
+  const { parentNames } = parseRecipeCategories(recipes);
 
   return Array.from(parentNames.entries())
     .map(([parentSlug, name]) => ({
@@ -107,7 +107,7 @@ async function getCategoriesList(supabase: SupabaseClient): Promise<CategoryItem
 
   if (recipesError) throw recipesError;
 
-  const { parentNames, parentToChildren } = parseRecipeCategories(recipes as RecipeRow[] | null);
+  const { parentNames, parentToChildren } = parseRecipeCategories(recipes);
 
   return Array.from(parentNames.entries())
     .map(([parentSlug, name]) => {
@@ -271,9 +271,9 @@ function slugify(text: string): string {
     .toLowerCase()
     .trim()
     .replace(/\s+/g, '-')
-    .replace(/&/g, '-and-')
-    .replace(/[^\w\-]+/g, '')
-    .replace(/\-\-+/g, '-');
+    .replaceAll('&', '-and-')
+    .replace(/[^\w-]+/g, '')
+    .replace(/--+/g, '-');
 }
 
 function transformToBest(categories: CategoryItem[], theBest?: string): CategoryItem[] {

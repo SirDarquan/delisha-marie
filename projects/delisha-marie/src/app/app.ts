@@ -1,10 +1,9 @@
 import { Component, ChangeDetectionStrategy, ViewEncapsulation, inject, Signal, effect } from '@angular/core';
-import { Router, RouterOutlet } from '@angular/router';
+import { Router, RouterOutlet, Scroll } from '@angular/router';
 import { Header } from './components/header/header';
 import { Footer } from './components/footer/footer';
 import { ViewportScroller } from '@angular/common';
 import { filter, map } from 'rxjs';
-import { Scroll } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 
 @Component({
@@ -23,7 +22,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class App {
-  private viewportScroller = inject(ViewportScroller);
+  private readonly viewportScroller = inject(ViewportScroller);
 
   constructor() {
     const scrollingPosition: Signal<[number, number] | undefined> = toSignal(
