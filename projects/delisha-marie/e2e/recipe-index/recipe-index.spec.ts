@@ -11,24 +11,23 @@ test.describe('Recipe Index Page', () => {
 
   test('should navigate to alphabet sections via jump links', async ({ page }) => {
     // Wait for ingredients to load (fetched via API)
-    const jumpLinkA = page.locator('a[href="/recipe-index#A"]');
+    const jumpLinkA = page.getByRole('button', { name: 'A', exact: true });
     await expect(jumpLinkA).toBeVisible();
 
     await jumpLinkA.click();
-    // Check if the scroll moved or just if the hash is updated
-    await expect(page).toHaveURL(/#A$/);
+    // Check that the URL is not updated with a hash
+    await expect(page).not.toHaveURL(/#A$/);
 
     const sectionA = page.locator('#A');
     await expect(sectionA).toBeVisible();
   });
 
-  test('should have back to top links in ingredient sections', async ({ page }) => {
-    const backToTop = page.locator('a[href="/recipe-index#recipe-by-ingredients"]').first();
+  test('should have back to top buttons in ingredient sections', async ({ page }) => {
+    const backToTop = page.getByRole('button', { name: /back to top/i }).first();
     await expect(backToTop).toBeVisible();
-    await expect(backToTop).toContainText(/back to top/i);
 
     await backToTop.click();
-    await expect(page).toHaveURL(/#recipe-by-ingredients$/);
+    await expect(page).not.toHaveURL(/#recipe-by-ingredients$/);
   });
 
   test('should show correct counts for ingredients', async ({ page }) => {

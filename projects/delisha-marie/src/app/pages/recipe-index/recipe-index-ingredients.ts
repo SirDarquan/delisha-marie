@@ -4,7 +4,10 @@ import {
   ViewEncapsulation,
   input,
   computed,
+  inject,
+  PLATFORM_ID,
 } from '@angular/core';
+import { DOCUMENT, isPlatformBrowser } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { Ingredient } from '../../models/category';
 
@@ -12,7 +15,7 @@ import { Ingredient } from '../../models/category';
   selector: 'dm-recipe-index-ingredients',
   imports: [RouterLink],
   template: `
-    <section id="recipe-by-ingredients" class="py-16 bg-[var(--mat-sys-surface)]">
+    <section id="recipe-by-ingredients" class="py-16 bg-[var(--mat-sys-surface)] scroll-mt-24">
       <div class="into-the-box">
         <header class="mb-10 text-left">
           <h2 class="text-4xl font-extrabold tracking-tight text-[var(--mat-sys-on-surface)]">
@@ -24,11 +27,12 @@ import { Ingredient } from '../../models/category';
         <!-- Alphabetical Jump Links -->
         <nav class="flex flex-wrap gap-2 mb-12 py-4 justify-center">
           @for (group of groupedIngredients(); track group.letter) {
-            <a
-              [href]="'/recipe-index#' + group.letter"
-              class="w-12 h-10 flex items-center justify-center rounded-lg bg-[var(--mat-sys-surface-container-highest)] text-[var(--mat-sys-primary)] font-bold hover:bg-[var(--mat-sys-primary)] hover:text-[var(--mat-sys-on-primary)] transition-all duration-200 no-underline shadow-sm">
+            <button
+              type="button"
+              (click)="scrollToSection(group.letter)"
+              class="w-12 h-10 flex items-center justify-center rounded-lg bg-[var(--mat-sys-surface-container-highest)] text-[var(--mat-sys-primary)] font-bold hover:bg-[var(--mat-sys-primary)] hover:text-[var(--mat-sys-on-primary)] transition-all duration-200 no-underline shadow-sm border-0 cursor-pointer">
               {{ group.letter }}
-            </a>
+            </button>
           }
         </nav>
 
@@ -40,12 +44,13 @@ import { Ingredient } from '../../models/category';
                 <h3 class="text-5xl font-black text-[var(--mat-sys-outline)] opacity-50">
                   {{ group.letter }}
                 </h3>
-                <a
-                  href="/recipe-index#recipe-by-ingredients"
-                  class="text-sm font-bold text-[var(--mat-sys-secondary)] hover:text-[var(--mat-sys-primary)] flex items-center gap-1 no-underline uppercase tracking-wider">
+                <button
+                  type="button"
+                  (click)="scrollToSection('recipe-by-ingredients')"
+                  class="text-sm font-bold text-[var(--mat-sys-secondary)] hover:text-[var(--mat-sys-primary)] flex items-center gap-1 no-underline uppercase tracking-wider bg-transparent border-0 cursor-pointer p-0">
                   <span class="material-icons text-base">expand_less</span>
                   (back to top)
-                </a>
+                </button>
               </header>
 
               <div class="columns-1 sm:columns-2 md:columns-3 lg:columns-4 gap-x-12">
@@ -106,6 +111,9 @@ import { Ingredient } from '../../models/category';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RecipeIndexIngredients {
+  private readonly platformId = inject(PLATFORM_ID);
+  private readonly document = inject(DOCUMENT);
+
   readonly ingredients = input.required<Ingredient[]>();
 
   readonly groupedIngredients = computed(() => {
@@ -133,5 +141,14 @@ export class RecipeIndexIngredients {
       return item.children.reduce((sum, child) => sum + (child.count || 0), 0);
     }
     return item.count || 0;
+  }
+
+  scrollToSection(id: string): void {
+    if (isPlatformBrowser(this.platformId)) {
+      const element = this.document.getElementById(id);
+      if (element && typeof element.scrollIntoView === 'function') {
+        element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
   }
 }

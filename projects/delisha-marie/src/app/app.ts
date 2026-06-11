@@ -1,9 +1,15 @@
-import { Component, ChangeDetectionStrategy, ViewEncapsulation, inject, Signal, effect } from '@angular/core';
+import {
+  Component,
+  ChangeDetectionStrategy,
+  ViewEncapsulation,
+  inject,
+  effect,
+} from '@angular/core';
 import { Router, RouterOutlet, Scroll } from '@angular/router';
 import { Header } from './components/header/header';
 import { Footer } from './components/footer/footer';
 import { ViewportScroller } from '@angular/common';
-import { filter, map } from 'rxjs';
+import { filter } from 'rxjs';
 import { toSignal } from '@angular/core/rxjs-interop';
 
 @Component({
@@ -25,17 +31,19 @@ export class App {
   private readonly viewportScroller = inject(ViewportScroller);
 
   constructor() {
-    const scrollingPosition: Signal<[number, number] | undefined> = toSignal(
-      inject(Router).events.pipe(
-        filter((event): event is Scroll => event instanceof Scroll),
-        map((event: Scroll) => event.position || [0, 0]),
-      ))
+    const scrollEvent = toSignal(
+      inject(Router).events.pipe(filter((event): event is Scroll => event instanceof Scroll)),
+    );
 
     effect(() => {
-      if (scrollingPosition()) {
-        this.viewportScroller.scrollToPosition(scrollingPosition()!);
+      const ev = scrollEvent();
+      if (ev) {
+        if (ev.position) {
+          this.viewportScroller.scrollToPosition(ev.position);
+        } else if (ev.anchor) {
+          this.viewportScroller.scrollToAnchor(ev.anchor);
+        }
       }
     });
   }
-
 }

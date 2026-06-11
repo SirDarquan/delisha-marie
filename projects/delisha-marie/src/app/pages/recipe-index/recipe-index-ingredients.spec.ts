@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { RecipeIndexIngredients } from './recipe-index-ingredients';
 import { provideRouter } from '@angular/router';
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { Ingredient } from '../../models/category';
 
 describe('RecipeIndexIngredients', () => {
@@ -27,6 +27,9 @@ describe('RecipeIndexIngredients', () => {
   ];
 
   beforeEach(async () => {
+    // Mock scrollIntoView in JSDOM
+    window.HTMLElement.prototype.scrollIntoView = vi.fn();
+
     await TestBed.configureTestingModule({
       imports: [RecipeIndexIngredients],
       providers: [provideRouter([])],
@@ -56,24 +59,74 @@ describe('RecipeIndexIngredients', () => {
     expect(count).toBe(46); // 6 + 40
   });
 
-  it('should render jump links with full path', () => {
+  it('should render jump links as buttons', () => {
     const compiled = fixture.nativeElement as HTMLElement;
-    const links = compiled.querySelectorAll('nav a');
-    expect(links.length).toBe(2);
-    expect(links[0].textContent).toContain('A');
-    expect((links[0] as HTMLAnchorElement).getAttribute('href')).toBe('/recipe-index#A');
+    const buttons = compiled.querySelectorAll('nav button');
+    expect(buttons.length).toBe(2);
+    expect(buttons[0].textContent).toContain('A');
   });
 
-  it('should render (back to top) links with full path', () => {
+  it('should render (back to top) buttons', () => {
     const compiled = fixture.nativeElement as HTMLElement;
-    const backToTop = compiled.querySelector('a[href="/recipe-index#recipe-by-ingredients"]');
-    expect(backToTop).toBeTruthy();
-    expect(backToTop?.textContent).toContain('(back to top)');
+    const backToTopButtons = compiled.querySelectorAll('button');
+    // 2 jump links + 2 back-to-top buttons = 4 total
+    expect(backToTopButtons.length).toBe(4);
+    expect(backToTopButtons[2].textContent).toContain('(back to top)');
+  });
+
+  it('should call scrollToSection when a jump link is clicked', () => {
+    const spy = vi.spyOn(component, 'scrollToSection');
+    const compiled = fixture.nativeElement as HTMLElement;
+    const button = compiled.querySelector('nav button') as HTMLButtonElement;
+    button.click();
+    expect(spy).toHaveBeenCalledWith('A');
+  });
+
+  it('should call scrollToSection when (back to top) is clicked', () => {
+    const spy = vi.spyOn(component, 'scrollToSection');
+    const compiled = fixture.nativeElement as HTMLElement;
+    const backToTopButtons = compiled.querySelectorAll('button');
+    const backToTopButton = backToTopButtons[2] as HTMLButtonElement;
+    backToTopButton.click();
+    expect(spy).toHaveBeenCalledWith('recipe-by-ingredients');
   });
 
   it('should render counts in parentheses', () => {
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.textContent).toContain('(46)');
     expect(compiled.textContent).toContain('(15)');
+  });
+
+  it('should do nothing in scrollToSection if platform is server', () => {
+    const spy = vi.spyOn(document, 'getElementById');
+    const compAny = component as any;
+    const originalPlatformId = compAny.platformId;
+    compAny.platformId = 'server';
+    component.scrollToSection('A');
+    compAny.platformId = originalPlatformId;
+    expect(spy).not.toHaveBeenCalled();
+  });
+
+  it('should do nothing in scrollToSection if element is not found', () => {
+    const originalGetElementById = document.getElementById;
+    const spy = vi.spyOn(document, 'getElementById').mockImplementation(function (id) {
+      if (id === 'NonExistent') return null;
+      return originalGetElementById.call(document, id);
+    });
+    component.scrollToSection('NonExistent');
+    expect(spy).toHaveBeenCalledWith('NonExistent');
+    spy.mockRestore();
+  });
+
+  it('should do nothing in scrollToSection if scrollIntoView is not a function', () => {
+    const originalGetElementById = document.getElementById;
+    const mockElement = { scrollIntoView: undefined } as unknown as HTMLElement;
+    const spy = vi.spyOn(document, 'getElementById').mockImplementation(function (id) {
+      if (id === 'A') return mockElement;
+      return originalGetElementById.call(document, id);
+    });
+    component.scrollToSection('A');
+    expect(spy).toHaveBeenCalledWith('A');
+    spy.mockRestore();
   });
 });

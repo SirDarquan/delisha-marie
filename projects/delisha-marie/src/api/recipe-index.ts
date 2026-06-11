@@ -45,7 +45,7 @@ interface IngredientListItem {
   children?: IngredientListItem[];
 }
 
-function parseRecipeCategories(recipes: any[] | null) {
+function parseRecipeCategories(recipes: RecipeRow[] | null) {
   const parentNames = new Map<string, string>();
   const parentToChildren = new Map<string, Map<string, string>>();
 
@@ -167,12 +167,13 @@ async function getCookingMethodsAndList(supabase: SupabaseClient) {
   if (methodsError) throw methodsError;
 
   const cookingMethods =
-    (dbMethods as { name: string; slug: string }[] | null)?.map((m) => ({
-      name: m.name,
-      url: `/methods/${m.slug}`,
-      image: `/images/methods/${m.slug}.png`,
-    }))
-    .slice(0, 6) || [];
+    (dbMethods as { name: string; slug: string }[] | null)
+      ?.map((m) => ({
+        name: m.name,
+        url: `/methods/${m.slug}`,
+        image: `/images/methods/${m.slug}.png`,
+      }))
+      .slice(0, 6) || [];
 
   const methodsList =
     (dbMethods as { name: string; slug: string }[] | null)?.map((m) => ({
@@ -265,24 +266,11 @@ async function getIngredients(supabase: SupabaseClient) {
     .sort((a, b) => a.name.localeCompare(b.name));
 }
 
-function slugify(text: string): string {
-  return text
-    .toString()
-    .toLowerCase()
-    .trim()
-    .replace(/\s+/g, '-')
-    .replaceAll('&', '-and-')
-    .replace(/[^\w-]+/g, '')
-    .replace(/--+/g, '-');
-}
-
 function transformToBest(categories: CategoryItem[], theBest?: string): CategoryItem[] {
   return categories.map((cat) => {
     const bestName = `The Best ${cat.name}`;
     const slug = cat.url.split('/').at(-1) || '';
-    const bestUrl = theBest
-      ? `${theBest}/the-best-${slug}`
-      : `/the-best-recipes/the-best-${slug}`;
+    const bestUrl = theBest ? `${theBest}/the-best-${slug}` : `/the-best-recipes/the-best-${slug}`;
 
     const item: CategoryItem = {
       name: bestName,
