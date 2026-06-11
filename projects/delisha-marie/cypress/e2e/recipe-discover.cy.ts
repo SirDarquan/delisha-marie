@@ -35,7 +35,7 @@ describe('Recipe Discovery Listings', () => {
         methodsList: [],
         holidays: [],
         specialDiets: [],
-        bestRecipes: [],
+        theBest: [],
         ingredients: [],
       },
     }).as('getIndex');

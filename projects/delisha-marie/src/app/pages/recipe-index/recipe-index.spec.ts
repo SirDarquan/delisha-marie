@@ -33,6 +33,15 @@ describe('RecipeIndex', () => {
       { name: 'Baked', image: 'test.png', url: '/methods/baked' },
     ];
 
+    const mockBestRecipes = [
+      {
+        name: 'The Best Air Fryer',
+        url: '/the-best-recipes/the-best-air-fryer',
+        children: [{ name: 'The Best Chicken', url: '/the-best-recipes/the-best-air-fryer/the-best-chicken' }],
+      },
+      { name: 'The Best Baked', url: '/the-best-recipes/the-best-baked' },
+    ];
+
     await TestBed.configureTestingModule({
       imports: [RecipeIndex],
       providers: [
@@ -48,7 +57,7 @@ describe('RecipeIndex', () => {
                 cookingMethods: mockMethods,
                 holidays: mockMethods,
                 specialDiets: mockMethods,
-                bestRecipes: mockMethods,
+                bestRecipes: mockBestRecipes,
                 categoriesList: mockMethods,
                 methodsList: mockMethods,
                 ingredients: [],

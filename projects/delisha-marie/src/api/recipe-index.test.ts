@@ -222,6 +222,18 @@ describe('Recipe Index Router API', () => {
       expect(res.body.specialDiets).toHaveLength(1);
       expect(res.body.specialDiets[0].name).toBe('Gluten Free');
 
+      // Verify best recipes
+      const theBest = res.body.bestRecipes;
+      expect(theBest).toHaveLength(2);
+      expect(theBest[0].name).toBe('The Best Appetizers');
+      expect(theBest[0].url).toBe('/the-best-recipes/the-best-appetizers');
+      expect(theBest[0].children).toHaveLength(2);
+      expect(theBest[0].children[0].name).toBe('The Best Dips');
+      expect(theBest[0].children[0].url).toBe('/the-best-recipes/the-best-appetizers/the-best-dips');
+      expect(theBest[1].name).toBe('The Best Main Dishes');
+      expect(theBest[1].url).toBe('/the-best-recipes/the-best-main-dishes');
+
+
       // Verify ingredients prefix matching nesting
       const ingredients = res.body.ingredients;
       expect(ingredients).toHaveLength(2); // "Apple" (parent containing children) and "Baking Soda"

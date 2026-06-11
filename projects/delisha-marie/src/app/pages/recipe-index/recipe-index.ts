@@ -17,8 +17,7 @@ import { RecipeIndexMethodImages } from './recipe-index-method-images';
 import { RecipeIndexService } from './recipe-index.service';
 import { RecipeIndexLinkList } from './recipe-index-link-list';
 import { RecipeIndexIngredients } from './recipe-index-ingredients';
-import { Category } from '../../models/category';
-import { slugify } from '../../utils/slug';
+
 
 @Component({
   selector: 'dm-recipe-index',
@@ -130,27 +129,8 @@ export class RecipeIndex {
   readonly specialDiets = computed(() => this._data()?.specialDiets || []);
   readonly ingredients = computed(() => this._data()?.ingredients || []);
 
-  readonly bestRecipes = computed(() => {
-    const categories = this._data()?.categoriesList || [];
-    return this.transformToBest(categories);
-  });
+  readonly bestRecipes = computed(() => this._data()?.bestRecipes || []);
 
-  private transformToBest(categories: Category[], theBest?: string): Category[] {
-    return categories.map((cat) => {
-      const bestName = `The Best ${cat.name}`;
-      // Generate clean URL following the strategy: /the-best-recipes/the-best-{slug}
-      const bestUrl = theBest
-        ? `${theBest}/the-best-${slugify(cat.name)}`
-        : `/the-best-recipes/the-best-${slugify(cat.name)}`;
-
-      return {
-        ...cat,
-        name: bestName,
-        url: bestUrl,
-        children: cat.children ? this.transformToBest(cat.children, bestUrl) : undefined,
-      };
-    });
-  }
 
   readonly breadcrumbItems = signal<BreadcrumbItem[]>([
     { label: 'Home', url: '/' },
