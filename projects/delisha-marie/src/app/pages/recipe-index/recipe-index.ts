@@ -18,7 +18,6 @@ import { RecipeIndexService } from './recipe-index.service';
 import { RecipeIndexLinkList } from './recipe-index-link-list';
 import { RecipeIndexIngredients } from './recipe-index-ingredients';
 
-
 @Component({
   selector: 'dm-recipe-index',
   imports: [
@@ -130,7 +129,6 @@ export class RecipeIndex {
   readonly ingredients = computed(() => this._data()?.ingredients || []);
 
   readonly bestRecipes = computed(() => this._data()?.bestRecipes || []);
-
 
   readonly breadcrumbItems = signal<BreadcrumbItem[]>([
     { label: 'Home', url: '/' },

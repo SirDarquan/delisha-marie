@@ -37,7 +37,12 @@ describe('RecipeIndex', () => {
       {
         name: 'The Best Air Fryer',
         url: '/the-best-recipes/the-best-air-fryer',
-        children: [{ name: 'The Best Chicken', url: '/the-best-recipes/the-best-air-fryer/the-best-chicken' }],
+        children: [
+          {
+            name: 'The Best Chicken',
+            url: '/the-best-recipes/the-best-air-fryer/the-best-chicken',
+          },
+        ],
       },
       { name: 'The Best Baked', url: '/the-best-recipes/the-best-baked' },
     ];
