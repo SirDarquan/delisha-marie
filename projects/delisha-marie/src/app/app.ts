@@ -1,7 +1,11 @@
-import { Component, ChangeDetectionStrategy, ViewEncapsulation } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { Component, ChangeDetectionStrategy, ViewEncapsulation, inject, Signal, effect } from '@angular/core';
+import { Router, RouterOutlet } from '@angular/router';
 import { Header } from './components/header/header';
 import { Footer } from './components/footer/footer';
+import { ViewportScroller } from '@angular/common';
+import { filter, map } from 'rxjs';
+import { Scroll } from '@angular/router';
+import { toSignal } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'dm-root',
@@ -18,4 +22,21 @@ import { Footer } from './components/footer/footer';
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class App {}
+export class App {
+  private viewportScroller = inject(ViewportScroller);
+
+  constructor() {
+    const scrollingPosition: Signal<[number, number] | undefined> = toSignal(
+      inject(Router).events.pipe(
+        filter((event): event is Scroll => event instanceof Scroll),
+        map((event: Scroll) => event.position || [0, 0]),
+      ))
+
+    effect(() => {
+      if (scrollingPosition()) {
+        this.viewportScroller.scrollToPosition(scrollingPosition()!);
+      }
+    });
+  }
+
+}
