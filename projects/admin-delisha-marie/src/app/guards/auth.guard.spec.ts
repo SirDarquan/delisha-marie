@@ -1,8 +1,8 @@
-import { TestBed } from '@angular/core/testing';
-import { Router, UrlTree, ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
 import { PLATFORM_ID } from '@angular/core';
-import { authGuard } from './auth.guard';
+import { TestBed } from '@angular/core/testing';
+import { ActivatedRouteSnapshot, Router, RouterStateSnapshot, UrlTree } from '@angular/router';
 import { AuthService } from '../services/auth.service';
+import { authGuard } from './auth.guard';
 
 describe('authGuard', () => {
   let isAuth = false;

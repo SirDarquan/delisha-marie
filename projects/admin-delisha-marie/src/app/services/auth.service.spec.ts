@@ -1,10 +1,10 @@
-import { TestBed } from '@angular/core/testing';
 import { PLATFORM_ID } from '@angular/core';
-import { AuthService } from './auth.service';
-import { ApiService } from './api.service';
+import { TestBed } from '@angular/core/testing';
 import { DescopeAuthConfig, DescopeAuthService } from '@descope/angular-sdk';
 import { of } from 'rxjs';
 import { vi } from 'vitest';
+import { ApiService } from './api.service';
+import { AuthService } from './auth.service';
 
 if (typeof localStorage === 'undefined') {
   const store: Record<string, string> = {};

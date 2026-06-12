@@ -1,24 +1,24 @@
-import {
-  Component,
-  ChangeDetectionStrategy,
-  ViewEncapsulation,
-  input,
-  signal,
-  inject,
-  computed,
-  resource,
-  output,
-} from '@angular/core';
 import { CommonModule } from '@angular/common';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ViewEncapsulation,
+  computed,
+  inject,
+  input,
+  output,
+  resource,
+  signal,
+} from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { form, required, FormField, FormRoot, email } from '@angular/forms/signals';
-import { NgxPaginationModule } from 'ngx-pagination';
-import { MatIconModule } from '@angular/material/icon';
+import { FormField, FormRoot, email, form, required } from '@angular/forms/signals';
 import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
 import { Router } from '@angular/router';
-import { Recipe, RecipeService, Comment } from '../../services/recipe.service';
 import { Stars } from '@dm/library';
+import { NgxPaginationModule } from 'ngx-pagination';
 import { WINDOW } from '../../services/global-tokens';
+import { Comment, Recipe, RecipeService } from '../../services/recipe.service';
 
 export interface CommentFormValue {
   author: string;

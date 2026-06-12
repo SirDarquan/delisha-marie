@@ -1,9 +1,9 @@
-import { TestBed, ComponentFixture } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
 import { signal } from '@angular/core';
-import { RecipesListComponent } from './recipes-list';
-import { RecipeService } from '../../services/recipe.service';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { Recipe } from '../../models/recipe.model';
+import { RecipeService } from '../../services/recipe.service';
+import { RecipesListComponent } from './recipes-list';
 
 describe('RecipesListComponent', () => {
   let component: RecipesListComponent;

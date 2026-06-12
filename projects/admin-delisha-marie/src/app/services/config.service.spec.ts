@@ -1,9 +1,9 @@
-import { TestBed } from '@angular/core/testing';
-import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 import { provideHttpClient } from '@angular/common/http';
-import { AppConfigService, AppConfig, provideAppConfig } from './config.service';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { TestBed } from '@angular/core/testing';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { APP_PLUGINS } from '../../core/plugins/plugin.token';
-import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { AppConfig, AppConfigService, provideAppConfig } from './config.service';
 
 describe('AppConfigService', () => {
   let service: AppConfigService;

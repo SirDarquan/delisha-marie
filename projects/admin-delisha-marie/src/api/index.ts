@@ -1,7 +1,7 @@
 import '@dm/backend-shared/load-env';
 
-import { Router } from 'express';
 import cookieParser from 'cookie-parser';
+import { Router } from 'express';
 import authRouter from './auth';
 import recipesRouter from './recipes';
 

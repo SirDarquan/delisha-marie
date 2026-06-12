@@ -1,14 +1,14 @@
+import { CommonModule } from '@angular/common';
 import {
-  Component,
-  input,
   ChangeDetectionStrategy,
+  Component,
   computed,
+  input,
   ViewEncapsulation,
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { MatButtonModule } from '@angular/material/button';
 import { RouterLink } from '@angular/router';
 import { Recipe } from '../../services/recipe.service';
-import { MatButtonModule } from '@angular/material/button';
 
 @Component({
   selector: 'dml-recipe-tags',

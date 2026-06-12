@@ -1,10 +1,10 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { RecipeDetail } from './recipe-detail';
-import { Recipe, RecipeService } from '../../services/recipe.service';
-import { provideRouter } from '@angular/router';
 import { signal } from '@angular/core';
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { Recipe, RecipeService } from '../../services/recipe.service';
 import { createMockRecipe } from '../../utils/test-recipe';
+import { RecipeDetail } from './recipe-detail';
 
 describe('RecipeDetail', () => {
   let component: RecipeDetail;

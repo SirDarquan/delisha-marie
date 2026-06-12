@@ -1,8 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { RecipeIndexIngredients } from './recipe-index-ingredients';
 import { provideRouter } from '@angular/router';
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Ingredient } from '../../models/category';
+import { RecipeIndexIngredients } from './recipe-index-ingredients';
 
 describe('RecipeIndexIngredients', () => {
   let component: RecipeIndexIngredients;
@@ -99,7 +99,7 @@ describe('RecipeIndexIngredients', () => {
 
   it('should do nothing in scrollToSection if platform is server', () => {
     const spy = vi.spyOn(document, 'getElementById');
-    const compAny = component as any;
+    const compAny = component as unknown as { platformId: string };
     const originalPlatformId = compAny.platformId;
     compAny.platformId = 'server';
     component.scrollToSection('A');

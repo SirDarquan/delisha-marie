@@ -1,4 +1,4 @@
-import { inject, signal, InjectionToken } from '@angular/core';
+import { inject, InjectionToken, signal } from '@angular/core';
 
 export const BRAND_TITLE_TOKEN = new InjectionToken<string>('brandTitle');
 

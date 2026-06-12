@@ -1,23 +1,23 @@
+import { CommonModule } from '@angular/common';
 import {
-  Component,
   ChangeDetectionStrategy,
-  inject,
-  input,
-  output,
-  model,
-  signal,
+  Component,
   computed,
   effect,
-  ViewEncapsulation,
-  viewChild,
   ElementRef,
+  inject,
+  input,
+  model,
+  output,
+  signal,
+  viewChild,
+  ViewEncapsulation,
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { FormValueControl } from '@angular/forms/signals';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
 import { RecipeService } from '../../services/recipe.service';
-import { FormValueControl } from '@angular/forms/signals';
 
 @Component({
   selector: 'app-cooking-method-selector',

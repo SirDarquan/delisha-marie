@@ -1,8 +1,8 @@
-import { Component, ChangeDetectionStrategy, ViewEncapsulation, input } from '@angular/core';
 import { NgOptimizedImage } from '@angular/common';
-import { ReactiveFormsModule, FormControl } from '@angular/forms';
-import { MatIconModule } from '@angular/material/icon';
+import { ChangeDetectionStrategy, Component, ViewEncapsulation, input } from '@angular/core';
+import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { RouterLink } from '@angular/router';
 import { FullCategory } from '../../models/category';

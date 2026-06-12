@@ -1,24 +1,24 @@
-import {
-  Component,
-  ChangeDetectionStrategy,
-  inject,
-  ViewEncapsulation,
-  OnInit,
-  signal,
-  computed,
-  AfterViewInit,
-  PLATFORM_ID,
-  DOCUMENT,
-} from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-import { form, FormRoot, FormField, required, email, pattern } from '@angular/forms/signals';
-import { Router, ActivatedRoute } from '@angular/router';
+import {
+  AfterViewInit,
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  DOCUMENT,
+  inject,
+  OnInit,
+  PLATFORM_ID,
+  signal,
+  ViewEncapsulation,
+} from '@angular/core';
+import { email, form, FormField, FormRoot, pattern, required } from '@angular/forms/signals';
+import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { MatButtonModule } from '@angular/material/button';
-import { MatSnackBarModule, MatSnackBar } from '@angular/material/snack-bar';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService } from '../../../services/auth.service';
 import { injectAuthCommon } from '../auth-shared.utils';
 

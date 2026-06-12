@@ -1,9 +1,9 @@
 import { ClassProvider, Type } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { RouterStateSnapshot, TitleStrategy } from '@angular/router';
 import { Title } from '@angular/platform-browser';
+import { RouterStateSnapshot, TitleStrategy } from '@angular/router';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { TemplatePageTitleStrategy, provideTitleStrategy } from './title.strategy';
-import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 describe('TemplatePageTitleStrategy', () => {
   let strategy: TemplatePageTitleStrategy;

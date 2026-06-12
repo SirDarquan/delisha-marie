@@ -1,8 +1,8 @@
-import { Injectable, signal, computed, inject, PLATFORM_ID, Injector } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-import { ApiService } from './api.service';
+import { computed, inject, Injectable, Injector, PLATFORM_ID, signal } from '@angular/core';
 import { DescopeAuthConfig, DescopeAuthService } from '@descope/angular-sdk';
 import { firstValueFrom } from 'rxjs';
+import { ApiService } from './api.service';
 
 export interface AdminUser {
   username: string;

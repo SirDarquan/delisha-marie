@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { RecipeNavigation } from './recipe-navigation';
-import { describe, it, expect, beforeEach } from 'vitest';
 import { provideRouter } from '@angular/router';
+import { beforeEach, describe, expect, it } from 'vitest';
+import { RecipeNavigation } from './recipe-navigation';
 
 describe('RecipeNavigation', () => {
   let component: RecipeNavigation;

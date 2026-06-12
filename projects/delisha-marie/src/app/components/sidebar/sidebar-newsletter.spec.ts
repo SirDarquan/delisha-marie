@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SidebarNewsletter } from './sidebar-newsletter';
-import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 interface SidebarNewsletterTestInstance {
   userModel: { (): { email: string }; set: (v: { email: string }) => void };

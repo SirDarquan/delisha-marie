@@ -1,7 +1,7 @@
-import { TestBed, ComponentFixture } from '@angular/core/testing';
-import { HolidaysSelectorComponent } from './holidays-selector';
-import { RecipeService } from '../../services/recipe.service';
 import { signal } from '@angular/core';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { RecipeService } from '../../services/recipe.service';
+import { HolidaysSelectorComponent } from './holidays-selector';
 
 describe('HolidaysSelectorComponent', () => {
   let component: HolidaysSelectorComponent;

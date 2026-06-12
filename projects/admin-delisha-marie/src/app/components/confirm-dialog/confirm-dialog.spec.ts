@@ -1,7 +1,7 @@
-import { TestBed, ComponentFixture } from '@angular/core/testing';
-import { ConfirmDialogComponent, ConfirmDialogData } from './confirm-dialog';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { By } from '@angular/platform-browser';
+import { ConfirmDialogComponent, ConfirmDialogData } from './confirm-dialog';
 
 describe('ConfirmDialogComponent', () => {
   let component: ConfirmDialogComponent;

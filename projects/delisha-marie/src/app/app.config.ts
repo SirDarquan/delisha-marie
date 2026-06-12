@@ -5,13 +5,13 @@ import {
 } from '@angular/core';
 import { provideRouter, withComponentInputBinding, withInMemoryScrolling } from '@angular/router';
 
-import { routes } from './app.routes';
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import {
   provideClientHydration,
   withEventReplay,
   withNoIncrementalHydration,
 } from '@angular/platform-browser';
-import { provideHttpClient, withInterceptors } from '@angular/common/http';
+import { routes } from './app.routes';
 import { TemplatePageTitleStrategy, provideTitleStrategy } from './services/title.strategy';
 
 export const appConfig: ApplicationConfig = {

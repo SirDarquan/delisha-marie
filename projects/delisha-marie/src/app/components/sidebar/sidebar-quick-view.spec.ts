@@ -1,10 +1,10 @@
+import { IMAGE_LOADER, ImageLoaderConfig, NgOptimizedImage } from '@angular/common';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { SidebarQuickView } from './sidebar-quick-view';
-import { Recipe } from '../../services/recipe.service';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { WINDOW } from '../../services/global-tokens';
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { NgOptimizedImage, IMAGE_LOADER, ImageLoaderConfig } from '@angular/common';
+import { Recipe } from '../../services/recipe.service';
 import { createMockRecipe } from '../../utils/test-recipe';
+import { SidebarQuickView } from './sidebar-quick-view';
 
 describe('SidebarQuickView', () => {
   let component: SidebarQuickView;

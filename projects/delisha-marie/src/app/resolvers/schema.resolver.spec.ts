@@ -1,24 +1,24 @@
-import { TestBed } from '@angular/core/testing';
 import { DOCUMENT } from '@angular/common';
-import { RouterStateSnapshot, ActivatedRouteSnapshot } from '@angular/router';
-import {
-  schemaResolver,
-  schemaRecipeResolver,
-  generateOrganizationSchema,
-  generateWebSiteSchema,
-  generateCollectionPageSchema,
-  generateAboutPageSchema,
-  generateContactPageSchema,
-  generateFAQPageSchema,
-  generateWebPageSchema,
-  generateBreadcrumbSchema,
-  getRecipeBreadcrumbs,
-  generatePersonSchema,
-  generateImageObjectSchema,
-} from './schema.resolver';
-import { describe, it, expect, beforeEach, vi, Mock } from 'vitest';
+import { TestBed } from '@angular/core/testing';
+import { ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
+import { beforeEach, describe, expect, it, Mock, vi } from 'vitest';
 import { Recipe, RecipeService } from '../services/recipe.service';
 import { createMockRecipe } from '../utils/test-recipe';
+import {
+  generateAboutPageSchema,
+  generateBreadcrumbSchema,
+  generateCollectionPageSchema,
+  generateContactPageSchema,
+  generateFAQPageSchema,
+  generateImageObjectSchema,
+  generateOrganizationSchema,
+  generatePersonSchema,
+  generateWebPageSchema,
+  generateWebSiteSchema,
+  getRecipeBreadcrumbs,
+  schemaRecipeResolver,
+  schemaResolver,
+} from './schema.resolver';
 
 describe('schemaResolver', () => {
   let mockDocument: {

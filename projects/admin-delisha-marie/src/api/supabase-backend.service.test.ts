@@ -1,4 +1,4 @@
-import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // 1. Mock @supabase/supabase-js
 vi.mock('@supabase/supabase-js', () => {

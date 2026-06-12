@@ -1,8 +1,8 @@
-import { TestBed } from '@angular/core/testing';
 import { DOCUMENT } from '@angular/common';
+import { TestBed } from '@angular/core/testing';
 import { Meta } from '@angular/platform-browser';
+import { beforeEach, describe, expect, it, Mock, vi } from 'vitest';
 import { SeoService } from './seo.service';
-import { describe, it, expect, beforeEach, vi, Mock } from 'vitest';
 
 describe('SeoService', () => {
   let service: SeoService;

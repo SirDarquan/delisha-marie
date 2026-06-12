@@ -1,8 +1,8 @@
-import { TestBed } from '@angular/core/testing';
-import { ThemeService } from './theme.service';
 import { PLATFORM_ID } from '@angular/core';
+import { TestBed } from '@angular/core/testing';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { WINDOW } from './global-tokens';
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
+import { ThemeService } from './theme.service';
 
 if (typeof localStorage === 'undefined') {
   const store: Record<string, string> = {};

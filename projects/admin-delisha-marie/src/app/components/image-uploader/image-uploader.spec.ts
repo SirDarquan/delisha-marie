@@ -1,7 +1,7 @@
-import { TestBed, ComponentFixture } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { vi } from 'vitest';
 import { ImageUploaderComponent } from './image-uploader';
-import { By } from '@angular/platform-browser';
 
 describe('ImageUploaderComponent', () => {
   let component: ImageUploaderComponent;

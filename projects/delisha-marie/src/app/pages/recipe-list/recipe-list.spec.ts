@@ -1,12 +1,12 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { RecipeList } from './recipe-list';
-import { provideRouter, Router, ActivatedRoute } from '@angular/router';
-import { RecipeService, Recipe } from '../../services/recipe.service';
-import { RecipeIndexService } from '../recipe-index/recipe-index.service';
-import { WINDOW } from '../../services/global-tokens';
-import { describe, it, expect, beforeEach, vi, Mock } from 'vitest';
+import { ActivatedRoute, provideRouter, Router } from '@angular/router';
 import { Subject } from 'rxjs';
+import { beforeEach, describe, expect, it, Mock, vi } from 'vitest';
+import { WINDOW } from '../../services/global-tokens';
+import { Recipe, RecipeService } from '../../services/recipe.service';
 import { createMockRecipe } from '../../utils/test-recipe';
+import { RecipeIndexService } from '../recipe-index/recipe-index.service';
+import { RecipeList } from './recipe-list';
 
 describe('RecipeList', () => {
   let component: RecipeList;

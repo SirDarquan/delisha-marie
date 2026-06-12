@@ -1,8 +1,8 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { RefineBy, RefineByItem } from './refine-by';
-import { provideRouter } from '@angular/router';
 import { Component } from '@angular/core';
-import { describe, it, expect, beforeEach } from 'vitest';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
+import { beforeEach, describe, expect, it } from 'vitest';
+import { RefineBy, RefineByItem } from './refine-by';
 
 @Component({
   template: `<dml-refine-by [items]="items" />`,

@@ -1,8 +1,8 @@
 import express from 'express';
-import request from 'supertest';
 import fs from 'node:fs';
 import { findSourceMap } from 'node:module';
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
+import request from 'supertest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('node:module', () => ({
   findSourceMap: vi.fn(),

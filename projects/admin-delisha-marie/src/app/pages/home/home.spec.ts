@@ -1,9 +1,9 @@
-import { TestBed, ComponentFixture } from '@angular/core/testing';
+import { signal } from '@angular/core';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import { vi } from 'vitest';
-import { HomeComponent } from './home';
 import { RecipeService } from '../../services/recipe.service';
-import { signal } from '@angular/core';
+import { HomeComponent } from './home';
 
 interface MockRecipeService {
   recipes: unknown;

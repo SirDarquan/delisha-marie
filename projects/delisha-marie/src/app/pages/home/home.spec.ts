@@ -1,9 +1,9 @@
-import { TestBed } from '@angular/core/testing';
-import { Home } from './home';
-import { RecipeService } from '../../services/recipe.service';
 import { signal } from '@angular/core';
+import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { describe, it, expect, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
+import { RecipeService } from '../../services/recipe.service';
+import { Home } from './home';
 
 describe('Home', () => {
   const mockRecipes = [

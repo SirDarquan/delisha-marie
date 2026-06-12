@@ -1,24 +1,24 @@
+import { CommonModule } from '@angular/common';
 import {
-  Component,
   ChangeDetectionStrategy,
+  Component,
   computed,
   input,
   ViewEncapsulation,
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { Breadcrumbs, BreadcrumbItem } from '../../components/breadcrumbs/breadcrumbs';
-import { RecipeHero } from './recipe-hero';
-import { Recipe } from '../../services/recipe.service';
-import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { RouterLink } from '@angular/router';
+import { BreadcrumbItem, Breadcrumbs } from '../../components/breadcrumbs/breadcrumbs';
 import { Sidebar } from '../../components/sidebar/sidebar';
 import { SidebarQuickView } from '../../components/sidebar/sidebar-quick-view';
+import { Recipe } from '../../services/recipe.service';
 import { RecipeCard } from './recipe-card';
-import { RecipeTags } from './recipe-tags';
-import { RecipeNavigation } from './recipe-navigation';
 import { RecipeComments } from './recipe-comments';
+import { RecipeHero } from './recipe-hero';
 import { RecipeMeta } from './recipe-meta';
-import { RouterLink } from '@angular/router';
+import { RecipeNavigation } from './recipe-navigation';
+import { RecipeTags } from './recipe-tags';
 
 @Component({
   selector: 'dm-recipe-detail',

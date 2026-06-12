@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { RecipeIndexMethodImages } from './recipe-index-method-images';
 import { provideRouter } from '@angular/router';
 import { FullCategory } from '../../models/category';
+import { RecipeIndexMethodImages } from './recipe-index-method-images';
 
 describe('RecipeIndexMethodImages', () => {
   let component: RecipeIndexMethodImages;

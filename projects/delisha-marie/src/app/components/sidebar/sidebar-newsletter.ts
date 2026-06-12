@@ -1,9 +1,9 @@
-import { Component, ChangeDetectionStrategy, ViewEncapsulation, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { ChangeDetectionStrategy, Component, ViewEncapsulation, signal } from '@angular/core';
+import { FormField, FormRoot, email, form, required } from '@angular/forms/signals';
 import { MatButtonModule } from '@angular/material/button';
-import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
-import { FormRoot, FormField, form, required, email } from '@angular/forms/signals';
+import { MatInputModule } from '@angular/material/input';
 
 @Component({
   selector: 'dm-sidebar-newsletter',

@@ -1,13 +1,13 @@
 import {
+  ChangeDetectionStrategy,
   Component,
+  computed,
+  inject,
   signal,
   ViewEncapsulation,
-  inject,
-  computed,
-  ChangeDetectionStrategy,
 } from '@angular/core';
-import { RouterOutlet, Router, NavigationEnd } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
+import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { filter, map } from 'rxjs/operators';
 import { HeaderComponent } from './components/header/header';
 import { AuthService } from './services/auth.service';

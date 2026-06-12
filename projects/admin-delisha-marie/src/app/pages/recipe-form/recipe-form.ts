@@ -1,30 +1,30 @@
 import {
-  Component,
   ChangeDetectionStrategy,
-  inject,
-  signal,
+  Component,
   computed,
+  inject,
   OnInit,
+  signal,
   ViewEncapsulation,
 } from '@angular/core';
-import { form, FormRoot, FormField, required } from '@angular/forms/signals';
-import { Router, ActivatedRoute } from '@angular/router';
-import { MatDialog } from '@angular/material/dialog';
-import { ConfirmDialogComponent } from '../../components/confirm-dialog/confirm-dialog';
+import { form, FormField, FormRoot, required } from '@angular/forms/signals';
 import { MatButtonModule } from '@angular/material/button';
+import { MatChipsModule } from '@angular/material/chips';
+import { MatDialog } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
-import { MatChipsModule } from '@angular/material/chips';
-import { RecipeService } from '../../services/recipe.service';
-import { Recipe } from '../../models/recipe.model';
+import { ActivatedRoute, Router } from '@angular/router';
+import { BaseTrail, CategoryTrails, Nutrition } from '@dm/library';
 import { CategoryBoardComponent } from '../../components/category-board/category-board';
+import { ConfirmDialogComponent } from '../../components/confirm-dialog/confirm-dialog';
 import { CookingMethodSelectorComponent } from '../../components/cooking-method-selector/cooking-method-selector';
-import { SpecialDietsSelectorComponent } from '../../components/special-diets-selector/special-diets-selector';
 import { HolidaysSelectorComponent } from '../../components/holidays-selector/holidays-selector';
 import { ImageUploaderComponent } from '../../components/image-uploader/image-uploader';
-import { CategoryTrails, Nutrition, BaseTrail } from '@dm/library';
+import { SpecialDietsSelectorComponent } from '../../components/special-diets-selector/special-diets-selector';
+import { Recipe } from '../../models/recipe.model';
+import { RecipeService } from '../../services/recipe.service';
 
 interface RecipeFormModel {
   title: string;

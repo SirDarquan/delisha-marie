@@ -1,13 +1,13 @@
-import { TestBed, ComponentFixture } from '@angular/core/testing';
-import { Router, provideRouter, ActivatedRoute } from '@angular/router';
-import { vi, Mock } from 'vitest';
-import { LoginComponent } from './login';
 import { DOCUMENT } from '@angular/common';
-import { BRAND_TITLE_TOKEN } from '../auth-shared.utils';
-import { AuthService } from '../../../services/auth.service';
+import { PLATFORM_ID, WritableSignal, signal } from '@angular/core';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { submit } from '@angular/forms/signals';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { signal, PLATFORM_ID, WritableSignal } from '@angular/core';
+import { ActivatedRoute, Router, provideRouter } from '@angular/router';
+import { Mock, vi } from 'vitest';
+import { AuthService } from '../../../services/auth.service';
+import { BRAND_TITLE_TOKEN } from '../auth-shared.utils';
+import { LoginComponent } from './login';
 
 interface MockAuthService {
   isAuthenticated: unknown;

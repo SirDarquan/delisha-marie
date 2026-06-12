@@ -1,9 +1,9 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { Breadcrumbs, BreadcrumbItem } from './breadcrumbs';
-import { provideRouter } from '@angular/router';
 import { Component, signal } from '@angular/core';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { describe, it, expect, beforeEach } from 'vitest';
+import { provideRouter } from '@angular/router';
+import { beforeEach, describe, expect, it } from 'vitest';
+import { BreadcrumbItem, Breadcrumbs } from './breadcrumbs';
 
 @Component({
   template: `<dml-breadcrumbs [items]="items()" />`,

@@ -1,13 +1,13 @@
+import { CommonModule } from '@angular/common';
 import {
-  Component,
-  input,
   ChangeDetectionStrategy,
+  Component,
   computed,
+  input,
   ViewEncapsulation,
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
+import { RouterLink } from '@angular/router';
 
 export interface NavRecipe {
   title: string;

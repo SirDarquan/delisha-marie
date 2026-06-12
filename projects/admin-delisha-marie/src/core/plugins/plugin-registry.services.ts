@@ -1,6 +1,6 @@
-import { Injectable, inject, PLATFORM_ID } from '@angular/core';
-import { APP_PLUGINS } from './plugin.token';
 import { isPlatformBrowser } from '@angular/common';
+import { inject, Injectable, PLATFORM_ID } from '@angular/core';
+import { APP_PLUGINS } from './plugin.token';
 
 @Injectable({
   providedIn: 'root',

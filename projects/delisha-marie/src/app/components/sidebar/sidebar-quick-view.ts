@@ -1,15 +1,15 @@
-import {
-  Component,
-  ChangeDetectionStrategy,
-  ViewEncapsulation,
-  input,
-  inject,
-} from '@angular/core';
 import { CommonModule, NgOptimizedImage } from '@angular/common';
-import { MatIconModule } from '@angular/material/icon';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ViewEncapsulation,
+  inject,
+  input,
+} from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
-import { Recipe } from '../../services/recipe.service';
+import { MatIconModule } from '@angular/material/icon';
 import { WINDOW } from '../../services/global-tokens';
+import { Recipe } from '../../services/recipe.service';
 
 @Component({
   selector: 'dm-sidebar-quick-view',

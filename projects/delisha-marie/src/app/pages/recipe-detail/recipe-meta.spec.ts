@@ -1,9 +1,9 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { RecipeMeta } from './recipe-meta';
-import { RecipeService, Recipe } from '../../services/recipe.service';
 import { provideRouter } from '@angular/router';
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { Recipe, RecipeService } from '../../services/recipe.service';
 import { createMockRecipe } from '../../utils/test-recipe';
+import { RecipeMeta } from './recipe-meta';
 
 describe('RecipeMeta', () => {
   let component: RecipeMeta;

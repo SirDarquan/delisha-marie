@@ -1,12 +1,12 @@
+import { DOCUMENT } from '@angular/common';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
-import { seoResolver, seoRecipeListResolver, seoRecipeResolver } from './seo.resolver';
-import { SeoService } from '../services/seo.service';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SeoContent } from '../models/seo-content';
-import { DOCUMENT } from '@angular/common';
 import { RecipeListService } from '../pages/recipe-list/recipe-list.service';
-import { RecipeService, Recipe } from '../services/recipe.service';
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { Recipe, RecipeService } from '../services/recipe.service';
+import { SeoService } from '../services/seo.service';
+import { seoRecipeListResolver, seoRecipeResolver, seoResolver } from './seo.resolver';
 
 describe('Seo Resolvers', () => {
   let seoService: SeoService;

@@ -1,5 +1,5 @@
-import { Router, Request, Response } from 'express';
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { Request, Response, Router } from 'express';
 
 const recipeIndexRouter = Router();
 
