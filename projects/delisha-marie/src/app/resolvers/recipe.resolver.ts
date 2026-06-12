@@ -1,7 +1,7 @@
 import { inject } from '@angular/core';
 import { ResolveFn } from '@angular/router';
-import { Recipe, RecipeService } from '../services/recipe.service';
 import { RecipeListService } from '../pages/recipe-list/recipe-list.service';
+import { Recipe, RecipeService } from '../services/recipe.service';
 
 export const recipeResolver: ResolveFn<Recipe | null> = (route) => {
   const slug = route.paramMap.get('slug');

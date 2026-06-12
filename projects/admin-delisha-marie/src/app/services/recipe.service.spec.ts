@@ -1,8 +1,8 @@
-import { TestBed } from '@angular/core/testing';
-import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 import { provideHttpClient } from '@angular/common/http';
-import { RecipeService } from './recipe.service';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { TestBed } from '@angular/core/testing';
 import { Recipe } from '../models/recipe.model';
+import { RecipeService } from './recipe.service';
 
 if (typeof localStorage === 'undefined') {
   const store: Record<string, string> = {};

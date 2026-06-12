@@ -1,11 +1,10 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { RecipeComments } from './recipe-comments';
 import { provideRouter, Router } from '@angular/router';
-import { RecipeService } from '../../services/recipe.service';
+import { beforeEach, describe, expect, it, Mock, vi } from 'vitest';
 import { WINDOW } from '../../services/global-tokens';
-import { describe, it, expect, beforeEach, vi, Mock } from 'vitest';
-import { Comment } from '../../services/recipe.service';
+import { Comment, RecipeService } from '../../services/recipe.service';
+import { RecipeComments } from './recipe-comments';
 
 describe('RecipeComments', () => {
   let component: RecipeComments;

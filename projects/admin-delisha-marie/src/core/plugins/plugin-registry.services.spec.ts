@@ -1,8 +1,8 @@
-import { TestBed } from '@angular/core/testing';
 import { PLATFORM_ID } from '@angular/core';
+import { TestBed } from '@angular/core/testing';
+import { describe, expect, it, vi } from 'vitest';
 import { PluginRegistry } from './plugin-registry.services';
 import { APP_PLUGINS, AppPlugin } from './plugin.token';
-import { describe, it, expect, vi } from 'vitest';
 
 describe('PluginRegistry', () => {
   let registry: PluginRegistry;

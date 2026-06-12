@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { RecipeCard } from './recipe-card';
-import { describe, it, expect, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { Recipe } from '../../services/recipe.service';
+import { RecipeCard } from './recipe-card';
 
 import { provideRouter } from '@angular/router';
 

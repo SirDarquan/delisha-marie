@@ -1,12 +1,12 @@
-import { TestBed, ComponentFixture } from '@angular/core/testing';
-import { FormRoot, FormField } from '@angular/forms/signals';
-import { Router, ActivatedRoute } from '@angular/router';
-import { RecipeFormComponent } from './recipe-form';
-import { By } from '@angular/platform-browser';
-import { RecipeService } from '../../services/recipe.service';
-import { Recipe } from '../../models/recipe.model';
-import { CategoryTrails } from '@dm/library';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { FormField, FormRoot } from '@angular/forms/signals';
 import { MatDialog } from '@angular/material/dialog';
+import { By } from '@angular/platform-browser';
+import { ActivatedRoute, Router } from '@angular/router';
+import { CategoryTrails } from '@dm/library';
+import { Recipe } from '../../models/recipe.model';
+import { RecipeService } from '../../services/recipe.service';
+import { RecipeFormComponent } from './recipe-form';
 
 describe('RecipeFormComponent', () => {
   let component: RecipeFormComponent;

@@ -1,8 +1,8 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { RecipeHero } from './recipe-hero';
-import { Recipe } from '../../services/recipe.service';
 import { IMAGE_LOADER, ImageLoaderConfig } from '@angular/common';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { Recipe } from '../../services/recipe.service';
 import { createMockRecipe } from '../../utils/test-recipe';
+import { RecipeHero } from './recipe-hero';
 
 describe('RecipeHero', () => {
   let component: RecipeHero;

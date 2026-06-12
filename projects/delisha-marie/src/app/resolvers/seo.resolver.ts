@@ -1,10 +1,10 @@
+import { DOCUMENT } from '@angular/common';
 import { inject } from '@angular/core';
 import { ResolveFn } from '@angular/router';
 import { SeoContent } from '../models/seo-content';
-import { SeoService } from '../services/seo.service';
-import { DOCUMENT } from '@angular/common';
 import { RecipeListService } from '../pages/recipe-list/recipe-list.service';
 import { RecipeService } from '../services/recipe.service';
+import { SeoService } from '../services/seo.service';
 
 export const seoResolver: ResolveFn<Partial<SeoContent>> = (route, state) => {
   const seoService = inject(SeoService);

@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { injectAuthCommon, BRAND_TITLE_TOKEN } from './auth-shared.utils';
+import { BRAND_TITLE_TOKEN, injectAuthCommon } from './auth-shared.utils';
 
 describe('auth-shared.utils', () => {
   beforeEach(() => {

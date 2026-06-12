@@ -1,7 +1,7 @@
-import { Component, input, ChangeDetectionStrategy, ViewEncapsulation } from '@angular/core';
 import { CommonModule, NgOptimizedImage } from '@angular/common';
-import { Recipe } from '../../services/recipe.service';
+import { ChangeDetectionStrategy, Component, input, ViewEncapsulation } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
+import { Recipe } from '../../services/recipe.service';
 
 @Component({
   selector: 'dml-recipe-hero',

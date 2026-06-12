@@ -1,6 +1,6 @@
-import { inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-import { Router, ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
+import { inject, PLATFORM_ID } from '@angular/core';
+import { ActivatedRouteSnapshot, Router, RouterStateSnapshot } from '@angular/router';
 import { AuthService } from '../services/auth.service';
 
 export const authGuard = async (_route: ActivatedRouteSnapshot, state: RouterStateSnapshot) => {

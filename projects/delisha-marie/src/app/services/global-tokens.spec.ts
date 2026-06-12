@@ -1,7 +1,7 @@
-import { TestBed } from '@angular/core/testing';
 import { DOCUMENT } from '@angular/common';
+import { TestBed } from '@angular/core/testing';
+import { describe, expect, it } from 'vitest';
 import { WINDOW } from './global-tokens';
-import { describe, it, expect } from 'vitest';
 
 describe('WINDOW token', () => {
   it('should return the window object', () => {

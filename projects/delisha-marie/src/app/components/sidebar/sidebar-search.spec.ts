@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { SidebarSearch } from './sidebar-search';
 import { provideRouter, Router } from '@angular/router';
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { SidebarSearch } from './sidebar-search';
 
 describe('SidebarSearch', () => {
   let component: SidebarSearch;

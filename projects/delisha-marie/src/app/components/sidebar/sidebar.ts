@@ -1,8 +1,8 @@
-import { Component, ChangeDetectionStrategy, ViewEncapsulation } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
 import { AuthorBio } from './author-bio';
-import { SidebarSearch } from './sidebar-search';
 import { SidebarNewsletter } from './sidebar-newsletter';
+import { SidebarSearch } from './sidebar-search';
 
 @Component({
   selector: 'dml-sidebar',

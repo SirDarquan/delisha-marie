@@ -1,8 +1,8 @@
 import { TestBed } from '@angular/core/testing';
 import { DescopeAuthConfig } from '@descope/angular-sdk';
-import { provideDescope } from './descope';
+import { describe, expect, it } from 'vitest';
 import { AppConfigService } from '../services/config.service';
-import { describe, it, expect } from 'vitest';
+import { provideDescope } from './descope';
 
 describe('Descope Provider', () => {
   it('should resolve DescopeAuthConfig dynamically from AppConfigService', () => {

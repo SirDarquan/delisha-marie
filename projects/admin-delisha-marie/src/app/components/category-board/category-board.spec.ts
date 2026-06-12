@@ -1,9 +1,9 @@
-import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { signal } from '@angular/core';
-import { CategoryBoardComponent } from './category-board';
-import { RecipeService } from '../../services/recipe.service';
-import { Recipe } from '../../models/recipe.model';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { CategoryTrails } from '@dm/library';
+import { Recipe } from '../../models/recipe.model';
+import { RecipeService } from '../../services/recipe.service';
+import { CategoryBoardComponent } from './category-board';
 
 describe('CategoryBoardComponent', () => {
   let component: CategoryBoardComponent;

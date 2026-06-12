@@ -1,25 +1,25 @@
+import { CommonModule, NgOptimizedImage } from '@angular/common';
 import {
-  Component,
   ChangeDetectionStrategy,
+  Component,
   ViewEncapsulation,
-  inject,
   computed,
+  inject,
   resource,
 } from '@angular/core';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { CommonModule, NgOptimizedImage } from '@angular/common';
-import { MatCardModule } from '@angular/material/card';
-import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
-import { MatChipsModule } from '@angular/material/chips';
-import { Breadcrumbs, BreadcrumbItem } from '../../components/breadcrumbs/breadcrumbs';
-import { RefineBy, RefineByItem } from '../../components/refine-by/refine-by';
-import { RecipeService } from '../../services/recipe.service';
-import { RecipeIndexService } from '../recipe-index/recipe-index.service';
 import { toSignal } from '@angular/core/rxjs-interop';
+import { MatButtonModule } from '@angular/material/button';
+import { MatCardModule } from '@angular/material/card';
+import { MatChipsModule } from '@angular/material/chips';
+import { MatIconModule } from '@angular/material/icon';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { NgxPaginationModule } from 'ngx-pagination';
+import { BreadcrumbItem, Breadcrumbs } from '../../components/breadcrumbs/breadcrumbs';
+import { RefineBy, RefineByItem } from '../../components/refine-by/refine-by';
 import { WINDOW } from '../../services/global-tokens';
+import { RecipeService } from '../../services/recipe.service';
 import { deslugify } from '../../utils/slug';
+import { RecipeIndexService } from '../recipe-index/recipe-index.service';
 
 @Component({
   selector: 'dm-recipe-list',

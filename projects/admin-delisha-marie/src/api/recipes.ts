@@ -1,6 +1,6 @@
-import { Router, Response } from 'express';
-import { backendService } from './supabase-backend.service';
+import { Response, Router } from 'express';
 import { authMiddleware, AuthRequest } from './middleware/auth.middleware';
+import { backendService } from './supabase-backend.service';
 
 const recipesRouter = Router();
 

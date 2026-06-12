@@ -1,9 +1,9 @@
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
-import { recipeListTitleResolver, recipeResolver, recipeTitleResolver } from './recipe.resolver';
-import { Recipe, RecipeService } from '../services/recipe.service';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { RecipeListService } from '../pages/recipe-list/recipe-list.service';
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { Recipe, RecipeService } from '../services/recipe.service';
+import { recipeListTitleResolver, recipeResolver, recipeTitleResolver } from './recipe.resolver';
 
 describe('Recipe Resolvers', () => {
   let recipeListService: RecipeListService;

@@ -1,14 +1,14 @@
+import { LowerCasePipe } from '@angular/common';
 import {
-  Component,
   ChangeDetectionStrategy,
+  Component,
+  computed,
   inject,
   signal,
-  computed,
   ViewEncapsulation,
 } from '@angular/core';
-import { RouterLink } from '@angular/router';
-import { LowerCasePipe } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
+import { RouterLink } from '@angular/router';
 import { RecipeService } from '../../services/recipe.service';
 
 @Component({

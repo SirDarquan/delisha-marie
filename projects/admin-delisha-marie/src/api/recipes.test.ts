@@ -1,4 +1,4 @@
-import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Ensure Env vars exist before static initialization in imported modules
 vi.hoisted(() => {
@@ -31,9 +31,9 @@ const mockChain = {
   single: mockSingle,
 };
 
+import cookieParser from 'cookie-parser';
 import express from 'express';
 import request from 'supertest';
-import cookieParser from 'cookie-parser';
 import recipesRouter from './recipes';
 import { backendService } from './supabase-backend.service';
 

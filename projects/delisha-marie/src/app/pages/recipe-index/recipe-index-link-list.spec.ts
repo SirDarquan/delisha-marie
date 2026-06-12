@@ -1,8 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
-import { RecipeIndexLinkList } from './recipe-index-link-list';
-import { describe, it, expect, beforeEach } from 'vitest';
 import { By } from '@angular/platform-browser';
+import { provideRouter } from '@angular/router';
+import { beforeEach, describe, expect, it } from 'vitest';
+import { RecipeIndexLinkList } from './recipe-index-link-list';
 
 describe('RecipeIndexLinkList', () => {
   let component: RecipeIndexLinkList;

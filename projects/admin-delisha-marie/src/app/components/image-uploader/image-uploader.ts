@@ -1,22 +1,22 @@
+import { CommonModule } from '@angular/common';
 import {
-  Component,
   ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  ElementRef,
   input,
+  model,
   output,
   signal,
-  computed,
-  model,
-  effect,
   untracked,
-  ViewEncapsulation,
   viewChild,
-  ElementRef,
+  ViewEncapsulation,
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { FormValueControl } from '@angular/forms/signals';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { FormValueControl } from '@angular/forms/signals';
 
 @Component({
   selector: 'app-image-uploader',

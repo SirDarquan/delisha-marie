@@ -1,22 +1,22 @@
 import {
-  Component,
   ChangeDetectionStrategy,
+  Component,
   ViewEncapsulation,
-  signal,
-  inject,
   computed,
+  inject,
   resource,
+  signal,
 } from '@angular/core';
-import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
+import { MatCardModule } from '@angular/material/card';
 import { MatChipsModule } from '@angular/material/chips';
-import { Breadcrumbs, BreadcrumbItem } from '../../components/breadcrumbs/breadcrumbs';
+import { MatIconModule } from '@angular/material/icon';
+import { BreadcrumbItem, Breadcrumbs } from '../../components/breadcrumbs/breadcrumbs';
 import { RecipeIndexCategoryImages } from './recipe-index-category-images';
+import { RecipeIndexIngredients } from './recipe-index-ingredients';
+import { RecipeIndexLinkList } from './recipe-index-link-list';
 import { RecipeIndexMethodImages } from './recipe-index-method-images';
 import { RecipeIndexService } from './recipe-index.service';
-import { RecipeIndexLinkList } from './recipe-index-link-list';
-import { RecipeIndexIngredients } from './recipe-index-ingredients';
 
 @Component({
   selector: 'dm-recipe-index',

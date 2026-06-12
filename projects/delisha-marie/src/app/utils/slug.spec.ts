@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { slugify, deslugify, generateUrl } from './slug';
+import { describe, expect, it } from 'vitest';
+import { deslugify, generateUrl, slugify } from './slug';
 
 describe('Slug Utility', () => {
   describe('slugify', () => {

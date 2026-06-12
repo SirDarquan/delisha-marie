@@ -1,13 +1,13 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import {
-  describe,
-  it,
-  expect,
-  beforeEach,
-  beforeAll,
-  vi,
   afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
   type MockInstance,
 } from 'vitest';
 

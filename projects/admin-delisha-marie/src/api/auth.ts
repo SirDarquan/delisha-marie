@@ -1,7 +1,7 @@
-import { Router, Request, Response } from 'express';
-import { backendService } from './supabase-backend.service';
-import { authMiddleware, AuthRequest, setAuthCookies } from './middleware/auth.middleware';
 import DescopeClient from '@descope/node-sdk';
+import { Request, Response, Router } from 'express';
+import { authMiddleware, AuthRequest, setAuthCookies } from './middleware/auth.middleware';
+import { backendService } from './supabase-backend.service';
 
 function cleanEnvValue(val: string | undefined): string {
   if (!val) return '';

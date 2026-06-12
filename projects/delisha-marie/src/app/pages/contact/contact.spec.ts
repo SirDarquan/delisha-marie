@@ -1,8 +1,8 @@
 import { TestBed } from '@angular/core/testing';
-import { Contact } from './contact';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
-import { describe, it, expect, beforeEach } from 'vitest';
 import { provideRouter } from '@angular/router';
+import { beforeEach, describe, expect, it } from 'vitest';
+import { Contact } from './contact';
 
 interface ContactTestInstance {
   contactForm: () => { invalid: () => boolean };

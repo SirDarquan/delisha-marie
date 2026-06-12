@@ -1,9 +1,9 @@
-import { TestBed, ComponentFixture } from '@angular/core/testing';
-import { Router, provideRouter } from '@angular/router';
-import { vi, Mock } from 'vitest';
-import { HeaderComponent } from './header';
-import { AuthService } from '../../services/auth.service';
 import { signal } from '@angular/core';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { Router, provideRouter } from '@angular/router';
+import { Mock, vi } from 'vitest';
+import { AuthService } from '../../services/auth.service';
+import { HeaderComponent } from './header';
 
 interface MockAuthService {
   currentUser: unknown;

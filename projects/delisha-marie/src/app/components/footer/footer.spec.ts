@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
-import { Footer } from './footer';
 import { provideRouter } from '@angular/router';
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { Footer } from './footer';
 
 describe('Footer', () => {
   beforeEach(async () => {

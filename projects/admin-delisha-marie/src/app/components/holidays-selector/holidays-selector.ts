@@ -1,19 +1,19 @@
+import { CommonModule } from '@angular/common';
 import {
-  Component,
   ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  ElementRef,
   inject,
   input,
   output,
   signal,
-  computed,
-  effect,
-  ViewEncapsulation,
   viewChild,
-  ElementRef,
+  ViewEncapsulation,
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatSelectModule, MatSelect } from '@angular/material/select';
+import { MatSelect, MatSelectModule } from '@angular/material/select';
 import { RecipeService } from '../../services/recipe.service';
 
 @Component({

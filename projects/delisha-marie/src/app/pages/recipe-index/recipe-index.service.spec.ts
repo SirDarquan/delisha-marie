@@ -1,9 +1,9 @@
-import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
-import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
-import { RecipeIndexService } from './recipe-index.service';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { TestBed } from '@angular/core/testing';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { RecipeIndexResponse } from '../../models/category';
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { RecipeIndexService } from './recipe-index.service';
 
 describe('RecipeIndexService', () => {
   let service: RecipeIndexService;

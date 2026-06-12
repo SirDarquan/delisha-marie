@@ -1,30 +1,30 @@
+import { CommonModule } from '@angular/common';
 import {
-  Component,
   ChangeDetectionStrategy,
+  Component,
   computed,
+  effect,
+  inject,
   input,
+  model,
   output,
   signal,
-  effect,
   ViewEncapsulation,
-  inject,
-  model,
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { FormValueControl } from '@angular/forms/signals';
 import { MatButtonModule } from '@angular/material/button';
-import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
 import {
   CategoryTrails,
-  isStandardTrail,
   getCleanRecipeUrl,
-  trimSlashes,
+  isStandardTrail,
   trimLeadingSlashes,
+  trimSlashes,
   trimTrailingSlashes,
 } from '@dm/library';
 import { Recipe } from '../../models/recipe.model';
 import { RecipeService } from '../../services/recipe.service';
-import { FormValueControl } from '@angular/forms/signals';
 
 interface CategoryConfig {
   name: string;

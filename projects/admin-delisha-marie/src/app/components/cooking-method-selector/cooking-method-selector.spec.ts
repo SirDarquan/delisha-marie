@@ -1,9 +1,9 @@
-import { TestBed, ComponentFixture } from '@angular/core/testing';
-import { CookingMethodSelectorComponent } from './cooking-method-selector';
-import { RecipeService } from '../../services/recipe.service';
 import { signal } from '@angular/core';
-import { By } from '@angular/platform-browser';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MatSelect } from '@angular/material/select';
+import { By } from '@angular/platform-browser';
+import { RecipeService } from '../../services/recipe.service';
+import { CookingMethodSelectorComponent } from './cooking-method-selector';
 
 describe('CookingMethodSelectorComponent', () => {
   let component: CookingMethodSelectorComponent;

@@ -1,6 +1,6 @@
-import { Injectable, inject, resource, computed } from '@angular/core';
+import { Injectable, computed, inject, resource } from '@angular/core';
+import type { BaseRecipe, Breadcrumbs, Comment, Nutrition } from '@dm/library';
 import { Api } from './api';
-import type { BaseRecipe, Comment, Nutrition, Breadcrumbs } from '@dm/library';
 export type { Comment };
 
 export interface Recipe extends BaseRecipe {

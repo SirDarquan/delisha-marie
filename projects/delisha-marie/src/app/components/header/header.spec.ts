@@ -1,10 +1,10 @@
-import { TestBed } from '@angular/core/testing';
-import { Header } from './header';
-import { provideRouter } from '@angular/router';
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { ThemeService } from '../../services/theme.service';
 import { signal, WritableSignal } from '@angular/core';
+import { TestBed } from '@angular/core/testing';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { provideRouter } from '@angular/router';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ThemeService } from '../../services/theme.service';
+import { Header } from './header';
 
 describe('Header', () => {
   let themeServiceMock: {

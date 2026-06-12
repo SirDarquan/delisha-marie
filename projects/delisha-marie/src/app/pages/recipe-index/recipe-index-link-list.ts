@@ -1,9 +1,9 @@
 import {
-  Component,
   ChangeDetectionStrategy,
+  Component,
   ViewEncapsulation,
-  input,
   computed,
+  input,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Category } from '../../models/category';

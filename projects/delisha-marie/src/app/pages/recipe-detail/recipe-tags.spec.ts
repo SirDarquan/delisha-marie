@@ -1,9 +1,9 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { RecipeTags } from './recipe-tags';
-import { Recipe } from '../../services/recipe.service';
 import { provideRouter } from '@angular/router';
-import { describe, it, expect, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
+import { Recipe } from '../../services/recipe.service';
 import { createMockRecipe } from '../../utils/test-recipe';
+import { RecipeTags } from './recipe-tags';
 
 describe('RecipeTags', () => {
   let component: RecipeTags;

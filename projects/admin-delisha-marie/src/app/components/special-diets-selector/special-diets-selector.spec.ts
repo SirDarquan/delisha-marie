@@ -1,7 +1,7 @@
-import { TestBed, ComponentFixture } from '@angular/core/testing';
-import { SpecialDietsSelectorComponent } from './special-diets-selector';
-import { RecipeService } from '../../services/recipe.service';
 import { signal } from '@angular/core';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { RecipeService } from '../../services/recipe.service';
+import { SpecialDietsSelectorComponent } from './special-diets-selector';
 
 describe('SpecialDietsSelectorComponent', () => {
   let component: SpecialDietsSelectorComponent;

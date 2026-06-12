@@ -1,3 +1,4 @@
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import {
   ApplicationConfig,
   inject,
@@ -5,19 +6,18 @@ import {
   provideBrowserGlobalErrorListeners,
   provideZonelessChangeDetection,
 } from '@angular/core';
-import { provideRouter } from '@angular/router';
-import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import {
   provideClientHydration,
   withEventReplay,
   withNoIncrementalHydration,
 } from '@angular/platform-browser';
+import { provideRouter } from '@angular/router';
+import { PluginRegistry } from '../core/plugins/plugin-registry.services';
 import { routes } from './app.routes';
 import { authInterceptor } from './interceptors/auth.interceptor';
-import { provideDescope } from './provider/descope';
-import { PluginRegistry } from '../core/plugins/plugin-registry.services';
-import { provideAppConfig } from './services/config.service';
 import { BRAND_TITLE_TOKEN } from './pages/auth/auth-shared.utils';
+import { provideDescope } from './provider/descope';
+import { provideAppConfig } from './services/config.service';
 
 export const appConfig: ApplicationConfig = {
   providers: [
