@@ -1,13 +1,13 @@
+import { DOCUMENT, isPlatformBrowser } from '@angular/common';
 import {
-  Component,
   ChangeDetectionStrategy,
-  ViewEncapsulation,
-  input,
+  Component,
   computed,
   inject,
+  input,
   PLATFORM_ID,
+  ViewEncapsulation,
 } from '@angular/core';
-import { DOCUMENT, isPlatformBrowser } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { Ingredient } from '../../models/category';
 

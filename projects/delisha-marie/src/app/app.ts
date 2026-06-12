@@ -1,16 +1,16 @@
-import {
-  Component,
-  ChangeDetectionStrategy,
-  ViewEncapsulation,
-  inject,
-  effect,
-} from '@angular/core';
-import { Router, RouterOutlet, Scroll } from '@angular/router';
-import { Header } from './components/header/header';
-import { Footer } from './components/footer/footer';
 import { ViewportScroller } from '@angular/common';
-import { filter } from 'rxjs';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ViewEncapsulation,
+  effect,
+  inject,
+} from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
+import { Router, RouterOutlet, Scroll } from '@angular/router';
+import { filter } from 'rxjs';
+import { Footer } from './components/footer/footer';
+import { Header } from './components/header/header';
 
 @Component({
   selector: 'dm-root',
