@@ -1,4 +1,4 @@
-import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.hoisted(() => {
   process.env['SUPABASE_URL'] = 'https://example.supabase.co';
@@ -82,9 +82,7 @@ describe('Recipe Index Router API', () => {
       id: 'recipe-5',
       breadcrumbs: [
         {
-          items: [
-            { label: 'Empty Category Slug', url: '/recipes/' },
-          ],
+          items: [{ label: 'Empty Category Slug', url: '/recipes/' }],
         },
       ],
     },
