@@ -29,9 +29,9 @@ export class RecipeService {
       }
     }
 
-    // Default to loading from the main public assets recipes.json
+    // Default to loading from the backend recipes endpoint
     this.api
-      .get<Recipe[]>('/recipes.json')
+      .get<Recipe[]>('/recipes')
       .then((data) => {
         if (data.length) {
           this._recipes.set(data);
@@ -68,9 +68,14 @@ export class RecipeService {
 
   createRecipe(newRecipe: Omit<Recipe, 'id'>): Recipe {
     const all = this._recipes();
-    const id = all.length
-      ? Math.max(...all.map((r) => (typeof r.id === 'number' ? r.id : 0))) + 1
-      : 1;
+    const id =
+      typeof crypto !== 'undefined' && crypto.randomUUID
+        ? crypto.randomUUID()
+        : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+            const r = (Math.random() * 16) | 0;
+            const v = c === 'x' ? r : (r & 0x3) | 0x8;
+            return v.toString(16);
+          });
     const recipe: Recipe = {
       ...newRecipe,
       id,

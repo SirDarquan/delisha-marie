@@ -727,7 +727,6 @@ export class RecipeFormComponent implements OnInit {
       required(fields.content, { message: 'Content is required' });
       required(fields.ingredients, { message: 'Ingredients is required' });
       required(fields.instructions, { message: 'Instructions is required' });
-      required(fields.method, { message: 'Method is required' });
       required(fields.cuisine, { message: 'Cuisine is required' });
       required(fields.course, { message: 'Course is required' });
       required(fields.servingSize, { message: 'Serving size is required' });
@@ -852,7 +851,6 @@ export class RecipeFormComponent implements OnInit {
       isMissing(this.getFieldValue('content')) ||
       isMissing(this.getFieldValue('ingredients')) ||
       isMissing(this.getFieldValue('instructions')) ||
-      isMissing(this.getFieldValue('method')) ||
       isMissing(this.getFieldValue('cuisine')) ||
       isMissing(this.getFieldValue('course')) ||
       isMissing(this.getFieldValue('servingSize')) ||
@@ -1056,7 +1054,7 @@ export class RecipeFormComponent implements OnInit {
     const holidays = formValue.holidays ? [formValue.holidays] : [];
     const specialDiets = formValue.specialDiets || [];
 
-    const nutrition: Nutrition | undefined =
+    const nutrition =
       formValue.servingSize ||
       formValue.calories ||
       formValue.fat ||
@@ -1068,18 +1066,18 @@ export class RecipeFormComponent implements OnInit {
       formValue.cholesterol ||
       formValue.saturatedFat
         ? {
-            servingSize: formValue.servingSize || '',
-            calories: formValue.calories || '',
-            fat: formValue.fat || '',
-            carbohydrates: formValue.carbohydrates || '',
-            protein: formValue.protein || '',
-            fiber: formValue.fiber || '',
-            sugar: formValue.sugar || '',
-            sodium: formValue.sodium || '',
-            cholesterol: formValue.cholesterol || '',
-            saturatedFat: formValue.saturatedFat || '',
+            servingSize: formValue.servingSize?.trim() || null,
+            calories: formValue.calories?.trim() || null,
+            fat: formValue.fat?.trim() || null,
+            carbohydrates: formValue.carbohydrates?.trim() || null,
+            protein: formValue.protein?.trim() || null,
+            fiber: formValue.fiber?.trim() || null,
+            sugar: formValue.sugar?.trim() || null,
+            sodium: formValue.sodium?.trim() || null,
+            cholesterol: formValue.cholesterol?.trim() || null,
+            saturatedFat: formValue.saturatedFat?.trim() || null,
           }
-        : undefined;
+        : null;
 
     const categoryTrails = formValue.category
       ? formValue.category.trails.filter(
@@ -1096,33 +1094,33 @@ export class RecipeFormComponent implements OnInit {
       slug: formValue.slug || '',
       category: { trails: categoryTrails },
       difficulty: formValue.difficulty || 'Easy',
-      prepTime: formValue.prepTime || '',
-      cookTime: formValue.cookTime || '',
-      totalTime: formValue.totalTime || '',
-      yield: formValue.yield || '',
-      image: formValue.image || '',
-      imageWidth: formValue.imageWidth || '',
-      imageHeight: formValue.imageHeight || '',
-      imageType: formValue.imageType || '',
-      description: formValue.description || '',
-      content: formValue.content || '',
+      prepTime: formValue.prepTime?.trim() || null,
+      cookTime: formValue.cookTime?.trim() || null,
+      totalTime: formValue.totalTime?.trim() || null,
+      yield: formValue.yield?.trim() || null,
+      image: formValue.image?.trim() || null,
+      imageWidth: formValue.imageWidth?.trim() || null,
+      imageHeight: formValue.imageHeight?.trim() || null,
+      imageType: formValue.imageType?.trim() || null,
+      description: formValue.description?.trim() || null,
+      content: formValue.content?.trim() || null,
       ingredients,
       instructions,
       author: formValue.author || 'Delisha Marie',
       status,
-      preview_token: formValue.preview_token || '',
-      method: formValue.method || '',
+      preview_token: formValue.preview_token?.trim() || null,
+      method: formValue.method?.trim() || null,
       theBest: formValue.theBest || false,
       holidays,
       specialDiets,
       breadcrumbs: null,
-      cuisine: formValue.cuisine || '',
-      course: formValue.course || '',
+      cuisine: formValue.cuisine?.trim() || null,
+      course: formValue.course?.trim() || null,
       nutrition,
       keywords,
       equipment,
       notes,
-    };
+    } as unknown as Omit<Recipe, 'id'>;
   }
 
   saveDraft(): void {
@@ -1145,6 +1143,8 @@ export class RecipeFormComponent implements OnInit {
       }
     }
     this.initialModel.set(this.getCurrentFormValue());
+    this.recipeModel().status = 'draft';
+    this.isEdit.set(false);
   }
 
   saveRequired(status: 'scheduled' | 'published'): void {

@@ -819,15 +819,15 @@ describe('RecipeFormComponent', () => {
 
     expect(createPayload.nutrition).toBeDefined();
     expect(createPayload.nutrition?.calories).toBe('200 kcal');
-    expect(createPayload.nutrition?.servingSize).toBe('');
-    expect(createPayload.nutrition?.fat).toBe('');
-    expect(createPayload.nutrition?.carbohydrates).toBe('');
-    expect(createPayload.nutrition?.protein).toBe('');
-    expect(createPayload.nutrition?.fiber).toBe('');
-    expect(createPayload.nutrition?.sugar).toBe('');
-    expect(createPayload.nutrition?.sodium).toBe('');
-    expect(createPayload.nutrition?.cholesterol).toBe('');
-    expect(createPayload.nutrition?.saturatedFat).toBe('');
+    expect(createPayload.nutrition?.servingSize).toBeNull();
+    expect(createPayload.nutrition?.fat).toBeNull();
+    expect(createPayload.nutrition?.carbohydrates).toBeNull();
+    expect(createPayload.nutrition?.protein).toBeNull();
+    expect(createPayload.nutrition?.fiber).toBeNull();
+    expect(createPayload.nutrition?.sugar).toBeNull();
+    expect(createPayload.nutrition?.sodium).toBeNull();
+    expect(createPayload.nutrition?.cholesterol).toBeNull();
+    expect(createPayload.nutrition?.saturatedFat).toBeNull();
   });
 
   it('should return early on saveRequired if form is invalid', () => {
@@ -1014,7 +1014,7 @@ describe('RecipeFormComponent', () => {
     expect(result.specialDiets).toEqual([]);
     expect(result.difficulty).toBe('Easy');
     expect(result.author).toBe('Delisha Marie');
-    expect(result.nutrition?.calories).toBe('');
+    expect(result.nutrition?.calories).toBeNull();
   });
 
   it('should handle timestamp updates when changing a published recipe with missing original createdAt (line 1016)', () => {
