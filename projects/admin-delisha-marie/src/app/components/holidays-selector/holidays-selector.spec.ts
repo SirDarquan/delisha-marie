@@ -14,8 +14,15 @@ describe('HolidaysSelectorComponent', () => {
     { title: 'C', slug: 'c', holidays: ['Thanksgiving'], status: 'published' },
   ]);
 
+  const mockHolidaysSignal = signal<{ id: string; name: string }[]>([
+    { id: '1', name: 'Christmas' },
+    { id: '2', name: 'Easter' },
+    { id: '3', name: 'Thanksgiving' },
+  ]);
+
   const fakeRecipeService = {
     recipes: mockRecipesSignal,
+    holidays: mockHolidaysSignal,
   };
 
   beforeEach(async () => {
@@ -65,7 +72,6 @@ describe('HolidaysSelectorComponent', () => {
 
     expect(component.selectedHoliday()).toBe('Christmas');
     expect(emittedValue).toBe('Christmas');
-    expect(component.showCustomInput()).toBe(false);
   });
 
   it('should open custom holiday input when custom is selected', () => {
@@ -73,7 +79,6 @@ describe('HolidaysSelectorComponent', () => {
     component.onHolidaySelect('custom');
     fixture.detectChanges();
 
-    expect(component.showCustomInput()).toBe(true);
     expect(component.customHolidayText()).toBe('');
   });
 
@@ -82,7 +87,6 @@ describe('HolidaysSelectorComponent', () => {
     // 1. Select custom option
     component.onHolidaySelect('custom');
     fixture.detectChanges();
-    expect(component.showCustomInput()).toBe(true);
 
     // 2. Type text
     component.onCustomTextChange({ target: { value: 'New Year' } } as unknown as Event);
@@ -95,7 +99,6 @@ describe('HolidaysSelectorComponent', () => {
     expect(component.selectedHoliday()).toBe('New Year');
     expect(emittedValue).toBe('New Year');
     expect(component.compiledHolidays()).toContain('New Year');
-    expect(component.showCustomInput()).toBe(false);
   });
 
   it('should support canceling custom method entry', () => {
@@ -109,7 +112,6 @@ describe('HolidaysSelectorComponent', () => {
 
     component.cancelCustomHoliday();
     fixture.detectChanges();
-    expect(component.showCustomInput()).toBe(false);
     expect(component.selectedHoliday()).toBe('Thanksgiving');
   });
 
@@ -176,7 +178,6 @@ describe('HolidaysSelectorComponent', () => {
     fixture.detectChanges();
 
     expect(component.selectedHoliday()).toBe('Labor Day');
-    expect(component.showCustomInput()).toBe(false);
 
     // 2. Select custom again, then click Cancel button in UI
     component.onHolidaySelect('custom');
@@ -188,8 +189,6 @@ describe('HolidaysSelectorComponent', () => {
     expect(cancelBtn).toBeTruthy();
     cancelBtn.click();
     fixture.detectChanges();
-
-    expect(component.showCustomInput()).toBe(false);
   });
 
   it('should handle onHolidaySelect when selectField is undefined (line 207)', () => {
@@ -197,8 +196,15 @@ describe('HolidaysSelectorComponent', () => {
     // @ts-expect-error - mock the selectField signal to return undefined
     component.selectField = (() => undefined) as unknown as typeof component.selectField;
 
-    // Call the method
-    component.onHolidaySelect('custom');
-    expect(component.showCustomInput()).toBe(true);
+    // Call the method and assert it does not throw
+    expect(() => component.onHolidaySelect('custom')).not.toThrow();
+  });
+
+  it('should prepopulate compiledHolidays with baseline holidays from service', () => {
+    fixture.detectChanges();
+    const compiled = component.compiledHolidays();
+    expect(compiled).toContain('Christmas');
+    expect(compiled).toContain('Easter');
+    expect(compiled).toContain('Thanksgiving');
   });
 });

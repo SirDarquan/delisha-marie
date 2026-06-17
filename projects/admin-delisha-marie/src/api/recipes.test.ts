@@ -109,6 +109,81 @@ describe('Recipes Router API', () => {
     });
   });
 
+  describe('GET /holidays', () => {
+    it('should return holidays', async () => {
+      const mockData = [
+        { id: 1, name: 'Christmas' },
+        { id: 2, name: 'Thanksgiving' },
+      ];
+      mockOrder.mockResolvedValue({ data: mockData, error: null });
+
+      const res = await request(app).get('/holidays');
+
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual(mockData);
+      expect(mockFrom).toHaveBeenCalledWith('holidays');
+    });
+
+    it('should handle errors', async () => {
+      mockOrder.mockResolvedValue({ data: null, error: new Error('DB error') });
+
+      const res = await request(app).get('/holidays');
+
+      expect(res.status).toBe(500);
+      expect(res.body.error).toBe('DB error');
+    });
+  });
+
+  describe('GET /special-diets', () => {
+    it('should return special diets', async () => {
+      const mockData = [
+        { id: 1, name: 'Gluten-Free' },
+        { id: 2, name: 'Vegan' },
+      ];
+      mockOrder.mockResolvedValue({ data: mockData, error: null });
+
+      const res = await request(app).get('/special-diets');
+
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual(mockData);
+      expect(mockFrom).toHaveBeenCalledWith('special_diets');
+    });
+
+    it('should handle errors', async () => {
+      mockOrder.mockResolvedValue({ data: null, error: new Error('DB error') });
+
+      const res = await request(app).get('/special-diets');
+
+      expect(res.status).toBe(500);
+      expect(res.body.error).toBe('DB error');
+    });
+  });
+
+  describe('GET /methods', () => {
+    it('should return methods', async () => {
+      const mockData = [
+        { id: 1, name: 'Air Frying', slug: 'air-frying' },
+        { id: 2, name: 'Baking', slug: 'baking' },
+      ];
+      mockOrder.mockResolvedValue({ data: mockData, error: null });
+
+      const res = await request(app).get('/methods');
+
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual(mockData);
+      expect(mockFrom).toHaveBeenCalledWith('methods');
+    });
+
+    it('should handle errors', async () => {
+      mockOrder.mockResolvedValue({ data: null, error: new Error('DB error') });
+
+      const res = await request(app).get('/methods');
+
+      expect(res.status).toBe(500);
+      expect(res.body.error).toBe('DB error');
+    });
+  });
+
   describe('POST /recipes', () => {
     it('should successfully create a recipe and return the result', async () => {
       const inputRecipe = { title: 'New Salad', description: 'Fresh veggies' };

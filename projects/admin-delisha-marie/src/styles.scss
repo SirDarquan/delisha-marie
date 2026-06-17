@@ -38,10 +38,32 @@ body {
   height: 100%;
 }
 
-asl-google-signin-button .nsm7Bb-HzV7m-LgbsSe {
-  background-color: transparent !important;
-  border: 1px solid var(--mat-sys-outline) !important;
-  color: var(--mat-sys-primary) !important;
-  border-radius: 20px;
-  width: 400px
+/* Form field custom container overrides */
+.custom-mat-form-field {
+  width: 100%;
+  --mdc-outlined-text-field-container-shape: 12px;
+  --mdc-outlined-text-field-outline-color: rgba(71, 85, 105, 0.6);
+  --mdc-outlined-text-field-focus-outline-color: #c084fc;
+  --mdc-outlined-text-field-container-color: rgba(30, 41, 59, 0.4);
+  --mdc-outlined-text-field-container-height: 44px;
+  --mat-select-trigger-text-color: #ffffff;
+  --mat-select-placeholder-text-color: #94a3b8;
+}
+.custom-mat-form-field .mat-mdc-form-field-subscript-wrapper {
+  display: none !important;
+}
+.custom-mat-form-field .mat-mdc-form-field-flex {
+  height: 44px !important;
+  align-items: center !important;
+}
+.custom-mat-form-field .mat-mdc-select-value {
+  color: #ffffff !important;
+  font-size: 14px !important;
+}
+.custom-mat-form-field .mat-mdc-select-placeholder {
+  color: #94a3b8 !important;
+  font-size: 14px !important;
+}
+.custom-mat-form-field .mat-mdc-select-arrow {
+  color: #94a3b8 !important;
 }
