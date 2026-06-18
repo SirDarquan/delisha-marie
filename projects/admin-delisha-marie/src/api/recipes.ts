@@ -1,6 +1,8 @@
+import { camelCase, snakeCase } from 'change-case';
 import { Response, Router } from 'express';
 import { authMiddleware, AuthRequest } from './middleware/auth.middleware';
 import { backendService } from './supabase-backend.service';
+import { SupabaseClient } from '@supabase/supabase-js';
 
 const recipesRouter = Router();
 
@@ -30,17 +32,17 @@ recipesRouter.post('/recipes', async (req: AuthRequest, res: Response) => {
     const specialDietsData = req.body.specialDiets;
 
     const dbBody = normalizeDbBody(
-      filterRecipeColumns(camelToSnake(req.body) as Record<string, unknown>),
+      filterRecipeColumns(
+        Object.fromEntries(Object.entries(req.body).map(([k, v]) => [snakeCase(k), v])),
+      ),
     );
 
-    const { data: recipe, error } = await client
-      .from('recipes')
-      .insert(dbBody)
-      .select()
-      .single();
+    const { data: recipe, error } = await client.from('recipes').insert(dbBody).select().single();
     if (error) throw error;
 
-    const camelRecipe = snakeToCamel(recipe);
+    const camelRecipe = Object.fromEntries(
+      Object.entries(recipe).map(([k, v]) => [camelCase(k), v]),
+    ) as Record<string, unknown> & { id: string | number };
 
     await saveRecipeCategory(client, camelRecipe['id'], categoryData);
     await saveRecipeMethod(client, camelRecipe['id'], methodName);
@@ -66,7 +68,9 @@ recipesRouter.put('/recipes/:id', async (req: AuthRequest, res: Response) => {
     delete updateBody.id;
 
     const dbBody = normalizeDbBody(
-      filterRecipeColumns(camelToSnake(updateBody) as Record<string, unknown>),
+      filterRecipeColumns(
+        Object.fromEntries(Object.entries(updateBody).map(([k, v]) => [snakeCase(k), v])),
+      ),
     );
 
     const { data: updateData, error: updateError } = await client
@@ -92,7 +96,9 @@ recipesRouter.put('/recipes/:id', async (req: AuthRequest, res: Response) => {
       recipe = insertData;
     }
 
-    const camelRecipe = snakeToCamel(recipe);
+    const camelRecipe = Object.fromEntries(
+      Object.entries(recipe).map(([k, v]) => [camelCase(k), v]),
+    ) as Record<string, unknown> & { id: string | number };
 
     await saveRecipeCategory(client, camelRecipe['id'], categoryData);
     await saveRecipeMethod(client, camelRecipe['id'], methodName);
@@ -126,39 +132,39 @@ function slugify(text: string): string {
     .toLowerCase()
     .trim()
     .replace(/\s+/g, '-')
-    .replace(/[^\w\-]+/g, '')
-    .replace(/\-\-+/g, '-');
+    .replace(/[^\w-]+/g, '')
+    .replace(/--+/g, '-');
 }
 
-function camelToSnake(obj: Record<string, any>): Record<string, any> {
-  const result: Record<string, any> = {};
-  for (const key of Object.keys(obj)) {
-    const snake = key.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`);
-    result[snake] = obj[key];
-  }
-  return result;
-}
-
-function snakeToCamel(obj: Record<string, any>): Record<string, any> {
-  const result: Record<string, any> = {};
-  for (const key of Object.keys(obj)) {
-    const camel = key.replace(/([-_][a-z])/g, (group) =>
-      group.toUpperCase().replace('-', '').replace('_', ''),
-    );
-    result[camel] = obj[key];
-  }
-  return result;
-}
-
-function filterRecipeColumns(obj: Record<string, any>): Record<string, any> {
+function filterRecipeColumns(obj: Record<string, unknown>): Record<string, unknown> {
   const allowed = [
-    'id', 'title', 'slug', 'difficulty', 'prep_time', 'cook_time',
-    'total_time', 'yield', 'image', 'image_width', 'image_height',
-    'image_type', 'description', 'content', 'ingredients', 'instructions',
-    'author', 'status', 'preview_token', 'the_best', 'breadcrumbs',
-    'cuisine', 'course', 'nutrition', 'keywords', 'equipment', 'notes'
+    'title',
+    'slug',
+    'prep_time',
+    'cook_time',
+    'total_time',
+    'yield',
+    'image',
+    'image_width',
+    'image_height',
+    'image_type',
+    'description',
+    'content',
+    'ingredients',
+    'instructions',
+    'author',
+    'status',
+    'preview_token',
+    'the_best',
+    'breadcrumbs',
+    'cuisine',
+    'course',
+    'nutrition',
+    'keywords',
+    'equipment',
+    'notes',
   ];
-  const result: Record<string, any> = {};
+  const result: Record<string, unknown> = {};
   for (const key of allowed) {
     if (key in obj) {
       result[key] = obj[key];
@@ -167,35 +173,117 @@ function filterRecipeColumns(obj: Record<string, any>): Record<string, any> {
   return result;
 }
 
-function normalizeDbBody(obj: Record<string, any>): Record<string, any> {
+function normalizeDbBody(obj: Record<string, unknown>): Record<string, unknown> {
   const result = { ...obj };
   const nullable = [
-    'prep_time', 'cook_time', 'total_time', 'yield', 'image',
-    'image_width', 'image_height', 'image_type', 'description',
-    'content', 'preview_token', 'cuisine', 'course'
+    'prep_time',
+    'cook_time',
+    'total_time',
+    'yield',
+    'image',
+    'image_width',
+    'image_height',
+    'image_type',
+    'description',
+    'content',
+    'preview_token',
+    'cuisine',
+    'course',
   ];
   for (const key of nullable) {
     if (key in result && (result[key] === '' || result[key] === undefined)) {
       result[key] = null;
     }
   }
+  if (result['nutrition'] && typeof result['nutrition'] === 'object') {
+    result['nutrition'] = Object.fromEntries(
+      Object.entries(result['nutrition']).map(([k, v]) => [snakeCase(k), v]),
+    );
+  }
   return result;
 }
 
+async function getOrCreateCategory(
+  client: SupabaseClient,
+  name: string,
+  url: string,
+): Promise<string> {
+  const { data, error } = await client.from('categories').select('id').eq('url', url).maybeSingle();
+  if (error) throw error;
+  if (data) return data.id;
+
+  const { data: newCat, error: insertError } = await client
+    .from('categories')
+    .insert({ name, url })
+    .select('id')
+    .single();
+  if (insertError) throw insertError;
+  return newCat.id;
+}
+
+async function getOrCreateMethod(client: SupabaseClient, name: string): Promise<string> {
+  const slug = slugify(name);
+  const { data, error } = await client.from('methods').select('id').eq('slug', slug).maybeSingle();
+  if (error) throw error;
+  if (data) return data.id;
+
+  const { data: newMethod, error: insertError } = await client
+    .from('methods')
+    .insert({ name, slug })
+    .select('id')
+    .single();
+  if (insertError) throw insertError;
+  return newMethod.id;
+}
+
+async function getOrCreateHoliday(client: SupabaseClient, name: string): Promise<string> {
+  const slug = slugify(name);
+  const { data, error } = await client.from('holidays').select('id').eq('slug', slug).maybeSingle();
+  if (error) throw error;
+  if (data) return data.id;
+
+  const { data: newHoliday, error: insertError } = await client
+    .from('holidays')
+    .insert({ name, slug })
+    .select('id')
+    .single();
+  if (insertError) throw insertError;
+  return newHoliday.id;
+}
+
+async function getOrCreateSpecialDiet(client: SupabaseClient, name: string): Promise<string> {
+  const slug = slugify(name);
+  const { data, error } = await client
+    .from('special_diets')
+    .select('id')
+    .eq('slug', slug)
+    .maybeSingle();
+  if (error) throw error;
+  if (data) return data.id;
+
+  const { data: newDiet, error: insertError } = await client
+    .from('special_diets')
+    .insert({ name, slug })
+    .select('id')
+    .single();
+  if (insertError) throw insertError;
+  return newDiet.id;
+}
+
 async function saveRecipeCategory(
-  client: any,
+  client: SupabaseClient,
   recipeId: string | number,
-  categoryData: any,
+  categoryData: { trails?: { name?: string; url?: string }[][] } | null | undefined,
 ): Promise<void> {
   if (!categoryData?.trails || !Array.isArray(categoryData.trails)) {
     return;
   }
 
-  const { error: deleteRelError } = await client
+  const { error: deleteError } = await client
     .from('recipe_categories')
     .delete()
     .eq('recipe_id', recipeId);
-  if (deleteRelError) throw deleteRelError;
+  if (deleteError) throw deleteError;
 
   for (const trail of categoryData.trails) {
     if (!Array.isArray(trail)) continue;
@@ -205,26 +293,7 @@ async function saveRecipeCategory(
         continue;
       }
 
-      let catId: string;
-      const { data: existingCat, error: findError } = await client
-        .from('categories')
-        .select('id')
-        .eq('url', part.url)
-        .maybeSingle();
-      if (findError) throw findError;
-
-      if (existingCat) {
-        catId = existingCat.id;
-      } else {
-        const { data: newCat, error: insertError } = await client
-          .from('categories')
-          .insert({ name: part.name, url: part.url })
-          .select('id')
-          .single();
-        if (insertError) throw insertError;
-        catId = newCat.id;
-      }
-
+      const catId = await getOrCreateCategory(client, part.name, part.url);
       const { error: relError } = await client
         .from('recipe_categories')
         .upsert(
@@ -237,62 +306,37 @@ async function saveRecipeCategory(
 }
 
 async function saveRecipeMethod(
-  client: any,
+  client: SupabaseClient,
   recipeId: string | number,
-  methodName: any,
+  methodName: unknown,
 ): Promise<void> {
-  const { error: deleteMethodRelError } = await client
+  const { error: deleteError } = await client
     .from('recipe_methods')
     .delete()
     .eq('recipe_id', recipeId);
-  if (deleteMethodRelError) throw deleteMethodRelError;
+  if (deleteError) throw deleteError;
 
   if (typeof methodName !== 'string' || methodName.trim() === '') {
     return;
   }
 
-  const nameTrimmed = methodName.trim();
-  const methodSlug = slugify(nameTrimmed);
-
-  let methodId: string;
-  const { data: existingMethod, error: findError } = await client
-    .from('methods')
-    .select('id')
-    .eq('slug', methodSlug)
-    .maybeSingle();
-  if (findError) throw findError;
-
-  if (existingMethod) {
-    methodId = existingMethod.id;
-  } else {
-    const { data: newMethod, error: insertError } = await client
-      .from('methods')
-      .insert({ name: nameTrimmed, slug: methodSlug })
-      .select('id')
-      .single();
-    if (insertError) throw insertError;
-    methodId = newMethod.id;
-  }
-
+  const methodId = await getOrCreateMethod(client, methodName.trim());
   const { error: relError } = await client
     .from('recipe_methods')
-    .upsert(
-      { recipe_id: recipeId, method_id: methodId },
-      { onConflict: 'recipe_id,method_id' },
-    );
+    .upsert({ recipe_id: recipeId, method_id: methodId }, { onConflict: 'recipe_id,method_id' });
   if (relError) throw relError;
 }
 
 async function saveRecipeHolidays(
-  client: any,
+  client: SupabaseClient,
   recipeId: string | number,
-  holidays: any,
+  holidays: unknown,
 ): Promise<void> {
-  const { error: deleteHolidayRelError } = await client
+  const { error: deleteError } = await client
     .from('recipe_holidays')
     .delete()
     .eq('recipe_id', recipeId);
-  if (deleteHolidayRelError) throw deleteHolidayRelError;
+  if (deleteError) throw deleteError;
 
   if (!Array.isArray(holidays)) {
     return;
@@ -302,29 +346,8 @@ async function saveRecipeHolidays(
     if (typeof holName !== 'string' || holName.trim() === '') {
       continue;
     }
-    const holidayName = holName.trim();
-    const holidaySlug = slugify(holidayName);
 
-    let holidayId: string;
-    const { data: existingHol, error: findError } = await client
-      .from('holidays')
-      .select('id')
-      .eq('slug', holidaySlug)
-      .maybeSingle();
-    if (findError) throw findError;
-
-    if (existingHol) {
-      holidayId = existingHol.id;
-    } else {
-      const { data: newHol, error: insertError } = await client
-        .from('holidays')
-        .insert({ name: holidayName, slug: holidaySlug })
-        .select('id')
-        .single();
-      if (insertError) throw insertError;
-      holidayId = newHol.id;
-    }
-
+    const holidayId = await getOrCreateHoliday(client, holName.trim());
     const { error: relError } = await client
       .from('recipe_holidays')
       .upsert(
@@ -336,15 +359,15 @@ async function saveRecipeHolidays(
 }
 
 async function saveRecipeSpecialDiets(
-  client: any,
+  client: SupabaseClient,
   recipeId: string | number,
-  specialDiets: any,
+  specialDiets: unknown,
 ): Promise<void> {
-  const { error: deleteDietRelError } = await client
+  const { error: deleteError } = await client
     .from('recipe_special_diets')
     .delete()
     .eq('recipe_id', recipeId);
-  if (deleteDietRelError) throw deleteDietRelError;
+  if (deleteError) throw deleteError;
 
   if (!Array.isArray(specialDiets)) {
     return;
@@ -354,35 +377,11 @@ async function saveRecipeSpecialDiets(
     if (typeof dietName !== 'string' || dietName.trim() === '') {
       continue;
     }
-    const nameTrimmed = dietName.trim();
-    const dietSlug = slugify(nameTrimmed);
 
-    let dietId: string;
-    const { data: existingDiet, error: findError } = await client
-      .from('special_diets')
-      .select('id')
-      .eq('slug', dietSlug)
-      .maybeSingle();
-    if (findError) throw findError;
-
-    if (existingDiet) {
-      dietId = existingDiet.id;
-    } else {
-      const { data: newDiet, error: insertError } = await client
-        .from('special_diets')
-        .insert({ name: nameTrimmed, slug: dietSlug })
-        .select('id')
-        .single();
-      if (insertError) throw insertError;
-      dietId = newDiet.id;
-    }
-
+    const dietId = await getOrCreateSpecialDiet(client, dietName.trim());
     const { error: relError } = await client
       .from('recipe_special_diets')
-      .upsert(
-        { recipe_id: recipeId, diet_id: dietId },
-        { onConflict: 'recipe_id,diet_id' },
-      );
+      .upsert({ recipe_id: recipeId, diet_id: dietId }, { onConflict: 'recipe_id,diet_id' });
     if (relError) throw relError;
   }
 }
