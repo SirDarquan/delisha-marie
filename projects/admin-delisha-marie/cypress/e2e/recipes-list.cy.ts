@@ -36,9 +36,9 @@ describe('Admin Recipes List Page', () => {
       },
     }).as('getCurrentUser');
 
-    // Note: The app service fetches items from `/recipes.json` on init.
+    // Note: The app service fetches items from `/recipes` on init.
     // Intercept this endpoint to mock our test repository list.
-    cy.intercept('GET', '**/api/recipes.json*', {
+    cy.intercept('GET', '**/api/recipes*', {
       statusCode: 200,
       body: mockRecipes,
     }).as('getRecipes');

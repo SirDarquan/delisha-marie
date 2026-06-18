@@ -37,6 +37,7 @@
     "@descope/angular-sdk": "^0.25.7",
     "@descope/node-sdk": "^2.6.0",
     "@supabase/supabase-js": "^2.107.0",
+    "change-case": "^5.4.4",
     "cookie-parser": "^1.4.7",
     "express": "^5.1.0",
     "ngx-pagination": "^6.0.3",
