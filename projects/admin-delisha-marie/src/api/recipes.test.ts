@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { SupabaseClient, User } from '@supabase/supabase-js';
 
 // Ensure Env vars exist before static initialization in imported modules
 vi.hoisted(() => {
@@ -7,17 +8,29 @@ vi.hoisted(() => {
 });
 
 // 1. Explicitly declare mock functions outside to track calls
-const { mockFrom, mockSelect, mockOrder, mockInsert, mockUpdate, mockDelete, mockEq, mockSingle } =
-  vi.hoisted(() => ({
-    mockFrom: vi.fn(),
-    mockSelect: vi.fn(),
-    mockOrder: vi.fn(),
-    mockInsert: vi.fn(),
-    mockUpdate: vi.fn(),
-    mockDelete: vi.fn(),
-    mockEq: vi.fn(),
-    mockSingle: vi.fn(),
-  }));
+const {
+  mockFrom,
+  mockSelect,
+  mockOrder,
+  mockInsert,
+  mockUpdate,
+  mockDelete,
+  mockEq,
+  mockSingle,
+  mockMaybeSingle,
+  mockUpsert,
+} = vi.hoisted(() => ({
+  mockFrom: vi.fn(),
+  mockSelect: vi.fn(),
+  mockOrder: vi.fn(),
+  mockInsert: vi.fn(),
+  mockUpdate: vi.fn(),
+  mockDelete: vi.fn(),
+  mockEq: vi.fn(),
+  mockSingle: vi.fn(),
+  mockMaybeSingle: vi.fn(),
+  mockUpsert: vi.fn(),
+}));
 
 // 2. Setup the chain linkages
 const mockChain = {
@@ -29,6 +42,10 @@ const mockChain = {
   delete: mockDelete,
   eq: mockEq,
   single: mockSingle,
+  maybeSingle: mockMaybeSingle,
+  upsert: mockUpsert,
+  then: (resolve: (val: { data: null; error: null }) => void) =>
+    resolve({ data: null, error: null }),
 };
 
 import cookieParser from 'cookie-parser';
@@ -55,44 +72,42 @@ describe('Recipes Router API', () => {
     mockUpdate.mockReturnValue(mockChain);
     mockDelete.mockReturnValue(mockChain);
     mockEq.mockReturnValue(mockChain);
-    mockSingle.mockReturnValue(mockChain);
+    mockSingle.mockResolvedValue({ data: null, error: null });
+    mockMaybeSingle.mockResolvedValue({ data: null, error: null });
+    mockUpsert.mockResolvedValue({ data: null, error: null });
 
     vi.mocked(backendService.getClient).mockReturnValue({
       from: mockFrom,
-    } as unknown as ReturnType<typeof backendService.getClient>);
+    } as unknown as SupabaseClient);
 
+    // Mock verifyToken to immediately succeed and inject user context
     vi.mocked(backendService.verifyToken).mockResolvedValue({
-      id: 'user-123',
+      username: 'test-user',
       email: 'test@example.com',
-    } as unknown as Awaited<ReturnType<typeof backendService.verifyToken>>);
+    } as unknown as User);
 
     app = express();
     app.use(express.json());
     app.use(cookieParser());
 
-    // Automatically inject access cookie into every request to pass authMiddleware
-    app.use((req, res, next) => {
-      req.cookies = req.cookies || {};
-      req.cookies['admin_access_token'] = 'test-token-xyz';
+    // Inject token cookie in requests to pass authMiddleware
+    app.use((req, _res, next) => {
+      req.cookies = { admin_access_token: 'test-token-xyz' };
       next();
     });
 
-    app.use('/', recipesRouter);
+    app.use(recipesRouter);
   });
 
   describe('GET /recipes', () => {
-    it('should successfully fetch recipes and return them', async () => {
-      const mockRecipes = [
-        { id: 'recipe-1', title: 'Delicious Cake' },
-        { id: 'recipe-2', title: 'Yummy Pie' },
-      ];
-
-      mockOrder.mockResolvedValue({ data: mockRecipes, error: null });
+    it('should successfully return all recipes', async () => {
+      const mockList = [{ id: 'recipe-1', title: 'Salad' }];
+      mockOrder.mockResolvedValue({ data: mockList, error: null });
 
       const res = await request(app).get('/recipes');
 
       expect(res.status).toBe(200);
-      expect(res.body).toEqual(mockRecipes);
+      expect(res.body).toEqual(mockList);
       expect(backendService.getClient).toHaveBeenCalledWith('test-token-xyz');
       expect(mockFrom).toHaveBeenCalledWith('recipes');
       expect(mockSelect).toHaveBeenCalledWith('*');
@@ -185,18 +200,43 @@ describe('Recipes Router API', () => {
   });
 
   describe('POST /recipes', () => {
-    it('should successfully create a recipe and return the result', async () => {
-      const inputRecipe = { title: 'New Salad', description: 'Fresh veggies' };
-      const createdRecipe = { id: 'recipe-3', ...inputRecipe };
+    it('should successfully create a recipe and associate categories, method, holidays, and special diets', async () => {
+      const inputRecipe = {
+        title: 'New Salad',
+        description: 'Fresh veggies',
+        category: {
+          trails: [
+            [
+              { name: 'Home', url: '/' },
+              { name: 'Recipes', url: '/recipes' },
+              { name: 'Dinner', url: '/recipes/dinner' },
+            ],
+          ],
+        },
+        method: 'Baking',
+        holidays: ['Christmas'],
+        specialDiets: ['Vegan'],
+      };
+      const createdRecipe = { id: 'recipe-3', title: 'New Salad', description: 'Fresh veggies' };
 
-      mockSingle.mockResolvedValue({ data: createdRecipe, error: null });
+      // Mock recipes insert
+      mockSingle.mockResolvedValueOnce({ data: createdRecipe, error: null });
+
+      // Mock chain methods for finding/inserting relations
+      mockMaybeSingle.mockResolvedValueOnce({ data: { id: 'cat-1' }, error: null }); // Category find
+
+      mockMaybeSingle.mockResolvedValueOnce({ data: null, error: null }); // Method find
+      mockSingle.mockResolvedValueOnce({ data: { id: 'method-1' }, error: null }); // Method insert
+
+      mockMaybeSingle.mockResolvedValueOnce({ data: { id: 'hol-1' }, error: null }); // Holiday find
+
+      mockMaybeSingle.mockResolvedValueOnce({ data: { id: 'diet-1' }, error: null }); // Diet find
 
       const res = await request(app).post('/recipes').send(inputRecipe);
 
       expect(res.status).toBe(200);
-      expect(res.body).toEqual(createdRecipe);
-      expect(backendService.getClient).toHaveBeenCalledWith('test-token-xyz');
-      expect(mockInsert).toHaveBeenCalledWith(inputRecipe);
+      expect(res.body.title).toBe('New Salad');
+      expect(res.body.category).toEqual(inputRecipe.category);
     });
 
     it('should return 400 when recipe creation fails', async () => {
@@ -210,27 +250,65 @@ describe('Recipes Router API', () => {
   });
 
   describe('PUT /recipes/:id', () => {
-    it('should successfully update a recipe and return the result', async () => {
-      const updateData = { title: 'Updated Salad' };
+    it('should successfully update a recipe and re-associate categories, method, holidays, and special diets', async () => {
+      const updateData = {
+        title: 'Updated Salad',
+        category: {
+          trails: [
+            [
+              { name: 'Home', url: '/' },
+              { name: 'Recipes', url: '/recipes' },
+              { name: 'Dinner', url: '/recipes/dinner' },
+            ],
+          ],
+        },
+        method: 'Baking',
+        holidays: ['Christmas'],
+        specialDiets: ['Vegan'],
+      };
       const updatedRecipe = {
         id: 'recipe-3',
         title: 'Updated Salad',
         description: 'Fresh veggies',
       };
 
-      mockSingle.mockResolvedValue({ data: updatedRecipe, error: null });
+      // Mock recipe update check
+      mockMaybeSingle.mockResolvedValueOnce({ data: updatedRecipe, error: null });
+
+      // Mock category find category
+      mockMaybeSingle.mockResolvedValueOnce({ data: { id: 'cat-1' }, error: null });
+
+      // Mock method find method & insert
+      mockMaybeSingle.mockResolvedValueOnce({ data: null, error: null });
+      mockSingle.mockResolvedValueOnce({ data: { id: 'method-1' }, error: null });
+
+      // Mock holiday find holiday
+      mockMaybeSingle.mockResolvedValueOnce({ data: { id: 'hol-1' }, error: null });
+
+      // Mock special diet find diet
+      mockMaybeSingle.mockResolvedValueOnce({ data: { id: 'diet-1' }, error: null });
 
       const res = await request(app).put('/recipes/recipe-3').send(updateData);
 
       expect(res.status).toBe(200);
-      expect(res.body).toEqual(updatedRecipe);
-      expect(backendService.getClient).toHaveBeenCalledWith('test-token-xyz');
-      expect(mockUpdate).toHaveBeenCalledWith(updateData);
-      expect(mockEq).toHaveBeenCalledWith('id', 'recipe-3');
+      expect(res.body.title).toBe('Updated Salad');
+    });
+
+    it('should fallback to inserting a recipe if update does not find one', async () => {
+      const updateData = { title: 'Missing Recipe' };
+      mockMaybeSingle.mockResolvedValueOnce({ data: null, error: null });
+      mockSingle.mockResolvedValueOnce({
+        data: { id: 'recipe-99', title: 'Missing Recipe' },
+        error: null,
+      });
+
+      const res = await request(app).put('/recipes/recipe-99').send(updateData);
+      expect(res.status).toBe(200);
+      expect(res.body.title).toBe('Missing Recipe');
     });
 
     it('should return 400 when recipe update fails', async () => {
-      mockSingle.mockResolvedValue({ data: null, error: new Error('Update failed') });
+      mockMaybeSingle.mockResolvedValue({ data: null, error: new Error('Update failed') });
 
       const res = await request(app).put('/recipes/recipe-3').send({});
 
@@ -278,7 +356,7 @@ describe('Recipes Router API', () => {
     });
 
     it('should return 400 when PUT /recipes/:id receives a non-Error string exception', async () => {
-      mockSingle.mockRejectedValue('Raw PUT string exception');
+      mockMaybeSingle.mockRejectedValue('Raw PUT string exception');
       const res = await request(app).put('/recipes/recipe-3').send({ title: 'Update' });
       expect(res.status).toBe(400);
       expect(res.body.error).toBe('Raw PUT string exception');
@@ -289,6 +367,334 @@ describe('Recipes Router API', () => {
       const res = await request(app).delete('/recipes/recipe-3');
       expect(res.status).toBe(400);
       expect(res.body.error).toBe('Raw DELETE string exception');
+    });
+  });
+
+  describe('Recipes Router API Coverage Boosters', () => {
+    it('should cover nullable field normalization and nutrition mapping', async () => {
+      const inputRecipe = {
+        title: 'New Salad',
+        prepTime: '',
+        cuisine: '',
+        nutrition: {
+          calories: '100 kcal',
+          fatContent: '5g',
+        },
+      };
+      const createdRecipe = { id: 'recipe-4', title: 'New Salad' };
+
+      // Mock recipes insert
+      mockSingle.mockResolvedValueOnce({ data: createdRecipe, error: null });
+
+      const res = await request(app).post('/recipes').send(inputRecipe);
+
+      expect(res.status).toBe(200);
+      expect(mockInsert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          prep_time: null,
+          cuisine: null,
+          nutrition: {
+            calories: '100 kcal',
+            fat_content: '5g',
+          },
+        }),
+      );
+    });
+
+    it('should cover category trails skip patterns and category insertion', async () => {
+      const inputRecipe = {
+        title: 'New Salad',
+        category: {
+          trails: [
+            [
+              { name: 'Home', url: '/' },
+              { name: 'Recipes', url: '/recipes' },
+              { name: '', url: '/recipes/dinner' }, // empty name
+              { name: 'Dinner', url: '' }, // empty url
+              { name: 'Pizza', url: '/recipe/pizza' }, // starts with /recipe/
+              { name: 'Salads', url: '/salads' }, // normal new category
+            ],
+          ],
+        },
+      };
+      const createdRecipe = { id: 'recipe-5', title: 'New Salad' };
+
+      // Mock recipes insert
+      mockSingle.mockResolvedValueOnce({ data: createdRecipe, error: null });
+
+      // Mock category lookup - returns null (category doesn't exist)
+      mockMaybeSingle.mockResolvedValueOnce({ data: null, error: null });
+      // Mock category insert
+      mockSingle.mockResolvedValueOnce({ data: { id: 'cat-new-99' }, error: null });
+
+      const res = await request(app).post('/recipes').send(inputRecipe);
+
+      expect(res.status).toBe(200);
+      // Verify category table query
+      expect(mockFrom).toHaveBeenCalledWith('categories');
+      expect(mockInsert).toHaveBeenCalledWith({ name: 'Salads', url: '/salads' });
+    });
+
+    it('should cover existing cooking method skip-insert branch', async () => {
+      const inputRecipe = {
+        title: 'New Salad',
+        method: 'Baking',
+      };
+      const createdRecipe = { id: 'recipe-6', title: 'New Salad' };
+
+      mockSingle.mockResolvedValueOnce({ data: createdRecipe, error: null });
+
+      // Mock method lookup - returns existing method
+      mockMaybeSingle.mockResolvedValueOnce({ data: { id: 'method-existing' }, error: null });
+
+      const res = await request(app).post('/recipes').send(inputRecipe);
+
+      expect(res.status).toBe(200);
+      expect(mockFrom).toHaveBeenCalledWith('recipe_methods');
+      expect(mockUpsert).toHaveBeenCalledWith(
+        { recipe_id: 'recipe-6', method_id: 'method-existing' },
+        { onConflict: 'recipe_id,method_id' },
+      );
+    });
+
+    it('should cover holiday and diet skip patterns and insertions', async () => {
+      const inputRecipe = {
+        title: 'New Salad',
+        holidays: ['', '  ', 'Christmas'],
+        specialDiets: ['', '  ', 'Vegan'],
+      };
+      const createdRecipe = { id: 'recipe-7', title: 'New Salad' };
+
+      mockSingle.mockResolvedValueOnce({ data: createdRecipe, error: null });
+
+      // Holiday lookup - returns null (not existing)
+      mockMaybeSingle.mockResolvedValueOnce({ data: null, error: null });
+      // Holiday insert
+      mockSingle.mockResolvedValueOnce({ data: { id: 'hol-new' }, error: null });
+
+      // Diet lookup - returns null (not existing)
+      mockMaybeSingle.mockResolvedValueOnce({ data: null, error: null });
+      // Diet insert
+      mockSingle.mockResolvedValueOnce({ data: { id: 'diet-new' }, error: null });
+
+      const res = await request(app).post('/recipes').send(inputRecipe);
+
+      expect(res.status).toBe(200);
+      expect(mockInsert).toHaveBeenCalledWith({ name: 'Christmas', slug: 'christmas' });
+      expect(mockInsert).toHaveBeenCalledWith({ name: 'Vegan', slug: 'vegan' });
+    });
+
+    it('should cover relation error handling branches (category lookup error)', async () => {
+      const inputRecipe = {
+        title: 'New Salad',
+        category: {
+          trails: [
+            [
+              { name: 'Home', url: '/' },
+              { name: 'Recipes', url: '/recipes' },
+              { name: 'Dinner', url: '/recipes/dinner' },
+            ],
+          ],
+        },
+      };
+      mockSingle.mockResolvedValueOnce({ data: { id: 'recipe-error' }, error: null });
+      // Category lookup error
+      mockMaybeSingle.mockResolvedValueOnce({
+        data: null,
+        error: new Error('Category DB lookup failed'),
+      });
+
+      const res = await request(app).post('/recipes').send(inputRecipe);
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe('Category DB lookup failed');
+    });
+
+    it('should cover relation error handling branches (method lookup error)', async () => {
+      const inputRecipe = {
+        title: 'New Salad',
+        method: 'Baking',
+      };
+      mockSingle.mockResolvedValueOnce({ data: { id: 'recipe-error' }, error: null });
+      // Method lookup error
+      mockMaybeSingle.mockResolvedValueOnce({
+        data: null,
+        error: new Error('Method DB lookup failed'),
+      });
+
+      const res = await request(app).post('/recipes').send(inputRecipe);
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe('Method DB lookup failed');
+    });
+
+    it('should cover relation error handling branches (holiday lookup error)', async () => {
+      const inputRecipe = {
+        title: 'New Salad',
+        holidays: ['Christmas'],
+      };
+      mockSingle.mockResolvedValueOnce({ data: { id: 'recipe-error' }, error: null });
+      // Holiday lookup error
+      mockMaybeSingle.mockResolvedValueOnce({
+        data: null,
+        error: new Error('Holiday DB lookup failed'),
+      });
+
+      const res = await request(app).post('/recipes').send(inputRecipe);
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe('Holiday DB lookup failed');
+    });
+
+    it('should cover relation error handling branches (special diet lookup error)', async () => {
+      const inputRecipe = {
+        title: 'New Salad',
+        specialDiets: ['Vegan'],
+      };
+      mockSingle.mockResolvedValueOnce({ data: { id: 'recipe-error' }, error: null });
+      // Diet lookup error
+      mockMaybeSingle.mockResolvedValueOnce({
+        data: null,
+        error: new Error('Diet DB lookup failed'),
+      });
+
+      const res = await request(app).post('/recipes').send(inputRecipe);
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe('Diet DB lookup failed');
+    });
+
+    it('should cover category insert error', async () => {
+      const inputRecipe = {
+        title: 'New Salad',
+        category: {
+          trails: [
+            [
+              { name: 'Home', url: '/' },
+              { name: 'Recipes', url: '/recipes' },
+              { name: 'Dinner', url: '/recipes/dinner' },
+            ],
+          ],
+        },
+      };
+      mockSingle.mockResolvedValueOnce({ data: { id: 'recipe-error' }, error: null });
+      mockMaybeSingle.mockResolvedValueOnce({ data: null, error: null });
+      mockSingle.mockResolvedValueOnce({ data: null, error: new Error('Category insert failed') });
+
+      const res = await request(app).post('/recipes').send(inputRecipe);
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe('Category insert failed');
+    });
+
+    it('should cover category relation upsert error', async () => {
+      const inputRecipe = {
+        title: 'New Salad',
+        category: {
+          trails: [
+            [
+              { name: 'Home', url: '/' },
+              { name: 'Recipes', url: '/recipes' },
+              { name: 'Dinner', url: '/recipes/dinner' },
+            ],
+          ],
+        },
+      };
+      mockSingle.mockResolvedValueOnce({ data: { id: 'recipe-error' }, error: null });
+      mockMaybeSingle.mockResolvedValueOnce({ data: { id: 'cat-1' }, error: null });
+      mockUpsert.mockResolvedValueOnce({
+        data: null,
+        error: new Error('Category rel upsert failed'),
+      });
+
+      const res = await request(app).post('/recipes').send(inputRecipe);
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe('Category rel upsert failed');
+    });
+
+    it('should cover method insert error', async () => {
+      const inputRecipe = {
+        title: 'New Salad',
+        method: 'Baking',
+      };
+      mockSingle.mockResolvedValueOnce({ data: { id: 'recipe-error' }, error: null });
+      mockMaybeSingle.mockResolvedValueOnce({ data: null, error: null });
+      mockSingle.mockResolvedValueOnce({ data: null, error: new Error('Method insert failed') });
+
+      const res = await request(app).post('/recipes').send(inputRecipe);
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe('Method insert failed');
+    });
+
+    it('should cover method relation upsert error', async () => {
+      const inputRecipe = {
+        title: 'New Salad',
+        method: 'Baking',
+      };
+      mockSingle.mockResolvedValueOnce({ data: { id: 'recipe-error' }, error: null });
+      mockMaybeSingle.mockResolvedValueOnce({ data: { id: 'method-1' }, error: null });
+      mockUpsert.mockResolvedValueOnce({
+        data: null,
+        error: new Error('Method rel upsert failed'),
+      });
+
+      const res = await request(app).post('/recipes').send(inputRecipe);
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe('Method rel upsert failed');
+    });
+
+    it('should cover holiday insert error', async () => {
+      const inputRecipe = {
+        title: 'New Salad',
+        holidays: ['Christmas'],
+      };
+      mockSingle.mockResolvedValueOnce({ data: { id: 'recipe-error' }, error: null });
+      mockMaybeSingle.mockResolvedValueOnce({ data: null, error: null });
+      mockSingle.mockResolvedValueOnce({ data: null, error: new Error('Holiday insert failed') });
+
+      const res = await request(app).post('/recipes').send(inputRecipe);
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe('Holiday insert failed');
+    });
+
+    it('should cover holiday relation upsert error', async () => {
+      const inputRecipe = {
+        title: 'New Salad',
+        holidays: ['Christmas'],
+      };
+      mockSingle.mockResolvedValueOnce({ data: { id: 'recipe-error' }, error: null });
+      mockMaybeSingle.mockResolvedValueOnce({ data: { id: 'hol-1' }, error: null });
+      mockUpsert.mockResolvedValueOnce({
+        data: null,
+        error: new Error('Holiday rel upsert failed'),
+      });
+
+      const res = await request(app).post('/recipes').send(inputRecipe);
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe('Holiday rel upsert failed');
+    });
+
+    it('should cover special diet insert error', async () => {
+      const inputRecipe = {
+        title: 'New Salad',
+        specialDiets: ['Vegan'],
+      };
+      mockSingle.mockResolvedValueOnce({ data: { id: 'recipe-error' }, error: null });
+      mockMaybeSingle.mockResolvedValueOnce({ data: null, error: null });
+      mockSingle.mockResolvedValueOnce({ data: null, error: new Error('Diet insert failed') });
+
+      const res = await request(app).post('/recipes').send(inputRecipe);
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe('Diet insert failed');
+    });
+
+    it('should cover special diet relation upsert error', async () => {
+      const inputRecipe = {
+        title: 'New Salad',
+        specialDiets: ['Vegan'],
+      };
+      mockSingle.mockResolvedValueOnce({ data: { id: 'recipe-error' }, error: null });
+      mockMaybeSingle.mockResolvedValueOnce({ data: { id: 'diet-1' }, error: null });
+      mockUpsert.mockResolvedValueOnce({ data: null, error: new Error('Diet rel upsert failed') });
+
+      const res = await request(app).post('/recipes').send(inputRecipe);
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe('Diet rel upsert failed');
     });
   });
 });

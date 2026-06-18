@@ -100,7 +100,7 @@ describe('RecipeService', () => {
     service = TestBed.inject(RecipeService);
     httpMock = TestBed.inject(HttpTestingController);
 
-    const req = httpMock.expectOne('/api/recipes.json');
+    const req = httpMock.expectOne('/api/recipes');
     req.flush(mockRecipes);
 
     await new Promise((resolve) => setTimeout(resolve, 0));
@@ -113,7 +113,7 @@ describe('RecipeService', () => {
     service = TestBed.inject(RecipeService);
     httpMock = TestBed.inject(HttpTestingController);
 
-    const req = httpMock.expectOne('/api/recipes.json');
+    const req = httpMock.expectOne('/api/recipes');
     req.error(new ProgressEvent('Network Error'));
 
     await new Promise((resolve) => setTimeout(resolve, 0));
@@ -138,7 +138,7 @@ describe('RecipeService', () => {
     service = TestBed.inject(RecipeService);
     httpMock = TestBed.inject(HttpTestingController);
 
-    const req = httpMock.expectOne('/api/recipes.json');
+    const req = httpMock.expectOne('/api/recipes');
     req.flush(mockRecipes);
 
     await new Promise((resolve) => setTimeout(resolve, 0));
@@ -159,12 +159,12 @@ describe('RecipeService', () => {
     expect(service.getRecipeByIdOrSlug('nonexistent')).toBeNull();
   });
 
-  it('should create a new recipe with generated numeric ID', async () => {
+  it('should create a new recipe with generated UUID', async () => {
     service = TestBed.inject(RecipeService);
     httpMock = TestBed.inject(HttpTestingController);
 
     // Swallow constructor fetch
-    const initReq = httpMock.expectOne('/api/recipes.json');
+    const initReq = httpMock.expectOne('/api/recipes');
     initReq.flush(mockRecipes);
     await new Promise((resolve) => setTimeout(resolve, 0));
 
@@ -186,7 +186,8 @@ describe('RecipeService', () => {
     };
 
     const created = service.createRecipe(newRecipe);
-    expect(created.id).toBe(3);
+    expect(typeof created.id).toBe('string');
+    expect(created.id).toBeTruthy();
     expect(service.recipes().length).toBe(3);
 
     const req = httpMock.expectOne('/api/recipes');
@@ -197,7 +198,7 @@ describe('RecipeService', () => {
   it('should log an error to console when createRecipe backend call fails', async () => {
     service = TestBed.inject(RecipeService);
     httpMock = TestBed.inject(HttpTestingController);
-    httpMock.expectOne('/api/recipes.json').flush([]);
+    httpMock.expectOne('/api/recipes').flush([]);
 
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     service.createRecipe({
@@ -228,7 +229,7 @@ describe('RecipeService', () => {
   it('should handle creating recipe when original list is empty', () => {
     service = TestBed.inject(RecipeService);
     httpMock = TestBed.inject(HttpTestingController);
-    const initReq = httpMock.expectOne('/api/recipes.json');
+    const initReq = httpMock.expectOne('/api/recipes');
     initReq.flush([]);
 
     expect(service.recipes().length).toBe(0);
@@ -249,7 +250,8 @@ describe('RecipeService', () => {
       author: 'Delisha Marie',
       status: 'draft',
     });
-    expect(created.id).toBe(1);
+    expect(typeof created.id).toBe('string');
+    expect(created.id).toBeTruthy();
     expect(service.recipes().length).toBe(1);
 
     const req = httpMock.expectOne('/api/recipes');
@@ -330,49 +332,16 @@ describe('RecipeService', () => {
   });
 
   // --- NEW ADDITIONAL BOOSTERS ---
-  it('should fall back to 0 when recipe.id is not a number in createRecipe', async () => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(
-        'admin_recipes',
-        JSON.stringify([{ ...mockRecipes[0], id: 'pasta-id' }]),
-      );
-    }
-    service = TestBed.inject(RecipeService);
-    httpMock = TestBed.inject(HttpTestingController);
-
-    // Swallow constructor load
-    await new Promise((resolve) => setTimeout(resolve, 0));
-
-    const created = service.createRecipe({
-      title: 'New Salad',
-      slug: 'new-salad',
-      description: '',
-      content: '',
-      ingredients: [],
-      instructions: [],
-      image: '',
-      prepTime: '',
-      cookTime: '',
-      difficulty: 'Easy',
-      totalTime: '',
-      yield: '',
-      author: 'Chef',
-      status: 'draft',
-    });
-    // Max of [0] + 1 -> 1
-    expect(created.id).toBe(1);
-
-    const req = httpMock.expectOne('/api/recipes');
-    req.flush(created);
-  });
-
   it('should skip storage loads and saves if window is undefined', async () => {
     vi.stubGlobal('window', undefined);
+    httpMock = TestBed.inject(HttpTestingController);
 
     try {
-      const localService = TestBed.runInInjectionContext(() => new RecipeService());
+      const localService = TestBed.inject(RecipeService);
       expect(localService).toBeTruthy();
       localService['saveToStorage']([]);
+      const req = httpMock.expectOne('/api/recipes');
+      req.flush([]);
     } finally {
       vi.unstubAllGlobals();
     }
