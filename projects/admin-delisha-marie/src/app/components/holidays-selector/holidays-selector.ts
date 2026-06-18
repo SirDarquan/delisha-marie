@@ -37,9 +37,6 @@ import { RecipeService } from '../../services/recipe.service';
               @for (holiday of compiledHolidays(); track holiday) {
                 <mat-option [value]="holiday">{{ holiday }}</mat-option>
               }
-              <mat-option value="custom" class="text-purple-400 font-semibold">
-                + Add Custom Holiday...
-              </mat-option>
             </mat-select>
           </mat-form-field>
         </div>
@@ -126,7 +123,6 @@ export class HolidaysSelectorComponent {
 
   // Dynamically compile holidays/occasions from database recipes + local additions + initial state
   readonly compiledHolidays = computed(() => {
-    const recipes = this.recipeService.recipes();
     const holidaysSet = new Set<string>();
 
     // 0. Pre-populate baseline holidays from database
@@ -136,28 +132,17 @@ export class HolidaysSelectorComponent {
       }
     });
 
-    // 1. Extract from database recipes
-    recipes.forEach((r) => {
-      if (r.holidays && Array.isArray(r.holidays)) {
-        r.holidays.forEach((h) => {
-          if (h?.trim()) {
-            holidaysSet.add(h.trim());
-          }
-        });
-      }
-    });
-
-    // 2. Add local custom additions
+    // 1. Add local custom holidays
     this.localCustomHolidays().forEach((h) => {
       if (h?.trim()) {
         holidaysSet.add(h.trim());
       }
     });
 
-    // 3. Ensure initial incoming holiday is in the set
-    const initial = this.initialHoliday();
-    if (initial?.trim()) {
-      holidaysSet.add(initial.trim());
+    // 2. Add current value if not already present
+    const currentVal = this.selectedHoliday();
+    if (currentVal && currentVal.trim()) {
+      holidaysSet.add(currentVal.trim());
     }
 
     return Array.from(holidaysSet).sort((a, b) => a.localeCompare(b));
@@ -172,21 +157,8 @@ export class HolidaysSelectorComponent {
   }
 
   onHolidaySelect(value: string): void {
-    if (value === 'custom') {
-      // Intercept custom: open custom input, close panel, focus
-      this.customHolidayText.set('');
-
-      if (this.selectField()) {
-        this.selectField()!.close();
-      }
-
-      setTimeout(() => {
-        this.customInputEl()?.nativeElement?.focus();
-      }, 50);
-    } else {
-      this.selectedHoliday.set(value);
-      this.holidayChange.emit(value);
-    }
+    this.selectedHoliday.set(value);
+    this.holidayChange.emit(value);
   }
 
   onCustomTextChange(event: Event): void {
@@ -205,14 +177,15 @@ export class HolidaysSelectorComponent {
       return list;
     });
 
-    this.selectedHoliday.set(val);
-    this.holidayChange.emit(val);
     this.customHolidayText.set('');
+
+    setTimeout(() => {
+      this.selectedHoliday.set(val);
+      this.holidayChange.emit(val);
+    }, 0);
   }
 
   cancelCustomHoliday(): void {
     this.customHolidayText.set('');
-    // Revert to original selected
-    this.holidayChange.emit(this.selectedHoliday());
   }
 }

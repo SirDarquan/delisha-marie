@@ -73,6 +73,9 @@ describe('RecipeFormComponent', () => {
 
   const fakeRecipeService = {
     recipes: () => [],
+    methods: () => [],
+    holidays: () => [],
+    specialDiets: () => [],
 
     getRecipeByIdOrSlug: (id: string | number) => {
       return id ? mockRecipeById : null;

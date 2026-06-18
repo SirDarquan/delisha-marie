@@ -134,7 +134,6 @@ export class CookingMethodSelectorComponent implements FormValueControl<string> 
 
   // Dynamically compile methods from current database recipes + local additions
   readonly compiledMethods = computed(() => {
-    const recipes = this.recipeService.recipes();
     const methodsSet = new Set<string>();
 
     // 0. Pre-populate baseline methods
@@ -144,24 +143,17 @@ export class CookingMethodSelectorComponent implements FormValueControl<string> 
       }
     });
 
-    // 1. Extract all methods present in the recipes database
-    recipes.forEach((r) => {
-      if (r.method?.trim()) {
-        methodsSet.add(r.method.trim());
-      }
-    });
-
-    // 2. Add local custom methods added during this session
+    // 1. Add local custom methods
     this.localCustomMethods().forEach((m) => {
       if (m?.trim()) {
         methodsSet.add(m.trim());
       }
     });
 
-    // 3. Ensure incoming/current method is in the set
-    const val = this.value();
-    if (val?.trim()) {
-      methodsSet.add(val.trim());
+    // 2. Add current value if not already present
+    const currentVal = this.value();
+    if (currentVal && currentVal.trim()) {
+      methodsSet.add(currentVal.trim());
     }
 
     return Array.from(methodsSet).sort((a, b) => a.localeCompare(b));
@@ -178,15 +170,8 @@ export class CookingMethodSelectorComponent implements FormValueControl<string> 
   }
 
   onMethodSelect(val: string): void {
-    if (val === 'custom') {
-      this.customMethodText.set('');
-      setTimeout(() => {
-        this.customInputEl()?.nativeElement?.focus();
-      }, 50);
-    } else {
-      this.value.set(val);
-      this.methodChange.emit(val);
-    }
+    this.value.set(val);
+    this.methodChange.emit(val);
   }
 
   onCustomTextChange(event: Event): void {
@@ -198,20 +183,22 @@ export class CookingMethodSelectorComponent implements FormValueControl<string> 
     if (!val) return;
 
     // Add to local custom methods list if not already present
-    this.localCustomMethods.update((list) => {
-      if (!list.includes(val)) {
-        return [...list, val];
-      }
-      return list;
-    });
+    // this.localCustomMethods.update((list) => {
+    //   if (!list.includes(val)) {
+    //     return [...list, val];
+    //   }
+    //   return list;
+    // });
 
-    this.value.set(val);
-    this.methodChange.emit(val);
     this.customMethodText.set('');
+
+    setTimeout(() => {
+      this.value.set(val);
+      this.methodChange.emit(val);
+    }, 0);
   }
 
   cancelCustomMethod(): void {
     this.customMethodText.set('');
-    this.methodChange.emit(this.value());
   }
 }

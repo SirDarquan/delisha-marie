@@ -24,6 +24,8 @@ describe('CookingMethodSelectorComponent', () => {
     { id: '5', name: 'Sautéing', slug: 'sauteing' },
     { id: '6', name: 'Slow Cooking', slug: 'slow-cooking' },
     { id: '7', name: 'Stovetop', slug: 'stovetop' },
+    { id: '8', name: 'Smoking', slug: 'smoking' },
+    { id: '9', name: 'Sous Vide', slug: 'sous-vide' },
   ]);
 
   const fakeRecipeService = {
@@ -86,27 +88,16 @@ describe('CookingMethodSelectorComponent', () => {
     expect(emittedValue).toBe('Smoking');
   });
 
-  it('should open custom method input when custom option is selected', () => {
+  it('should support entering, adding, and emitting a custom method', async () => {
     fixture.detectChanges();
-    component.onMethodSelect('custom');
-    fixture.detectChanges();
-
-    expect(component.customMethodText()).toBe('');
-  });
-
-  it('should support entering, adding, and emitting a custom method', () => {
-    fixture.detectChanges();
-    // 1. Select custom option
-    component.onMethodSelect('custom');
-    fixture.detectChanges();
-
-    // 2. Type text
+    // 1. Type text
     component.onCustomTextChange({ target: { value: 'Dehydrating' } } as unknown as Event);
     fixture.detectChanges();
     expect(component.customMethodText()).toBe('Dehydrating');
 
-    // 3. Click add
+    // 2. Click add
     component.addCustomMethod();
+    await new Promise((resolve) => setTimeout(resolve, 0));
     fixture.detectChanges();
     expect(component.selectedMethod()).toBe('Dehydrating');
     expect(emittedValue).toBe('Dehydrating');
@@ -117,33 +108,28 @@ describe('CookingMethodSelectorComponent', () => {
     fixture.componentRef.setInput('initialMethod', 'Sous Vide');
     fixture.detectChanges();
 
-    // 1. Select custom
-    component.onMethodSelect('custom');
-    fixture.detectChanges();
     component.onCustomTextChange({ target: { value: 'Smoking' } } as unknown as Event);
     fixture.detectChanges();
 
-    // 2. Cancel
+    // Cancel
     component.cancelCustomMethod();
     fixture.detectChanges();
-    expect(emittedValue).toBe('Sous Vide'); // Reverts to previous
+    expect(component.customMethodText()).toBe('');
   });
 
-  it('should not duplicate custom method in compiledMethods if added again', () => {
-    fixture.detectChanges();
-    component.onMethodSelect('custom');
+  it('should not duplicate custom method in compiledMethods if added again', async () => {
     fixture.detectChanges();
 
     // Add once
     component.onCustomTextChange({ target: { value: 'Smoking' } } as unknown as Event);
     component.addCustomMethod();
+    await new Promise((resolve) => setTimeout(resolve, 0));
     fixture.detectChanges();
 
     // Add again
-    component.onMethodSelect('custom');
-    fixture.detectChanges();
     component.onCustomTextChange({ target: { value: 'Smoking' } } as unknown as Event);
     component.addCustomMethod();
+    await new Promise((resolve) => setTimeout(resolve, 0));
     fixture.detectChanges();
 
     // Smoking is in the list only once
@@ -174,9 +160,7 @@ describe('CookingMethodSelectorComponent', () => {
     expect(spy).not.toHaveBeenCalled();
   });
 
-  it('should click template Add and Cancel buttons', () => {
-    fixture.detectChanges();
-    component.onMethodSelect('custom');
+  it('should click template Add and Cancel buttons', async () => {
     fixture.detectChanges();
 
     // 1. Enter text
@@ -189,20 +173,19 @@ describe('CookingMethodSelectorComponent', () => {
     ) as HTMLButtonElement;
     expect(addBtn).toBeTruthy();
     addBtn.click();
+    await new Promise((resolve) => setTimeout(resolve, 0));
     fixture.detectChanges();
 
     expect(component.selectedMethod()).toBe('Grilling');
 
-    // 2. Select custom again, then click Cancel button in UI
-    component.onMethodSelect('custom');
-    fixture.detectChanges();
-
+    // Click Cancel button in UI
     const cancelBtn = (
       Array.from(fixture.nativeElement.querySelectorAll('button')) as HTMLButtonElement[]
     ).find((b) => b.textContent?.includes('Cancel')) as HTMLButtonElement;
     expect(cancelBtn).toBeTruthy();
     cancelBtn.click();
     fixture.detectChanges();
+    expect(component.customMethodText()).toBe('');
   });
 
   it('should bind the required input to the mat-select required property', () => {

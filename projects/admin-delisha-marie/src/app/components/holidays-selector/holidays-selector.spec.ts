@@ -18,6 +18,7 @@ describe('HolidaysSelectorComponent', () => {
     { id: '1', name: 'Christmas' },
     { id: '2', name: 'Easter' },
     { id: '3', name: 'Thanksgiving' },
+    { id: '4', name: 'Sunday Roast' },
   ]);
 
   const fakeRecipeService = {
@@ -74,27 +75,16 @@ describe('HolidaysSelectorComponent', () => {
     expect(emittedValue).toBe('Christmas');
   });
 
-  it('should open custom holiday input when custom is selected', () => {
+  it('should support typing, adding, and emitting a custom holiday', async () => {
     fixture.detectChanges();
-    component.onHolidaySelect('custom');
-    fixture.detectChanges();
-
-    expect(component.customHolidayText()).toBe('');
-  });
-
-  it('should support typing, adding, and emitting a custom holiday', () => {
-    fixture.detectChanges();
-    // 1. Select custom option
-    component.onHolidaySelect('custom');
-    fixture.detectChanges();
-
-    // 2. Type text
+    // 1. Type text
     component.onCustomTextChange({ target: { value: 'New Year' } } as unknown as Event);
     fixture.detectChanges();
     expect(component.customHolidayText()).toBe('New Year');
 
-    // 3. Add custom holiday
+    // 2. Add custom holiday
     component.addCustomHoliday();
+    await new Promise((resolve) => setTimeout(resolve, 0));
     fixture.detectChanges();
     expect(component.selectedHoliday()).toBe('New Year');
     expect(emittedValue).toBe('New Year');
@@ -105,31 +95,27 @@ describe('HolidaysSelectorComponent', () => {
     fixture.componentRef.setInput('initialHoliday', 'Thanksgiving');
     fixture.detectChanges();
 
-    component.onHolidaySelect('custom');
-    fixture.detectChanges();
     component.onCustomTextChange({ target: { value: 'Fourth of July' } } as unknown as Event);
     fixture.detectChanges();
 
     component.cancelCustomHoliday();
     fixture.detectChanges();
-    expect(component.selectedHoliday()).toBe('Thanksgiving');
+    expect(component.customHolidayText()).toBe('');
   });
 
-  it('should not duplicate custom holiday in compiledHolidays if added again', () => {
-    fixture.detectChanges();
-    component.onHolidaySelect('custom');
+  it('should not duplicate custom holiday in compiledHolidays if added again', async () => {
     fixture.detectChanges();
 
     // Add once
     component.onCustomTextChange({ target: { value: 'New Year' } } as unknown as Event);
     component.addCustomHoliday();
+    await new Promise((resolve) => setTimeout(resolve, 0));
     fixture.detectChanges();
 
     // Add again
-    component.onHolidaySelect('custom');
-    fixture.detectChanges();
     component.onCustomTextChange({ target: { value: 'New Year' } } as unknown as Event);
     component.addCustomHoliday();
+    await new Promise((resolve) => setTimeout(resolve, 0));
     fixture.detectChanges();
 
     const matches = component.compiledHolidays().filter((h) => h === 'New Year');
@@ -160,9 +146,7 @@ describe('HolidaysSelectorComponent', () => {
     expect(spy).not.toHaveBeenCalled();
   });
 
-  it('should click template Add and Cancel buttons', () => {
-    fixture.detectChanges();
-    component.onHolidaySelect('custom');
+  it('should click template Add and Cancel buttons', async () => {
     fixture.detectChanges();
 
     // 1. Enter text
@@ -175,20 +159,19 @@ describe('HolidaysSelectorComponent', () => {
     ) as HTMLButtonElement;
     expect(addBtn).toBeTruthy();
     addBtn.click();
+    await new Promise((resolve) => setTimeout(resolve, 0));
     fixture.detectChanges();
 
     expect(component.selectedHoliday()).toBe('Labor Day');
 
-    // 2. Select custom again, then click Cancel button in UI
-    component.onHolidaySelect('custom');
-    fixture.detectChanges();
-
+    // Click Cancel button in UI
     const cancelBtn = (
       Array.from(fixture.nativeElement.querySelectorAll('button')) as HTMLButtonElement[]
     ).find((b) => b.textContent?.includes('Cancel')) as HTMLButtonElement;
     expect(cancelBtn).toBeTruthy();
     cancelBtn.click();
     fixture.detectChanges();
+    expect(component.customHolidayText()).toBe('');
   });
 
   it('should handle onHolidaySelect when selectField is undefined (line 207)', () => {
@@ -197,7 +180,7 @@ describe('HolidaysSelectorComponent', () => {
     component.selectField = (() => undefined) as unknown as typeof component.selectField;
 
     // Call the method and assert it does not throw
-    expect(() => component.onHolidaySelect('custom')).not.toThrow();
+    expect(() => component.onHolidaySelect('Test')).not.toThrow();
   });
 
   it('should prepopulate compiledHolidays with baseline holidays from service', () => {

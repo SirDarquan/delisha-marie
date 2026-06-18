@@ -24,10 +24,7 @@ recipesRouter.get('/recipes', async (req: AuthRequest, res: Response) => {
 recipesRouter.get('/holidays', async (req: AuthRequest, res: Response) => {
   try {
     const client = backendService.getClient(req.token);
-    const { data, error } = await client
-      .from('holidays')
-      .select('id, name')
-      .order('name');
+    const { data, error } = await client.from('holidays').select('id, name').order('name');
     if (error) throw error;
     return res.json(data);
   } catch (err: unknown) {
@@ -39,10 +36,7 @@ recipesRouter.get('/holidays', async (req: AuthRequest, res: Response) => {
 recipesRouter.get('/special-diets', async (req: AuthRequest, res: Response) => {
   try {
     const client = backendService.getClient(req.token);
-    const { data, error } = await client
-      .from('special_diets')
-      .select('id, name')
-      .order('name');
+    const { data, error } = await client.from('special_diets').select('id, name').order('name');
     if (error) throw error;
     return res.json(data);
   } catch (err: unknown) {
@@ -54,10 +48,7 @@ recipesRouter.get('/special-diets', async (req: AuthRequest, res: Response) => {
 recipesRouter.get('/methods', async (req: AuthRequest, res: Response) => {
   try {
     const client = backendService.getClient(req.token);
-    const { data, error } = await client
-      .from('methods')
-      .select('id, name, slug')
-      .order('name');
+    const { data, error } = await client.from('methods').select('id, name, slug').order('name');
     if (error) throw error;
     return res.json(data);
   } catch (err: unknown) {

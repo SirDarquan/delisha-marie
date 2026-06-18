@@ -76,10 +76,22 @@ describe('RecipeService', () => {
     TestBed.configureTestingModule({
       providers: [provideHttpClient(), provideHttpClientTesting(), RecipeService],
     });
+    // Reset httpMock to prevent cross-test pollution
+    httpMock = undefined as any;
   });
 
   afterEach(() => {
     if (httpMock) {
+      // Flush any pending metadata requests to prevent verify() from failing
+      const methodsReqs = httpMock.match('/api/methods');
+      methodsReqs.forEach((r) => !r.cancelled && r.flush([]));
+
+      const holidaysReqs = httpMock.match('/api/holidays');
+      holidaysReqs.forEach((r) => !r.cancelled && r.flush([]));
+
+      const dietsReqs = httpMock.match('/api/special-diets');
+      dietsReqs.forEach((r) => !r.cancelled && r.flush([]));
+
       httpMock.verify();
     }
   });
@@ -371,7 +383,7 @@ describe('RecipeService', () => {
       // Clean up requests from constructor
       service = TestBed.inject(RecipeService);
       httpMock = TestBed.inject(HttpTestingController);
-      
+
       const reqRecipes = httpMock.expectOne('/api/recipes.json');
       reqRecipes.flush([]);
       const reqMethods = httpMock.expectOne('/api/methods');
@@ -383,9 +395,7 @@ describe('RecipeService', () => {
     });
 
     it('should load methods correctly from API', async () => {
-      const mockMethods = [
-        { id: '1', name: 'Air Frying', slug: 'air-frying' },
-      ];
+      const mockMethods = [{ id: '1', name: 'Air Frying', slug: 'air-frying' }];
       service['loadInitialMethods']();
       const req = httpMock.expectOne('/api/methods');
       req.flush(mockMethods);

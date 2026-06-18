@@ -37,9 +37,6 @@ import { RecipeService } from '../../services/recipe.service';
               @for (diet of compiledDiets(); track diet) {
                 <mat-option [value]="diet">{{ diet }}</mat-option>
               }
-              <mat-option value="custom" class="text-purple-400 font-semibold">
-                + Add Custom Diet...
-              </mat-option>
             </mat-select>
           </mat-form-field>
         </div>
@@ -114,7 +111,6 @@ export class SpecialDietsSelectorComponent {
 
   // Dynamically compile dietary profiles from database recipes + local additions + initial state
   readonly compiledDiets = computed(() => {
-    const recipes = this.recipeService.recipes();
     const dietsSet = new Set<string>();
 
     // 0. Pre-populate baseline special diets from database
@@ -124,33 +120,19 @@ export class SpecialDietsSelectorComponent {
       }
     });
 
-    // 1. Extract from database recipes
-    recipes.forEach((r) => {
-      if (r.specialDiets && Array.isArray(r.specialDiets)) {
-        r.specialDiets.forEach((d) => {
-          if (d?.trim()) {
-            dietsSet.add(d.trim());
-          }
-        });
-      }
-    });
-
-    // 2. Add local custom additions
+    // 1. Add local custom diets
     this.localCustomDiets().forEach((d) => {
       if (d?.trim()) {
         dietsSet.add(d.trim());
       }
     });
 
-    // 3. Ensure initial diets are in the set
-    const initial = this.initialDiets();
-    if (initial && Array.isArray(initial)) {
-      initial.forEach((d) => {
-        if (d?.trim()) {
-          dietsSet.add(d.trim());
-        }
-      });
-    }
+    // 2. Add currently selected diets if not already present
+    this.selectedDiets().forEach((d) => {
+      if (d?.trim()) {
+        dietsSet.add(d.trim());
+      }
+    });
 
     return Array.from(dietsSet).sort((a, b) => a.localeCompare(b));
   });
@@ -167,26 +149,8 @@ export class SpecialDietsSelectorComponent {
   }
 
   onSelectionChange(value: string[]): void {
-    if (value.includes('custom')) {
-      // Intercept the custom click: open custom input, strip 'custom' from value
-      this.customDietText.set('');
-      const cleaned = value.filter((v) => v !== 'custom');
-      this.selectedDiets.set(cleaned);
-      this.dietsChange.emit(cleaned);
-
-      // Programmatically close the select overlay panel for clean flow
-      if (this.selectField()) {
-        this.selectField()!.close();
-      }
-
-      // Automatically focus the input field
-      setTimeout(() => {
-        this.customInputEl()?.nativeElement?.focus();
-      }, 50);
-    } else {
-      this.selectedDiets.set(value);
-      this.dietsChange.emit(value);
-    }
+    this.selectedDiets.set(value);
+    this.dietsChange.emit(value);
   }
 
   onCustomTextChange(event: Event): void {
@@ -205,16 +169,19 @@ export class SpecialDietsSelectorComponent {
       return list;
     });
 
-    // Select the new item
-    this.selectedDiets.update((selected) => {
-      if (!selected.includes(val)) {
-        return [...selected, val];
-      }
-      return selected;
-    });
-
-    this.dietsChange.emit(this.selectedDiets());
     this.customDietText.set('');
+
+    setTimeout(() => {
+      // Select the new item
+      this.selectedDiets.update((selected) => {
+        if (!selected.includes(val)) {
+          return [...selected, val];
+        }
+        return selected;
+      });
+
+      this.dietsChange.emit(this.selectedDiets());
+    }, 0);
   }
 
   cancelCustomDiet(): void {
