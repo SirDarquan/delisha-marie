@@ -16,7 +16,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { ActivatedRoute, Router } from '@angular/router';
-import { BaseTrail, CategoryTrails, Nutrition } from '@dm/library';
+import { BaseTrail, CategoryTrails } from '@dm/library';
 import { CategoryBoardComponent } from '../../components/category-board/category-board';
 import { ConfirmDialogComponent } from '../../components/confirm-dialog/confirm-dialog';
 import { CookingMethodSelectorComponent } from '../../components/cooking-method-selector/cooking-method-selector';
@@ -1066,16 +1066,16 @@ export class RecipeFormComponent implements OnInit {
       formValue.cholesterol ||
       formValue.saturatedFat
         ? {
-            servingSize: formValue.servingSize?.trim() || null,
-            calories: formValue.calories?.trim() || null,
-            fat: formValue.fat?.trim() || null,
-            carbohydrates: formValue.carbohydrates?.trim() || null,
-            protein: formValue.protein?.trim() || null,
-            fiber: formValue.fiber?.trim() || null,
-            sugar: formValue.sugar?.trim() || null,
-            sodium: formValue.sodium?.trim() || null,
-            cholesterol: formValue.cholesterol?.trim() || null,
-            saturatedFat: formValue.saturatedFat?.trim() || null,
+            servingSize: formValue.servingSize?.trim() || '',
+            calories: formValue.calories?.trim() || '',
+            fat: formValue.fat?.trim() || '',
+            carbohydrates: formValue.carbohydrates?.trim() || '',
+            protein: formValue.protein?.trim() || '',
+            fiber: formValue.fiber?.trim() || '',
+            sugar: formValue.sugar?.trim() || '',
+            sodium: formValue.sodium?.trim() || '',
+            cholesterol: formValue.cholesterol?.trim() || '',
+            saturatedFat: formValue.saturatedFat?.trim() || '',
           }
         : null;
 
