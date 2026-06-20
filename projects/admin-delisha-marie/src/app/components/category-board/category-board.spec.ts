@@ -173,8 +173,8 @@ describe('CategoryBoardComponent', () => {
     expect((component.value() as CategoryTrails).trails[0].length).toBe(3);
   });
 
-  it('should load initial category values through constructor effect', async () => {
-    const initialCategory: CategoryTrails = {
+  it('should load initial values through constructor effect', async () => {
+    const value: CategoryTrails = {
       trails: [
         [
           { name: 'Home', url: '/' },
@@ -191,7 +191,7 @@ describe('CategoryBoardComponent', () => {
     }).compileComponents();
 
     const customFixture = TestBed.createComponent(CategoryBoardComponent);
-    customFixture.componentRef.setInput('initialCategory', initialCategory);
+    customFixture.componentRef.setInput('value', value);
     customFixture.detectChanges();
 
     // Give effect time to run

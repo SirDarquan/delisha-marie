@@ -14,8 +14,17 @@ describe('SpecialDietsSelectorComponent', () => {
     { title: 'C', slug: 'c', specialDiets: ['Gluten Free'], status: 'published' },
   ]);
 
+  const mockSpecialDietsSignal = signal<{ id: string; name: string }[]>([
+    { id: '1', name: 'Dairy-Free' },
+    { id: '2', name: 'Keto' },
+    { id: '3', name: 'Vegan' },
+    { id: '4', name: 'Gluten Free' },
+    { id: '5', name: 'Low Carb' },
+  ]);
+
   const fakeRecipeService = {
     recipes: mockRecipesSignal,
+    specialDiets: mockSpecialDietsSignal,
   };
 
   beforeEach(async () => {
@@ -52,8 +61,8 @@ describe('SpecialDietsSelectorComponent', () => {
     expect(compiled.indexOf('Low Carb')).toBeLessThan(compiled.indexOf('Vegan'));
   });
 
-  it('should sync with initialDiets input', () => {
-    fixture.componentRef.setInput('initialDiets', ['Vegan', 'Keto']);
+  it('should sync with value input', () => {
+    fixture.componentRef.setInput('value', ['Vegan', 'Keto']);
     fixture.detectChanges();
     expect(component.selectedDiets()).toEqual(['Vegan', 'Keto']);
     expect(component.compiledDiets()).toContain('Keto');
@@ -65,71 +74,50 @@ describe('SpecialDietsSelectorComponent', () => {
 
     expect(component.selectedDiets()).toEqual(['Vegan', 'Low Carb']);
     expect(emittedValues).toEqual(['Vegan', 'Low Carb']);
-    expect(component.showCustomInput()).toBe(false);
   });
 
-  it('should open custom diet input when custom is in values and strip custom from choice list', () => {
+  it('should support typing, adding, and emitting a custom dietary profile', async () => {
+    fixture.componentRef.setInput('value', ['Vegan']);
     fixture.detectChanges();
-    component.onSelectionChange(['Vegan', 'custom']);
-    fixture.detectChanges();
-
-    expect(component.showCustomInput()).toBe(true);
-    expect(component.selectedDiets()).toEqual(['Vegan']);
-    expect(emittedValues).toEqual(['Vegan']);
-    expect(component.customDietText()).toBe('');
-  });
-
-  it('should support typing, adding, and emitting a custom dietary profile', () => {
-    fixture.detectChanges();
-    // 1. Intercept custom select
-    component.onSelectionChange(['Vegan', 'custom']);
-    fixture.detectChanges();
-    expect(component.showCustomInput()).toBe(true);
-
-    // 2. Type text
+    // 1. Type text
     component.onCustomTextChange({ target: { value: 'Nut Free' } } as unknown as Event);
     fixture.detectChanges();
     expect(component.customDietText()).toBe('Nut Free');
 
-    // 3. Add custom diet
+    // 2. Add custom diet
     component.addCustomDiet();
+    await new Promise((resolve) => setTimeout(resolve, 0));
     fixture.detectChanges();
     expect(component.selectedDiets()).toEqual(['Vegan', 'Nut Free']);
     expect(emittedValues).toEqual(['Vegan', 'Nut Free']);
     expect(component.compiledDiets()).toContain('Nut Free');
-    expect(component.showCustomInput()).toBe(false);
   });
 
   it('should support canceling custom method entry', () => {
-    fixture.componentRef.setInput('initialDiets', ['Gluten Free']);
+    fixture.componentRef.setInput('value', ['Gluten Free']);
     fixture.detectChanges();
 
-    component.onSelectionChange(['Gluten Free', 'custom']);
-    fixture.detectChanges();
     component.onCustomTextChange({ target: { value: 'Dairy Free' } } as unknown as Event);
     fixture.detectChanges();
 
     component.cancelCustomDiet();
     fixture.detectChanges();
-    expect(component.showCustomInput()).toBe(false);
-    expect(component.selectedDiets()).toEqual(['Gluten Free']);
+    expect(component.customDietText()).toBe('');
   });
 
-  it('should not duplicate custom diet in compiledDiets if added again', () => {
-    fixture.detectChanges();
-    component.onSelectionChange(['Vegan', 'custom']);
+  it('should not duplicate custom diet in compiledDiets if added again', async () => {
     fixture.detectChanges();
 
     // Add once
     component.onCustomTextChange({ target: { value: 'Nut Free' } } as unknown as Event);
     component.addCustomDiet();
+    await new Promise((resolve) => setTimeout(resolve, 0));
     fixture.detectChanges();
 
     // Add again
-    component.onSelectionChange(['Vegan', 'Nut Free', 'custom']);
-    fixture.detectChanges();
     component.onCustomTextChange({ target: { value: 'Nut Free' } } as unknown as Event);
     component.addCustomDiet();
+    await new Promise((resolve) => setTimeout(resolve, 0));
     fixture.detectChanges();
 
     const matches = component.compiledDiets().filter((d) => d === 'Nut Free');
@@ -160,9 +148,7 @@ describe('SpecialDietsSelectorComponent', () => {
     expect(spy).not.toHaveBeenCalled();
   });
 
-  it('should click template Add and Cancel buttons', () => {
-    fixture.detectChanges();
-    component.onSelectionChange(['custom']);
+  it('should click template Add and Cancel buttons', async () => {
     fixture.detectChanges();
 
     // 1. Enter text
@@ -175,44 +161,33 @@ describe('SpecialDietsSelectorComponent', () => {
     ) as HTMLButtonElement;
     expect(addBtn).toBeTruthy();
     addBtn.click();
+    await new Promise((resolve) => setTimeout(resolve, 0));
     fixture.detectChanges();
 
     expect(component.selectedDiets()).toEqual(['Keto']);
-    expect(component.showCustomInput()).toBe(false);
 
-    // 2. Select custom again, then click Cancel button in UI
-    component.onSelectionChange(['custom']);
-    fixture.detectChanges();
-
+    // Click Cancel button in UI
     const cancelBtn = (
       Array.from(fixture.nativeElement.querySelectorAll('button')) as HTMLButtonElement[]
     ).find((b) => b.textContent?.includes('Cancel')) as HTMLButtonElement;
     expect(cancelBtn).toBeTruthy();
     cancelBtn.click();
     fixture.detectChanges();
-
-    expect(component.showCustomInput()).toBe(false);
+    expect(component.customDietText()).toBe('');
   });
 
-  it('should handle fallback or undefined selectField / initialDiets / initial values (lines 185, 187, 200, 217)', () => {
-    // 1. Line 185: initial is null/undefined
-    fixture.componentRef.setInput('initialDiets', null as unknown as string[]);
+  it('should handle fallback selectField inside onSelectionChange (line 217)', () => {
     fixture.detectChanges();
-    expect(component.compiledDiets()).toBeTruthy();
-
-    // 2. Line 187: initial has null or empty diets
-    fixture.componentRef.setInput('initialDiets', ['', null as unknown as string, '  ']);
-    fixture.detectChanges();
-    expect(component.compiledDiets()).toBeTruthy();
-
-    // 3. Line 200: inside constructor effect, initial is null
-    fixture.componentRef.setInput('initialDiets', null as unknown as string[]);
-    fixture.detectChanges();
-
-    // 4. Line 217: selectField is undefined inside onSelectionChange
     // @ts-expect-error - mock selectField to undefined
     component.selectField = (() => undefined) as unknown as typeof component.selectField;
-    component.onSelectionChange(['custom']);
-    expect(component.showCustomInput()).toBe(true);
+    expect(() => component.onSelectionChange(['Vegan'])).not.toThrow();
+  });
+
+  it('should prepopulate compiledDiets with baseline diets from service', () => {
+    fixture.detectChanges();
+    const compiled = component.compiledDiets();
+    expect(compiled).toContain('Dairy-Free');
+    expect(compiled).toContain('Keto');
+    expect(compiled).toContain('Vegan');
   });
 });

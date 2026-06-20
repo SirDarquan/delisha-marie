@@ -16,8 +16,21 @@ describe('CookingMethodSelectorComponent', () => {
     { title: 'C', slug: 'c', method: 'Baking', status: 'published' },
   ]);
 
+  const mockMethodsSignal = signal<{ id: string; name: string; slug: string }[]>([
+    { id: '1', name: 'Air Frying', slug: 'air-frying' },
+    { id: '2', name: 'Baking', slug: 'baking' },
+    { id: '3', name: 'Grilling', slug: 'grilling' },
+    { id: '4', name: 'No Bake', slug: 'no-bake' },
+    { id: '5', name: 'Sautéing', slug: 'sauteing' },
+    { id: '6', name: 'Slow Cooking', slug: 'slow-cooking' },
+    { id: '7', name: 'Stovetop', slug: 'stovetop' },
+    { id: '8', name: 'Smoking', slug: 'smoking' },
+    { id: '9', name: 'Sous Vide', slug: 'sous-vide' },
+  ]);
+
   const fakeRecipeService = {
     recipes: mockRecipesSignal,
+    methods: mockMethodsSignal,
   };
 
   beforeEach(async () => {
@@ -50,16 +63,19 @@ describe('CookingMethodSelectorComponent', () => {
     expect(compiled).toContain('Sous Vide');
     expect(compiled).toContain('Baking');
 
-    // Seed defaults no longer included
-    expect(compiled).not.toContain('Grilling');
-    expect(compiled).not.toContain('Sautéing');
+    // Seed defaults are now included as baselines
+    expect(compiled).toContain('Grilling');
+    expect(compiled).toContain('Sautéing');
+
+    // Random non-existent methods are not included
+    expect(compiled).not.toContain('Poaching');
 
     // Sorted alphabetically
     expect(compiled[0] <= compiled[1]).toBe(true);
   });
 
-  it('should sync with initialMethod input', () => {
-    fixture.componentRef.setInput('initialMethod', 'Roasting');
+  it('should sync with value input', () => {
+    fixture.componentRef.setInput('value', 'Roasting');
     fixture.detectChanges();
     expect(component.selectedMethod()).toBe('Roasting');
   });
@@ -70,71 +86,50 @@ describe('CookingMethodSelectorComponent', () => {
 
     expect(component.selectedMethod()).toBe('Smoking');
     expect(emittedValue).toBe('Smoking');
-    expect(component.showCustomInput()).toBe(false);
   });
 
-  it('should open custom method input when custom option is selected', () => {
+  it('should support entering, adding, and emitting a custom method', async () => {
     fixture.detectChanges();
-    component.onMethodSelect('custom');
-    fixture.detectChanges();
-
-    expect(component.showCustomInput()).toBe(true);
-    expect(component.customMethodText()).toBe('');
-  });
-
-  it('should support entering, adding, and emitting a custom method', () => {
-    fixture.detectChanges();
-    // 1. Select custom option
-    component.onMethodSelect('custom');
-    fixture.detectChanges();
-    expect(component.showCustomInput()).toBe(true);
-
-    // 2. Type text
+    // 1. Type text
     component.onCustomTextChange({ target: { value: 'Dehydrating' } } as unknown as Event);
     fixture.detectChanges();
     expect(component.customMethodText()).toBe('Dehydrating');
 
-    // 3. Click add
+    // 2. Click add
     component.addCustomMethod();
+    await new Promise((resolve) => setTimeout(resolve, 0));
     fixture.detectChanges();
     expect(component.selectedMethod()).toBe('Dehydrating');
     expect(emittedValue).toBe('Dehydrating');
-    expect(component.showCustomInput()).toBe(false);
     expect(component.compiledMethods()).toContain('Dehydrating');
   });
 
   it('should support canceling custom method entry', () => {
-    fixture.componentRef.setInput('initialMethod', 'Sous Vide');
+    fixture.componentRef.setInput('value', 'Sous Vide');
     fixture.detectChanges();
 
-    // 1. Select custom
-    component.onMethodSelect('custom');
-    fixture.detectChanges();
     component.onCustomTextChange({ target: { value: 'Smoking' } } as unknown as Event);
     fixture.detectChanges();
 
-    // 2. Cancel
+    // Cancel
     component.cancelCustomMethod();
     fixture.detectChanges();
-    expect(component.showCustomInput()).toBe(false);
-    expect(emittedValue).toBe('Sous Vide'); // Reverts to previous
+    expect(component.customMethodText()).toBe('');
   });
 
-  it('should not duplicate custom method in compiledMethods if added again', () => {
-    fixture.detectChanges();
-    component.onMethodSelect('custom');
+  it('should not duplicate custom method in compiledMethods if added again', async () => {
     fixture.detectChanges();
 
     // Add once
     component.onCustomTextChange({ target: { value: 'Smoking' } } as unknown as Event);
     component.addCustomMethod();
+    await new Promise((resolve) => setTimeout(resolve, 0));
     fixture.detectChanges();
 
     // Add again
-    component.onMethodSelect('custom');
-    fixture.detectChanges();
     component.onCustomTextChange({ target: { value: 'Smoking' } } as unknown as Event);
     component.addCustomMethod();
+    await new Promise((resolve) => setTimeout(resolve, 0));
     fixture.detectChanges();
 
     // Smoking is in the list only once
@@ -165,9 +160,7 @@ describe('CookingMethodSelectorComponent', () => {
     expect(spy).not.toHaveBeenCalled();
   });
 
-  it('should click template Add and Cancel buttons', () => {
-    fixture.detectChanges();
-    component.onMethodSelect('custom');
+  it('should click template Add and Cancel buttons', async () => {
     fixture.detectChanges();
 
     // 1. Enter text
@@ -180,23 +173,19 @@ describe('CookingMethodSelectorComponent', () => {
     ) as HTMLButtonElement;
     expect(addBtn).toBeTruthy();
     addBtn.click();
+    await new Promise((resolve) => setTimeout(resolve, 0));
     fixture.detectChanges();
 
     expect(component.selectedMethod()).toBe('Grilling');
-    expect(component.showCustomInput()).toBe(false);
 
-    // 2. Select custom again, then click Cancel button in UI
-    component.onMethodSelect('custom');
-    fixture.detectChanges();
-
+    // Click Cancel button in UI
     const cancelBtn = (
       Array.from(fixture.nativeElement.querySelectorAll('button')) as HTMLButtonElement[]
     ).find((b) => b.textContent?.includes('Cancel')) as HTMLButtonElement;
     expect(cancelBtn).toBeTruthy();
     cancelBtn.click();
     fixture.detectChanges();
-
-    expect(component.showCustomInput()).toBe(false);
+    expect(component.customMethodText()).toBe('');
   });
 
   it('should bind the required input to the mat-select required property', () => {
@@ -206,5 +195,17 @@ describe('CookingMethodSelectorComponent', () => {
     expect(selectDebug).toBeTruthy();
     const selectInstance = selectDebug.componentInstance as MatSelect;
     expect(selectInstance.required).toBe(true);
+  });
+
+  it('should prepopulate compiledMethods with baseline methods', () => {
+    fixture.detectChanges();
+    const compiled = component.compiledMethods();
+    expect(compiled).toContain('Air Frying');
+    expect(compiled).toContain('Baking');
+    expect(compiled).toContain('Grilling');
+    expect(compiled).toContain('No Bake');
+    expect(compiled).toContain('Sautéing');
+    expect(compiled).toContain('Slow Cooking');
+    expect(compiled).toContain('Stovetop');
   });
 });

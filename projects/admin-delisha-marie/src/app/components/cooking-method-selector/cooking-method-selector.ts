@@ -1,16 +1,12 @@
-import { CommonModule } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
   computed,
-  effect,
-  ElementRef,
   inject,
   input,
   model,
   output,
   signal,
-  viewChild,
   ViewEncapsulation,
 } from '@angular/core';
 import { FormValueControl } from '@angular/forms/signals';
@@ -21,14 +17,14 @@ import { RecipeService } from '../../services/recipe.service';
 
 @Component({
   selector: 'app-cooking-method-selector',
-  imports: [CommonModule, MatButtonModule, MatFormFieldModule, MatSelectModule],
+  imports: [MatButtonModule, MatFormFieldModule, MatSelectModule],
   template: `
     <div class="flex flex-col gap-2">
       <div class="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
         <!-- 1. The Material Select Dropdown -->
         <div class="relative flex-1">
           <mat-form-field appearance="outline" class="custom-mat-form-field">
-            <mat-label>Cooking Method</mat-label>
+            <mat-label>Cooking Methods</mat-label>
             <mat-select
               id="cooking-method-select"
               [value]="selectedMethod()"
@@ -36,45 +32,39 @@ import { RecipeService } from '../../services/recipe.service';
               (selectionChange)="onMethodSelect($event.value)"
               panelClass="custom-select-panel"
               placeholder="Select Cooking Method">
-              <mat-option value="" class="text-slate-400">Select Cooking Method</mat-option>
               @for (method of compiledMethods(); track method) {
                 <mat-option [value]="method">{{ method }}</mat-option>
               }
-              <mat-option value="custom" class="text-purple-400 font-semibold">
-                + Add Custom Method...
-              </mat-option>
             </mat-select>
           </mat-form-field>
         </div>
 
         <!-- 2. Custom Method text input (if selected) -->
-        @if (showCustomInput()) {
-          <div class="flex gap-2 items-center flex-1 animate-fadeIn">
-            <input
-              #customInput
-              type="text"
-              [value]="customMethodText()"
-              (input)="onCustomTextChange($event)"
-              (keydown.enter)="addCustomMethod()"
-              placeholder="e.g., Smoking, Dehydrating"
-              class="w-full bg-slate-800/40 border border-slate-700/60 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-400/20 text-white placeholder-slate-500 transition" />
-            <button
-              matButton="tonal"
-              type="button"
-              (click)="addCustomMethod()"
-              [disabled]="!customMethodText().trim()"
-              class="px-5 py-2.5 rounded-xl font-bold text-white bg-purple-600 hover:bg-purple-500 disabled:opacity-40 disabled:cursor-not-allowed transition shadow-md cursor-pointer border-0 flex items-center justify-center shrink-0">
-              Add
-            </button>
-            <button
-              matButton
-              type="button"
-              (click)="cancelCustomMethod()"
-              class="px-3 py-2.5 rounded-xl font-semibold text-slate-400 hover:text-slate-200 transition cursor-pointer border-0 bg-transparent">
-              Cancel
-            </button>
-          </div>
-        }
+        <div class="flex gap-2 items-center flex-1 animate-fadeIn">
+          <input
+            #customInput
+            type="text"
+            [value]="customMethodText()"
+            (input)="onCustomTextChange($event)"
+            (keydown.enter)="addCustomMethod()"
+            placeholder="e.g., Smoking, Dehydrating"
+            class="w-full bg-slate-800/40 border border-slate-700/60 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-400/20 text-white placeholder-slate-500 transition" />
+          <button
+            matButton="tonal"
+            type="button"
+            (click)="addCustomMethod()"
+            [disabled]="!customMethodText().trim()"
+            class="px-5 py-2.5 rounded-xl font-bold text-white bg-purple-600 hover:bg-purple-500 disabled:opacity-40 disabled:cursor-not-allowed transition shadow-md cursor-pointer border-0 flex items-center justify-center shrink-0">
+            Add
+          </button>
+          <button
+            matButton
+            type="button"
+            (click)="cancelCustomMethod()"
+            class="px-3 py-2.5 rounded-xl font-semibold text-slate-400 hover:text-slate-200 transition cursor-pointer border-0 bg-transparent">
+            Cancel
+          </button>
+        </div>
       </div>
     </div>
   `,
@@ -105,41 +95,11 @@ import { RecipeService } from '../../services/recipe.service';
         --mat-select-trigger-text-color: #ffffff;
         --mat-select-placeholder-text-color: #94a3b8;
       }
-      .custom-mat-form-field .mat-mdc-form-field-subscript-wrapper {
-        display: none !important;
+      .custom-mat-form-field .mat-mdc-floating-label {
+        top: 22px !important;
       }
-      .custom-mat-form-field .mat-mdc-form-field-flex {
-        height: 44px !important;
-        align-items: center !important;
-      }
-      .custom-mat-form-field .mat-mdc-select-value {
-        color: #ffffff !important;
-        font-size: 14px !important;
-      }
-      .custom-mat-form-field .mat-mdc-select-placeholder {
-        color: #94a3b8 !important;
-        font-size: 14px !important;
-      }
-      .custom-mat-form-field .mat-mdc-select-arrow {
-        color: #94a3b8 !important;
-      }
-      .custom-select-panel {
-        background-color: #0f172a !important; /* slate-900 */
-        border: 1px solid rgba(71, 85, 105, 0.6) !important;
-        border-radius: 12px !important;
-        margin-top: 4px !important;
-      }
-      .custom-select-panel .mat-mdc-option {
-        color: #e2e8f0 !important; /* slate-200 */
-        font-size: 14px !important;
-      }
-      .custom-select-panel
-        .mat-mdc-option.mdc-list-item--selected:not(.mdc-list-item--disabled)
-        .mdc-list-item__primary-text {
-        color: #c084fc !important; /* purple-400 */
-      }
-      .custom-select-panel .mat-mdc-option:hover:not(.mdc-list-item--disabled) {
-        background-color: rgba(168, 85, 247, 0.1) !important; /* purple-500/10 */
+      .custom-mat-form-field .mat-mdc-floating-label.mdc-floating-label--float-above {
+        top: 28px !important;
       }
     `,
   ],
@@ -149,81 +109,46 @@ import { RecipeService } from '../../services/recipe.service';
 export class CookingMethodSelectorComponent implements FormValueControl<string> {
   private readonly recipeService = inject(RecipeService);
 
-  readonly customInputEl = viewChild<ElementRef<HTMLInputElement>>('customInput');
-
   // Standalone value model for signals form integration
-  readonly value = model<string>('None');
+  readonly value = model<string>('');
   readonly required = input<boolean>(false);
 
   // Backward compatible inputs/outputs for specs and legacy usage
-  initialMethod = input<string>('');
   methodChange = output<string>();
 
   // Computed property to sync/keep selectedMethod readable
   readonly selectedMethod = computed(() => this.value());
 
   customMethodText = signal<string>('');
-  showCustomInput = signal<boolean>(false);
   localCustomMethods = signal<string[]>([]);
+
+  readonly baselineMethods = computed(() => {
+    return this.recipeService.methods().map((m) => m.name);
+  });
 
   // Dynamically compile methods from current database recipes + local additions
   readonly compiledMethods = computed(() => {
-    const recipes = this.recipeService.recipes();
     const methodsSet = new Set<string>();
 
-    // 1. Extract all methods present in the recipes database
-    recipes.forEach((r) => {
-      if (r.method?.trim()) {
-        methodsSet.add(r.method.trim());
-      }
-    });
-
-    // 2. Add local custom methods added during this session
-    this.localCustomMethods().forEach((m) => {
+    // 1. Pre-populate baseline methods
+    this.baselineMethods().forEach((m) => {
       if (m?.trim()) {
         methodsSet.add(m.trim());
       }
     });
 
-    // 3. Ensure incoming/current method is in the set
-    const val = this.value();
-    if (val?.trim() && val !== 'None') {
-      methodsSet.add(val.trim());
+    // 2. Add current value if not already present
+    const currentVal = this.value();
+    if (currentVal?.trim()) {
+      methodsSet.add(currentVal.trim());
     }
 
     return Array.from(methodsSet).sort((a, b) => a.localeCompare(b));
   });
 
-  constructor() {
-    // 1. Sync initialMethod input -> value model signal
-    effect(() => {
-      const initial = this.initialMethod();
-      if (initial) {
-        this.value.set(initial);
-      }
-    });
-
-    // 2. Hide custom input when value updates
-    effect(() => {
-      const val = this.value();
-      if (val) {
-        this.showCustomInput.set(false);
-      }
-    });
-  }
-
   onMethodSelect(val: string): void {
-    if (val === 'custom') {
-      this.showCustomInput.set(true);
-      this.customMethodText.set('');
-      setTimeout(() => {
-        this.customInputEl()?.nativeElement?.focus();
-      }, 50);
-    } else {
-      this.showCustomInput.set(false);
-      this.value.set(val);
-      this.methodChange.emit(val);
-    }
+    this.value.set(val);
+    this.methodChange.emit(val);
   }
 
   onCustomTextChange(event: Event): void {
@@ -234,23 +159,15 @@ export class CookingMethodSelectorComponent implements FormValueControl<string> 
     const val = this.customMethodText().trim();
     if (!val) return;
 
-    // Add to local custom methods list if not already present
-    this.localCustomMethods.update((list) => {
-      if (!list.includes(val)) {
-        return [...list, val];
-      }
-      return list;
-    });
-
-    this.value.set(val);
-    this.methodChange.emit(val);
-    this.showCustomInput.set(false);
     this.customMethodText.set('');
+
+    setTimeout(() => {
+      this.value.set(val);
+      this.methodChange.emit(val);
+    }, 0);
   }
 
   cancelCustomMethod(): void {
-    this.showCustomInput.set(false);
     this.customMethodText.set('');
-    this.methodChange.emit(this.value());
   }
 }

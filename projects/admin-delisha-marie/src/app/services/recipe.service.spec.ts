@@ -76,10 +76,22 @@ describe('RecipeService', () => {
     TestBed.configureTestingModule({
       providers: [provideHttpClient(), provideHttpClientTesting(), RecipeService],
     });
+    // Reset httpMock to prevent cross-test pollution
+    httpMock = undefined as unknown as HttpTestingController;
   });
 
   afterEach(() => {
     if (httpMock) {
+      // Flush any pending metadata requests to prevent verify() from failing
+      const methodsReqs = httpMock.match('/api/methods');
+      methodsReqs.forEach((r) => !r.cancelled && r.flush([]));
+
+      const holidaysReqs = httpMock.match('/api/holidays');
+      holidaysReqs.forEach((r) => !r.cancelled && r.flush([]));
+
+      const dietsReqs = httpMock.match('/api/special-diets');
+      dietsReqs.forEach((r) => !r.cancelled && r.flush([]));
+
       httpMock.verify();
     }
   });
@@ -333,5 +345,103 @@ describe('RecipeService', () => {
     } finally {
       vi.unstubAllGlobals();
     }
+  });
+
+  describe('Metadata Loading', () => {
+    beforeEach(() => {
+      // Clean up requests from constructor
+      service = TestBed.inject(RecipeService);
+      httpMock = TestBed.inject(HttpTestingController);
+
+      const reqRecipes = httpMock.expectOne('/api/recipes');
+      reqRecipes.flush([]);
+      const reqMethods = httpMock.expectOne('/api/methods');
+      reqMethods.flush([]);
+      const reqHolidays = httpMock.expectOne('/api/holidays');
+      reqHolidays.flush([]);
+      const reqDiets = httpMock.expectOne('/api/special-diets');
+      reqDiets.flush([]);
+    });
+
+    it('should load methods correctly from API', async () => {
+      const mockMethods = [{ id: '1', name: 'Air Frying', slug: 'air-frying' }];
+      service['loadInitialMethods']();
+      const req = httpMock.expectOne('/api/methods');
+      req.flush(mockMethods);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      expect(service.methods()).toEqual(mockMethods);
+    });
+
+    it('should handle API errors gracefully in loadInitialMethods', async () => {
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+      service['loadInitialMethods']();
+      const req = httpMock.expectOne('/api/methods');
+      req.error(new ProgressEvent('Error'));
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      expect(consoleSpy).toHaveBeenCalled();
+      consoleSpy.mockRestore();
+    });
+
+    it('should not set methods if API returns null or non-array', async () => {
+      service['loadInitialMethods']();
+      const req = httpMock.expectOne('/api/methods');
+      req.flush(null);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      expect(service.methods()).toEqual([]);
+    });
+
+    it('should load holidays correctly from API', async () => {
+      const mockHolidays = [{ id: '1', name: 'Christmas' }];
+      service['loadInitialHolidays']();
+      const req = httpMock.expectOne('/api/holidays');
+      req.flush(mockHolidays);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      expect(service.holidays()).toEqual(mockHolidays);
+    });
+
+    it('should handle API errors gracefully in loadInitialHolidays', async () => {
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+      service['loadInitialHolidays']();
+      const req = httpMock.expectOne('/api/holidays');
+      req.error(new ProgressEvent('Error'));
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      expect(consoleSpy).toHaveBeenCalled();
+      consoleSpy.mockRestore();
+    });
+
+    it('should not set holidays if API returns null or non-array', async () => {
+      service['loadInitialHolidays']();
+      const req = httpMock.expectOne('/api/holidays');
+      req.flush(null);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      expect(service.holidays()).toEqual([]);
+    });
+
+    it('should load special diets correctly from API', async () => {
+      const mockDiets = [{ id: '1', name: 'Vegan' }];
+      service['loadInitialSpecialDiets']();
+      const req = httpMock.expectOne('/api/special-diets');
+      req.flush(mockDiets);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      expect(service.specialDiets()).toEqual(mockDiets);
+    });
+
+    it('should handle API errors gracefully in loadInitialSpecialDiets', async () => {
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+      service['loadInitialSpecialDiets']();
+      const req = httpMock.expectOne('/api/special-diets');
+      req.error(new ProgressEvent('Error'));
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      expect(consoleSpy).toHaveBeenCalled();
+      consoleSpy.mockRestore();
+    });
+
+    it('should not set special diets if API returns null or non-array', async () => {
+      service['loadInitialSpecialDiets']();
+      const req = httpMock.expectOne('/api/special-diets');
+      req.flush(null);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      expect(service.specialDiets()).toEqual([]);
+    });
   });
 });

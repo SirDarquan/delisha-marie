@@ -73,6 +73,9 @@ describe('RecipeFormComponent', () => {
 
   const fakeRecipeService = {
     recipes: () => [],
+    methods: () => [],
+    holidays: () => [],
+    specialDiets: () => [],
 
     getRecipeByIdOrSlug: (id: string | number) => {
       return id ? mockRecipeById : null;
@@ -186,6 +189,23 @@ describe('RecipeFormComponent', () => {
     expect(component['recipeModel']().holidays).toBe('Holiday 1');
     expect(component['recipeModel']().specialDiets).toEqual(['Diet 1']);
     expect(component['recipeModel']().category).toEqual(testCategory);
+  });
+
+  it('should populate edit form and map object-based holidays and special diets correctly', () => {
+    routeParams['id'] = '1';
+    mockRecipeById = {
+      id: 1,
+      title: 'Mock Pasta',
+      slug: 'mock-pasta',
+      status: 'published',
+      holidays: [{ name: 'Christmas' }] as unknown as string[],
+      specialDiets: [{ name: 'Vegan' }] as unknown as string[],
+    } as unknown as Recipe;
+
+    fixture.detectChanges();
+
+    expect(component['recipeModel']().holidays).toBe('Christmas');
+    expect(component['recipeModel']().specialDiets).toEqual(['Vegan']);
   });
 
   it('should submit form and call createRecipe', () => {
@@ -900,7 +920,6 @@ describe('RecipeFormComponent', () => {
     // 2. Click draft / schedule buttons in draft state
     component['activeTab'].set('what');
     component['isInitialized'] = true;
-    component.markDirty();
     fixture.detectChanges();
 
     const buttons = Array.from(
@@ -917,7 +936,6 @@ describe('RecipeFormComponent', () => {
       title: 'Valid title',
       slug: 'valid-slug',
     });
-    component.markDirty();
     fixture.detectChanges();
 
     const scheduleBtn = buttons.find((b) => b.textContent?.includes('Schedule Publication'));
@@ -933,7 +951,6 @@ describe('RecipeFormComponent', () => {
       slug: 'scheduled-slug',
       status: 'scheduled',
     });
-    component.markDirty();
     fixture.detectChanges();
 
     const buttons2 = Array.from(
@@ -956,7 +973,6 @@ describe('RecipeFormComponent', () => {
       slug: 'published-slug',
       status: 'published',
     });
-    component.markDirty();
     fixture.detectChanges();
 
     const buttons3 = Array.from(

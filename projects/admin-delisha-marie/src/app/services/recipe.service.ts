@@ -12,8 +12,23 @@ export class RecipeService {
   private readonly _recipes = signal<Recipe[]>([]);
   readonly recipes = computed(() => this._recipes());
 
+  // Core state: signal of all methods from database
+  private readonly _methods = signal<{ id: string; name: string; slug: string }[]>([]);
+  readonly methods = computed(() => this._methods());
+
+  // Core state: signal of all holidays from database
+  private readonly _holidays = signal<{ id: string; name: string }[]>([]);
+  readonly holidays = computed(() => this._holidays());
+
+  // Core state: signal of all special diets from database
+  private readonly _specialDiets = signal<{ id: string; name: string }[]>([]);
+  readonly specialDiets = computed(() => this._specialDiets());
+
   constructor() {
     this.loadInitialRecipes();
+    this.loadInitialMethods();
+    this.loadInitialHolidays();
+    this.loadInitialSpecialDiets();
   }
 
   private loadInitialRecipes(): void {
@@ -128,5 +143,44 @@ export class RecipeService {
       .catch((err: unknown) => console.error('Backend deleteRecipe error:', err));
 
     return true;
+  }
+
+  private loadInitialMethods(): void {
+    this.api
+      .get<{ id: string; name: string; slug: string }[]>('/methods')
+      .then((data) => {
+        if (data && Array.isArray(data)) {
+          this._methods.set(data);
+        }
+      })
+      .catch((err) => {
+        console.error('Failed to load methods:', err);
+      });
+  }
+
+  private loadInitialHolidays(): void {
+    this.api
+      .get<{ id: string; name: string }[]>('/holidays')
+      .then((data) => {
+        if (data && Array.isArray(data)) {
+          this._holidays.set(data);
+        }
+      })
+      .catch((err) => {
+        console.error('Failed to load holidays:', err);
+      });
+  }
+
+  private loadInitialSpecialDiets(): void {
+    this.api
+      .get<{ id: string; name: string }[]>('/special-diets')
+      .then((data) => {
+        if (data && Array.isArray(data)) {
+          this._specialDiets.set(data);
+        }
+      })
+      .catch((err) => {
+        console.error('Failed to load special diets:', err);
+      });
   }
 }

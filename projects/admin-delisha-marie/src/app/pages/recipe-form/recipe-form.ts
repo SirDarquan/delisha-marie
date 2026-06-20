@@ -139,12 +139,7 @@ interface RecipeFormModel {
 
       <main
         class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl max-w-4xl mx-auto backdrop-blur-md">
-        <form
-          [formRoot]="recipeForm"
-          (change)="markDirty()"
-          (input)="markDirty()"
-          aria-label="Recipe details form"
-          class="flex flex-col gap-6">
+        <form [formRoot]="recipeForm" aria-label="Recipe details form" class="flex flex-col gap-6">
           <!-- 1. WHAT IS IT Tab -->
           @if (activeTab() === 'what') {
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5 animate-fadeIn">
@@ -495,7 +490,6 @@ interface RecipeFormModel {
               <div class="flex flex-col gap-1 md:col-span-2">
                 <app-category-board
                   [formField]="recipeForm.category"
-                  [initialCategory]="recipeModel().category"
                   [recipeTitle]="recipeModel().title"
                   [recipeSlug]="recipeModel().slug"
                   (categoryChange)="onCategoryChanged($event)">
@@ -530,21 +524,20 @@ interface RecipeFormModel {
               <div class="flex flex-col gap-1 md:col-span-2">
                 <app-cooking-method-selector
                   [formField]="recipeForm.method"
-                  [initialMethod]="recipeModel().method"
                   (methodChange)="onMethodChanged($event)">
                 </app-cooking-method-selector>
               </div>
 
               <div class="flex flex-col gap-1 md:col-span-2">
                 <app-holidays-selector
-                  [initialHoliday]="recipeModel().holidays"
+                  [formField]="recipeForm.holidays"
                   (holidayChange)="onHolidayChanged($event)">
                 </app-holidays-selector>
               </div>
 
               <div class="flex flex-col gap-1 md:col-span-2">
                 <app-special-diets-selector
-                  [initialDiets]="recipeModel().specialDiets"
+                  [formField]="recipeForm.specialDiets"
                   (dietsChange)="onSpecialDietsChanged($event)">
                 </app-special-diets-selector>
               </div>
@@ -727,6 +720,7 @@ export class RecipeFormComponent implements OnInit {
       required(fields.content, { message: 'Content is required' });
       required(fields.ingredients, { message: 'Ingredients is required' });
       required(fields.instructions, { message: 'Instructions is required' });
+      required(fields.method, { message: 'Method is required' });
       required(fields.cuisine, { message: 'Cuisine is required' });
       required(fields.course, { message: 'Course is required' });
       required(fields.servingSize, { message: 'Serving size is required' });
@@ -851,6 +845,7 @@ export class RecipeFormComponent implements OnInit {
       isMissing(this.getFieldValue('content')) ||
       isMissing(this.getFieldValue('ingredients')) ||
       isMissing(this.getFieldValue('instructions')) ||
+      isMissing(this.getFieldValue('method')) ||
       isMissing(this.getFieldValue('cuisine')) ||
       isMissing(this.getFieldValue('course')) ||
       isMissing(this.getFieldValue('servingSize')) ||
@@ -894,6 +889,23 @@ export class RecipeFormComponent implements OnInit {
   }
 
   private mapRecipeToForm(recipe: Recipe): RecipeFormModel {
+    let holidayStr = '';
+    if (recipe.holidays && recipe.holidays.length > 0) {
+      const firstHoliday = recipe.holidays[0];
+      if (typeof firstHoliday === 'object' && firstHoliday !== null) {
+        holidayStr = (firstHoliday as { name?: string }).name || '';
+      } else {
+        holidayStr = String(firstHoliday);
+      }
+    }
+
+    const specialDietsList = (recipe.specialDiets || []).map((d: unknown) => {
+      if (typeof d === 'object' && d !== null) {
+        return (d as { name?: string }).name || '';
+      }
+      return String(d);
+    });
+
     return {
       title: recipe.title || '',
       slug: recipe.slug || '',
@@ -916,8 +928,8 @@ export class RecipeFormComponent implements OnInit {
       instructions: recipe.instructions ? recipe.instructions.join('\n') : '',
       method: recipe.method || '',
       theBest: recipe.theBest || false,
-      holidays: recipe.holidays?.[0] || '',
-      specialDiets: recipe.specialDiets || [],
+      holidays: holidayStr,
+      specialDiets: specialDietsList,
       cuisine: recipe.cuisine || '',
       course: recipe.course || '',
       keyword: recipe.keywords || [],
@@ -936,16 +948,11 @@ export class RecipeFormComponent implements OnInit {
     };
   }
 
-  markDirty(): void {
-    // No-op since isDirty is computed reactively from form control values
-  }
-
   onCategoryChanged(c: CategoryTrails): void {
     this.recipeModel.update((model) => ({
       ...model,
       category: c,
     }));
-    this.markDirty();
   }
 
   onImageUploaded(event: {
@@ -966,8 +973,6 @@ export class RecipeFormComponent implements OnInit {
     this.recipeForm.imageWidth().value.set(event.imageWidth);
     this.recipeForm.imageHeight().value.set(event.imageHeight);
     this.recipeForm.imageType().value.set(event.imageType);
-
-    this.markDirty();
   }
 
   onMethodChanged(method: string): void {
@@ -975,7 +980,6 @@ export class RecipeFormComponent implements OnInit {
       ...model,
       method,
     }));
-    this.markDirty();
   }
 
   onSpecialDietsChanged(specialDiets: string[]): void {
@@ -983,15 +987,13 @@ export class RecipeFormComponent implements OnInit {
       ...model,
       specialDiets,
     }));
-    this.markDirty();
   }
 
-  onHolidayChanged(holidays: string): void {
+  onHolidayChanged(holiday: string): void {
     this.recipeModel.update((model) => ({
       ...model,
-      holidays,
+      holidays: holiday,
     }));
-    this.markDirty();
   }
 
   addKeyword(): void {
@@ -1144,7 +1146,6 @@ export class RecipeFormComponent implements OnInit {
     }
     this.initialModel.set(this.getCurrentFormValue());
     this.recipeModel().status = 'draft';
-    this.isEdit.set(false);
   }
 
   saveRequired(status: 'scheduled' | 'published'): void {
@@ -1191,6 +1192,7 @@ export class RecipeFormComponent implements OnInit {
 
     this.initialModel.set(this.getCurrentFormValue());
     this.router.navigate(['/recipes']);
+    this.isEdit.set(false);
   }
 
   private getBestTrail(standardTrail: BaseTrail[]): BaseTrail[] {
