@@ -26,7 +26,6 @@ import { SpecialDietsSelectorComponent } from '../../components/special-diets-se
 import { Recipe } from '../../models/recipe.model';
 import { RecipeService } from '../../services/recipe.service';
 
-
 interface RecipeFormModel {
   title: string;
   slug: string;
@@ -651,7 +650,6 @@ export class RecipeFormComponent implements OnInit {
   private readonly recipeService = inject(RecipeService);
   private readonly dialog = inject(MatDialog);
 
-
   protected readonly isEdit = signal<boolean>(false);
   private readonly idToEdit = signal<string | number | null>(null);
 
@@ -891,6 +889,23 @@ export class RecipeFormComponent implements OnInit {
   }
 
   private mapRecipeToForm(recipe: Recipe): RecipeFormModel {
+    let holidayStr = '';
+    if (recipe.holidays && recipe.holidays.length > 0) {
+      const firstHoliday = recipe.holidays[0];
+      if (typeof firstHoliday === 'object' && firstHoliday !== null) {
+        holidayStr = (firstHoliday as { name?: string }).name || '';
+      } else {
+        holidayStr = String(firstHoliday);
+      }
+    }
+
+    const specialDietsList = (recipe.specialDiets || []).map((d: unknown) => {
+      if (typeof d === 'object' && d !== null) {
+        return (d as { name?: string }).name || '';
+      }
+      return String(d);
+    });
+
     return {
       title: recipe.title || '',
       slug: recipe.slug || '',
@@ -913,16 +928,8 @@ export class RecipeFormComponent implements OnInit {
       instructions: recipe.instructions ? recipe.instructions.join('\n') : '',
       method: recipe.method || '',
       theBest: recipe.theBest || false,
-      holidays: recipe.holidays
-        ? typeof recipe.holidays[0] === 'object' && recipe.holidays[0]
-          ? (recipe.holidays[0] as { name?: string }).name || ''
-          : String(recipe.holidays[0])
-        : '',
-      specialDiets: recipe.specialDiets
-        ? recipe.specialDiets.map((d: unknown) =>
-            typeof d === 'object' && d ? (d as { name?: string }).name || '' : String(d),
-          )
-        : [],
+      holidays: holidayStr,
+      specialDiets: specialDietsList,
       cuisine: recipe.cuisine || '',
       course: recipe.course || '',
       keyword: recipe.keywords || [],

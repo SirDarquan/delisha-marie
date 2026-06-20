@@ -40,9 +40,7 @@ recipesRouter.get('/recipes', async (req: AuthRequest, res: Response) => {
       delete cleanRecipe.recipe_holidays;
       delete cleanRecipe.recipe_special_diets;
 
-      const camelRecipe = Object.fromEntries(
-        Object.entries(cleanRecipe).map(([k, v]) => [camelCase(k), v]),
-      );
+      const camelRecipe = camelCaseKeys(cleanRecipe);
 
       return {
         ...camelRecipe,
@@ -103,17 +101,13 @@ recipesRouter.post('/recipes', async (req: AuthRequest, res: Response) => {
     const specialDietsData = req.body.specialDiets;
 
     const dbBody = normalizeDbBody(
-      filterRecipeColumns(
-        Object.fromEntries(Object.entries(req.body).map(([k, v]) => [snakeCase(k), v])),
-      ),
+      filterRecipeColumns(snakeCaseKeys(req.body as Record<string, unknown>)),
     );
 
     const { data: recipe, error } = await client.from('recipes').insert(dbBody).select().single();
     if (error) throw error;
 
-    const camelRecipe = Object.fromEntries(
-      Object.entries(recipe).map(([k, v]) => [camelCase(k), v]),
-    ) as Record<string, unknown> & { id: string | number };
+    const camelRecipe = camelCaseKeys(recipe) as Record<string, unknown> & { id: string | number };
 
     await saveRecipeCategory(client, camelRecipe['id'], categoryData);
     await saveRecipeMethod(client, camelRecipe['id'], methodName);
@@ -134,7 +128,6 @@ recipesRouter.post('/recipes', async (req: AuthRequest, res: Response) => {
 
 recipesRouter.put('/recipes/:id', async (req: AuthRequest, res: Response) => {
   try {
-    console.log(req.body);
     const client = backendService.getClient(req.token);
     const categoryData = req.body.category;
     const methodName = req.body.method;
@@ -145,9 +138,7 @@ recipesRouter.put('/recipes/:id', async (req: AuthRequest, res: Response) => {
     delete updateBody.id;
 
     const dbBody = normalizeDbBody(
-      filterRecipeColumns(
-        Object.fromEntries(Object.entries(updateBody).map(([k, v]) => [snakeCase(k), v])),
-      ),
+      filterRecipeColumns(snakeCaseKeys(updateBody as Record<string, unknown>)),
     );
 
     let recipe = null;
@@ -173,16 +164,13 @@ recipesRouter.put('/recipes/:id', async (req: AuthRequest, res: Response) => {
       return res.status(400).json({ error: 'Recipe not found' });
     }
 
-    const camelRecipe = Object.fromEntries(
-      Object.entries(recipe).map(([k, v]) => [camelCase(k), v]),
-    ) as Record<string, unknown> & { id: string | number };
+    const camelRecipe = camelCaseKeys(recipe) as Record<string, unknown> & { id: string | number };
 
     await saveRecipeCategory(client, camelRecipe['id'], categoryData);
     await saveRecipeMethod(client, camelRecipe['id'], methodName);
     await saveRecipeHolidays(client, camelRecipe['id'], holidaysData);
     await saveRecipeSpecialDiets(client, camelRecipe['id'], specialDietsData);
 
-    // console.log({ camelRecipe, categoryData, methodName, holidaysData, specialDietsData });
     return res.json({
       ...camelRecipe,
       category: categoryData,
@@ -208,6 +196,14 @@ recipesRouter.delete('/recipes/:id', async (req: AuthRequest, res: Response) => 
 });
 
 // --- Helper Functions ---
+
+function camelCaseKeys(obj: Record<string, unknown>): Record<string, unknown> {
+  return Object.fromEntries(Object.entries(obj).map(([k, v]) => [camelCase(k), v]));
+}
+
+function snakeCaseKeys(obj: Record<string, unknown>): Record<string, unknown> {
+  return Object.fromEntries(Object.entries(obj).map(([k, v]) => [snakeCase(k), v]));
+}
 
 function slugify(text: string): string {
   return text

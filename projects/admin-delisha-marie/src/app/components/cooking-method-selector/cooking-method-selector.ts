@@ -2,14 +2,11 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
-  effect,
-  ElementRef,
   inject,
   input,
   model,
   output,
   signal,
-  viewChild,
   ViewEncapsulation,
 } from '@angular/core';
 import { FormValueControl } from '@angular/forms/signals';
@@ -142,7 +139,7 @@ export class CookingMethodSelectorComponent implements FormValueControl<string> 
 
     // 2. Add current value if not already present
     const currentVal = this.value();
-    if (currentVal && currentVal.trim()) {
+    if (currentVal?.trim()) {
       methodsSet.add(currentVal.trim());
     }
 

@@ -198,9 +198,9 @@ describe('RecipeFormComponent', () => {
       title: 'Mock Pasta',
       slug: 'mock-pasta',
       status: 'published',
-      holidays: [{ name: 'Christmas' }] as any,
-      specialDiets: [{ name: 'Vegan' }] as any,
-    } as any;
+      holidays: [{ name: 'Christmas' }] as unknown as string[],
+      specialDiets: [{ name: 'Vegan' }] as unknown as string[],
+    } as unknown as Recipe;
 
     fixture.detectChanges();
 
