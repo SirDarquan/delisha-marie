@@ -375,7 +375,6 @@ export class CategoryBoardComponent implements FormValueControl<CategoryTrails |
   readonly required = input<boolean>(false);
 
   // Standalone Inputs
-  initialCategory = input<CategoryTrails | null>(null);
   recipeTitle = input<string>('');
   recipeSlug = input<string>('');
 
@@ -420,7 +419,7 @@ export class CategoryBoardComponent implements FormValueControl<CategoryTrails |
   constructor() {
     // Automatically load incoming category structures when initialized
     effect(() => {
-      const initial = this.value() || this.initialCategory();
+      const initial = this.value();
       if (initial?.trails) {
         // Extract standard trails (starts with Home and Recipes, url not matching auto-generated paths)
         const standardTrails = initial.trails.filter((trail) => {

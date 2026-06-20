@@ -61,8 +61,8 @@ describe('SpecialDietsSelectorComponent', () => {
     expect(compiled.indexOf('Low Carb')).toBeLessThan(compiled.indexOf('Vegan'));
   });
 
-  it('should sync with initialDiets input', () => {
-    fixture.componentRef.setInput('initialDiets', ['Vegan', 'Keto']);
+  it('should sync with value input', () => {
+    fixture.componentRef.setInput('value', ['Vegan', 'Keto']);
     fixture.detectChanges();
     expect(component.selectedDiets()).toEqual(['Vegan', 'Keto']);
     expect(component.compiledDiets()).toContain('Keto');
@@ -77,7 +77,7 @@ describe('SpecialDietsSelectorComponent', () => {
   });
 
   it('should support typing, adding, and emitting a custom dietary profile', async () => {
-    fixture.componentRef.setInput('initialDiets', ['Vegan']);
+    fixture.componentRef.setInput('value', ['Vegan']);
     fixture.detectChanges();
     // 1. Type text
     component.onCustomTextChange({ target: { value: 'Nut Free' } } as unknown as Event);
@@ -94,7 +94,7 @@ describe('SpecialDietsSelectorComponent', () => {
   });
 
   it('should support canceling custom method entry', () => {
-    fixture.componentRef.setInput('initialDiets', ['Gluten Free']);
+    fixture.componentRef.setInput('value', ['Gluten Free']);
     fixture.detectChanges();
 
     component.onCustomTextChange({ target: { value: 'Dairy Free' } } as unknown as Event);

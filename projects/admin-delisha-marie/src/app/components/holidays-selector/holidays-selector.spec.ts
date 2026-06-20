@@ -60,8 +60,8 @@ describe('HolidaysSelectorComponent', () => {
     expect(compiled.indexOf('Sunday Roast')).toBeLessThan(compiled.indexOf('Thanksgiving'));
   });
 
-  it('should sync with initialHoliday input', () => {
-    fixture.componentRef.setInput('initialHoliday', 'Halloween');
+  it('should sync with value input', () => {
+    fixture.componentRef.setInput('value', 'Halloween');
     fixture.detectChanges();
     expect(component.selectedHoliday()).toBe('Halloween');
     expect(component.compiledHolidays()).toContain('Halloween');
@@ -92,7 +92,7 @@ describe('HolidaysSelectorComponent', () => {
   });
 
   it('should support canceling custom method entry', () => {
-    fixture.componentRef.setInput('initialHoliday', 'Thanksgiving');
+    fixture.componentRef.setInput('value', 'Thanksgiving');
     fixture.detectChanges();
 
     component.onCustomTextChange({ target: { value: 'Fourth of July' } } as unknown as Event);

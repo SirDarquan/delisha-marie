@@ -107,10 +107,20 @@ describe('Recipes Router API', () => {
       const res = await request(app).get('/recipes');
 
       expect(res.status).toBe(200);
-      expect(res.body).toEqual(mockList);
+      expect(res.body).toEqual([
+        { id: 'recipe-1', title: 'Salad', holidays: [], specialDiets: [] },
+      ]);
       expect(backendService.getClient).toHaveBeenCalledWith('test-token-xyz');
       expect(mockFrom).toHaveBeenCalledWith('recipes');
-      expect(mockSelect).toHaveBeenCalledWith('*');
+      expect(mockSelect).toHaveBeenCalledWith(`
+        *,
+        recipe_holidays (
+          holidays (name)
+        ),
+        recipe_special_diets (
+          special_diets (name)
+        )
+      `);
       expect(mockOrder).toHaveBeenCalledWith('created_at', { ascending: false });
     });
 
@@ -294,17 +304,56 @@ describe('Recipes Router API', () => {
       expect(res.body.title).toBe('Updated Salad');
     });
 
-    it('should fallback to inserting a recipe if update does not find one', async () => {
+    it('should return 400 if update does not find the recipe', async () => {
       const updateData = { title: 'Missing Recipe' };
-      mockMaybeSingle.mockResolvedValueOnce({ data: null, error: null });
-      mockSingle.mockResolvedValueOnce({
-        data: { id: 'recipe-99', title: 'Missing Recipe' },
-        error: null,
-      });
+      mockMaybeSingle.mockResolvedValueOnce({ data: null, error: null }); // update query
+      mockMaybeSingle.mockResolvedValueOnce({ data: null, error: null }); // select query
 
       const res = await request(app).put('/recipes/recipe-99').send(updateData);
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe('Recipe not found');
+    });
+
+    it('should fall back to select when update returns null but recipe exists', async () => {
+      const updateData = {
+        title: 'Existing Recipe',
+        category: {
+          trails: [
+            [
+              { name: 'Home', url: '/' },
+              { name: 'Recipes', url: '/recipes' },
+              { name: 'Dinner', url: '/recipes/dinner' },
+            ],
+          ],
+        },
+        method: 'Baking',
+        holidays: ['Christmas'],
+        specialDiets: ['Vegan'],
+      };
+      const existingRecipe = { id: 'recipe-3', title: 'Existing Recipe' };
+
+      // Mock update query returning null
+      mockMaybeSingle.mockResolvedValueOnce({ data: null, error: null });
+      // Mock select query returning existing recipe
+      mockMaybeSingle.mockResolvedValueOnce({ data: existingRecipe, error: null });
+
+      // Mock category find category
+      mockMaybeSingle.mockResolvedValueOnce({ data: { id: 'cat-1' }, error: null });
+
+      // Mock method find method & insert
+      mockMaybeSingle.mockResolvedValueOnce({ data: null, error: null });
+      mockSingle.mockResolvedValueOnce({ data: { id: 'method-1' }, error: null });
+
+      // Mock holiday find holiday
+      mockMaybeSingle.mockResolvedValueOnce({ data: { id: 'hol-1' }, error: null });
+
+      // Mock special diet find diet
+      mockMaybeSingle.mockResolvedValueOnce({ data: { id: 'diet-1' }, error: null });
+
+      const res = await request(app).put('/recipes/recipe-3').send(updateData);
+
       expect(res.status).toBe(200);
-      expect(res.body.title).toBe('Missing Recipe');
+      expect(res.body.title).toBe('Existing Recipe');
     });
 
     it('should return 400 when recipe update fails', async () => {

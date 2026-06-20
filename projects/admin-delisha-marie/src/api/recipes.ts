@@ -13,10 +13,45 @@ recipesRouter.get('/recipes', async (req: AuthRequest, res: Response) => {
     const client = backendService.getClient(req.token);
     const { data, error } = await client
       .from('recipes')
-      .select('*')
+      .select(
+        `
+        *,
+        recipe_holidays (
+          holidays (name)
+        ),
+        recipe_special_diets (
+          special_diets (name)
+        )
+      `,
+      )
       .order('created_at', { ascending: false });
     if (error) throw error;
-    return res.json(data);
+
+    const formatted = (data || []).map((rawRecipe: unknown) => {
+      const recipe = rawRecipe as Record<string, unknown> & {
+        recipe_holidays?: { holidays: { name: string } | null }[];
+        recipe_special_diets?: { special_diets: { name: string } | null }[];
+      };
+      const holidays = recipe.recipe_holidays?.map((h) => h.holidays?.name).filter(Boolean) || [];
+      const specialDiets =
+        recipe.recipe_special_diets?.map((d) => d.special_diets?.name).filter(Boolean) || [];
+
+      const cleanRecipe = { ...recipe };
+      delete cleanRecipe.recipe_holidays;
+      delete cleanRecipe.recipe_special_diets;
+
+      const camelRecipe = Object.fromEntries(
+        Object.entries(cleanRecipe).map(([k, v]) => [camelCase(k), v]),
+      );
+
+      return {
+        ...camelRecipe,
+        holidays,
+        specialDiets,
+      };
+    });
+
+    return res.json(formatted);
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     return res.status(500).json({ error: msg });
@@ -85,7 +120,12 @@ recipesRouter.post('/recipes', async (req: AuthRequest, res: Response) => {
     await saveRecipeHolidays(client, camelRecipe['id'], holidaysData);
     await saveRecipeSpecialDiets(client, camelRecipe['id'], specialDietsData);
 
-    return res.json({ ...camelRecipe, category: categoryData });
+    return res.json({
+      ...camelRecipe,
+      category: categoryData,
+      holidays: holidaysData || [],
+      specialDiets: specialDietsData || [],
+    });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     return res.status(400).json({ error: msg });
@@ -94,6 +134,7 @@ recipesRouter.post('/recipes', async (req: AuthRequest, res: Response) => {
 
 recipesRouter.put('/recipes/:id', async (req: AuthRequest, res: Response) => {
   try {
+    console.log(req.body);
     const client = backendService.getClient(req.token);
     const categoryData = req.body.category;
     const methodName = req.body.method;
@@ -109,6 +150,7 @@ recipesRouter.put('/recipes/:id', async (req: AuthRequest, res: Response) => {
       ),
     );
 
+    let recipe = null;
     const { data: updateData, error: updateError } = await client
       .from('recipes')
       .update(dbBody)
@@ -117,19 +159,18 @@ recipesRouter.put('/recipes/:id', async (req: AuthRequest, res: Response) => {
       .maybeSingle();
 
     if (updateError) throw updateError;
-
-    let recipe = null;
-    if (updateData) {
-      recipe = updateData;
-    } else {
-      const insertBody = { ...dbBody, id: req.params['id'] };
-      const { data: insertData, error: insertError } = await client
+    recipe = updateData;
+    if (!updateData) {
+      const data = await client
         .from('recipes')
-        .insert(insertBody)
-        .select()
-        .single();
-      if (insertError) throw insertError;
-      recipe = insertData;
+        .select('*')
+        .eq('id', req.params['id'])
+        .maybeSingle();
+      recipe = data.data;
+      console.log(recipe);
+    }
+    if (!recipe) {
+      return res.status(400).json({ error: 'Recipe not found' });
     }
 
     const camelRecipe = Object.fromEntries(
@@ -141,7 +182,13 @@ recipesRouter.put('/recipes/:id', async (req: AuthRequest, res: Response) => {
     await saveRecipeHolidays(client, camelRecipe['id'], holidaysData);
     await saveRecipeSpecialDiets(client, camelRecipe['id'], specialDietsData);
 
-    return res.json({ ...camelRecipe, category: categoryData });
+    // console.log({ camelRecipe, categoryData, methodName, holidaysData, specialDietsData });
+    return res.json({
+      ...camelRecipe,
+      category: categoryData,
+      holidays: holidaysData || [],
+      specialDiets: specialDietsData || [],
+    });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     return res.status(400).json({ error: msg });

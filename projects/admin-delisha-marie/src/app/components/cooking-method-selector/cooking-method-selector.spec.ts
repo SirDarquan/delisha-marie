@@ -74,8 +74,8 @@ describe('CookingMethodSelectorComponent', () => {
     expect(compiled[0] <= compiled[1]).toBe(true);
   });
 
-  it('should sync with initialMethod input', () => {
-    fixture.componentRef.setInput('initialMethod', 'Roasting');
+  it('should sync with value input', () => {
+    fixture.componentRef.setInput('value', 'Roasting');
     fixture.detectChanges();
     expect(component.selectedMethod()).toBe('Roasting');
   });
@@ -105,7 +105,7 @@ describe('CookingMethodSelectorComponent', () => {
   });
 
   it('should support canceling custom method entry', () => {
-    fixture.componentRef.setInput('initialMethod', 'Sous Vide');
+    fixture.componentRef.setInput('value', 'Sous Vide');
     fixture.detectChanges();
 
     component.onCustomTextChange({ target: { value: 'Smoking' } } as unknown as Event);

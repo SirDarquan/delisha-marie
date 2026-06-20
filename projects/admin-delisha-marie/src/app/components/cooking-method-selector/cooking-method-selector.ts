@@ -112,14 +112,11 @@ import { RecipeService } from '../../services/recipe.service';
 export class CookingMethodSelectorComponent implements FormValueControl<string> {
   private readonly recipeService = inject(RecipeService);
 
-  readonly customInputEl = viewChild<ElementRef<HTMLInputElement>>('customInput');
-
   // Standalone value model for signals form integration
   readonly value = model<string>('');
   readonly required = input<boolean>(false);
 
   // Backward compatible inputs/outputs for specs and legacy usage
-  initialMethod = input<string>('');
   methodChange = output<string>();
 
   // Computed property to sync/keep selectedMethod readable
@@ -136,15 +133,8 @@ export class CookingMethodSelectorComponent implements FormValueControl<string> 
   readonly compiledMethods = computed(() => {
     const methodsSet = new Set<string>();
 
-    // 0. Pre-populate baseline methods
+    // 1. Pre-populate baseline methods
     this.baselineMethods().forEach((m) => {
-      if (m?.trim()) {
-        methodsSet.add(m.trim());
-      }
-    });
-
-    // 1. Add local custom methods
-    this.localCustomMethods().forEach((m) => {
       if (m?.trim()) {
         methodsSet.add(m.trim());
       }
@@ -159,16 +149,6 @@ export class CookingMethodSelectorComponent implements FormValueControl<string> 
     return Array.from(methodsSet).sort((a, b) => a.localeCompare(b));
   });
 
-  constructor() {
-    // 1. Sync initialMethod input -> value model signal
-    effect(() => {
-      const initial = this.initialMethod();
-      if (initial) {
-        this.value.set(initial);
-      }
-    });
-  }
-
   onMethodSelect(val: string): void {
     this.value.set(val);
     this.methodChange.emit(val);
@@ -181,14 +161,6 @@ export class CookingMethodSelectorComponent implements FormValueControl<string> 
   addCustomMethod(): void {
     const val = this.customMethodText().trim();
     if (!val) return;
-
-    // Add to local custom methods list if not already present
-    // this.localCustomMethods.update((list) => {
-    //   if (!list.includes(val)) {
-    //     return [...list, val];
-    //   }
-    //   return list;
-    // });
 
     this.customMethodText.set('');
 

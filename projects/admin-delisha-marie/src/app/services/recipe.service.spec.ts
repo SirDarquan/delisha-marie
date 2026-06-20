@@ -77,7 +77,7 @@ describe('RecipeService', () => {
       providers: [provideHttpClient(), provideHttpClientTesting(), RecipeService],
     });
     // Reset httpMock to prevent cross-test pollution
-    httpMock = undefined as any;
+    httpMock = undefined as unknown as HttpTestingController;
   });
 
   afterEach(() => {
@@ -353,7 +353,7 @@ describe('RecipeService', () => {
       service = TestBed.inject(RecipeService);
       httpMock = TestBed.inject(HttpTestingController);
 
-      const reqRecipes = httpMock.expectOne('/api/recipes.json');
+      const reqRecipes = httpMock.expectOne('/api/recipes');
       reqRecipes.flush([]);
       const reqMethods = httpMock.expectOne('/api/methods');
       reqMethods.flush([]);

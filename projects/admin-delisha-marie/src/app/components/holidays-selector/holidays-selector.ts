@@ -3,9 +3,9 @@ import {
   Component,
   computed,
   effect,
-  ElementRef,
   inject,
   input,
+  model,
   output,
   signal,
   viewChild,
@@ -15,6 +15,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelect, MatSelectModule } from '@angular/material/select';
 import { RecipeService } from '../../services/recipe.service';
+import { FormValueControl } from '@angular/forms/signals';
 
 @Component({
   selector: 'app-holidays-selector',
@@ -102,18 +103,17 @@ import { RecipeService } from '../../services/recipe.service';
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class HolidaysSelectorComponent {
+export class HolidaysSelectorComponent implements FormValueControl<string> {
   private readonly recipeService = inject(RecipeService);
 
   readonly selectField = viewChild<MatSelect>('select');
-  readonly customInputEl = viewChild<ElementRef<HTMLInputElement>>('customInput');
 
   // Standalone Inputs & Outputs
-  initialHoliday = input<string>('');
   holidayChange = output<string>();
 
   // Component local states
-  selectedHoliday = signal<string>('');
+  readonly value = model<string>('');
+  readonly selectedHoliday = computed(() => this.value());
   customHolidayText = signal<string>('');
   localCustomHolidays = signal<string[]>([]);
 
@@ -140,24 +140,16 @@ export class HolidaysSelectorComponent {
     });
 
     // 2. Add current value if not already present
-    const currentVal = this.selectedHoliday();
-    if (currentVal && currentVal.trim()) {
+    const currentVal = this.value();
+    if (currentVal?.trim()) {
       holidaysSet.add(currentVal.trim());
     }
 
     return Array.from(holidaysSet).sort((a, b) => a.localeCompare(b));
   });
 
-  constructor() {
-    // Sync incoming initial holiday when available
-    effect(() => {
-      const initial = this.initialHoliday();
-      this.selectedHoliday.set(initial || '');
-    });
-  }
-
   onHolidaySelect(value: string): void {
-    this.selectedHoliday.set(value);
+    this.value.set(value);
     this.holidayChange.emit(value);
   }
 
@@ -180,7 +172,7 @@ export class HolidaysSelectorComponent {
     this.customHolidayText.set('');
 
     setTimeout(() => {
-      this.selectedHoliday.set(val);
+      this.value.set(val);
       this.holidayChange.emit(val);
     }, 0);
   }

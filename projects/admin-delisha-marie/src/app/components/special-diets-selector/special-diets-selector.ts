@@ -6,6 +6,7 @@ import {
   ElementRef,
   inject,
   input,
+  model,
   output,
   signal,
   viewChild,
@@ -15,6 +16,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelect, MatSelectModule } from '@angular/material/select';
 import { RecipeService } from '../../services/recipe.service';
+import { FormValueControl } from '@angular/forms/signals';
 
 @Component({
   selector: 'app-special-diets-selector',
@@ -90,18 +92,17 @@ import { RecipeService } from '../../services/recipe.service';
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class SpecialDietsSelectorComponent {
+export class SpecialDietsSelectorComponent implements FormValueControl<string[]> {
   private readonly recipeService = inject(RecipeService);
 
   readonly selectField = viewChild<MatSelect>('select');
-  readonly customInputEl = viewChild<ElementRef<HTMLInputElement>>('customInput');
 
   // Standalone Inputs & Outputs
-  initialDiets = input<string[]>([]);
+  readonly value = model<string[]>([]);
   dietsChange = output<string[]>();
 
   // Component local states
-  selectedDiets = signal<string[]>([]);
+  readonly selectedDiets = computed(() => this.value());
   customDietText = signal<string>('');
   localCustomDiets = signal<string[]>([]);
 
@@ -128,7 +129,7 @@ export class SpecialDietsSelectorComponent {
     });
 
     // 2. Add currently selected diets if not already present
-    this.selectedDiets().forEach((d) => {
+    this.value().forEach((d) => {
       if (d?.trim()) {
         dietsSet.add(d.trim());
       }
@@ -137,19 +138,8 @@ export class SpecialDietsSelectorComponent {
     return Array.from(dietsSet).sort((a, b) => a.localeCompare(b));
   });
 
-  constructor() {
-    // Sync incoming initial diets when available
-    effect(() => {
-      const initial = this.initialDiets();
-      if (initial && Array.isArray(initial)) {
-        this.selectedDiets.set([...initial]);
-        // Do not force-hide custom input if user is in the middle of typing
-      }
-    });
-  }
-
   onSelectionChange(value: string[]): void {
-    this.selectedDiets.set(value);
+    this.value.set(value);
     this.dietsChange.emit(value);
   }
 
@@ -173,14 +163,14 @@ export class SpecialDietsSelectorComponent {
 
     setTimeout(() => {
       // Select the new item
-      this.selectedDiets.update((selected) => {
+      this.value.update((selected) => {
         if (!selected.includes(val)) {
           return [...selected, val];
         }
         return selected;
       });
 
-      this.dietsChange.emit(this.selectedDiets());
+      this.dietsChange.emit(this.value());
     }, 0);
   }
 
