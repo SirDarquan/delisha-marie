@@ -109,10 +109,14 @@ recipesRouter.post('/recipes', async (req: AuthRequest, res: Response) => {
 
     const camelRecipe = camelCaseKeys(recipe) as Record<string, unknown> & { id: string | number };
 
-    await saveRecipeCategory(client, camelRecipe['id'], categoryData);
-    await saveRecipeMethod(client, camelRecipe['id'], methodName);
-    await saveRecipeHolidays(client, camelRecipe['id'], holidaysData);
-    await saveRecipeSpecialDiets(client, camelRecipe['id'], specialDietsData);
+    await saveAllRecipeRelations(
+      client,
+      camelRecipe['id'],
+      categoryData,
+      methodName,
+      holidaysData,
+      specialDietsData,
+    );
 
     return res.json({
       ...camelRecipe,
@@ -166,10 +170,14 @@ recipesRouter.put('/recipes/:id', async (req: AuthRequest, res: Response) => {
 
     const camelRecipe = camelCaseKeys(recipe) as Record<string, unknown> & { id: string | number };
 
-    await saveRecipeCategory(client, camelRecipe['id'], categoryData);
-    await saveRecipeMethod(client, camelRecipe['id'], methodName);
-    await saveRecipeHolidays(client, camelRecipe['id'], holidaysData);
-    await saveRecipeSpecialDiets(client, camelRecipe['id'], specialDietsData);
+    await saveAllRecipeRelations(
+      client,
+      camelRecipe['id'],
+      categoryData,
+      methodName,
+      holidaysData,
+      specialDietsData,
+    );
 
     return res.json({
       ...camelRecipe,
@@ -319,6 +327,74 @@ async function getOrCreateLookupItem(
   return newItem.id as string;
 }
 
+async function deleteRecipeRelations(
+  client: SupabaseClient,
+  tableName: 'recipe_categories' | 'recipe_methods' | 'recipe_holidays' | 'recipe_special_diets',
+  recipeId: string | number,
+): Promise<void> {
+  const { error } = await client.from(tableName).delete().eq('recipe_id', recipeId);
+  if (error) throw error;
+}
+
+async function saveRecipeManyRelations(
+  client: SupabaseClient,
+  recipeId: string | number,
+  items: unknown,
+  joinTable: 'recipe_holidays' | 'recipe_special_diets',
+  lookupTable: 'holidays' | 'special_diets',
+  fkColumn: 'holiday_id' | 'diet_id',
+): Promise<void> {
+  await deleteRecipeRelations(client, joinTable, recipeId);
+
+  if (!Array.isArray(items)) {
+    return;
+  }
+
+  for (const itemName of items) {
+    if (typeof itemName !== 'string' || itemName.trim() === '') {
+      continue;
+    }
+
+    const itemId = await getOrCreateLookupItem(client, lookupTable, itemName.trim());
+    const { error: relError } = await client
+      .from(joinTable)
+      .upsert({ recipe_id: recipeId, [fkColumn]: itemId }, { onConflict: `recipe_id,${fkColumn}` });
+    if (relError) throw relError;
+  }
+}
+
+async function saveAllRecipeRelations(
+  client: SupabaseClient,
+  recipeId: string | number,
+  categoryData: unknown,
+  methodName: unknown,
+  holidaysData: unknown,
+  specialDietsData: unknown,
+): Promise<void> {
+  await saveRecipeCategory(
+    client,
+    recipeId,
+    categoryData as { trails?: { name?: string; url?: string }[][] } | null | undefined,
+  );
+  await saveRecipeMethod(client, recipeId, methodName);
+  await saveRecipeManyRelations(
+    client,
+    recipeId,
+    holidaysData,
+    'recipe_holidays',
+    'holidays',
+    'holiday_id',
+  );
+  await saveRecipeManyRelations(
+    client,
+    recipeId,
+    specialDietsData,
+    'recipe_special_diets',
+    'special_diets',
+    'diet_id',
+  );
+}
+
 async function saveRecipeCategory(
   client: SupabaseClient,
   recipeId: string | number,
@@ -328,11 +404,7 @@ async function saveRecipeCategory(
     return;
   }
 
-  const { error: deleteError } = await client
-    .from('recipe_categories')
-    .delete()
-    .eq('recipe_id', recipeId);
-  if (deleteError) throw deleteError;
+  await deleteRecipeRelations(client, 'recipe_categories', recipeId);
 
   for (const trail of categoryData.trails) {
     if (!Array.isArray(trail)) continue;
@@ -359,11 +431,7 @@ async function saveRecipeMethod(
   recipeId: string | number,
   methodName: unknown,
 ): Promise<void> {
-  const { error: deleteError } = await client
-    .from('recipe_methods')
-    .delete()
-    .eq('recipe_id', recipeId);
-  if (deleteError) throw deleteError;
+  await deleteRecipeRelations(client, 'recipe_methods', recipeId);
 
   if (typeof methodName !== 'string' || methodName.trim() === '') {
     return;
@@ -374,65 +442,6 @@ async function saveRecipeMethod(
     .from('recipe_methods')
     .upsert({ recipe_id: recipeId, method_id: methodId }, { onConflict: 'recipe_id,method_id' });
   if (relError) throw relError;
-}
-
-async function saveRecipeHolidays(
-  client: SupabaseClient,
-  recipeId: string | number,
-  holidays: unknown,
-): Promise<void> {
-  const { error: deleteError } = await client
-    .from('recipe_holidays')
-    .delete()
-    .eq('recipe_id', recipeId);
-  if (deleteError) throw deleteError;
-
-  if (!Array.isArray(holidays)) {
-    return;
-  }
-
-  for (const holName of holidays) {
-    if (typeof holName !== 'string' || holName.trim() === '') {
-      continue;
-    }
-
-    const holidayId = await getOrCreateLookupItem(client, 'holidays', holName.trim());
-    const { error: relError } = await client
-      .from('recipe_holidays')
-      .upsert(
-        { recipe_id: recipeId, holiday_id: holidayId },
-        { onConflict: 'recipe_id,holiday_id' },
-      );
-    if (relError) throw relError;
-  }
-}
-
-async function saveRecipeSpecialDiets(
-  client: SupabaseClient,
-  recipeId: string | number,
-  specialDiets: unknown,
-): Promise<void> {
-  const { error: deleteError } = await client
-    .from('recipe_special_diets')
-    .delete()
-    .eq('recipe_id', recipeId);
-  if (deleteError) throw deleteError;
-
-  if (!Array.isArray(specialDiets)) {
-    return;
-  }
-
-  for (const dietName of specialDiets) {
-    if (typeof dietName !== 'string' || dietName.trim() === '') {
-      continue;
-    }
-
-    const dietId = await getOrCreateLookupItem(client, 'special_diets', dietName.trim());
-    const { error: relError } = await client
-      .from('recipe_special_diets')
-      .upsert({ recipe_id: recipeId, diet_id: dietId }, { onConflict: 'recipe_id,diet_id' });
-    if (relError) throw relError;
-  }
 }
 
 export default recipesRouter;
