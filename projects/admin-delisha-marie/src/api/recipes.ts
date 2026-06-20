@@ -300,53 +300,23 @@ async function getOrCreateCategory(
   return newCat.id;
 }
 
-async function getOrCreateMethod(client: SupabaseClient, name: string): Promise<string> {
+async function getOrCreateLookupItem(
+  client: SupabaseClient,
+  tableName: 'methods' | 'holidays' | 'special_diets',
+  name: string,
+): Promise<string> {
   const slug = slugify(name);
-  const { data, error } = await client.from('methods').select('id').eq('slug', slug).maybeSingle();
+  const { data, error } = await client.from(tableName).select('id').eq('slug', slug).maybeSingle();
   if (error) throw error;
-  if (data) return data.id;
+  if (data) return data.id as string;
 
-  const { data: newMethod, error: insertError } = await client
-    .from('methods')
+  const { data: newItem, error: insertError } = await client
+    .from(tableName)
     .insert({ name, slug })
     .select('id')
     .single();
   if (insertError) throw insertError;
-  return newMethod.id;
-}
-
-async function getOrCreateHoliday(client: SupabaseClient, name: string): Promise<string> {
-  const slug = slugify(name);
-  const { data, error } = await client.from('holidays').select('id').eq('slug', slug).maybeSingle();
-  if (error) throw error;
-  if (data) return data.id;
-
-  const { data: newHoliday, error: insertError } = await client
-    .from('holidays')
-    .insert({ name, slug })
-    .select('id')
-    .single();
-  if (insertError) throw insertError;
-  return newHoliday.id;
-}
-
-async function getOrCreateSpecialDiet(client: SupabaseClient, name: string): Promise<string> {
-  const slug = slugify(name);
-  const { data, error } = await client
-    .from('special_diets')
-    .select('id')
-    .eq('slug', slug)
-    .maybeSingle();
-  if (error) throw error;
-  if (data) return data.id;
-
-  const { data: newDiet, error: insertError } = await client
-    .from('special_diets')
-    .insert({ name, slug })
-    .select('id')
-    .single();
-  if (insertError) throw insertError;
-  return newDiet.id;
+  return newItem.id as string;
 }
 
 async function saveRecipeCategory(
@@ -399,7 +369,7 @@ async function saveRecipeMethod(
     return;
   }
 
-  const methodId = await getOrCreateMethod(client, methodName.trim());
+  const methodId = await getOrCreateLookupItem(client, 'methods', methodName.trim());
   const { error: relError } = await client
     .from('recipe_methods')
     .upsert({ recipe_id: recipeId, method_id: methodId }, { onConflict: 'recipe_id,method_id' });
@@ -426,7 +396,7 @@ async function saveRecipeHolidays(
       continue;
     }
 
-    const holidayId = await getOrCreateHoliday(client, holName.trim());
+    const holidayId = await getOrCreateLookupItem(client, 'holidays', holName.trim());
     const { error: relError } = await client
       .from('recipe_holidays')
       .upsert(
@@ -457,7 +427,7 @@ async function saveRecipeSpecialDiets(
       continue;
     }
 
-    const dietId = await getOrCreateSpecialDiet(client, dietName.trim());
+    const dietId = await getOrCreateLookupItem(client, 'special_diets', dietName.trim());
     const { error: relError } = await client
       .from('recipe_special_diets')
       .upsert({ recipe_id: recipeId, diet_id: dietId }, { onConflict: 'recipe_id,diet_id' });
