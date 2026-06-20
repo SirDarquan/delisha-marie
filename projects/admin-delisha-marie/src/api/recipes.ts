@@ -290,158 +290,105 @@ function normalizeDbBody(obj: Record<string, unknown>): Record<string, unknown> 
   return result;
 }
 
-async function getOrCreateCategory(
-  client: SupabaseClient,
-  name: string,
-  url: string,
-): Promise<string> {
-  const { data, error } = await client.from('categories').select('id').eq('url', url).maybeSingle();
-  if (error) throw error;
-  if (data) return data.id;
-
-  const { data: newCat, error: insertError } = await client
-    .from('categories')
-    .insert({ name, url })
-    .select('id')
-    .single();
-  if (insertError) throw insertError;
-  return newCat.id;
-}
-
 async function getOrCreateLookupItem(
   client: SupabaseClient,
-  tableName: 'methods' | 'holidays' | 'special_diets',
+  tableName: 'methods' | 'holidays' | 'special_diets' | 'categories',
   name: string,
+  urlOverride?: string,
 ): Promise<string> {
-  const slug = slugify(name);
-  const { data, error } = await client.from(tableName).select('id').eq('slug', slug).maybeSingle();
+  const isCategory = tableName === 'categories';
+  const matchField = isCategory ? 'url' : 'slug';
+  const matchValue = isCategory ? urlOverride || '' : slugify(name);
+
+  const { data, error } = await client
+    .from(tableName)
+    .select('id')
+    .eq(matchField, matchValue)
+    .maybeSingle();
   if (error) throw error;
   if (data) return data.id as string;
 
   const { data: newItem, error: insertError } = await client
     .from(tableName)
-    .insert({ name, slug })
+    .insert({ name, [matchField]: matchValue })
     .select('id')
     .single();
   if (insertError) throw insertError;
   return newItem.id as string;
 }
 
-async function deleteRecipeRelations(
-  client: SupabaseClient,
-  tableName: 'recipe_categories' | 'recipe_methods' | 'recipe_holidays' | 'recipe_special_diets',
-  recipeId: string | number,
-): Promise<void> {
-  const { error } = await client.from(tableName).delete().eq('recipe_id', recipeId);
-  if (error) throw error;
-}
-
-async function saveRecipeManyRelations(
-  client: SupabaseClient,
-  recipeId: string | number,
-  items: unknown,
-  joinTable: 'recipe_holidays' | 'recipe_special_diets',
-  lookupTable: 'holidays' | 'special_diets',
-  fkColumn: 'holiday_id' | 'diet_id',
-): Promise<void> {
-  await deleteRecipeRelations(client, joinTable, recipeId);
-
-  if (!Array.isArray(items)) {
-    return;
-  }
-
-  for (const itemName of items) {
-    if (typeof itemName !== 'string' || itemName.trim() === '') {
-      continue;
-    }
-
-    const itemId = await getOrCreateLookupItem(client, lookupTable, itemName.trim());
-    const { error: relError } = await client
-      .from(joinTable)
-      .upsert({ recipe_id: recipeId, [fkColumn]: itemId }, { onConflict: `recipe_id,${fkColumn}` });
-    if (relError) throw relError;
-  }
-}
-
 async function saveAllRecipeRelations(
   client: SupabaseClient,
   recipeId: string | number,
-  categoryData: unknown,
-  methodName: unknown,
-  holidaysData: unknown,
-  specialDietsData: unknown,
-): Promise<void> {
-  await saveRecipeCategory(
-    client,
-    recipeId,
-    categoryData as { trails?: { name?: string; url?: string }[][] } | null | undefined,
-  );
-  await saveRecipeMethod(client, recipeId, methodName);
-  await saveRecipeManyRelations(
-    client,
-    recipeId,
-    holidaysData,
-    'recipe_holidays',
-    'holidays',
-    'holiday_id',
-  );
-  await saveRecipeManyRelations(
-    client,
-    recipeId,
-    specialDietsData,
-    'recipe_special_diets',
-    'special_diets',
-    'diet_id',
-  );
-}
-
-async function saveRecipeCategory(
-  client: SupabaseClient,
-  recipeId: string | number,
   categoryData: { trails?: { name?: string; url?: string }[][] } | null | undefined,
+  methodName: unknown,
+  holidays: unknown,
+  specialDiets: unknown,
 ): Promise<void> {
-  if (!categoryData?.trails || !Array.isArray(categoryData.trails)) {
-    return;
+  const tables = [
+    'recipe_categories',
+    'recipe_methods',
+    'recipe_holidays',
+    'recipe_special_diets',
+  ] as const;
+  for (const table of tables) {
+    const { error } = await client.from(table).delete().eq('recipe_id', recipeId);
+    if (error) throw error;
   }
 
-  await deleteRecipeRelations(client, 'recipe_categories', recipeId);
-
-  for (const trail of categoryData.trails) {
-    if (!Array.isArray(trail)) continue;
-    for (let i = 2; i < trail.length; i++) {
-      const part = trail[i];
-      if (!part?.name || !part.url || part.url.startsWith('/recipe/')) {
-        continue;
+  if (categoryData?.trails && Array.isArray(categoryData.trails)) {
+    for (const trail of categoryData.trails) {
+      if (!Array.isArray(trail)) continue;
+      for (let i = 2; i < trail.length; i++) {
+        const part = trail[i];
+        if (part?.name && part.url && !part.url.startsWith('/recipe/')) {
+          const catId = await getOrCreateLookupItem(client, 'categories', part.name, part.url);
+          const { error } = await client
+            .from('recipe_categories')
+            .upsert(
+              { recipe_id: recipeId, category_id: catId },
+              { onConflict: 'recipe_id,category_id' },
+            );
+          if (error) throw error;
+        }
       }
-
-      const catId = await getOrCreateCategory(client, part.name, part.url);
-      const { error: relError } = await client
-        .from('recipe_categories')
-        .upsert(
-          { recipe_id: recipeId, category_id: catId },
-          { onConflict: 'recipe_id,category_id' },
-        );
-      if (relError) throw relError;
     }
   }
-}
 
-async function saveRecipeMethod(
-  client: SupabaseClient,
-  recipeId: string | number,
-  methodName: unknown,
-): Promise<void> {
-  await deleteRecipeRelations(client, 'recipe_methods', recipeId);
-
-  if (typeof methodName !== 'string' || methodName.trim() === '') {
-    return;
+  if (typeof methodName === 'string' && methodName.trim() !== '') {
+    const methodId = await getOrCreateLookupItem(client, 'methods', methodName.trim());
+    const { error } = await client
+      .from('recipe_methods')
+      .upsert({ recipe_id: recipeId, method_id: methodId }, { onConflict: 'recipe_id,method_id' });
+    if (error) throw error;
   }
 
-  const methodId = await getOrCreateLookupItem(client, 'methods', methodName.trim());
-  const { error: relError } = await client
-    .from('recipe_methods')
-    .upsert({ recipe_id: recipeId, method_id: methodId }, { onConflict: 'recipe_id,method_id' });
-  if (relError) throw relError;
+  const listRelations = [
+    { items: holidays, lookupTable: 'holidays', joinTable: 'recipe_holidays', fk: 'holiday_id' },
+    {
+      items: specialDiets,
+      lookupTable: 'special_diets',
+      joinTable: 'recipe_special_diets',
+      fk: 'diet_id',
+    },
+  ] as const;
+
+  for (const rel of listRelations) {
+    if (Array.isArray(rel.items)) {
+      for (const name of rel.items) {
+        if (typeof name === 'string' && name.trim() !== '') {
+          const itemId = await getOrCreateLookupItem(client, rel.lookupTable, name.trim());
+          const { error } = await client
+            .from(rel.joinTable)
+            .upsert(
+              { recipe_id: recipeId, [rel.fk]: itemId },
+              { onConflict: `recipe_id,${rel.fk}` },
+            );
+          if (error) throw error;
+        }
+      }
+    }
+  }
 }
 
 export default recipesRouter;
