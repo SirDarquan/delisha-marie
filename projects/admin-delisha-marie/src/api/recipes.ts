@@ -162,7 +162,6 @@ recipesRouter.put('/recipes/:id', async (req: AuthRequest, res: Response) => {
         .eq('id', req.params['id'])
         .maybeSingle();
       recipe = data.data;
-      console.log(recipe);
     }
     if (!recipe) {
       return res.status(400).json({ error: 'Recipe not found' });
@@ -317,6 +316,59 @@ async function getOrCreateLookupItem(
   return newItem.id as string;
 }
 
+async function saveRecipeCategoryTrail(
+  client: SupabaseClient,
+  recipeId: string | number,
+  trails: unknown[][],
+): Promise<void> {
+  for (const trail of trails) {
+    if (!Array.isArray(trail)) continue;
+    await saveTrailParts(client, recipeId, trail);
+  }
+}
+
+async function saveTrailParts(
+  client: SupabaseClient,
+  recipeId: string | number,
+  trail: unknown[],
+): Promise<void> {
+  for (let i = 2; i < trail.length; i++) {
+    const part = trail[i] as { name?: string; url?: string } | null;
+    if (part?.name && part.url && !part.url.startsWith('/recipe/')) {
+      const catId = await getOrCreateLookupItem(client, 'categories', part.name, part.url);
+      const { error } = await client
+        .from('recipe_categories')
+        .upsert(
+          { recipe_id: recipeId, category_id: catId },
+          { onConflict: 'recipe_id,category_id' },
+        );
+      if (error) throw error;
+    }
+  }
+}
+
+async function saveRecipeListRelations(
+  client: SupabaseClient,
+  recipeId: string | number,
+  items: unknown[],
+  joinTable: 'recipe_holidays' | 'recipe_special_diets',
+  lookupTable: 'holidays' | 'special_diets',
+  fkColumn: 'holiday_id' | 'diet_id',
+): Promise<void> {
+  for (const name of items) {
+    if (typeof name === 'string' && name.trim() !== '') {
+      const itemId = await getOrCreateLookupItem(client, lookupTable, name.trim());
+      const { error } = await client
+        .from(joinTable)
+        .upsert(
+          { recipe_id: recipeId, [fkColumn]: itemId },
+          { onConflict: `recipe_id,${fkColumn}` },
+        );
+      if (error) throw error;
+    }
+  }
+}
+
 async function saveAllRecipeRelations(
   client: SupabaseClient,
   recipeId: string | number,
@@ -337,22 +389,7 @@ async function saveAllRecipeRelations(
   }
 
   if (categoryData?.trails && Array.isArray(categoryData.trails)) {
-    for (const trail of categoryData.trails) {
-      if (!Array.isArray(trail)) continue;
-      for (let i = 2; i < trail.length; i++) {
-        const part = trail[i];
-        if (part?.name && part.url && !part.url.startsWith('/recipe/')) {
-          const catId = await getOrCreateLookupItem(client, 'categories', part.name, part.url);
-          const { error } = await client
-            .from('recipe_categories')
-            .upsert(
-              { recipe_id: recipeId, category_id: catId },
-              { onConflict: 'recipe_id,category_id' },
-            );
-          if (error) throw error;
-        }
-      }
-    }
+    await saveRecipeCategoryTrail(client, recipeId, categoryData.trails);
   }
 
   if (typeof methodName === 'string' && methodName.trim() !== '') {
@@ -363,31 +400,26 @@ async function saveAllRecipeRelations(
     if (error) throw error;
   }
 
-  const listRelations = [
-    { items: holidays, lookupTable: 'holidays', joinTable: 'recipe_holidays', fk: 'holiday_id' },
-    {
-      items: specialDiets,
-      lookupTable: 'special_diets',
-      joinTable: 'recipe_special_diets',
-      fk: 'diet_id',
-    },
-  ] as const;
+  if (Array.isArray(holidays)) {
+    await saveRecipeListRelations(
+      client,
+      recipeId,
+      holidays,
+      'recipe_holidays',
+      'holidays',
+      'holiday_id',
+    );
+  }
 
-  for (const rel of listRelations) {
-    if (Array.isArray(rel.items)) {
-      for (const name of rel.items) {
-        if (typeof name === 'string' && name.trim() !== '') {
-          const itemId = await getOrCreateLookupItem(client, rel.lookupTable, name.trim());
-          const { error } = await client
-            .from(rel.joinTable)
-            .upsert(
-              { recipe_id: recipeId, [rel.fk]: itemId },
-              { onConflict: `recipe_id,${rel.fk}` },
-            );
-          if (error) throw error;
-        }
-      }
-    }
+  if (Array.isArray(specialDiets)) {
+    await saveRecipeListRelations(
+      client,
+      recipeId,
+      specialDiets,
+      'recipe_special_diets',
+      'special_diets',
+      'diet_id',
+    );
   }
 }
 
