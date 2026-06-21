@@ -24,12 +24,29 @@ describe('Recipe Index Router API', () => {
 
   // Control variables to trigger simulated query errors
   let shouldFailRecipes = false;
+  let shouldFailCategories = false;
   let shouldFailMethods = false;
   let shouldFailHolidays = false;
   let shouldFailDiets = false;
   let shouldFailIngredients = false;
   let shouldFailCounts = false;
   let shouldThrowGeneric = false;
+
+  const mockCategories = [
+    { name: 'Appetizers', url: '/recipes/appetizers' },
+    { name: 'Dips', url: '/recipes/appetizers/dips' },
+    { name: 'Wings', url: '/recipes/appetizers/wings' },
+    { name: 'Empty Category Slug', url: '/recipes/' },
+    { name: 'Main Dishes', url: '/recipes/main-dishes' },
+    { name: 'The Best Appetizers', url: '/the-best-recipes/the-best-appetizers' },
+    { name: 'The Best Dips', url: '/the-best-recipes/the-best-appetizers/the-best-dips' },
+    { name: 'The Best Wings', url: '/the-best-recipes/the-best-appetizers/the-best-wings' },
+    { name: 'The Best Empty Category Slug', url: '/the-best-recipes/the-best-' },
+    { name: 'The Best Main Dishes', url: '/the-best-recipes/the-best-main-dishes' },
+    { name: null as unknown as string, url: '/recipes/invalid-cat' },
+    { name: 'Invalid Cat Url', url: null as unknown as string },
+    null as unknown as { name: string; url: string },
+  ];
 
   const mockRecipes = [
     {
@@ -88,11 +105,29 @@ describe('Recipe Index Router API', () => {
     },
   ];
 
-  const mockMethods = [{ name: 'Air Fryer', slug: 'air-fryer' }];
+  const mockMethods = [
+    { name: 'Air Fryer', slug: 'air-fryer' },
+    { name: 'Baking', slug: 'baking' },
+    { name: null as unknown as string, slug: 'invalid-method' },
+    { name: 'Invalid Method Slug', slug: null as unknown as string },
+    null as unknown as { name: string; slug: string },
+  ];
 
-  const mockHolidays = [{ name: 'Christmas', slug: 'christmas' }];
+  const mockHolidays = [
+    { name: 'Christmas', slug: 'christmas' },
+    { name: 'Thanksgiving', slug: 'thanksgiving' },
+    { name: null as unknown as string, slug: 'invalid-holiday' },
+    { name: 'Invalid Holiday Slug', slug: null as unknown as string },
+    null as unknown as { name: string; slug: string },
+  ];
 
-  const mockDiets = [{ name: 'Gluten Free', slug: 'gluten-free' }];
+  const mockDiets = [
+    { name: 'Gluten Free', slug: 'gluten-free' },
+    { name: 'Vegan', slug: 'vegan' },
+    { name: null as unknown as string, slug: 'invalid-diet' },
+    { name: 'Invalid Diet Slug', slug: null as unknown as string },
+    null as unknown as { name: string; slug: string },
+  ];
 
   const mockIngredients = [
     { id: '1', name: 'Apple', slug: 'apple' },
@@ -115,6 +150,7 @@ describe('Recipe Index Router API', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     shouldFailRecipes = false;
+    shouldFailCategories = false;
     shouldFailMethods = false;
     shouldFailHolidays = false;
     shouldFailDiets = false;
@@ -132,22 +168,6 @@ describe('Recipe Index Router API', () => {
           const then = (
             onfulfilled?: (value: { data: unknown; error: Error | null }) => unknown,
           ) => {
-            if (table === 'methods' && shouldFailMethods) {
-              return Promise.resolve({ data: null, error: new Error('Methods query error') }).then(
-                onfulfilled,
-              );
-            }
-            if (table === 'holidays' && shouldFailHolidays) {
-              return Promise.resolve({ data: null, error: new Error('Holidays query error') }).then(
-                onfulfilled,
-              );
-            }
-            if (table === 'special_diets' && shouldFailDiets) {
-              return Promise.resolve({
-                data: null,
-                error: new Error('Special Diets query error'),
-              }).then(onfulfilled);
-            }
             if (table === 'ingredients' && shouldFailIngredients) {
               return Promise.resolve({
                 data: null,
@@ -161,10 +181,7 @@ describe('Recipe Index Router API', () => {
             }
 
             let data: unknown = [];
-            if (table === 'methods') data = mockMethods;
-            else if (table === 'holidays') data = mockHolidays;
-            else if (table === 'special_diets') data = mockDiets;
-            else if (table === 'ingredients') data = mockIngredients;
+            if (table === 'ingredients') data = mockIngredients;
             else if (table === 'recipe_ingredients') data = mockRelations;
 
             return Promise.resolve({ data, error: null }).then(onfulfilled);
@@ -172,10 +189,92 @@ describe('Recipe Index Router API', () => {
 
           return {
             eq: () => {
-              if (table === 'recipes' && shouldFailRecipes) {
-                return Promise.resolve({ data: null, error: new Error('Recipes query error') });
-              }
-              return Promise.resolve({ data: mockRecipes, error: null });
+              const getResult = () => {
+                if (table === 'recipe_categories') {
+                  if (shouldFailCategories) {
+                    return Promise.resolve({
+                      data: null,
+                      error: new Error('Categories query error'),
+                    });
+                  }
+                  const mockData = mockCategories.map((c) => ({
+                    categories: c ? { name: c.name, url: c.url } : null,
+                    recipes: { status: 'published' },
+                  }));
+                  return Promise.resolve({ data: mockData, error: null });
+                }
+                if (table === 'recipe_methods') {
+                  if (shouldFailMethods) {
+                    return Promise.resolve({
+                      data: null,
+                      error: new Error('Methods query error'),
+                    });
+                  }
+                  const mockData = mockMethods.map((m) => ({
+                    methods: m ? { name: m.name, slug: m.slug } : null,
+                    recipes: { status: 'published' },
+                  }));
+                  return Promise.resolve({ data: mockData, error: null });
+                }
+                if (table === 'recipe_holidays') {
+                  if (shouldFailHolidays) {
+                    return Promise.resolve({
+                      data: null,
+                      error: new Error('Holidays query error'),
+                    });
+                  }
+                  const mockData = mockHolidays.map((h) => ({
+                    holidays: h ? { name: h.name, slug: h.slug } : null,
+                    recipes: { status: 'published' },
+                  }));
+                  return Promise.resolve({ data: mockData, error: null });
+                }
+                if (table === 'recipe_special_diets') {
+                  if (shouldFailDiets) {
+                    return Promise.resolve({
+                      data: null,
+                      error: new Error('Special Diets query error'),
+                    });
+                  }
+                  const mockData = mockDiets.map((d) => ({
+                    special_diets: d ? { name: d.name, slug: d.slug } : null,
+                    recipes: { status: 'published' },
+                  }));
+                  return Promise.resolve({ data: mockData, error: null });
+                }
+                if (table === 'recipes' && shouldFailRecipes) {
+                  return Promise.resolve({ data: null, error: new Error('Recipes query error') });
+                }
+                return Promise.resolve({ data: mockRecipes, error: null });
+              };
+
+              const promise = getResult();
+
+              return {
+                ilike: (_col: string, val: string) => {
+                  const filterPrefix = val.replace(/%/g, '');
+                  const filteredPromise = promise.then((res) => {
+                    if (res.data && Array.isArray(res.data)) {
+                      const filteredData = res.data.filter((row: unknown) => {
+                        const rowTyped = row as {
+                          categories?: { name: string | null; url: string | null } | null;
+                        } | null;
+                        const url = rowTyped?.categories?.url;
+                        return url && url.startsWith(filterPrefix);
+                      });
+                      return { data: filteredData, error: null };
+                    }
+                    return res;
+                  });
+                  return {
+                    then: (
+                      onfulfilled?: (value: { data: unknown; error: Error | null }) => unknown,
+                    ) => filteredPromise.then(onfulfilled),
+                  };
+                },
+                then: (onfulfilled?: (value: { data: unknown; error: Error | null }) => unknown) =>
+                  promise.then(onfulfilled),
+              };
             },
             then,
           };
@@ -234,16 +333,19 @@ describe('Recipe Index Router API', () => {
       expect(categoryList[2].children).toBeUndefined(); // Main Dishes has no subcategory level 4 breadcrumbs in mockup
 
       // Verify cooking methods
-      expect(res.body.cookingMethods).toHaveLength(1);
+      expect(res.body.cookingMethods).toHaveLength(2);
       expect(res.body.cookingMethods[0].name).toBe('Air Fryer');
+      expect(res.body.cookingMethods[1].name).toBe('Baking');
 
       // Verify holidays
-      expect(res.body.holidays).toHaveLength(1);
+      expect(res.body.holidays).toHaveLength(2);
       expect(res.body.holidays[0].name).toBe('Christmas');
+      expect(res.body.holidays[1].name).toBe('Thanksgiving');
 
       // Verify special diets
-      expect(res.body.specialDiets).toHaveLength(1);
+      expect(res.body.specialDiets).toHaveLength(2);
       expect(res.body.specialDiets[0].name).toBe('Gluten Free');
+      expect(res.body.specialDiets[1].name).toBe('Vegan');
 
       // Verify best recipes
       const theBest = res.body.bestRecipes;
@@ -285,7 +387,11 @@ describe('Recipe Index Router API', () => {
               return Promise.resolve({ data: null, error: null }).then(onfulfilled);
             };
             return {
-              eq: () => Promise.resolve({ data: null, error: null }),
+              eq: () => ({
+                ilike: () => Promise.resolve({ data: null, error: null }),
+                then: (onfulfilled?: (value: { data: unknown; error: Error | null }) => unknown) =>
+                  Promise.resolve({ data: null, error: null }).then(onfulfilled),
+              }),
               then,
             };
           },
@@ -307,6 +413,13 @@ describe('Recipe Index Router API', () => {
       const res = await request(app).get('/api/recipe-index');
       expect(res.status).toBe(500);
       expect(res.body.error).toBe('Recipes query error');
+    });
+
+    it('should return 500 when categories query fails', async () => {
+      shouldFailCategories = true;
+      const res = await request(app).get('/api/recipe-index');
+      expect(res.status).toBe(500);
+      expect(res.body.error).toBe('Categories query error');
     });
 
     it('should return 500 when methods query fails', async () => {

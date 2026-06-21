@@ -17,20 +17,6 @@ async function getSupabaseClient() {
   return supabaseClient;
 }
 
-interface BreadcrumbItem {
-  label: string;
-  url?: string;
-}
-
-interface Breadcrumb {
-  items?: (BreadcrumbItem | null)[] | null;
-}
-
-interface RecipeRow {
-  id: string;
-  breadcrumbs: unknown;
-}
-
 interface CategoryItem {
   name: string;
   url: string;
@@ -45,82 +31,45 @@ interface IngredientListItem {
   children?: IngredientListItem[];
 }
 
-function parseRecipeCategories(recipes: RecipeRow[] | null) {
+function buildCategoryHierarchyFromParts(
+  items: { name: string | null; url: string | null }[],
+  mainSegment: string,
+): CategoryItem[] {
   const parentNames = new Map<string, string>();
   const parentToChildren = new Map<string, Map<string, string>>();
 
-  recipes?.forEach((r) => {
-    const breadcrumbs = r.breadcrumbs as Breadcrumb[] | null;
-    if (Array.isArray(breadcrumbs)) {
-      breadcrumbs.forEach((gp) => {
-        if (gp && Array.isArray(gp.items)) {
-          gp.items.forEach((item) => {
-            if (item?.url?.startsWith('/recipes/')) {
-              const parts = item.url.split('/');
-              if (parts.length === 3) {
-                const parentSlug = parts[2];
-                parentNames.set(parentSlug, item.label);
-              } else if (parts.length === 4) {
-                const parentSlug = parts[2];
-                const childSlug = parts[3];
+  items.forEach((item) => {
+    if (item.url && item.name) {
+      const parts = item.url.split('/');
+      if (parts[1] === mainSegment) {
+        if (parts.length === 3) {
+          const parentSlug = parts[2];
+          parentNames.set(parentSlug, item.name);
+        } else if (parts.length === 4) {
+          const parentSlug = parts[2];
+          const childSlug = parts[3];
 
-                if (!parentToChildren.has(parentSlug)) {
-                  parentToChildren.set(parentSlug, new Map<string, string>());
-                }
-                parentToChildren.get(parentSlug)!.set(childSlug, item.label);
-              }
-            }
-          });
+          if (!parentToChildren.has(parentSlug)) {
+            parentToChildren.set(parentSlug, new Map<string, string>());
+          }
+          parentToChildren.get(parentSlug)!.set(childSlug, item.name);
         }
-      });
+      }
     }
   });
-
-  return { parentNames, parentToChildren };
-}
-
-async function getFeaturedCategories(supabase: SupabaseClient) {
-  const { data: recipes, error: recipesError } = await supabase
-    .from('recipes')
-    .select('id, breadcrumbs')
-    .eq('status', 'published');
-
-  if (recipesError) throw recipesError;
-
-  const { parentNames } = parseRecipeCategories(recipes);
-
-  return Array.from(parentNames.entries())
-    .map(([parentSlug, name]) => ({
-      name,
-      url: `/recipes/${parentSlug}`,
-      image: `/images/categories/${parentSlug}.png`,
-    }))
-    .sort((a, b) => a.name.localeCompare(b.name))
-    .slice(0, 8);
-}
-
-async function getCategoriesList(supabase: SupabaseClient): Promise<CategoryItem[]> {
-  const { data: recipes, error: recipesError } = await supabase
-    .from('recipes')
-    .select('id, breadcrumbs')
-    .eq('status', 'published');
-
-  if (recipesError) throw recipesError;
-
-  const { parentNames, parentToChildren } = parseRecipeCategories(recipes);
 
   return Array.from(parentNames.entries())
     .map(([parentSlug, name]) => {
       const item: CategoryItem = {
         name,
-        url: `/recipes/${parentSlug}`,
+        url: `/${mainSegment}/${parentSlug}`,
       };
       const childrenMap = parentToChildren.get(parentSlug);
       if (childrenMap && childrenMap.size > 0) {
         item.children = Array.from(childrenMap.entries())
           .map(([childSlug, childName]) => ({
             name: childName,
-            url: `/recipes/${parentSlug}/${childSlug}`,
+            url: `/${mainSegment}/${parentSlug}/${childSlug}`,
           }))
           .sort((a, b) => a.name.localeCompare(b.name));
       }
@@ -129,57 +78,135 @@ async function getCategoriesList(supabase: SupabaseClient): Promise<CategoryItem
     .sort((a, b) => a.name.localeCompare(b.name));
 }
 
+async function getCategoriesFromDB(
+  supabase: SupabaseClient,
+  type: 'recipes' | 'the-best' = 'recipes',
+) {
+  const { data, error } = await supabase
+    .from('recipe_categories')
+    .select('categories (name, url), recipes!inner (status)')
+    .eq('recipes.status', 'published')
+    .ilike('categories.url', `/${type}%`);
+
+  if (error) throw error;
+
+  const categoriesMap = new Map<string, { name: string; url: string }>();
+  data?.forEach((row: unknown) => {
+    const rowTyped = row as {
+      categories: { name: string | null; url: string | null } | null;
+    } | null;
+    const cat = rowTyped?.categories;
+    if (cat && cat.name && cat.url) {
+      categoriesMap.set(cat.url, { name: cat.name, url: cat.url });
+    }
+  });
+
+  return Array.from(categoriesMap.values());
+}
+
+async function getFeaturedCategories(supabase: SupabaseClient) {
+  const categories = await getCategoriesFromDB(supabase);
+  const categoriesList = buildCategoryHierarchyFromParts(categories, 'recipes');
+
+  return categoriesList
+    .map((cat) => {
+      const parentSlug = cat.url.split('/').at(-1) || '';
+      return {
+        name: cat.name,
+        url: cat.url,
+        image: `/images/categories/${parentSlug}.png`,
+      };
+    })
+    .slice(0, 8);
+}
+
+async function getCategoriesList(supabase: SupabaseClient): Promise<CategoryItem[]> {
+  const categories = await getCategoriesFromDB(supabase);
+  return buildCategoryHierarchyFromParts(categories, 'recipes');
+}
+
 async function getHolidays(supabase: SupabaseClient) {
-  const { data: dbHolidays, error: holidaysError } = await supabase
-    .from('holidays')
-    .select('name, slug');
+  const { data, error } = await supabase
+    .from('recipe_holidays')
+    .select('holidays (name, slug), recipes!inner (status)')
+    .eq('recipes.status', 'published');
 
-  if (holidaysError) throw holidaysError;
+  if (error) throw error;
 
-  return (
-    (dbHolidays as { name: string; slug: string }[] | null)?.map((h) => ({
-      name: h.name,
-      url: `/holidays/${h.slug}`,
-    })) || []
-  );
+  const holidaysMap = new Map<string, { name: string; url: string }>();
+  data?.forEach((row: unknown) => {
+    const rowTyped = row as { holidays: { name: string; slug: string } | null } | null;
+    const h = rowTyped?.holidays;
+    if (h && h.name && h.slug) {
+      holidaysMap.set(h.slug, {
+        name: h.name,
+        url: `/holidays/${h.slug}`,
+      });
+    }
+  });
+
+  return Array.from(holidaysMap.values()).sort((a, b) => a.name.localeCompare(b.name));
 }
 
 async function getSpecialDiets(supabase: SupabaseClient) {
-  const { data: dbDiets, error: dietsError } = await supabase
-    .from('special_diets')
-    .select('name, slug');
+  const { data, error } = await supabase
+    .from('recipe_special_diets')
+    .select('special_diets (name, slug), recipes!inner (status)')
+    .eq('recipes.status', 'published');
 
-  if (dietsError) throw dietsError;
+  if (error) throw error;
 
-  return (
-    (dbDiets as { name: string; slug: string }[] | null)?.map((d) => ({
-      name: d.name,
-      url: `/special-diets/${d.slug}`,
-    })) || []
-  );
+  const dietsMap = new Map<string, { name: string; url: string }>();
+  data?.forEach((row: unknown) => {
+    const rowTyped = row as { special_diets: { name: string; slug: string } | null } | null;
+    const d = rowTyped?.special_diets;
+    if (d && d.name && d.slug) {
+      dietsMap.set(d.slug, {
+        name: d.name,
+        url: `/special-diets/${d.slug}`,
+      });
+    }
+  });
+
+  return Array.from(dietsMap.values()).sort((a, b) => a.name.localeCompare(b.name));
 }
 
 async function getCookingMethodsAndList(supabase: SupabaseClient) {
-  const { data: dbMethods, error: methodsError } = await supabase
-    .from('methods')
-    .select('name, slug');
+  const { data, error } = await supabase
+    .from('recipe_methods')
+    .select('methods (name, slug), recipes!inner (status)')
+    .eq('recipes.status', 'published');
 
-  if (methodsError) throw methodsError;
+  if (error) throw error;
 
-  const cookingMethods =
-    (dbMethods as { name: string; slug: string }[] | null)
-      ?.map((m) => ({
+  const methodsMap = new Map<string, { name: string; slug: string }>();
+  data?.forEach((row: unknown) => {
+    const rowTyped = row as { methods: { name: string; slug: string } | null } | null;
+    const m = rowTyped?.methods;
+    if (m && m.name && m.slug) {
+      methodsMap.set(m.slug, {
         name: m.name,
-        url: `/methods/${m.slug}`,
-        image: `/images/methods/${m.slug}.png`,
-      }))
-      .slice(0, 6) || [];
+        slug: m.slug,
+      });
+    }
+  });
 
-  const methodsList =
-    (dbMethods as { name: string; slug: string }[] | null)?.map((m) => ({
+  const methodsListSorted = Array.from(methodsMap.values()).sort((a, b) =>
+    a.name.localeCompare(b.name),
+  );
+
+  const cookingMethods = methodsListSorted
+    .map((m) => ({
       name: m.name,
       url: `/methods/${m.slug}`,
-    })) || [];
+      image: `/images/methods/${m.slug}.png`,
+    }))
+    .slice(0, 6);
+
+  const methodsList = methodsListSorted.map((m) => ({
+    name: m.name,
+    url: `/methods/${m.slug}`,
+  }));
 
   return { cookingMethods, methodsList };
 }
@@ -266,27 +293,9 @@ async function getIngredients(supabase: SupabaseClient) {
     .sort((a, b) => a.name.localeCompare(b.name));
 }
 
-function transformToBest(categories: CategoryItem[], theBest?: string): CategoryItem[] {
-  return categories.map((cat) => {
-    const bestName = `The Best ${cat.name}`;
-    const slug = cat.url.split('/').at(-1) || '';
-    const bestUrl = theBest ? `${theBest}/the-best-${slug}` : `/the-best-recipes/the-best-${slug}`;
-
-    const item: CategoryItem = {
-      name: bestName,
-      url: bestUrl,
-    };
-
-    if (cat.children) {
-      item.children = transformToBest(cat.children, bestUrl);
-    }
-    return item;
-  });
-}
-
 async function getBestRecipes(supabase: SupabaseClient): Promise<CategoryItem[]> {
-  const categoriesList = await getCategoriesList(supabase);
-  return transformToBest(categoriesList);
+  const categories = await getCategoriesFromDB(supabase, 'the-best');
+  return buildCategoryHierarchyFromParts(categories, 'the-best-recipes');
 }
 
 recipeIndexRouter.get('/recipe-index', async (req: Request, res: Response) => {
