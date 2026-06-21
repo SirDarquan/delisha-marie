@@ -96,7 +96,7 @@ async function getCategoriesFromDB(
       categories: { name: string | null; url: string | null } | null;
     } | null;
     const cat = rowTyped?.categories;
-    if (cat && cat.name && cat.url) {
+    if (cat?.name && cat?.url) {
       categoriesMap.set(cat.url, { name: cat.name, url: cat.url });
     }
   });
@@ -137,7 +137,7 @@ async function getHolidays(supabase: SupabaseClient) {
   data?.forEach((row: unknown) => {
     const rowTyped = row as { holidays: { name: string; slug: string } | null } | null;
     const h = rowTyped?.holidays;
-    if (h && h.name && h.slug) {
+    if (h?.name && h?.slug) {
       holidaysMap.set(h.slug, {
         name: h.name,
         url: `/holidays/${h.slug}`,
@@ -160,7 +160,7 @@ async function getSpecialDiets(supabase: SupabaseClient) {
   data?.forEach((row: unknown) => {
     const rowTyped = row as { special_diets: { name: string; slug: string } | null } | null;
     const d = rowTyped?.special_diets;
-    if (d && d.name && d.slug) {
+    if (d?.name && d?.slug) {
       dietsMap.set(d.slug, {
         name: d.name,
         url: `/special-diets/${d.slug}`,
@@ -183,7 +183,7 @@ async function getCookingMethodsAndList(supabase: SupabaseClient) {
   data?.forEach((row: unknown) => {
     const rowTyped = row as { methods: { name: string; slug: string } | null } | null;
     const m = rowTyped?.methods;
-    if (m && m.name && m.slug) {
+    if (m?.name && m?.slug) {
       methodsMap.set(m.slug, {
         name: m.name,
         slug: m.slug,
