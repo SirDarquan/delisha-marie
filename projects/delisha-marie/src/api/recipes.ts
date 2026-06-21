@@ -31,7 +31,14 @@ interface DbRecipe {
 
 recipesRouter.get('/recipes', async (req: Request, res: Response) => {
   try {
-    const supabase = await getSupabaseClient();
+    let supabase;
+    try {
+      supabase = await getSupabaseClient();
+    } catch (dbErr: unknown) {
+      const msg = dbErr instanceof Error ? dbErr.message : String(dbErr);
+      console.warn('Database client initialization skipped/failed:', msg);
+      return res.json({ items: [], total: 0 });
+    }
 
     const page = parseInt(req.query['page'] as string, 10) || 1;
     const pageSize = parseInt(req.query['pageSize'] as string, 10) || 12;

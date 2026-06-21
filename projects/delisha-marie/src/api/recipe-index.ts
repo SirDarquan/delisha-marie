@@ -300,7 +300,23 @@ async function getBestRecipes(supabase: SupabaseClient): Promise<CategoryItem[]>
 
 recipeIndexRouter.get('/recipe-index', async (req: Request, res: Response) => {
   try {
-    const supabase = await getSupabaseClient();
+    let supabase;
+    try {
+      supabase = await getSupabaseClient();
+    } catch (dbErr: unknown) {
+      const msg = dbErr instanceof Error ? dbErr.message : String(dbErr);
+      console.warn('Database client initialization skipped/failed:', msg);
+      return res.json({
+        featuredCategories: [],
+        cookingMethods: [],
+        categoriesList: [],
+        methodsList: [],
+        holidays: [],
+        specialDiets: [],
+        bestRecipes: [],
+        ingredients: [],
+      });
+    }
 
     const [
       featuredCategories,

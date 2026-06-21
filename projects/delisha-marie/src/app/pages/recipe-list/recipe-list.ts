@@ -55,15 +55,17 @@ import { RecipeIndexService } from '../recipe-index/recipe-index.service';
       <!-- Recipe Grid -->
       <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
         @if (isLoading()) {
-          @for (placeholder of [1,2,3,4,5,6,7,8,9,10,11,12]; track placeholder) {
+          @for (placeholder of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]; track placeholder) {
             <mat-card
               class="!bg-[var(--mat-sys-surface-container)] !rounded-[2.5rem] overflow-hidden border border-[var(--mat-sys-outline-variant)] animate-pulse">
               <div class="aspect-[4/3] bg-[var(--mat-sys-surface-container-highest)]"></div>
               <mat-card-content class="!p-6 space-y-3">
                 <div class="h-6 bg-[var(--mat-sys-surface-container-highest)] rounded w-3/4"></div>
                 <div class="space-y-2 pt-2">
-                  <div class="h-4 bg-[var(--mat-sys-surface-container-highest)] rounded w-full"></div>
-                  <div class="h-4 bg-[var(--mat-sys-surface-container-highest)] rounded w-5/6"></div>
+                  <div
+                    class="h-4 bg-[var(--mat-sys-surface-container-highest)] rounded w-full"></div>
+                  <div
+                    class="h-4 bg-[var(--mat-sys-surface-container-highest)] rounded w-5/6"></div>
                 </div>
               </mat-card-content>
             </mat-card>
