@@ -27,7 +27,7 @@ describe('RecipeService', () => {
     service.recipes();
     TestBed.flushEffects();
     const req = httpMock.expectOne('/api/recipes');
-    req.flush([]);
+    req.flush({ items: [], total: 0 });
   });
 
   it('should fetch recipes', async () => {
@@ -50,7 +50,7 @@ describe('RecipeService', () => {
 
     const req = httpMock.expectOne('/api/recipes');
     expect(req.request.method).toBe('GET');
-    req.flush(mockRecipes);
+    req.flush({ items: mockRecipes, total: mockRecipes.length });
 
     // Wait for the Promise from the mock response to resolve and update the resource
     await new Promise((resolve) => setTimeout(resolve, 0));
@@ -71,11 +71,10 @@ describe('RecipeService', () => {
       '/api/recipes?page=2&pageSize=2&method=baking&category=cakes&subcategory=chocolate',
     );
     expect(req.request.method).toBe('GET');
-    req.flush(mockAllRecipes);
+    req.flush({ items: [mockAllRecipes[2]], total: 3 });
 
     const result = await promise;
     expect(result.total).toBe(3);
-    // Since page=2, pageSize=2, start=2. Slice from 2 to 4 -> [R3]
     expect(result.items.length).toBe(1);
     expect(result.items[0].id).toBe(3);
   });
@@ -86,7 +85,7 @@ describe('RecipeService', () => {
       '/api/recipes?page=1&pageSize=10&method=baking&category=&subcategory=',
     );
     expect(req.request.method).toBe('GET');
-    req.flush([]);
+    req.flush({ items: [], total: 0 });
     const result = await promise;
     expect(result.total).toBe(0);
     expect(result.items).toEqual([]);
@@ -99,7 +98,7 @@ describe('RecipeService', () => {
       const promise = service.getRecipeBySlug('test-recipe');
 
       const req = httpMock.expectOne('/api/recipes');
-      req.flush(mockAllRecipes);
+      req.flush({ items: mockAllRecipes, total: mockAllRecipes.length });
 
       const result = await promise;
       expect(result).toEqual(mockAllRecipes[0]);
@@ -113,14 +112,14 @@ describe('RecipeService', () => {
       // Test with leading slash and prefix
       const promise1 = service.getRecipeBySlug('test-recipe');
       const req1 = httpMock.expectOne('/api/recipes');
-      req1.flush(mockAllRecipes);
+      req1.flush({ items: mockAllRecipes, total: 1 });
       const result1 = await promise1;
       expect(result1).toEqual(mockAllRecipes[0]);
 
       // Test with full slug
       const promise2 = service.getRecipeBySlug('/recipe/test-recipe');
       const req2 = httpMock.expectOne('/api/recipes');
-      req2.flush(mockAllRecipes);
+      req2.flush({ items: mockAllRecipes, total: 1 });
       const result2 = await promise2;
       expect(result2).toEqual(mockAllRecipes[0]);
     });
@@ -128,7 +127,7 @@ describe('RecipeService', () => {
     it('should return null if recipe not found', async () => {
       const promise = service.getRecipeBySlug('unknown');
       const req = httpMock.expectOne('/api/recipes');
-      req.flush([]);
+      req.flush({ items: [], total: 0 });
       const result = await promise;
       expect(result).toBeNull();
     });

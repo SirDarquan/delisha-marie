@@ -45,7 +45,7 @@ describe('Single Recipe Detail View', () => {
     // Setup active recipe list API mock
     cy.intercept('GET', '/api/recipes*', {
       statusCode: 200,
-      body: [mockFullRecipe],
+      body: { items: [mockFullRecipe], total: 1 },
     }).as('getRecipeList');
 
     // Stub comments list for this recipe

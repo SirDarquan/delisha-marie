@@ -22,6 +22,7 @@ export const appConfig: ApplicationConfig = {
       routes,
       withComponentInputBinding(),
       withInMemoryScrolling({
+        scrollPositionRestoration: 'enabled',
         anchorScrolling: 'enabled',
       }),
     ),
@@ -30,11 +31,6 @@ export const appConfig: ApplicationConfig = {
     provideHttpClient(
       withInterceptors([
         (req, next) => {
-          if (req.url.includes('/api/recipes')) {
-            const mockUrl = '/api/recipes.json';
-            return next(req.clone({ url: mockUrl }));
-          }
-
           if (req.url.includes('/api/comments')) {
             const mockUrl = '/api/comments.json';
             return next(req.clone({ url: mockUrl }));

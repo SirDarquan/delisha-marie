@@ -54,55 +54,73 @@ import { RecipeIndexService } from '../recipe-index/recipe-index.service';
 
       <!-- Recipe Grid -->
       <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
-        @for (
-          recipe of recipes()
-            | paginate
-              : { itemsPerPage: pageSize, currentPage: currentPage(), totalItems: totalItems() };
-          track recipe.id
-        ) {
-          <a [routerLink]="recipe.slug" class="block no-underline text-inherit">
+        @if (isLoading()) {
+          @for (placeholder of [1,2,3,4,5,6,7,8,9,10,11,12]; track placeholder) {
             <mat-card
-              class="!bg-[var(--mat-sys-surface-container)] !rounded-[2.5rem] overflow-hidden shadow-sm hover:shadow-xl transition-all duration-500 group border border-[var(--mat-sys-outline-variant)]">
-              <div class="aspect-[4/3] overflow-hidden relative">
-                <img
-                  [ngSrc]="recipe.image"
-                  width="400"
-                  height="300"
-                  [alt]="recipe.title"
-                  class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
-                <div
-                  class="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-              </div>
+              class="!bg-[var(--mat-sys-surface-container)] !rounded-[2.5rem] overflow-hidden border border-[var(--mat-sys-outline-variant)] animate-pulse">
+              <div class="aspect-[4/3] bg-[var(--mat-sys-surface-container-highest)]"></div>
               <mat-card-content class="!p-6 space-y-3">
-                <h3
-                  class="text-xl font-bold leading-tight line-clamp-2 group-hover:text-[var(--mat-sys-primary)] transition-colors">
-                  {{ recipe.title }}
-                </h3>
-                <p
-                  class="text-sm text-[var(--mat-sys-on-surface-variant)] line-clamp-3 font-medium">
-                  {{ recipe.description }}
-                </p>
+                <div class="h-6 bg-[var(--mat-sys-surface-container-highest)] rounded w-3/4"></div>
+                <div class="space-y-2 pt-2">
+                  <div class="h-4 bg-[var(--mat-sys-surface-container-highest)] rounded w-full"></div>
+                  <div class="h-4 bg-[var(--mat-sys-surface-container-highest)] rounded w-5/6"></div>
+                </div>
               </mat-card-content>
             </mat-card>
-          </a>
-        } @empty {
-          <div class="col-span-full py-20 text-center space-y-4">
-            <mat-icon class="text-6xl h-auto w-auto opacity-20">restaurant_menu</mat-icon>
-            <p class="text-xl text-[var(--mat-sys-outline)]">
-              No recipes found for this selection.
-            </p>
-          </div>
+          }
+        } @else {
+          @for (
+            recipe of recipes()
+              | paginate
+                : { itemsPerPage: pageSize, currentPage: currentPage(), totalItems: totalItems() };
+            track recipe.id
+          ) {
+            <a [routerLink]="['/recipe', recipe.slug]" class="block no-underline text-inherit">
+              <mat-card
+                class="!bg-[var(--mat-sys-surface-container)] !rounded-[2.5rem] overflow-hidden shadow-sm hover:shadow-xl transition-all duration-500 group border border-[var(--mat-sys-outline-variant)]">
+                <div class="aspect-[4/3] overflow-hidden relative">
+                  <img
+                    [ngSrc]="recipe.image"
+                    width="400"
+                    height="300"
+                    [alt]="recipe.title"
+                    class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                  <div
+                    class="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                </div>
+                <mat-card-content class="!p-6 space-y-3">
+                  <h3
+                    class="text-xl font-bold leading-tight line-clamp-2 group-hover:text-[var(--mat-sys-primary)] transition-colors">
+                    {{ recipe.title }}
+                  </h3>
+                  <p
+                    class="text-sm text-[var(--mat-sys-on-surface-variant)] line-clamp-3 font-medium">
+                    {{ recipe.description }}
+                  </p>
+                </mat-card-content>
+              </mat-card>
+            </a>
+          } @empty {
+            <div class="col-span-full py-20 text-center space-y-4">
+              <mat-icon class="text-6xl h-auto w-auto opacity-20">restaurant_menu</mat-icon>
+              <p class="text-xl text-[var(--mat-sys-outline)]">
+                No recipes found for this selection.
+              </p>
+            </div>
+          }
         }
       </section>
 
       <!-- Paginator -->
-      <div class="flex justify-center pt-8 pb-4">
-        <pagination-controls
-          (pageChange)="onPageChange($event)"
-          [responsive]="true"
-          class="recipe-pagination">
-        </pagination-controls>
-      </div>
+      @if (!isLoading() && totalItems() > pageSize) {
+        <div class="flex justify-center pt-8 pb-4">
+          <pagination-controls
+            (pageChange)="onPageChange($event)"
+            [responsive]="true"
+            class="recipe-pagination">
+          </pagination-controls>
+        </div>
+      }
     </div>
   `,
   styles: [
@@ -206,6 +224,7 @@ export class RecipeList {
   readonly recipes = computed(() => this._recipeResource.value()?.items || []);
   readonly totalItems = computed(() => this._recipeResource.value()?.total || 0);
   readonly totalPages = computed(() => Math.ceil(this.totalItems() / this.pageSize));
+  readonly isLoading = computed(() => this._recipeResource.isLoading());
 
   // Determine the root type based on the official path segments
   readonly rootType = computed(() => {
