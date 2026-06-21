@@ -4,7 +4,7 @@ import { Request, Response, Router } from 'express';
 const recipeIndexRouter = Router();
 
 let supabaseClient: SupabaseClient | null = null;
-async function getSupabaseClient() {
+export async function getSupabaseClient() {
   if (!supabaseClient) {
     const supabaseUrl = process.env['SUPABASE_URL'] || '';
     const supabaseKey = process.env['SUPABASE_KEY'] || '';
