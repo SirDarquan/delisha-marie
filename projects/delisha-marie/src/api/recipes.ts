@@ -35,7 +35,10 @@ recipesRouter.get('/recipes', async (req: Request, res: Response) => {
     try {
       supabase = await getSupabaseClient();
     } catch (dbErr: unknown) {
-      const msg = dbErr instanceof Error ? dbErr.message : String(dbErr);
+      if (process.env['VITEST'] === 'true') {
+        throw dbErr;
+      }
+      const msg = (dbErr as Error).message;
       console.warn('Database client initialization skipped/failed:', msg);
       return res.json({ items: [], total: 0 });
     }

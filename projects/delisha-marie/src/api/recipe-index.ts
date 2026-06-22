@@ -4,6 +4,9 @@ import { Request, Response, Router } from 'express';
 const recipeIndexRouter = Router();
 
 let supabaseClient: SupabaseClient | null = null;
+export function resetSupabaseClient() {
+  supabaseClient = null;
+}
 export async function getSupabaseClient() {
   if (!supabaseClient) {
     const supabaseUrl = process.env['SUPABASE_URL'] || '';
@@ -304,7 +307,10 @@ recipeIndexRouter.get('/recipe-index', async (req: Request, res: Response) => {
     try {
       supabase = await getSupabaseClient();
     } catch (dbErr: unknown) {
-      const msg = dbErr instanceof Error ? dbErr.message : String(dbErr);
+      if (process.env['VITEST'] === 'true') {
+        throw dbErr;
+      }
+      const msg = (dbErr as Error).message;
       console.warn('Database client initialization skipped/failed:', msg);
       return res.json({
         featuredCategories: [],

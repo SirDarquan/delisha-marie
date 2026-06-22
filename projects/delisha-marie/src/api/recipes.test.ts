@@ -18,6 +18,7 @@ vi.mock('@supabase/supabase-js', () => ({
 import express from 'express';
 import request from 'supertest';
 import recipesRouter from './recipes';
+import { resetSupabaseClient } from './recipe-index';
 
 describe('Recipes Router API', () => {
   let app: express.Express;
@@ -274,5 +275,71 @@ describe('Recipes Router API', () => {
     const res = await request(app).get('/api/recipes');
     expect(res.status).toBe(500);
     expect(res.body.error).toBe('String exception');
+  });
+
+  it('should fail gracefully and return 200 with empty list when env variables are missing and VITEST is not true', async () => {
+    const originalVitest = process.env['VITEST'];
+    delete process.env['VITEST'];
+
+    const originalUrl = process.env['SUPABASE_URL'];
+    const originalKey = process.env['SUPABASE_KEY'];
+    delete process.env['SUPABASE_URL'];
+    delete process.env['SUPABASE_KEY'];
+
+    resetSupabaseClient();
+
+    try {
+      const res = await request(app).get('/api/recipes');
+      expect(res.status).toBe(200);
+      expect(res.body.items).toEqual([]);
+      expect(res.body.total).toBe(0);
+    } finally {
+      resetSupabaseClient();
+      if (originalVitest !== undefined) process.env['VITEST'] = originalVitest;
+      if (originalUrl !== undefined) process.env['SUPABASE_URL'] = originalUrl;
+      if (originalKey !== undefined) process.env['SUPABASE_KEY'] = originalKey;
+    }
+  });
+
+  it('should return 500 when database client initialization fails and VITEST is true', async () => {
+    const originalUrl = process.env['SUPABASE_URL'];
+    const originalKey = process.env['SUPABASE_KEY'];
+    delete process.env['SUPABASE_URL'];
+    delete process.env['SUPABASE_KEY'];
+
+    resetSupabaseClient();
+
+    try {
+      const res = await request(app).get('/api/recipes');
+      expect(res.status).toBe(500);
+      expect(res.body.error).toContain('Supabase URL and Key are required');
+    } finally {
+      resetSupabaseClient();
+      if (originalUrl !== undefined) process.env['SUPABASE_URL'] = originalUrl;
+      if (originalKey !== undefined) process.env['SUPABASE_KEY'] = originalKey;
+    }
+  });
+
+  it('should cover the false branch of method === tag check', async () => {
+    mockFrom.mockImplementation(() => {
+      return {
+        select: () => {
+          const queryChain = {
+            eq: () => queryChain,
+            order: () => queryChain,
+            range: () => queryChain,
+            then: (onfulfilled?: (value: unknown) => unknown) => {
+              return Promise.resolve({ data: [], error: null, count: 0 }).then(onfulfilled);
+            },
+          };
+          return queryChain;
+        },
+      };
+    });
+
+    const res = await request(app)
+      .get('/api/recipes')
+      .query({ category: 'apple', method: 'nonexistent' });
+    expect(res.status).toBe(200);
   });
 });

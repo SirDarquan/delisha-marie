@@ -17,7 +17,7 @@ vi.mock('@supabase/supabase-js', () => ({
 
 import express from 'express';
 import request from 'supertest';
-import recipeIndexRouter from './recipe-index';
+import recipeIndexRouter, { resetSupabaseClient } from './recipe-index';
 
 describe('Recipe Index Router API', () => {
   let app: express.Express;
@@ -45,6 +45,9 @@ describe('Recipe Index Router API', () => {
     { name: 'The Best Main Dishes', url: '/the-best-recipes/the-best-main-dishes' },
     { name: null as unknown as string, url: '/recipes/invalid-cat' },
     { name: 'Invalid Cat Url', url: null as unknown as string },
+    { name: 'Mismatched Segment', url: '/other-segment/appetizers' },
+    { name: 'Short Url', url: '/recipes' },
+    { name: 'Long Url', url: '/recipes/a/b/c/d' },
     null as unknown as { name: string; url: string },
   ];
 
@@ -471,6 +474,29 @@ describe('Recipe Index Router API', () => {
       const res = await request(app).get('/api/recipe-index');
       expect(res.status).toBe(500);
       expect(res.body.error).toBe('String exception');
+    });
+
+    it('should fail gracefully and return 200 with empty lists when env variables are missing and VITEST is not true', async () => {
+      const originalVitest = process.env['VITEST'];
+      delete process.env['VITEST'];
+
+      const originalUrl = process.env['SUPABASE_URL'];
+      const originalKey = process.env['SUPABASE_KEY'];
+      delete process.env['SUPABASE_URL'];
+      delete process.env['SUPABASE_KEY'];
+
+      resetSupabaseClient();
+
+      try {
+        const res = await request(app).get('/api/recipe-index');
+        expect(res.status).toBe(200);
+        expect(res.body.featuredCategories).toEqual([]);
+      } finally {
+        resetSupabaseClient();
+        if (originalVitest !== undefined) process.env['VITEST'] = originalVitest;
+        if (originalUrl !== undefined) process.env['SUPABASE_URL'] = originalUrl;
+        if (originalKey !== undefined) process.env['SUPABASE_KEY'] = originalKey;
+      }
     });
   });
 });
