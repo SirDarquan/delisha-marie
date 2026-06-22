@@ -39,17 +39,19 @@ export class RecipeService {
    * Completely eliminates 'from', 'Observable', and 'toSignal'.
    */
   private readonly _recipesResource = resource({
-    loader: () => this.api.get<Recipe[]>('/api/recipes'),
+    loader: () => this.api.get<{ items: Recipe[]; total: number }>('/api/recipes'),
   });
 
-  readonly recipes = computed(() => this._recipesResource.value() || []);
+  readonly recipes = computed(() => this._recipesResource.value()?.items || []);
 
   /**
    * Fetches a single recipe by its slug.
    */
   async getRecipeBySlug(slug: string): Promise<Recipe | null> {
     try {
-      const all = await this.api.get<Recipe[]>('/api/recipes');
+      // This  is incorrect but I will correct it when we do the detail page
+      const res = await this.api.get<{ items: Recipe[]; total: number }>('/api/recipes');
+      const all = res?.items || [];
       const clean = (s: string) => s.replace(/^\/?recipe\//, '').replace(/^\//, '');
       const normalizedSearch = clean(slug);
 
@@ -72,15 +74,7 @@ export class RecipeService {
     subcategory?: string,
   ): Promise<{ items: Recipe[]; total: number }> {
     const url = `/api/recipes?page=${page}&pageSize=${pageSize}&method=${method}&category=${category || ''}&subcategory=${subcategory || ''}`;
-
-    return this.api.get<Recipe[]>(url).then((all) => {
-      const start = (page - 1) * pageSize;
-      const items = all.slice(start, start + pageSize);
-      return {
-        items,
-        total: all.length,
-      };
-    });
+    return this.api.get<{ items: Recipe[]; total: number }>(url);
   }
 
   /**

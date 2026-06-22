@@ -44,7 +44,7 @@ describe('Recipe Discovery Listings', () => {
   it('should load list view grid and render recipe cards with proper imagery', () => {
     cy.intercept('GET', '/api/recipes*', {
       statusCode: 200,
-      body: generateMockRecipes(5),
+      body: { items: generateMockRecipes(5), total: 5 },
     }).as('getRecipes');
 
     cy.visit('/recipes');
@@ -64,7 +64,7 @@ describe('Recipe Discovery Listings', () => {
   it('should display empty state icon/message when no recipes are yielded', () => {
     cy.intercept('GET', '/api/recipes*', {
       statusCode: 200,
-      body: [],
+      body: { items: [], total: 0 },
     }).as('getEmptyRecipes');
 
     cy.visit('/recipes');
@@ -77,7 +77,7 @@ describe('Recipe Discovery Listings', () => {
   it('should handle pagination controls correctly when items exceed standard limit', () => {
     cy.intercept('GET', '/api/recipes*', {
       statusCode: 200,
-      body: generateMockRecipes(15), // 15 items, first page will show 12
+      body: { items: generateMockRecipes(15), total: 15 }, // 15 items, first page will show 12
     }).as('getPaginatedRecipes');
 
     cy.visit('/recipes');
@@ -97,7 +97,7 @@ describe('Recipe Discovery Listings', () => {
   it('should display refine category filters and navigate to subcategory path', () => {
     cy.intercept('GET', '/api/recipes*', {
       statusCode: 200,
-      body: generateMockRecipes(2),
+      body: { items: generateMockRecipes(2), total: 2 },
     }).as('getFilteredRecipes');
 
     cy.visit('/recipes/dinner');

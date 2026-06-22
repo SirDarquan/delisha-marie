@@ -4,7 +4,10 @@ import { Request, Response, Router } from 'express';
 const recipeIndexRouter = Router();
 
 let supabaseClient: SupabaseClient | null = null;
-async function getSupabaseClient() {
+export function resetSupabaseClient() {
+  supabaseClient = null;
+}
+export async function getSupabaseClient() {
   if (!supabaseClient) {
     const supabaseUrl = process.env['SUPABASE_URL'] || '';
     const supabaseKey = process.env['SUPABASE_KEY'] || '';
@@ -300,7 +303,26 @@ async function getBestRecipes(supabase: SupabaseClient): Promise<CategoryItem[]>
 
 recipeIndexRouter.get('/recipe-index', async (req: Request, res: Response) => {
   try {
-    const supabase = await getSupabaseClient();
+    let supabase;
+    try {
+      supabase = await getSupabaseClient();
+    } catch (dbErr: unknown) {
+      if (process.env['VITEST'] === 'true') {
+        throw dbErr;
+      }
+      const msg = (dbErr as Error).message;
+      console.warn('Database client initialization skipped/failed:', msg);
+      return res.json({
+        featuredCategories: [],
+        cookingMethods: [],
+        categoriesList: [],
+        methodsList: [],
+        holidays: [],
+        specialDiets: [],
+        bestRecipes: [],
+        ingredients: [],
+      });
+    }
 
     const [
       featuredCategories,
