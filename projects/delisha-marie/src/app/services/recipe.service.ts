@@ -33,6 +33,7 @@ export interface NavigationLinks {
 })
 export class RecipeService {
   private readonly api = inject(Api);
+  private readonly recipeCache = new Map<string, Promise<Recipe | null>>();
 
   /**
    * Modern signal-native resource for fetching all recipes.
@@ -47,19 +48,20 @@ export class RecipeService {
   /**
    * Fetches a single recipe by its slug.
    */
-  async getRecipeBySlug(slug: string): Promise<Recipe | null> {
-    try {
-      // This  is incorrect but I will correct it when we do the detail page
-      const res = await this.api.get<{ items: Recipe[]; total: number }>('/api/recipes');
-      const all = res?.items || [];
-      const clean = (s: string) => s.replace(/^\/?recipe\//, '').replace(/^\//, '');
-      const normalizedSearch = clean(slug);
+  getRecipeBySlug(slug: string): Promise<Recipe | null> {
+    const clean = (s: string) => s.replace(/^\/?recipe\//, '').replace(/^\//, '');
+    const normalizedSearch = clean(slug);
 
-      const found = all.find((r) => clean(r.slug) === normalizedSearch) || null;
-      return found;
-    } catch {
-      return null;
+    let cached = this.recipeCache.get(normalizedSearch);
+    if (!cached) {
+      cached = this.api.get<Recipe | null>(`/api/recipes/${normalizedSearch}`).catch(() => null);
+      this.recipeCache.set(normalizedSearch, cached);
+
+      setTimeout(() => {
+        this.recipeCache.delete(normalizedSearch);
+      }, 5000);
     }
+    return cached;
   }
 
   /**

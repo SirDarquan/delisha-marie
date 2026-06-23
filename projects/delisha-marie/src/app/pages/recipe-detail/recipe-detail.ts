@@ -39,10 +39,45 @@ import { RecipeTags } from './recipe-tags';
   ],
   template: `
     <div class="into-the-box pt-12 pb-12">
-      <!-- Breadcrumbs -->
-      <dml-breadcrumbs [items]="breadcrumbItems()" class="block mb-8 px-4 sm:px-0 mt-4 sm:mt-0" />
+      @if (isLoading()) {
+        <!-- Skeleton Loader Layout -->
+        <div class="block mb-8 px-4 sm:px-0 mt-4 sm:mt-0">
+          <div class="h-6 w-64 skeleton rounded"></div>
+        </div>
 
-      @if (recipe(); as r) {
+        <div class="w-full animate-pulse">
+          <!-- Hero Skeleton -->
+          <div class="h-[300px] md:h-[450px] w-full skeleton rounded-3xl mb-8"></div>
+
+          <div class="max-w-7xl mx-auto sm:px-4 lg:px-8">
+            <div class="flex flex-col lg:flex-row gap-8">
+              <!-- Main Content Skeleton -->
+              <div class="flex-1 space-y-12">
+                <div class="space-y-4 px-4 sm:px-0">
+                  <div class="h-10 w-3/4 skeleton rounded"></div>
+                  <div class="h-6 w-1/2 skeleton rounded"></div>
+                  <div class="space-y-2 mt-6">
+                    <div class="h-4 w-full skeleton rounded"></div>
+                    <div class="h-4 w-full skeleton rounded"></div>
+                    <div class="h-4 w-5/6 skeleton rounded"></div>
+                  </div>
+                </div>
+
+                <!-- Card Skeleton -->
+                <div class="h-[400px] w-full skeleton rounded-3xl"></div>
+              </div>
+
+              <!-- Sidebar Skeleton -->
+              <aside class="w-full lg:w-[350px] shrink-0">
+                <div class="h-[300px] w-full skeleton rounded-3xl"></div>
+              </aside>
+            </div>
+          </div>
+        </div>
+      } @else if (recipe(); as r) {
+        <!-- Breadcrumbs -->
+        <dml-breadcrumbs [items]="breadcrumbItems()" class="block mb-8 px-4 sm:px-0 mt-4 sm:mt-0" />
+
         <dml-recipe-meta [recipe]="r" class="block mb-8 px-4 sm:px-0" />
 
         <article class="w-full">
@@ -115,15 +150,35 @@ import { RecipeTags } from './recipe-tags';
       .recipe-story p:last-child {
         margin-bottom: 0;
       }
+      @keyframes shimmer {
+        0% {
+          background-position: -200% 0;
+        }
+        100% {
+          background-position: 200% 0;
+        }
+      }
+      .skeleton {
+        background: linear-gradient(
+          90deg,
+          var(--mat-sys-surface-container) 25%,
+          var(--mat-sys-surface-container-high) 50%,
+          var(--mat-sys-surface-container) 75%
+        );
+        background-size: 200% 100%;
+        animation: shimmer 1.5s infinite linear;
+      }
     `,
   ],
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RecipeDetail {
-  // Input from resolver
-  recipe = input<Recipe | null>(null);
+  recipe = input<Recipe | null | undefined>(undefined);
+
   page = input<string>();
+
+  readonly isLoading = computed(() => this.recipe() === undefined);
 
   readonly breadcrumbItems = computed((): BreadcrumbItem[] => {
     const r = this.recipe();
