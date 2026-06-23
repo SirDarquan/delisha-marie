@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { camelCase } from 'change-case';
-import { getSupabaseClient } from './recipe-index';
+import { getSupabaseClient } from './supabase';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 const recipesRouter = Router();
@@ -19,14 +19,43 @@ function camelCaseKeys(obj: unknown): unknown {
   return obj;
 }
 
+interface CategoryInfo {
+  id: string;
+  name: string;
+  url: string;
+}
+
+interface CategoryRelation {
+  categories: CategoryInfo | null;
+}
+
 interface DbRecipe {
   id: string;
   recipe_holidays?: { holidays?: { name: string } | null }[] | null;
   recipe_special_diets?: { special_diets?: { name: string } | null }[] | null;
   recipe_methods?: { methods?: { name: string } | null }[] | null;
   method?: string;
-  recipe_categories?: unknown;
-  recipe_ingredients?: unknown;
+  recipe_categories?: CategoryRelation[] | null;
+  recipe_ingredients?: { ingredient_id: string }[] | null;
+  [key: string]: unknown;
+}
+
+interface FormattedRecipe {
+  id: string;
+  slug: string;
+  title: string;
+  status: string;
+  theBest?: boolean;
+  comments?: unknown[];
+  rating?: number;
+  breadcrumbs?: {
+    main: number;
+    items: { label: string; url?: string }[][];
+  };
+  navigation?: {
+    prev: { title: string; slug: string } | null;
+    next: { title: string; slug: string } | null;
+  } | null;
   [key: string]: unknown;
 }
 
@@ -35,7 +64,7 @@ function getSelectString(method: string, category: string): string {
     return `
       *,
       recipe_categories (
-        categories (name, url)
+        categories (id, name, url)
       ),
       recipe_methods (
         methods (name)
@@ -52,7 +81,7 @@ function getSelectString(method: string, category: string): string {
     return `
       *,
       recipe_categories!inner (
-        categories!inner (name, url)
+        categories!inner (id, name, url)
       ),
       recipe_methods (
         methods (name)
@@ -69,7 +98,7 @@ function getSelectString(method: string, category: string): string {
     return `
       *,
       recipe_categories (
-        categories (name, url)
+        categories (id, name, url)
       ),
       recipe_methods!inner (
         methods!inner (name, slug)
@@ -86,7 +115,7 @@ function getSelectString(method: string, category: string): string {
     return `
       *,
       recipe_categories (
-        categories (name, url)
+        categories (id, name, url)
       ),
       recipe_methods (
         methods (name)
@@ -103,7 +132,7 @@ function getSelectString(method: string, category: string): string {
     return `
       *,
       recipe_categories (
-        categories (name, url)
+        categories (id, name, url)
       ),
       recipe_methods (
         methods (name)
@@ -120,7 +149,7 @@ function getSelectString(method: string, category: string): string {
     return `
       *,
       recipe_categories (
-        categories (name, url)
+        categories (id, name, url)
       ),
       recipe_methods (
         methods (name)
@@ -139,7 +168,7 @@ function getSelectString(method: string, category: string): string {
   return `
     *,
     recipe_categories (
-      categories (name, url)
+      categories (id, name, url)
     ),
     recipe_methods (
       methods (name)
@@ -190,11 +219,13 @@ async function getTagMatchedIds(
 }
 
 function applyRecipeFilters(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   query: any,
   method: string,
   category: string,
   subcategory: string,
   matchedIds: string[],
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): any {
   if (method === 'the-best-recipes') {
     query = query.eq('the_best', true);
@@ -244,8 +275,8 @@ function applyRecipeFilters(
   return query;
 }
 
-function formatDbRecipes(data: any[]): any[] {
-  return data.map((recipeRaw: unknown) => {
+function formatDbRecipes(data: DbRecipe[]): FormattedRecipe[] {
+  return data.map((recipeRaw: DbRecipe) => {
     const recipe = recipeRaw as DbRecipe;
     const holidays = recipe.recipe_holidays?.map((h) => h.holidays?.name).filter(Boolean) || [];
     const specialDiets =
@@ -266,23 +297,13 @@ function formatDbRecipes(data: any[]): any[] {
       holidays,
       specialDiets,
       method: methodVal,
-    };
+    } as unknown as FormattedRecipe;
   });
 }
 
 recipesRouter.get('/recipes', async (req: Request, res: Response) => {
   try {
-    let supabase;
-    try {
-      supabase = await getSupabaseClient();
-    } catch (dbErr: unknown) {
-      if (process.env['VITEST'] === 'true') {
-        throw dbErr;
-      }
-      const msg = (dbErr as Error).message;
-      console.warn('Database client initialization skipped/failed:', msg);
-      return res.json({ items: [], total: 0 });
-    }
+    const supabase = await getSupabaseClient();
 
     const page = Number.parseInt(req.query['page'] as string, 10) || 1;
     const pageSize = Number.parseInt(req.query['pageSize'] as string, 10) || 12;
@@ -308,12 +329,144 @@ recipesRouter.get('/recipes', async (req: Request, res: Response) => {
     const { data, error, count } = await query;
     if (error) throw error;
 
-    const formatted = formatDbRecipes(data || []);
+    const formatted = formatDbRecipes((data || []) as unknown as DbRecipe[]);
 
     return res.json({
       items: formatted,
       total: count || 0,
     });
+  } catch (err: unknown) {
+    console.error(err);
+    const msg = err instanceof Error ? err.message : String(err);
+    return res.status(500).json({ error: msg });
+  }
+});
+
+async function getAdjacentRecipe(
+  supabase: SupabaseClient,
+  recipeId: string,
+  rowType: 'next' | 'prev',
+): Promise<{ title: string; slug: string } | null> {
+  let query = supabase
+    .from('recipes')
+    .select('id, title, slug, created_at')
+    .eq('status', 'published')
+    .limit(1);
+
+  if (rowType === 'next') {
+    query = query.gt('id', recipeId);
+    query = query.order('id', { ascending: true });
+  } else {
+    query = query.lt('id', recipeId);
+    query = query.order('id', { ascending: false });
+  }
+
+  const { data, error } = await query;
+  if (error) throw error;
+
+  const filtered = (data || []).map((m) => m as unknown as { title: string; slug: string });
+
+  const next =
+    filtered.length > 0 ? { title: filtered[0].title, slug: '/recipe/' + filtered[0].slug } : null;
+
+  return next;
+}
+
+async function getBreadcrumbs(
+  supabase: SupabaseClient,
+  recipeId: string,
+  formatted: FormattedRecipe,
+): Promise<{ label: string; url?: string }[][]> {
+  const { data: recipeCatsData, error: catsError } = await supabase
+    .from('recipe_categories')
+    .select('categories (id, name, url)')
+    .eq('recipe_id', recipeId);
+  if (catsError) throw catsError;
+
+  const prefixUrl = formatted.theBest ? '/the-best-recipes' : '/recipes';
+  let filteredCategories = (recipeCatsData || [])
+    .map((rc) => (rc as unknown as CategoryRelation).categories)
+    .filter((cat): cat is CategoryInfo => !!cat?.url.startsWith(prefixUrl));
+
+  if (filteredCategories.length === 0 && recipeCatsData && recipeCatsData.length > 0) {
+    const fallbackCat = (recipeCatsData || [])
+      .map((rc) => (rc as unknown as CategoryRelation).categories)
+      .find((cat): cat is CategoryInfo => !!(cat && cat.url && cat.name));
+    if (fallbackCat) {
+      filteredCategories = [fallbackCat];
+    }
+  }
+
+  const breadcrumbItems: { label: string; url?: string }[][] = [];
+  const mainLabel = formatted.theBest ? 'The Best Recipes' : 'Recipes';
+  const mainUrl = formatted.theBest ? '/the-best-recipes' : '/recipes';
+  const prefix = [
+    { label: 'Home', url: '/' },
+    { label: mainLabel, url: mainUrl },
+  ];
+
+  const trails = filteredCategories.map((c) => ({ label: c.name, url: c.url }));
+  breadcrumbItems.push([
+    ...prefix,
+    ...trails,
+    { label: formatted.title, url: '/recipe/' + formatted.slug },
+  ]);
+
+  return breadcrumbItems;
+}
+
+recipesRouter.get('/recipes/:slug', async (req: Request, res: Response) => {
+  try {
+    const supabase = await getSupabaseClient();
+    const { slug } = req.params as { slug: string };
+    const cleanSlug = slug.replace(/^\/?recipe\//, '').replace(/^\//, '');
+
+    // Get recipe
+    const selectStr = getSelectString('recipes', '');
+    const { data: recipeDataRaw, error: recipeError } = await supabase
+      .from('recipes')
+      .select(selectStr)
+      .eq('slug', cleanSlug)
+      .eq('status', 'published')
+      .maybeSingle();
+
+    if (recipeError) throw recipeError;
+    if (!recipeDataRaw) {
+      return res.json(null);
+    }
+
+    const recipeData = recipeDataRaw as unknown as DbRecipe;
+
+    // Format fields (reuse formatDbRecipes helper)
+    const [formatted] = formatDbRecipes([recipeData]);
+
+    // Populate comments rating & review structure defaults
+    formatted.comments = [];
+    formatted.rating = 5;
+
+    // Fetch breadcrumbs and adjacent sibling navigation in parallel
+    const [breadcrumbs, prev, next] = await Promise.all([
+      getBreadcrumbs(supabase, recipeData.id, formatted),
+      getAdjacentRecipe(supabase, recipeData.id, 'prev'),
+      getAdjacentRecipe(supabase, recipeData.id, 'next'),
+    ]);
+
+    formatted.breadcrumbs = {
+      main: 0,
+      items: breadcrumbs,
+    };
+    formatted.navigation = {
+      prev,
+      next,
+    };
+
+    // Simulate configurable latency from .env
+    const latency = Number(process.env['RECIPE_DETAIL_LATENCY']) || 0;
+    if (latency > 0) {
+      await new Promise((resolve) => setTimeout(resolve, latency));
+    }
+
+    return res.json(formatted);
   } catch (err: unknown) {
     console.error(err);
     const msg = err instanceof Error ? err.message : String(err);

@@ -9,15 +9,43 @@ const { mockFrom } = vi.hoisted(() => ({
   mockFrom: vi.fn(),
 }));
 
-vi.mock('@supabase/supabase-js', () => ({
-  createClient: vi.fn(() => ({
-    from: mockFrom,
-  })),
-}));
+vi.mock('@supabase/supabase-js', () => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const wrapQueryChain = (chain: any): any => {
+    if (!chain || typeof chain !== 'object') return chain;
+    if (chain instanceof Promise) return chain;
+    return new Proxy(chain, {
+      get(target, prop) {
+        if (prop === 'then') {
+          return target.then ? target.then.bind(target) : undefined;
+        }
+        if (prop in target) {
+          const val = target[prop];
+          if (typeof val === 'function') {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            return (...args: any[]) => {
+              const res = val.apply(target, args);
+              return wrapQueryChain(res);
+            };
+          }
+          return val;
+        }
+        // Fallback for missing methods (returns a function that returns the proxied chain itself)
+        return () => wrapQueryChain(target);
+      },
+    });
+  };
+
+  return {
+    createClient: vi.fn(() => ({
+      from: (table: string) => wrapQueryChain(mockFrom(table)),
+    })),
+  };
+});
 
 import express from 'express';
 import request from 'supertest';
-import recipeIndexRouter, { resetSupabaseClient } from './recipe-index';
+import recipeIndexRouter from './recipe-index';
 
 describe('Recipe Index Router API', () => {
   let app: express.Express;
@@ -474,29 +502,6 @@ describe('Recipe Index Router API', () => {
       const res = await request(app).get('/api/recipe-index');
       expect(res.status).toBe(500);
       expect(res.body.error).toBe('String exception');
-    });
-
-    it('should fail gracefully and return 200 with empty lists when env variables are missing and VITEST is not true', async () => {
-      const originalVitest = process.env['VITEST'];
-      delete process.env['VITEST'];
-
-      const originalUrl = process.env['SUPABASE_URL'];
-      const originalKey = process.env['SUPABASE_KEY'];
-      delete process.env['SUPABASE_URL'];
-      delete process.env['SUPABASE_KEY'];
-
-      resetSupabaseClient();
-
-      try {
-        const res = await request(app).get('/api/recipe-index');
-        expect(res.status).toBe(200);
-        expect(res.body.featuredCategories).toEqual([]);
-      } finally {
-        resetSupabaseClient();
-        if (originalVitest !== undefined) process.env['VITEST'] = originalVitest;
-        if (originalUrl !== undefined) process.env['SUPABASE_URL'] = originalUrl;
-        if (originalKey !== undefined) process.env['SUPABASE_KEY'] = originalKey;
-      }
     });
   });
 });
