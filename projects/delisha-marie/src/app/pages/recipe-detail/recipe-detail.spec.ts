@@ -106,7 +106,7 @@ describe('RecipeDetail', () => {
 
     const breadcrumbs = component.breadcrumbItems();
 
-    expect(breadcrumbs.length).toBe(5); // Home > Recipes > Desserts > Cakes > Test Recipe
+    expect(breadcrumbs).toHaveLength(5); // Home > Recipes > Desserts > Cakes > Test Recipe
     expect(breadcrumbs[0].label).toBe('Home');
     expect(breadcrumbs[2].label).toBe('Desserts');
     expect(breadcrumbs[3].label).toBe('Cakes');
@@ -134,7 +134,7 @@ describe('RecipeDetail', () => {
 
     const breadcrumbs = component.breadcrumbItems();
 
-    expect(breadcrumbs.length).toBe(4); // Home > Recipes > Desserts > Test Recipe
+    expect(breadcrumbs).toHaveLength(4); // Home > Recipes > Desserts > Test Recipe
     expect(breadcrumbs[2].label).toBe('Desserts');
     expect(breadcrumbs[3].label).toBe('Test Recipe');
   });
@@ -159,7 +159,7 @@ describe('RecipeDetail', () => {
 
     const breadcrumbs = component.breadcrumbItems();
 
-    expect(breadcrumbs.length).toBe(3); // Home > Recipes > Test Recipe
+    expect(breadcrumbs).toHaveLength(3); // Home > Recipes > Test Recipe
     expect(breadcrumbs[1].label).toBe('Recipes');
     expect(breadcrumbs[2].label).toBe('Test Recipe');
   });
@@ -193,7 +193,7 @@ describe('RecipeDetail', () => {
     await fixture.whenStable();
 
     const breadcrumbs = component.breadcrumbItems();
-    expect(breadcrumbs.length).toBe(0);
+    expect(breadcrumbs).toHaveLength(0);
   });
 
   it('should return empty array if recipe is null', async () => {
@@ -202,6 +202,6 @@ describe('RecipeDetail', () => {
     await fixture.whenStable();
 
     const breadcrumbs = component.breadcrumbItems();
-    expect(breadcrumbs.length).toBe(0);
+    expect(breadcrumbs).toHaveLength(0);
   });
 });

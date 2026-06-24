@@ -75,7 +75,7 @@ describe('RecipeService', () => {
 
     const result = await promise;
     expect(result.total).toBe(3);
-    expect(result.items.length).toBe(1);
+    expect(result.items).toHaveLength(1);
     expect(result.items[0].id).toBe(3);
   });
 
@@ -185,7 +185,7 @@ describe('RecipeService', () => {
       req.flush(mockComments);
 
       const result = await promise;
-      expect(result.length).toBe(1);
+      expect(result).toHaveLength(1);
       expect(result[0].id).toBe('c1');
     });
 

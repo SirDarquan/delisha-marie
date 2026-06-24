@@ -389,9 +389,9 @@ async function getBreadcrumbs(
     .filter((cat): cat is CategoryInfo => !!cat?.url.startsWith(prefixUrl));
 
   if (filteredCategories.length === 0 && recipeCatsData && recipeCatsData.length > 0) {
-    const fallbackCat = (recipeCatsData || [])
+    const fallbackCat = recipeCatsData
       .map((rc) => (rc as unknown as CategoryRelation).categories)
-      .find((cat): cat is CategoryInfo => !!(cat && cat.url && cat.name));
+      .find((cat): cat is CategoryInfo => cat !== null);
     if (fallbackCat) {
       filteredCategories = [fallbackCat];
     }
