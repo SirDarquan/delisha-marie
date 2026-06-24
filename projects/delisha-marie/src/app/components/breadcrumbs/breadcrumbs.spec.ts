@@ -37,7 +37,7 @@ describe('Breadcrumbs', () => {
     fixture.detectChanges();
 
     const items = fixture.debugElement.queryAll(By.css('li'));
-    expect(items.length).toBe(3);
+    expect(items).toHaveLength(3);
 
     expect(items[0].nativeElement.textContent).toContain('Home');
     expect(items[1].nativeElement.textContent).toContain('Level 1');
@@ -49,7 +49,7 @@ describe('Breadcrumbs', () => {
     fixture.detectChanges();
 
     const links = fixture.debugElement.queryAll(By.css('a'));
-    expect(links.length).toBe(1);
+    expect(links).toHaveLength(1);
     expect(links[0].nativeElement.textContent).toContain('Home');
 
     const lastItem = fixture.debugElement.query(By.css('li:last-child span'));
@@ -66,6 +66,6 @@ describe('Breadcrumbs', () => {
     fixture.detectChanges();
 
     const icons = fixture.debugElement.queryAll(By.css('mat-icon'));
-    expect(icons.length).toBe(2);
+    expect(icons).toHaveLength(2);
   });
 });

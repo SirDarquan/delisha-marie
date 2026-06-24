@@ -71,14 +71,14 @@ describe('RecipeTags', () => {
     fixture.detectChanges();
 
     const tags = component.tagGroups();
-    expect(tags.length).toBe(1);
-    expect(tags[0].items.length).toBe(2);
+    expect(tags).toHaveLength(1);
+    expect(tags[0].items).toHaveLength(2);
     expect(tags[0].items[0].label).toBe('Recipes');
     expect(tags[0].items[1].label).toBe('Breads');
 
     const compiled = fixture.nativeElement as HTMLElement;
     const tagLinks = compiled.querySelectorAll('.tag-link');
-    expect(tagLinks.length).toBe(2);
+    expect(tagLinks).toHaveLength(2);
     expect(tagLinks[0].textContent).toContain('Recipes');
     expect(tagLinks[1].textContent).toContain('Breads');
   });

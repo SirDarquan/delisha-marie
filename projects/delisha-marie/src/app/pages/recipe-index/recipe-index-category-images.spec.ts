@@ -35,7 +35,7 @@ describe('RecipeIndexCategoryImages', () => {
   it('should render the correct number of categories', () => {
     const compiled = fixture.nativeElement as HTMLElement;
     const links = compiled.querySelectorAll('nav[aria-label="Recipe categories"] a');
-    expect(links.length).toBe(2);
+    expect(links).toHaveLength(2);
   });
 
   it('should have correct ARIA labels for category links', () => {

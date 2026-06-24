@@ -58,7 +58,7 @@ describe('RecipeIndexLinkList', () => {
 
   it('should render parent items as links', () => {
     const parentLinks = fixture.debugElement.queryAll(By.css('a.text-xl'));
-    expect(parentLinks.length).toBe(2);
+    expect(parentLinks).toHaveLength(2);
     // After sorting, Apple Pie is first
     expect(parentLinks[0].nativeElement.textContent.trim()).toBe('Apple Pie');
     expect(parentLinks[1].nativeElement.textContent.trim()).toBe('Zebra Cakes');
@@ -66,7 +66,7 @@ describe('RecipeIndexLinkList', () => {
 
   it('should render children when present', () => {
     const childrenLinks = fixture.debugElement.queryAll(By.css('ul li a'));
-    expect(childrenLinks.length).toBe(1);
+    expect(childrenLinks).toHaveLength(1);
     expect(childrenLinks[0].nativeElement.textContent.trim()).toBe('Icing');
   });
 

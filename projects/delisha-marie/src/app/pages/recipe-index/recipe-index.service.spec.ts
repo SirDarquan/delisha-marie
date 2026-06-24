@@ -45,8 +45,8 @@ describe('RecipeIndexService', () => {
 
     const data = await promise;
     expect(data).toEqual(mockResponse);
-    expect(data.featuredCategories.length).toBe(1);
-    expect(data.cookingMethods.length).toBe(1);
+    expect(data.featuredCategories).toHaveLength(1);
+    expect(data.cookingMethods).toHaveLength(1);
   });
 
   it('should handle empty response properties', async () => {
@@ -67,7 +67,7 @@ describe('RecipeIndexService', () => {
     req.flush(mockResponse);
 
     const data = await promise;
-    expect(data.featuredCategories.length).toBe(0);
-    expect(data.cookingMethods.length).toBe(0);
+    expect(data.featuredCategories).toHaveLength(0);
+    expect(data.cookingMethods).toHaveLength(0);
   });
 });
