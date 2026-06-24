@@ -222,8 +222,8 @@ async function handleDescopeVerification(
   } = await getSupabaseAdmin().auth.admin.listUsers();
   if (listError) throw listError;
 
-  const user = users.find((u) => u.email === email);
-  if (!user) {
+  const userExists = users.some((u) => u.email === email);
+  if (!userExists) {
     return res.json({
       success: true,
       isNewUser: true,

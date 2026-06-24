@@ -59,7 +59,7 @@ describe('HomeComponent', () => {
 
     expect(component.totalRecipes()).toBe(4);
     const recent = component.recentRecipes();
-    expect(recent.length).toBe(3);
+    expect(recent).toHaveLength(3);
     // last element is sliced and reversed, so first should be 'Recipe Four' (id: '4')
     expect(recent[0].id).toBe('4');
     expect(recent[1].id).toBe('3');
