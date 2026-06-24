@@ -9,19 +9,52 @@ const { mockFrom } = vi.hoisted(() => ({
   mockFrom: vi.fn(),
 }));
 
-vi.mock('@supabase/supabase-js', () => ({
-  createClient: vi.fn(() => ({
-    from: mockFrom,
-  })),
-}));
+vi.mock('@supabase/supabase-js', () => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const wrapQueryChain = (chain: any): any => {
+    if (!chain || typeof chain !== 'object') return chain;
+    if (chain instanceof Promise) return chain;
+    return new Proxy(chain, {
+      get(target, prop) {
+        if (prop === 'then') {
+          return target.then ? target.then.bind(target) : undefined;
+        }
+        if (prop in target) {
+          const val = target[prop];
+          if (typeof val === 'function') {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            return (...args: any[]) => {
+              const res = val.apply(target, args);
+              return wrapQueryChain(res);
+            };
+          }
+          return val;
+        }
+        // Fallback for missing methods (returns a function that returns the proxied chain itself)
+        return () => wrapQueryChain(target);
+      },
+    });
+  };
+
+  return {
+    createClient: vi.fn(() => ({
+      from: (table: string) => {
+        const activeMockFrom = (globalThis as any).supabaseMockFrom || mockFrom;
+        return wrapQueryChain(activeMockFrom(table));
+      },
+    })),
+  };
+});
 
 import express from 'express';
 import request from 'supertest';
 import recipesRouter from './recipes';
-import { resetSupabaseClient } from './recipe-index';
+import { resetSupabaseClient } from './supabase';
 
 describe('Recipes Router API', () => {
-  let app: express.Express;
+  const app = express();
+  app.use('/api', recipesRouter);
+
   let shouldFail = false;
   let mockIngredientsData: { id: string; name: string }[] = [];
 
@@ -31,6 +64,7 @@ describe('Recipes Router API', () => {
   ];
 
   beforeEach(() => {
+    (globalThis as any).supabaseMockFrom = mockFrom;
     vi.clearAllMocks();
     shouldFail = false;
     mockIngredientsData = [];
@@ -84,9 +118,6 @@ describe('Recipes Router API', () => {
         },
       };
     });
-
-    app = express();
-    app.use('/api', recipesRouter);
   });
 
   it('should fetch recipes with default pagination', async () => {
@@ -277,31 +308,7 @@ describe('Recipes Router API', () => {
     expect(res.body.error).toBe('String exception');
   });
 
-  it('should fail gracefully and return 200 with empty list when env variables are missing and VITEST is not true', async () => {
-    const originalVitest = process.env['VITEST'];
-    delete process.env['VITEST'];
-
-    const originalUrl = process.env['SUPABASE_URL'];
-    const originalKey = process.env['SUPABASE_KEY'];
-    delete process.env['SUPABASE_URL'];
-    delete process.env['SUPABASE_KEY'];
-
-    resetSupabaseClient();
-
-    try {
-      const res = await request(app).get('/api/recipes');
-      expect(res.status).toBe(200);
-      expect(res.body.items).toEqual([]);
-      expect(res.body.total).toBe(0);
-    } finally {
-      resetSupabaseClient();
-      if (originalVitest !== undefined) process.env['VITEST'] = originalVitest;
-      if (originalUrl !== undefined) process.env['SUPABASE_URL'] = originalUrl;
-      if (originalKey !== undefined) process.env['SUPABASE_KEY'] = originalKey;
-    }
-  });
-
-  it('should return 500 when database client initialization fails and VITEST is true', async () => {
+  it('should return 500 when database client initialization fails', async () => {
     const originalUrl = process.env['SUPABASE_URL'];
     const originalKey = process.env['SUPABASE_KEY'];
     delete process.env['SUPABASE_URL'];
@@ -341,5 +348,471 @@ describe('Recipes Router API', () => {
       .get('/api/recipes')
       .query({ category: 'apple', method: 'nonexistent' });
     expect(res.status).toBe(200);
+  });
+
+  describe('GET /api/recipes/:slug', () => {
+    it('should return a recipe by slug with breadcrumbs and navigation links', async () => {
+      const mockSingleDbRecipe = {
+        id: '1',
+        title: 'Recipe 1',
+        slug: 'r1',
+        status: 'published',
+        created_at: '2026-06-22T08:00:00Z',
+        recipe_categories: [
+          { categories: { id: 'c1', name: 'Dinner', url: '/recipes/dinner' } },
+          { categories: { id: 'c2', name: 'Pasta', url: '/recipes/dinner/pasta' } },
+        ],
+        recipe_methods: [{ methods: { name: 'Baking' } }],
+        recipe_holidays: [{ holidays: { name: 'Christmas' } }],
+        recipe_special_diets: [{ special_diets: { name: 'Vegan' } }],
+      };
+
+      const mockCategories = [
+        { name: 'Dinner', url: '/recipes/dinner' },
+        { name: 'Pasta', url: '/recipes/dinner/pasta' },
+      ];
+
+      const mockPrevRecipe = {
+        id: '0',
+        title: 'Prev Title',
+        slug: 'prev-slug',
+        created_at: '2026-06-22T07:00:00Z',
+      };
+      const mockNextRecipe = {
+        id: '2',
+        title: 'Next Title',
+        slug: 'next-slug',
+        created_at: '2026-06-22T09:00:00Z',
+      };
+
+      mockFrom.mockImplementation((table: string) => {
+        if (table === 'categories') {
+          return {
+            select: () => Promise.resolve({ data: mockCategories, error: null }),
+          };
+        }
+        if (table === 'recipe_categories') {
+          const queryChain = {
+            select: () => queryChain,
+            eq: () => queryChain,
+            then: (onfulfilled?: (value: unknown) => unknown) => {
+              return Promise.resolve({
+                data: mockSingleDbRecipe.recipe_categories,
+                error: null,
+              }).then(onfulfilled);
+            },
+          };
+          return queryChain;
+        }
+        let isNext = false;
+        const queryChain = {
+          eq: () => queryChain,
+          in: () => queryChain,
+          order: () => queryChain,
+          limit: () => queryChain,
+          gt: () => {
+            isNext = true;
+            return queryChain;
+          },
+          lt: () => {
+            isNext = false;
+            return queryChain;
+          },
+          maybeSingle: () => Promise.resolve({ data: mockSingleDbRecipe, error: null }),
+          then: (onfulfilled?: (value: unknown) => unknown) => {
+            return Promise.resolve({
+              data: isNext ? [mockNextRecipe] : [mockPrevRecipe],
+              error: null,
+            }).then(onfulfilled);
+          },
+        };
+        return {
+          select: () => queryChain,
+        };
+      });
+
+      const res = await request(app).get('/api/recipes/r1');
+
+      expect(res.status).toBe(200);
+      expect(res.body.id).toBe('1');
+      expect(res.body.title).toBe('Recipe 1');
+      expect(res.body.rating).toBe(5);
+      expect(res.body.comments).toEqual([]);
+      expect(res.body.breadcrumbs.main).toBe(0);
+      expect(res.body.breadcrumbs.items).toHaveLength(1);
+      expect(res.body.breadcrumbs.items[0]).toEqual([
+        { label: 'Home', url: '/' },
+        { label: 'Recipes', url: '/recipes' },
+        { label: 'Dinner', url: '/recipes/dinner' },
+        { label: 'Pasta', url: '/recipes/dinner/pasta' },
+        { label: 'Recipe 1', url: '/recipe/r1' },
+      ]);
+      expect(res.body.navigation.prev.title).toBe('Prev Title');
+      expect(res.body.navigation.prev.slug).toBe('/recipe/prev-slug');
+      expect(res.body.navigation.next.title).toBe('Next Title');
+      expect(res.body.navigation.next.slug).toBe('/recipe/next-slug');
+    });
+
+    it('should return null when recipe is not found', async () => {
+      mockFrom.mockImplementation(() => {
+        return {
+          select: () => {
+            const queryChain = {
+              eq: () => queryChain,
+              maybeSingle: () => Promise.resolve({ data: null, error: null }),
+            };
+            return queryChain;
+          },
+        };
+      });
+
+      const res = await request(app).get('/api/recipes/nonexistent');
+      expect(res.status).toBe(200);
+      expect(res.body).toBeNull();
+    });
+
+    it('should return 500 when recipe query fails', async () => {
+      mockFrom.mockImplementation(() => {
+        return {
+          select: () => {
+            const queryChain = {
+              eq: () => queryChain,
+              maybeSingle: () => Promise.resolve({ data: null, error: new Error('Query error') }),
+            };
+            return queryChain;
+          },
+        };
+      });
+
+      const res = await request(app).get('/api/recipes/error');
+      expect(res.status).toBe(500);
+      expect(res.body.error).toBe('Query error');
+    });
+
+    it('should handle category deslugification fallback and theBest prefix checks', async () => {
+      const mockSingleDbRecipe = {
+        id: '2',
+        title: 'Recipe 2',
+        slug: 'r2',
+        status: 'published',
+        the_best: true,
+        created_at: '2026-06-22T08:00:00Z',
+        recipe_categories: [
+          {
+            categories: {
+              id: 'c3',
+              name: 'The Best Steak',
+              url: '/the-best-recipes/the-best-dinner/steak',
+            },
+          },
+        ],
+        recipe_methods: [],
+        recipe_holidays: [],
+        recipe_special_diets: [],
+      };
+
+      mockFrom.mockImplementation((table: string) => {
+        if (table === 'categories') {
+          return {
+            select: () => Promise.resolve({ data: [], error: null }),
+          };
+        }
+        if (table === 'recipe_categories') {
+          const queryChain = {
+            select: () => queryChain,
+            eq: () => queryChain,
+            then: (onfulfilled?: (value: unknown) => unknown) => {
+              return Promise.resolve({
+                data: mockSingleDbRecipe.recipe_categories,
+                error: null,
+              }).then(onfulfilled);
+            },
+          };
+          return queryChain;
+        }
+        const queryChain = {
+          eq: () => queryChain,
+          in: () => queryChain,
+          order: () => queryChain,
+          maybeSingle: () => Promise.resolve({ data: mockSingleDbRecipe, error: null }),
+          then: (onfulfilled?: (value: unknown) => unknown) => {
+            return Promise.resolve({ data: [mockSingleDbRecipe], error: null }).then(onfulfilled);
+          },
+        };
+        return {
+          select: () => queryChain,
+        };
+      });
+
+      const res = await request(app).get('/api/recipes/r2');
+      expect(res.status).toBe(200);
+      expect(res.body.breadcrumbs.items[0]).toEqual([
+        { label: 'Home', url: '/' },
+        { label: 'The Best Recipes', url: '/the-best-recipes' },
+        { label: 'The Best Steak', url: '/the-best-recipes/the-best-dinner/steak' },
+        { label: 'Recipe 2', url: '/recipe/r2' },
+      ]);
+    });
+
+    it('should cover getBreadcrumbs fallback branches (null categories and invalid category objects)', async () => {
+      const mockSingleDbRecipe = {
+        id: '4',
+        title: 'Recipe 4',
+        slug: 'r4',
+        status: 'published',
+        the_best: true,
+        created_at: '2026-06-22T08:00:00Z',
+        recipe_categories: [
+          {
+            categories: null,
+          },
+          {
+            categories: {
+              id: 'c_bad',
+              name: null,
+              url: null,
+            },
+          },
+        ],
+        recipe_methods: [],
+        recipe_holidays: [],
+        recipe_special_diets: [],
+      };
+
+      mockFrom.mockImplementation((table: string) => {
+        if (table === 'recipe_categories') {
+          const queryChain = {
+            select: () => queryChain,
+            eq: () => queryChain,
+            then: (onfulfilled?: (value: unknown) => unknown) => {
+              return Promise.resolve({
+                data: null,
+                error: null,
+              }).then(onfulfilled);
+            },
+          };
+          return queryChain;
+        }
+        const queryChain = {
+          eq: () => queryChain,
+          in: () => queryChain,
+          order: () => queryChain,
+          maybeSingle: () => Promise.resolve({ data: mockSingleDbRecipe, error: null }),
+          then: (onfulfilled?: (value: unknown) => unknown) => {
+            return Promise.resolve({ data: [], error: null }).then(onfulfilled);
+          },
+        };
+        return {
+          select: () => queryChain,
+        };
+      });
+
+      const res = await request(app).get('/api/recipes/r4');
+      expect(res.status).toBe(200);
+      expect(res.body.breadcrumbs.items[0]).toEqual([
+        { label: 'Home', url: '/' },
+        { label: 'The Best Recipes', url: '/the-best-recipes' },
+        { label: 'Recipe 4', url: '/recipe/r4' },
+      ]);
+    });
+
+    it('should fallback to first category when recipe is theBest but has no theBest categories', async () => {
+      const mockSingleDbRecipe = {
+        id: '5',
+        title: 'Recipe 5',
+        slug: 'r5',
+        status: 'published',
+        the_best: true,
+        created_at: '2026-06-22T08:00:00Z',
+        recipe_categories: [
+          {
+            categories: {
+              id: 'c4',
+              name: 'Dinner',
+              url: '/recipes/dinner',
+            },
+          },
+          {
+            categories: {
+              id: 'c_invalid',
+              name: null,
+              url: '/recipes/invalid',
+            },
+          },
+        ],
+        recipe_methods: [],
+        recipe_holidays: [],
+        recipe_special_diets: [],
+      };
+
+      mockFrom.mockImplementation((table: string) => {
+        if (table === 'recipe_categories') {
+          const queryChain = {
+            select: () => queryChain,
+            eq: () => queryChain,
+            then: (onfulfilled?: (value: unknown) => unknown) => {
+              return Promise.resolve({
+                data: mockSingleDbRecipe.recipe_categories,
+                error: null,
+              }).then(onfulfilled);
+            },
+          };
+          return queryChain;
+        }
+        const queryChain = {
+          eq: () => queryChain,
+          in: () => queryChain,
+          order: () => queryChain,
+          maybeSingle: () => Promise.resolve({ data: mockSingleDbRecipe, error: null }),
+          then: (onfulfilled?: (value: unknown) => unknown) => {
+            return Promise.resolve({ data: [], error: null }).then(onfulfilled);
+          },
+        };
+        return {
+          select: () => queryChain,
+        };
+      });
+
+      const res = await request(app).get('/api/recipes/r5');
+      expect(res.status).toBe(200);
+      expect(res.body.breadcrumbs.items[0]).toEqual([
+        { label: 'Home', url: '/' },
+        { label: 'The Best Recipes', url: '/the-best-recipes' },
+        { label: 'Dinner', url: '/recipes/dinner' },
+        { label: 'Recipe 5', url: '/recipe/r5' },
+      ]);
+    });
+
+    it('should throw error on database client initialization error', async () => {
+      const originalUrl = process.env['SUPABASE_URL'];
+      const originalKey = process.env['SUPABASE_KEY'];
+      delete process.env['SUPABASE_URL'];
+      delete process.env['SUPABASE_KEY'];
+
+      resetSupabaseClient();
+
+      try {
+        const res = await request(app).get('/api/recipes/r1');
+        expect(res.status).toBe(500);
+        expect(res.body.error).toContain('Supabase URL and Key are required');
+      } finally {
+        resetSupabaseClient();
+        if (originalUrl !== undefined) process.env['SUPABASE_URL'] = originalUrl;
+        if (originalKey !== undefined) process.env['SUPABASE_KEY'] = originalKey;
+      }
+    });
+
+    it('should handle recipe with no categories and null prev/next navigation', async () => {
+      const mockSingleDbRecipe = {
+        id: '3',
+        title: 'Recipe 3',
+        slug: 'r3',
+        status: 'published',
+        created_at: '2026-06-22T08:00:00Z',
+        recipe_categories: [],
+      };
+
+      mockFrom.mockImplementation(() => {
+        const queryChain = {
+          eq: () => queryChain,
+          in: () => queryChain,
+          order: () => queryChain,
+          maybeSingle: () => Promise.resolve({ data: mockSingleDbRecipe, error: null }),
+          then: (onfulfilled?: (value: unknown) => unknown) => {
+            return Promise.resolve({ data: [], error: null }).then(onfulfilled);
+          },
+        };
+        return {
+          select: () => queryChain,
+        };
+      });
+
+      const res = await request(app).get('/api/recipes/r3');
+      expect(res.status).toBe(200);
+      expect(res.body.breadcrumbs.items[0]).toEqual([
+        { label: 'Home', url: '/' },
+        { label: 'Recipes', url: '/recipes' },
+        { label: 'Recipe 3', url: '/recipe/r3' },
+      ]);
+      expect(res.body.navigation.prev).toBeNull();
+      expect(res.body.navigation.next).toBeNull();
+    });
+
+    it('should return 500 when categories fetch fails', async () => {
+      const mockSingleDbRecipe = {
+        id: '1',
+        slug: 'r1',
+        status: 'published',
+        created_at: '2026-06-22',
+      };
+
+      mockFrom.mockImplementation((table: string) => {
+        if (table === 'categories') {
+          return {
+            select: () => Promise.resolve({ data: null, error: new Error('Cats error') }),
+          };
+        }
+        if (table === 'recipe_categories') {
+          return {
+            select: () => {
+              const queryChain = {
+                eq: () => Promise.resolve({ data: null, error: new Error('Cats error') }),
+              };
+              return queryChain;
+            },
+          };
+        }
+        return {
+          select: () => {
+            const queryChain = {
+              eq: () => queryChain,
+              maybeSingle: () => Promise.resolve({ data: mockSingleDbRecipe, error: null }),
+            };
+            return queryChain;
+          },
+        };
+      });
+
+      const res = await request(app).get('/api/recipes/r1');
+      expect(res.status).toBe(500);
+      expect(res.body.error).toBe('Cats error');
+    });
+
+    it('should return 500 when adjacent recipes query fails', async () => {
+      const mockSingleDbRecipe = {
+        id: '1',
+        slug: 'r1',
+        status: 'published',
+        created_at: '2026-06-22',
+        recipe_categories: [{ categories: { id: 'c1', name: 'Dinner', url: '/recipes/dinner' } }],
+      };
+
+      mockFrom.mockImplementation((table: string) => {
+        if (table === 'categories') {
+          return {
+            select: () =>
+              Promise.resolve({ data: [{ name: 'Dinner', url: '/recipes/dinner' }], error: null }),
+          };
+        }
+        const queryChain = {
+          eq: () => queryChain,
+          in: () => queryChain,
+          order: () => queryChain,
+          maybeSingle: () => Promise.resolve({ data: mockSingleDbRecipe, error: null }),
+          then: (onfulfilled?: (value: unknown) => unknown) => {
+            return Promise.resolve({ data: null, error: new Error('Adjacent query error') }).then(
+              onfulfilled,
+            );
+          },
+        };
+        return {
+          select: () => queryChain,
+        };
+      });
+
+      const res = await request(app).get('/api/recipes/r1');
+      expect(res.status).toBe(500);
+      expect(res.body.error).toBe('Adjacent query error');
+    });
   });
 });

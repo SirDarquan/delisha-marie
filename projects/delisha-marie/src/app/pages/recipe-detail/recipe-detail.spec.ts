@@ -12,6 +12,7 @@ describe('RecipeDetail', () => {
   let recipeServiceMock: {
     recipes: ReturnType<typeof signal<Recipe[]>>;
     getComments: ReturnType<typeof vi.fn>;
+    getRecipeBySlug: ReturnType<typeof vi.fn>;
   };
 
   const mockRecipe: Recipe = createMockRecipe({
@@ -57,6 +58,7 @@ describe('RecipeDetail', () => {
     recipeServiceMock = {
       recipes: signal(mockRecipes),
       getComments: vi.fn().mockResolvedValue([]),
+      getRecipeBySlug: vi.fn().mockResolvedValue(mockRecipe),
     };
 
     await TestBed.configureTestingModule({
@@ -72,8 +74,10 @@ describe('RecipeDetail', () => {
     expect(component).toBeTruthy();
   });
 
-  it('should render recipe details when recipe is provided', () => {
+  it('should render recipe details when recipe is provided', async () => {
     fixture.componentRef.setInput('recipe', mockRecipe);
+    fixture.detectChanges();
+    await fixture.whenStable();
     fixture.detectChanges();
 
     const compiled = fixture.nativeElement as HTMLElement;
@@ -85,27 +89,32 @@ describe('RecipeDetail', () => {
     expect(compiled.querySelector('dml-recipe-comments')).toBeTruthy();
   }, 30000);
 
-  it('should render "Recipe not found" when recipe is null', () => {
+  it('should render "Recipe not found" when recipe is null', async () => {
     fixture.componentRef.setInput('recipe', null);
+    fixture.detectChanges();
+    await fixture.whenStable();
     fixture.detectChanges();
 
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.textContent).toContain('Recipe not found');
   });
 
-  it('should generate correct breadcrumbs with all levels', () => {
+  it('should generate correct breadcrumbs with all levels', async () => {
     fixture.componentRef.setInput('recipe', mockRecipe);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
     const breadcrumbs = component.breadcrumbItems();
 
-    expect(breadcrumbs.length).toBe(5); // Home > Recipes > Desserts > Cakes > Test Recipe
+    expect(breadcrumbs).toHaveLength(5); // Home > Recipes > Desserts > Cakes > Test Recipe
     expect(breadcrumbs[0].label).toBe('Home');
     expect(breadcrumbs[2].label).toBe('Desserts');
     expect(breadcrumbs[3].label).toBe('Cakes');
     expect(breadcrumbs[4].label).toBe('Test Recipe');
   });
 
-  it('should handle breadcrumbs without subcategory', () => {
-    fixture.componentRef.setInput('recipe', {
+  it('should handle breadcrumbs without subcategory', async () => {
+    const customRecipe = {
       ...mockRecipe,
       breadcrumbs: {
         main: 0,
@@ -118,16 +127,20 @@ describe('RecipeDetail', () => {
           ],
         ],
       },
-    });
+    };
+    fixture.componentRef.setInput('recipe', customRecipe);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
     const breadcrumbs = component.breadcrumbItems();
 
-    expect(breadcrumbs.length).toBe(4); // Home > Recipes > Desserts > Test Recipe
+    expect(breadcrumbs).toHaveLength(4); // Home > Recipes > Desserts > Test Recipe
     expect(breadcrumbs[2].label).toBe('Desserts');
     expect(breadcrumbs[3].label).toBe('Test Recipe');
   });
 
-  it('should handle breadcrumbs without category', () => {
-    fixture.componentRef.setInput('recipe', {
+  it('should handle breadcrumbs without category', async () => {
+    const customRecipe = {
       ...mockRecipe,
       breadcrumbs: {
         main: 0,
@@ -139,23 +152,31 @@ describe('RecipeDetail', () => {
           ],
         ],
       },
-    });
+    };
+    fixture.componentRef.setInput('recipe', customRecipe);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
     const breadcrumbs = component.breadcrumbItems();
 
-    expect(breadcrumbs.length).toBe(3); // Home > Recipes > Test Recipe
+    expect(breadcrumbs).toHaveLength(3); // Home > Recipes > Test Recipe
     expect(breadcrumbs[1].label).toBe('Recipes');
     expect(breadcrumbs[2].label).toBe('Test Recipe');
   });
 
-  it('should handle breadcrumbs with undefined content', () => {
-    fixture.componentRef.setInput('recipe', { ...mockRecipe, content: undefined });
+  it('should handle breadcrumbs with undefined content', async () => {
+    const customRecipe = { ...mockRecipe, content: undefined as unknown as string };
+    fixture.componentRef.setInput('recipe', customRecipe);
     fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.querySelector('.recipe-story')?.innerHTML).toBe('');
   });
 
-  it('should return empty array if breadcrumb main index is undefined', () => {
-    fixture.componentRef.setInput('recipe', {
+  it('should return empty array if breadcrumb main index is undefined', async () => {
+    const customRecipe = {
       ...mockRecipe,
       breadcrumbs: {
         main: undefined as unknown as number,
@@ -166,14 +187,21 @@ describe('RecipeDetail', () => {
           ],
         ],
       },
-    });
+    };
+    fixture.componentRef.setInput('recipe', customRecipe);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
     const breadcrumbs = component.breadcrumbItems();
-    expect(breadcrumbs.length).toBe(0);
+    expect(breadcrumbs).toHaveLength(0);
   });
 
-  it('should return empty array if recipe is null', () => {
+  it('should return empty array if recipe is null', async () => {
     fixture.componentRef.setInput('recipe', null);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
     const breadcrumbs = component.breadcrumbItems();
-    expect(breadcrumbs.length).toBe(0);
+    expect(breadcrumbs).toHaveLength(0);
   });
 });

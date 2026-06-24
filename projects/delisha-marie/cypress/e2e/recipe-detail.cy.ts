@@ -43,10 +43,16 @@ describe('Single Recipe Detail View', () => {
 
   beforeEach(() => {
     // Setup active recipe list API mock
-    cy.intercept('GET', '/api/recipes*', {
+    cy.intercept('GET', '/api/recipes', {
       statusCode: 200,
       body: { items: [mockFullRecipe], total: 1 },
     }).as('getRecipeList');
+
+    // Setup active recipe detail API mock
+    cy.intercept('GET', '/api/recipes/signature-beef-stew', {
+      statusCode: 200,
+      body: mockFullRecipe,
+    }).as('getRecipeDetail');
 
     // Stub comments list for this recipe
     cy.intercept('GET', '/api/comments*', {
@@ -64,6 +70,7 @@ describe('Single Recipe Detail View', () => {
 
     cy.visit('/recipe/signature-beef-stew');
     cy.wait('@getRecipeList');
+    cy.wait('@getRecipeDetail');
   });
 
   it('should populate the HTML Head with robust JSON-LD Schema markup', () => {

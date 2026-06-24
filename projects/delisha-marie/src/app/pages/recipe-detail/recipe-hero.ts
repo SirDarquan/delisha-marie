@@ -1,11 +1,11 @@
-import { CommonModule, NgOptimizedImage } from '@angular/common';
+import { NgOptimizedImage } from '@angular/common';
 import { ChangeDetectionStrategy, Component, input, ViewEncapsulation } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import { Recipe } from '../../services/recipe.service';
 
 @Component({
   selector: 'dml-recipe-hero',
-  imports: [CommonModule, NgOptimizedImage, MatIconModule],
+  imports: [NgOptimizedImage, MatIconModule],
   template: `
     <div class="hero-container mb-20">
       <div

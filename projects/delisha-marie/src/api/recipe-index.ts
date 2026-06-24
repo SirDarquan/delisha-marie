@@ -1,24 +1,8 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { Request, Response, Router } from 'express';
+import { getSupabaseClient } from './supabase';
 
 const recipeIndexRouter = Router();
-
-let supabaseClient: SupabaseClient | null = null;
-export function resetSupabaseClient() {
-  supabaseClient = null;
-}
-export async function getSupabaseClient() {
-  if (!supabaseClient) {
-    const supabaseUrl = process.env['SUPABASE_URL'] || '';
-    const supabaseKey = process.env['SUPABASE_KEY'] || '';
-    if (!supabaseUrl || !supabaseKey) {
-      throw new Error('Supabase URL and Key are required. Check environment variables.');
-    }
-    const { createClient } = await import('@supabase/supabase-js');
-    supabaseClient = createClient(supabaseUrl, supabaseKey);
-  }
-  return supabaseClient;
-}
 
 interface CategoryItem {
   name: string;
@@ -303,26 +287,7 @@ async function getBestRecipes(supabase: SupabaseClient): Promise<CategoryItem[]>
 
 recipeIndexRouter.get('/recipe-index', async (req: Request, res: Response) => {
   try {
-    let supabase;
-    try {
-      supabase = await getSupabaseClient();
-    } catch (dbErr: unknown) {
-      if (process.env['VITEST'] === 'true') {
-        throw dbErr;
-      }
-      const msg = (dbErr as Error).message;
-      console.warn('Database client initialization skipped/failed:', msg);
-      return res.json({
-        featuredCategories: [],
-        cookingMethods: [],
-        categoriesList: [],
-        methodsList: [],
-        holidays: [],
-        specialDiets: [],
-        bestRecipes: [],
-        ingredients: [],
-      });
-    }
+    const supabase = await getSupabaseClient();
 
     const [
       featuredCategories,

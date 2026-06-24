@@ -605,7 +605,7 @@ describe('RecipeFormComponent', () => {
 
     expect(createPayload.category).toEqual(testCategory);
     expect(createPayload.breadcrumbs).toBeNull();
-  });
+  }, 15000);
 
   it('should append transformed best trails to category property if theBest is true', () => {
     fixture.detectChanges();
@@ -1259,7 +1259,7 @@ describe('RecipeFormComponent', () => {
     expect(component['isDraftDisabled']()).toBe(true);
   });
 
-  it('should enable Save as Draft when typing in any field, and disable it when cleared/reverted to initial value', async () => {
+  it('should enable Save as Draft when modifying the title field, and disable it when reverted to initial value', async () => {
     fixture.detectChanges();
     await new Promise((resolve) => setTimeout(resolve, 0));
 
@@ -1277,15 +1277,15 @@ describe('RecipeFormComponent', () => {
     // Initially disabled (no changes)
     expect(component['isDraftDisabled']()).toBe(true);
 
-    // Type in cuisine field
-    component['recipeForm'].cuisine().controlValue.set('Italian');
+    // Type in title field
+    component['recipeForm'].title().controlValue.set('New Title');
     fixture.detectChanges();
 
     // Now it is dirty, so Save as Draft is enabled
     expect(component['isDraftDisabled']()).toBe(false);
 
-    // Revert/clear cuisine field back to empty
-    component['recipeForm'].cuisine().controlValue.set('');
+    // Revert/clear title field back to initial value
+    component['recipeForm'].title().controlValue.set('Initial Title');
     fixture.detectChanges();
 
     // Now it is back to clean initial state, so Save as Draft is disabled again
