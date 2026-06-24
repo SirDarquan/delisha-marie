@@ -49,6 +49,7 @@ vi.mock('@supabase/supabase-js', () => {
 import express from 'express';
 import request from 'supertest';
 import recipeIndexRouter from './recipe-index';
+import { resetSupabaseClient } from './supabase';
 
 describe('Recipe Index Router API', () => {
   let app: express.Express;
@@ -183,6 +184,7 @@ describe('Recipe Index Router API', () => {
 
   beforeEach(() => {
     (globalThis as any).supabaseMockFrom = mockFrom;
+    resetSupabaseClient();
     vi.clearAllMocks();
     shouldFailRecipes = false;
     shouldFailCategories = false;
