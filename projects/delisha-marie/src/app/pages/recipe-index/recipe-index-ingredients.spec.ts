@@ -48,7 +48,7 @@ describe('RecipeIndexIngredients', () => {
 
   it('should group ingredients alphabetically', () => {
     const groups = component.groupedIngredients();
-    expect(groups.length).toBe(2);
+    expect(groups).toHaveLength(2);
     expect(groups[0].letter).toBe('A');
     expect(groups[1].letter).toBe('B');
   });
@@ -62,7 +62,7 @@ describe('RecipeIndexIngredients', () => {
   it('should render jump links as buttons', () => {
     const compiled = fixture.nativeElement as HTMLElement;
     const buttons = compiled.querySelectorAll('nav button');
-    expect(buttons.length).toBe(2);
+    expect(buttons).toHaveLength(2);
     expect(buttons[0].textContent).toContain('A');
   });
 
@@ -70,7 +70,7 @@ describe('RecipeIndexIngredients', () => {
     const compiled = fixture.nativeElement as HTMLElement;
     const backToTopButtons = compiled.querySelectorAll('button');
     // 2 jump links + 2 back-to-top buttons = 4 total
-    expect(backToTopButtons.length).toBe(4);
+    expect(backToTopButtons).toHaveLength(4);
     expect(backToTopButtons[2].textContent).toContain('(back to top)');
   });
 

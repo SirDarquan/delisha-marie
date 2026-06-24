@@ -69,7 +69,7 @@ describe('RecipeComments', () => {
 
   it('should implement reverse-slice logic: Page 3 has 50 newest', () => {
     const paginated = component.paginatedComments();
-    expect(paginated.length).toBe(50);
+    expect(paginated).toHaveLength(50);
     // Newest in the whole set is c102
     expect(paginated[0].id).toBe('c102');
     // Oldest in this block is c53
@@ -81,7 +81,7 @@ describe('RecipeComments', () => {
     fixture.detectChanges();
 
     const paginated = component.paginatedComments();
-    expect(paginated.length).toBe(2);
+    expect(paginated).toHaveLength(2);
     expect(paginated[0].id).toBe('c2'); // newest of the oldest
     expect(paginated[1].id).toBe('c1'); // oldest of all
   });
@@ -106,9 +106,9 @@ describe('RecipeComments', () => {
     fixture.detectChanges();
     await fixture.whenStable();
 
-    expect(component.topLevelComments().length).toBe(0);
+    expect(component.topLevelComments()).toHaveLength(0);
     expect(component.currentPage()).toBe(1);
-    expect(component.paginatedComments().length).toBe(0);
+    expect(component.paginatedComments()).toHaveLength(0);
   });
 
   it('should sort replies chronologically (oldest first)', async () => {

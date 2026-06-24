@@ -611,7 +611,7 @@ describe('ImageUploaderComponent', () => {
 
     const fields = fixture.nativeElement.querySelectorAll('mat-form-field');
     // Should only render the MIME type field (1 mat-form-field instead of 3)
-    expect(fields.length).toBe(1);
+    expect(fields).toHaveLength(1);
     expect(fields[0].textContent).toContain('MIME Type');
     expect(fields[0].textContent).not.toContain('Width');
     expect(fields[0].textContent).not.toContain('Height');
@@ -622,6 +622,6 @@ describe('ImageUploaderComponent', () => {
     fixture.detectChanges();
 
     const allFields = fixture.nativeElement.querySelectorAll('mat-form-field');
-    expect(allFields.length).toBe(3);
+    expect(allFields).toHaveLength(3);
   });
 });

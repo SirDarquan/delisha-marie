@@ -110,7 +110,7 @@ describe('RecipeList', () => {
     fixture.detectChanges();
     await fixture.whenStable();
 
-    expect(component.recipes().length).toBe(2);
+    expect(component.recipes()).toHaveLength(2);
     expect(component.totalItems()).toBe(2);
     expect(component.totalPages()).toBe(1);
   });
@@ -190,7 +190,7 @@ describe('RecipeList', () => {
     fixture.detectChanges();
     await fixture.whenStable();
     const breadcrumbs = component.breadcrumbItems();
-    expect(breadcrumbs.length).toBe(4);
+    expect(breadcrumbs).toHaveLength(4);
     expect(breadcrumbs[1].label).toBe('Recipes'); // from segment
     expect(breadcrumbs[2].label).toBe('Desserts');
     expect(breadcrumbs[3].label).toBe('Cakes');
@@ -222,14 +222,14 @@ describe('RecipeList', () => {
     fixture.detectChanges();
     await fixture.whenStable();
     const subcats = component.subCategories();
-    expect(subcats.length).toBe(1);
+    expect(subcats).toHaveLength(1);
     expect(subcats[0].name).toBe('Cakes');
 
     // Subcategory should return empty array
     paramsSubject.next({ category: 'desserts', subcategory: 'cakes' });
     fixture.detectChanges();
     await fixture.whenStable();
-    expect(component.subCategories().length).toBe(0);
+    expect(component.subCategories()).toHaveLength(0);
   });
 
   it('should handle missing data gracefully in subCategories', async () => {
@@ -243,7 +243,7 @@ describe('RecipeList', () => {
     paramsSubject.next({});
     fixture.detectChanges();
     await fixture.whenStable();
-    expect(component.subCategories().length).toBe(0);
+    expect(component.subCategories()).toHaveLength(0);
   });
 
   it('should return full list if no categorySlug in subCategories', async () => {
@@ -251,7 +251,7 @@ describe('RecipeList', () => {
     paramsSubject.next({});
     fixture.detectChanges();
     await fixture.whenStable();
-    expect(component.subCategories().length).toBeGreaterThan(0);
+    expect(component.subCategories()).toHaveLength(1);
   });
 
   it('should return methods list for Methods rootType', async () => {
@@ -276,7 +276,7 @@ describe('RecipeList', () => {
     paramsSubject.next({ category: 'baking' });
     fixture.detectChanges();
     await fixture.whenStable();
-    expect(component.subCategories().length).toBe(1);
+    expect(component.subCategories()).toHaveLength(1);
     expect(component.subCategories()[0].name).toBe('Bread');
   });
 
@@ -301,7 +301,7 @@ describe('RecipeList', () => {
     paramsSubject.next({ category: 'christmas' });
     fixture.detectChanges();
     await fixture.whenStable();
-    expect(component.subCategories().length).toBe(1);
+    expect(component.subCategories()).toHaveLength(1);
   });
 
   it('should return special diets list for Special Diets rootType', async () => {
@@ -325,7 +325,7 @@ describe('RecipeList', () => {
     paramsSubject.next({ category: 'vegan' });
     fixture.detectChanges();
     await fixture.whenStable();
-    expect(component.subCategories().length).toBe(1);
+    expect(component.subCategories()).toHaveLength(1);
   });
 
   it('should return best recipes list for The Best Recipes rootType', async () => {
@@ -349,7 +349,7 @@ describe('RecipeList', () => {
     paramsSubject.next({ category: 'top-10' });
     fixture.detectChanges();
     await fixture.whenStable();
-    expect(component.subCategories().length).toBe(1);
+    expect(component.subCategories()).toHaveLength(1);
   });
 
   it('should return ingredients list for Tags rootType', async () => {
@@ -373,7 +373,7 @@ describe('RecipeList', () => {
     paramsSubject.next({ category: 'chicken' });
     fixture.detectChanges();
     await fixture.whenStable();
-    expect(component.subCategories().length).toBe(1);
+    expect(component.subCategories()).toHaveLength(1);
   });
 
   it('should compute breadcrumbs with page > 1', async () => {
@@ -382,7 +382,7 @@ describe('RecipeList', () => {
     fixture.detectChanges();
     await fixture.whenStable();
     const breadcrumbs = component.breadcrumbItems();
-    expect(breadcrumbs.length).toBe(3);
+    expect(breadcrumbs).toHaveLength(3);
     expect(breadcrumbs[1].label).toBe('Recipes');
     expect(breadcrumbs[1].url).toBe('/recipes');
     expect(breadcrumbs[2].label).toBe('Page 2');
@@ -402,7 +402,7 @@ describe('RecipeList', () => {
     paramsSubject.next({ category: 'nonexistent' });
     fixture.detectChanges();
     await fixture.whenStable();
-    expect(component.subCategories().length).toBe(0);
+    expect(component.subCategories()).toHaveLength(0);
   });
 
   it('should return correct page URL', async () => {
@@ -450,7 +450,7 @@ describe('RecipeList', () => {
       fixture.detectChanges();
       await fixture.whenStable();
       const breadcrumbs = component.breadcrumbItems();
-      expect(breadcrumbs.length).toBe(3);
+      expect(breadcrumbs).toHaveLength(3);
     } finally {
       Array.prototype.at = originalAt;
     }

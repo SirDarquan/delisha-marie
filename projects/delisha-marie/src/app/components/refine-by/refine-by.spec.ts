@@ -48,7 +48,7 @@ describe('RefineBy', () => {
     expect(refineText).toContain('Refine');
 
     const links = fixture.nativeElement.querySelectorAll('a');
-    expect(links.length).toBe(2);
+    expect(links).toHaveLength(2);
 
     expect(links[0].textContent).toContain('Vegan');
     expect(links[0].getAttribute('href')).toBe('/vegan');

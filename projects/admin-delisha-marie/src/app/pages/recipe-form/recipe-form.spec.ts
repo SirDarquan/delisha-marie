@@ -982,6 +982,11 @@ describe('RecipeFormComponent', () => {
     if (updatePublishedBtn) {
       updatePublishedBtn.click();
     }
+
+    // Verify that event bindings updated the model
+    expect(component['recipeModel']().method).toBe('Bake');
+    expect(component['recipeModel']().holidays).toBe('Easter');
+    expect(component['recipeModel']().specialDiets).toEqual(['Vegan']);
   });
 
   it('should update reactive recipeModel image properties when onImageUploaded is called directly and mark form dirty', () => {
