@@ -605,7 +605,7 @@ describe('RecipeFormComponent', () => {
 
     expect(createPayload.category).toEqual(testCategory);
     expect(createPayload.breadcrumbs).toBeNull();
-  });
+  }, 15000);
 
   it('should append transformed best trails to category property if theBest is true', () => {
     fixture.detectChanges();

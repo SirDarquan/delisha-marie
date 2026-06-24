@@ -1,6 +1,12 @@
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import DescopeClient from '@descope/node-sdk';
 
+// Ensure Env vars exist before static initialization in imported modules
+vi.hoisted(() => {
+  process.env['SUPABASE_URL'] = 'https://example.supabase.co';
+  process.env['SUPABASE_KEY'] = 'test-key';
+});
+
 // 1. Explicitly declare mock functions outside to track calls
 const {
   mockRpc,
@@ -71,10 +77,6 @@ vi.mock('@supabase/supabase-js', () => ({
     },
   })),
 }));
-
-// 3. Ensure Env vars exist for static initialization
-process.env['SUPABASE_URL'] = 'https://example.supabase.co';
-process.env['SUPABASE_KEY'] = 'test-key';
 
 // 4. Standard imports
 import express from 'express';

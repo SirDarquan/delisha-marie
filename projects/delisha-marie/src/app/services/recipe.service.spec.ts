@@ -139,6 +139,38 @@ describe('RecipeService', () => {
       const result = await promise;
       expect(result).toBeNull();
     });
+
+    it('should cache consecutive requests for the same slug and clear them after 5 seconds', async () => {
+      vi.useFakeTimers();
+      try {
+        const mockRecipe = { id: 1, slug: 'cached-recipe', title: 'Cached' } as unknown as Recipe;
+
+        // First request - goes to API
+        const promise1 = service.getRecipeBySlug('cached-recipe');
+        const req = httpMock.expectOne('/api/recipes/cached-recipe');
+        req.flush(mockRecipe);
+        const result1 = await promise1;
+        expect(result1).toEqual(mockRecipe);
+
+        // Second request - hits cache (no new API call)
+        const promise2 = service.getRecipeBySlug('cached-recipe');
+        httpMock.expectNone('/api/recipes/cached-recipe');
+        const result2 = await promise2;
+        expect(result2).toEqual(mockRecipe);
+
+        // Advance timers by 5 seconds to trigger eviction
+        vi.advanceTimersByTime(5000);
+
+        // Third request - cache is cleared, should trigger new API call
+        const promise3 = service.getRecipeBySlug('cached-recipe');
+        const req2 = httpMock.expectOne('/api/recipes/cached-recipe');
+        req2.flush(mockRecipe);
+        const result3 = await promise3;
+        expect(result3).toEqual(mockRecipe);
+      } finally {
+        vi.useRealTimers();
+      }
+    });
   });
   describe('comments', () => {
     it('should fetch comments for a recipe', async () => {
