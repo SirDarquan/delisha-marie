@@ -14,7 +14,8 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { FormField, FormRoot, email, form, required } from '@angular/forms/signals';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { Router } from '@angular/router';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { Router, RouterLink } from '@angular/router';
 import { Stars } from '@dm/library';
 import { NgxPaginationModule } from 'ngx-pagination';
 import { WINDOW } from '../../services/global-tokens';
@@ -26,6 +27,7 @@ export interface CommentFormValue {
   website: string;
   content: string;
   rating: number | null;
+  alt_email: string;
 }
 
 @Component({
@@ -40,20 +42,21 @@ export interface CommentFormValue {
     MatIconModule,
     MatButtonModule,
     Stars,
+    RouterLink,
   ],
   template: `
-    <div class="recipe-comments mt-20" id="comments">
+    <div class="recipe-comments mt-20 scroll-mt-28" id="comments">
       <!-- Comments Header -->
       <div class="flex items-center gap-4 mb-10">
         <h2 class="text-3xl font-black tracking-tight">
-          {{ topLevelComments().length }} comment(s) on '{{ recipe().title }}'
+          {{ totalTopLevelComments() }} comment(s) on '{{ recipe().title }}'
         </h2>
         <div class="h-px flex-1 bg-[var(--mat-sys-outline-variant)] opacity-30"></div>
       </div>
 
       <!-- Comment Form -->
       <div
-        class="bg-[var(--mat-sys-surface-container-low)] rounded-[2.5rem] p-6 sm:p-8 md:p-12 border-y sm:border border-[var(--mat-sys-outline-variant)] mb-16"
+        class="bg-[var(--mat-sys-surface-container-low)] rounded-[2.5rem] p-6 sm:p-8 md:p-12 border-y sm:border border-[var(--mat-sys-outline-variant)] mb-16 scroll-mt-28"
         id="respond">
         <div class="flex items-center justify-between mb-8">
           <h3 class="text-2xl font-black">
@@ -67,6 +70,15 @@ export interface CommentFormValue {
         </div>
 
         <form [formRoot]="commentForm" class="space-y-6">
+          <div class="hidden" aria-hidden="true" style="display: none;">
+            <input
+              type="text"
+              id="alt_email"
+              [formField]="commentForm.alt_email"
+              tabindex="-1"
+              autocomplete="off" />
+          </div>
+
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div class="space-y-1">
               <label
@@ -80,9 +92,9 @@ export interface CommentFormValue {
                 [formField]="commentForm.author"
                 placeholder="Your Name"
                 class="w-full h-14 px-6 rounded-2xl bg-[var(--mat-sys-surface-container-high)] border-transparent focus:border-[var(--mat-sys-primary)] focus:ring-0 transition-all font-medium" />
-              @if (commentForm.author().errors().length > 0 && commentForm.author().touched()) {
+              @if (commentForm.author().invalid() && commentForm.author().touched()) {
                 <span class="text-xs text-red-500 ml-2">{{
-                  commentForm.author().errors()[0].message
+                  commentForm.author().errors()?.[0]?.message
                 }}</span>
               }
             </div>
@@ -99,9 +111,9 @@ export interface CommentFormValue {
                 [formField]="commentForm.email"
                 placeholder="email@example.com"
                 class="w-full h-14 px-6 rounded-2xl bg-[var(--mat-sys-surface-container-high)] border-transparent focus:border-[var(--mat-sys-primary)] focus:ring-0 transition-all font-medium" />
-              @if (commentForm.email().errors().length > 0 && commentForm.email().touched()) {
+              @if (commentForm.email().invalid() && commentForm.email().touched()) {
                 <span class="text-xs text-red-500 ml-2">{{
-                  commentForm.email().errors()[0].message
+                  commentForm.email().errors()?.[0]?.message
                 }}</span>
               }
             </div>
@@ -149,9 +161,9 @@ export interface CommentFormValue {
               rows="5"
               placeholder="Share your thoughts..."
               class="w-full p-6 rounded-2xl bg-[var(--mat-sys-surface-container-high)] border-transparent focus:border-[var(--mat-sys-primary)] focus:ring-0 transition-all font-medium resize-none"></textarea>
-            @if (commentForm.content().errors().length > 0 && commentForm.content().touched()) {
+            @if (commentForm.content().invalid() && commentForm.content().touched()) {
               <span class="text-xs text-red-500 ml-2">{{
-                commentForm.content().errors()[0].message
+                commentForm.content().errors()?.[0]?.message
               }}</span>
             }
           </div>
@@ -183,12 +195,24 @@ export interface CommentFormValue {
                 class="h-32 rounded-3xl bg-[var(--mat-sys-surface-container-high)] animate-pulse"></div>
             }
           </div>
+        } @else if (comments().length === 0) {
+          <div
+            class="text-center py-16 bg-[var(--mat-sys-surface-container-low)] rounded-[2.5rem] border border-[var(--mat-sys-outline-variant)] border-opacity-50">
+            <p class="text-2xl font-black text-[var(--mat-sys-on-surface-variant)] opacity-50">
+              Be the first to comment!
+            </p>
+          </div>
         } @else {
           <!-- Register with ngx-pagination internally -->
           <div style="display: none">
             @for (
               c of topLevelComments()
-                | paginate: { itemsPerPage: pageSize(), currentPage: currentPage() };
+                | paginate
+                  : {
+                      itemsPerPage: pageSize(),
+                      currentPage: currentPage(),
+                      totalItems: totalTopLevelComments(),
+                    };
               track c.id
             ) {}
           </div>
@@ -201,9 +225,25 @@ export interface CommentFormValue {
                 <div
                   class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-0 mb-4">
                   <div class="flex flex-col">
-                    <span class="comment-author text-xl font-black tracking-tight">{{
-                      comment.author
-                    }}</span>
+                    @if (comment.author.toLowerCase() === 'delisha marie') {
+                      <a
+                        routerLink="/about"
+                        class="comment-author text-xl font-black tracking-tight underline hover:text-[var(--mat-sys-primary)] transition-colors">
+                        {{ comment.author }}
+                      </a>
+                    } @else if (comment.website) {
+                      <a
+                        [href]="comment.website"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="comment-author text-xl font-black tracking-tight underline hover:text-[var(--mat-sys-primary)] transition-colors">
+                        {{ comment.author }}
+                      </a>
+                    } @else {
+                      <span class="comment-author text-xl font-black tracking-tight">{{
+                        comment.author
+                      }}</span>
+                    }
                     <span class="text-xs opacity-50 font-medium">
                       {{ comment.createdAt | date: 'MMM d, yyyy' }} @
                       {{ comment.createdAt | date: 'h:mm a' }}
@@ -242,7 +282,23 @@ export interface CommentFormValue {
                         <div class="flex items-start justify-between mb-3">
                           <div class="flex flex-col">
                             <div class="flex items-center gap-2">
-                              <span class="text-lg font-black">{{ reply.author }}</span>
+                              @if (reply.author.toLowerCase() === 'delisha marie') {
+                                <a
+                                  routerLink="/about"
+                                  class="text-lg font-black underline hover:text-[var(--mat-sys-primary)] transition-colors"
+                                  >{{ reply.author }}</a
+                                >
+                              } @else if (reply.website) {
+                                <a
+                                  [href]="reply.website"
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  class="text-lg font-black underline hover:text-[var(--mat-sys-primary)] transition-colors"
+                                  >{{ reply.author }}</a
+                                >
+                              } @else {
+                                <span class="text-lg font-black">{{ reply.author }}</span>
+                              }
                               <span class="text-[10px] font-bold uppercase opacity-30"
                                 >Replied</span
                               >
@@ -267,7 +323,7 @@ export interface CommentFormValue {
       </div>
 
       <!-- Pagination Controls -->
-      @if (topLevelComments().length > pageSize()) {
+      @if (totalTopLevelComments() > pageSize()) {
         <div class="flex justify-center pt-12 pb-4">
           <pagination-controls
             (pageChange)="onPageChange($event)"
@@ -351,6 +407,7 @@ export class RecipeComments {
   private readonly recipeService = inject(RecipeService);
   private readonly router = inject(Router);
   private readonly window = inject(WINDOW);
+  private readonly snackBar = inject(MatSnackBar);
 
   // Signals for state
   replyTo = signal<Comment | null>(null);
@@ -360,18 +417,23 @@ export class RecipeComments {
     const p = this.page();
     if (p) return Number.parseInt(p, 10);
 
-    const total = this.topLevelComments().length;
+    const total = this.totalTopLevelComments();
     const size = this.pageSize();
     return Math.max(1, Math.ceil(total / size));
   });
 
   // Resource for comments
   private readonly commentsResource = resource({
-    params: () => ({ recipeId: this.recipe().id }),
-    loader: ({ params }) => this.recipeService.getComments(params.recipeId),
+    params: () => ({ recipeId: this.recipe().id, page: this.page() }),
+    loader: ({ params }) =>
+      this.recipeService.getComments(
+        params.recipeId,
+        params.page ? Number.parseInt(params.page, 10) : undefined,
+      ),
   });
 
-  comments = computed(() => this.commentsResource.value() || []);
+  comments = computed(() => this.commentsResource.value()?.comments || []);
+  totalTopLevelComments = computed(() => this.commentsResource.value()?.total || 0);
   loading = computed(() => this.commentsResource.isLoading());
 
   topLevelComments = computed(() => {
@@ -381,24 +443,7 @@ export class RecipeComments {
   });
 
   paginatedComments = computed(() => {
-    const p = this.currentPage();
-    const size = this.pageSize();
-    const all = this.topLevelComments(); // Sorted oldest first
-    const total = all.length;
-
-    if (total === 0) return [];
-
-    const lastPage = Math.max(1, Math.ceil(total / size));
-
-    // We want the last page to have the full 'size' if possible,
-    // and the first page to have the remainder.
-    // Example: total 102, size 50. Page 3 should be 53-102 (indices 52-101).
-    const end = total - (lastPage - p) * size;
-    const start = Math.max(0, end - size);
-
-    const slice = all.slice(start, end);
-    // Reverse within the page so newest in this block is at the top
-    return [...slice].reverse();
+    return this.topLevelComments().slice().reverse();
   });
 
   getReplies(parentId: string) {
@@ -414,6 +459,7 @@ export class RecipeComments {
     website: '',
     content: '',
     rating: null,
+    alt_email: '',
   });
 
   protected commentForm = form(
@@ -428,7 +474,7 @@ export class RecipeComments {
       submission: {
         action: async (f) => {
           const value = f().value();
-          const newComment: Omit<Comment, 'id' | 'createdAt'> = {
+          const newComment: Omit<Comment, 'id' | 'createdAt'> & { alt_email?: string } = {
             recipeId: String(this.recipe().id),
             author: value.author,
             email: value.email,
@@ -436,11 +482,19 @@ export class RecipeComments {
             content: value.content,
             rating: value.rating || undefined,
             parentId: this.replyTo()?.id,
+            alt_email: value.alt_email,
           };
 
           try {
             const saved = await this.recipeService.addComment(newComment);
-            this.commentsResource.update((prev) => (prev ? [saved, ...prev] : [saved]));
+            this.commentsResource.update((prev) => {
+              if (!prev) return { comments: [saved], total: 1 };
+              const isReply = !!saved.parentId;
+              return {
+                comments: [saved, ...prev.comments],
+                total: isReply ? prev.total : prev.total + 1,
+              };
+            });
 
             f().reset({
               author: '',
@@ -448,6 +502,7 @@ export class RecipeComments {
               website: '',
               content: '',
               rating: null,
+              alt_email: '',
             });
 
             const isReply = !!this.replyTo();
@@ -456,12 +511,23 @@ export class RecipeComments {
             setTimeout(() => {
               const targetId = isReply ? `comment-${saved.id}` : 'comments';
               const el = this.window.document.getElementById(targetId);
-              if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              if (el) {
+                const y = el.getBoundingClientRect().top + this.window.scrollY - 120;
+                this.window.scrollTo({ top: y, behavior: 'smooth' });
+              }
             }, 100);
 
-            this.commentCountChange.emit(this.topLevelComments().length);
-          } catch (err) {
+            this.commentCountChange.emit(this.totalTopLevelComments());
+          } catch (err: unknown) {
             console.error('Failed to post comment', err);
+            let errMsg = 'Failed to post comment. Please try again.';
+            const e = err as { error?: { error?: string }; message?: string };
+            if (e?.error?.error) {
+              errMsg = e.error.error;
+            } else if (e?.message) {
+              errMsg = e.message;
+            }
+            this.snackBar.open(errMsg, 'Close', { duration: 10000 });
           }
         },
       },
@@ -473,18 +539,13 @@ export class RecipeComments {
     const cleanSlug = slug.replace(/^\/?recipe\//, '').replace(/^\//, '');
 
     // Default route is the last page
-    const total = this.topLevelComments().length;
+    const total = this.totalTopLevelComments();
     const size = this.pageSize();
     const lastPage = Math.max(1, Math.ceil(total / size));
 
     const path = p === lastPage ? `/recipe/${cleanSlug}` : `/recipe/${cleanSlug}/page/${p}`;
 
     this.router.navigate([path], { fragment: 'comments' });
-
-    setTimeout(() => {
-      const el = this.window.document.getElementById('comments');
-      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 100);
   }
 
   setRating(rating: number) {
@@ -497,8 +558,11 @@ export class RecipeComments {
 
     setTimeout(() => {
       const el = this.window.document.getElementById('respond');
-      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }, 100);
+      if (el) {
+        const y = el.getBoundingClientRect().top + this.window.scrollY - 120;
+        this.window.scrollTo({ top: y, behavior: 'smooth' });
+      }
+    }, 50);
   }
 
   cancelReply() {

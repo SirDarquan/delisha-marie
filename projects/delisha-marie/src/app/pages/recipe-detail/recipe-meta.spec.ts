@@ -29,7 +29,7 @@ describe('RecipeMeta', () => {
 
   beforeEach(async () => {
     recipeServiceMock = {
-      getComments: vi.fn().mockResolvedValue([]),
+      getComments: vi.fn().mockResolvedValue({ comments: [], total: 0 }),
     };
 
     await TestBed.configureTestingModule({
@@ -77,7 +77,10 @@ describe('RecipeMeta', () => {
   });
 
   it('should update comment count when resource resolves', async () => {
-    recipeServiceMock.getComments.mockResolvedValue([{ id: '1' }, { id: '2' }]);
+    recipeServiceMock.getComments.mockResolvedValue({
+      comments: [{ id: '1' }, { id: '2' }],
+      total: 2,
+    });
 
     // Trigger resource re-fetch by updating the input (even with same ID to be safe or just wait)
     fixture.componentRef.setInput('recipe', { ...mockRecipe, id: '123-new' });
@@ -89,6 +92,14 @@ describe('RecipeMeta', () => {
 
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.querySelector('.recipe-meta')?.textContent).toContain('2 Comment(s)');
+  });
+
+  it('should override comment count when commentCountOverride is provided', () => {
+    fixture.componentRef.setInput('commentCountOverride', 42);
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.querySelector('.recipe-meta')?.textContent).toContain('42 Comment(s)');
   });
 
   it('should have correct navigation links', () => {

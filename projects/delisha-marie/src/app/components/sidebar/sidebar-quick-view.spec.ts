@@ -5,6 +5,7 @@ import { WINDOW } from '../../services/global-tokens';
 import { Recipe } from '../../services/recipe.service';
 import { createMockRecipe } from '../../utils/test-recipe';
 import { SidebarQuickView } from './sidebar-quick-view';
+import { By } from '@angular/platform-browser';
 
 describe('SidebarQuickView', () => {
   let component: SidebarQuickView;
@@ -81,5 +82,15 @@ describe('SidebarQuickView', () => {
   it('should not throw error if recipe-card element is not found', () => {
     mockWindow.document.getElementById.mockReturnValue(null);
     expect(() => component.scrollToElement('recipe-card')).not.toThrow();
+  });
+
+  it('should trigger scrollToElement on button click', () => {
+    const mockElement = { scrollIntoView: vi.fn() };
+    mockWindow.document.getElementById.mockReturnValue(mockElement);
+
+    const button = fixture.debugElement.query(By.css('button'));
+    button.triggerEventHandler('click', null);
+
+    expect(mockWindow.document.getElementById).toHaveBeenCalledWith('recipe-card');
   });
 });

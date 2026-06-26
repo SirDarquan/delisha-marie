@@ -174,23 +174,23 @@ describe('RecipeService', () => {
   });
   describe('comments', () => {
     it('should fetch comments for a recipe', async () => {
-      const mockComments = [
-        { id: 'c1', recipeId: '1', author: 'A' },
-        { id: 'c2', recipeId: '2', author: 'B' },
-      ];
+      const mockResponse = {
+        comments: [{ id: 'c1', recipeId: '1', author: 'A', createdAt: new Date().toISOString() }],
+        total: 1,
+      };
 
       const promise = service.getComments('1');
 
-      const req = httpMock.expectOne('/api/comments');
-      req.flush(mockComments);
+      const req = httpMock.expectOne('/api/recipes/1/comments?page=');
+      req.flush(mockResponse);
 
       const result = await promise;
-      expect(result).toHaveLength(1);
-      expect(result[0].id).toBe('c1');
+      expect(result.comments).toHaveLength(1);
+      expect(result.comments[0].id).toBe('c1');
+      expect(result.total).toBe(1);
     });
 
-    it('should add a comment with simulated latency', async () => {
-      vi.useFakeTimers();
+    it('should add a comment via POST request', async () => {
       const newCommentData = {
         recipeId: '1',
         author: 'Tester',
@@ -198,17 +198,23 @@ describe('RecipeService', () => {
         content: 'Nice!',
       };
 
+      const mockResponse = {
+        ...newCommentData,
+        id: 'new',
+        createdAt: new Date().toISOString(),
+      };
+
       const promise = service.addComment(newCommentData);
 
-      // Fast forward time
-      vi.advanceTimersByTime(800);
+      const req = httpMock.expectOne('/api/recipes/1/comments');
+      expect(req.request.method).toBe('POST');
+      expect(req.request.body).toEqual(newCommentData);
+      req.flush(mockResponse);
 
       const result = await promise;
       expect(result.author).toBe('Tester');
-      expect(result.id).toBeDefined();
+      expect(result.id).toBe('new');
       expect(result.createdAt).toBeDefined();
-
-      vi.useRealTimers();
     });
   });
 });

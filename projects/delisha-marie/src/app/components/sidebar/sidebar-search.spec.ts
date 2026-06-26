@@ -2,6 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SidebarSearch } from './sidebar-search';
+import { By } from '@angular/platform-browser';
 
 describe('SidebarSearch', () => {
   let component: SidebarSearch;
@@ -56,5 +57,17 @@ describe('SidebarSearch', () => {
     component.searchControl.setValue('');
     component.search();
     expect(navigateSpy).not.toHaveBeenCalled();
+  });
+
+  it('should trigger search on button click', () => {
+    const navigateSpy = vi.spyOn(router, 'navigate');
+    component.searchControl.setValue('Salad');
+
+    const button = fixture.debugElement.query(By.css('button'));
+    button.triggerEventHandler('click', null);
+
+    expect(navigateSpy).toHaveBeenCalledWith(['/recipe-index'], {
+      queryParams: { s: 'Salad' },
+    });
   });
 });

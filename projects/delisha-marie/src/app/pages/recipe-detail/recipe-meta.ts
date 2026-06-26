@@ -23,6 +23,7 @@ import { Recipe, RecipeService } from '../../services/recipe.service';
       <!-- Jump to Recipe -->
       <a
         mat-stroked-button
+        routerLink="."
         [routerLink]="[]"
         fragment="recipe-card"
         class="glow-button flex items-center gap-2 transition-all group rounded-full !border-[var(--mat-sys-outline-variant)]">
@@ -96,7 +97,13 @@ export class RecipeMeta {
     loader: ({ params }) => this.recipeService.getComments(params.recipeId),
   });
 
-  readonly commentCount = computed(() => this.commentsResource.value()?.length ?? 0);
+  commentCountOverride = input<number | null>(null);
+
+  readonly commentCount = computed(() => {
+    const override = this.commentCountOverride();
+    if (override !== null) return override;
+    return this.commentsResource.value()?.total ?? 0;
+  });
 
   readonly date = computed(
     () => this.recipe().updatedAt || this.recipe().createdAt || new Date().toISOString(),

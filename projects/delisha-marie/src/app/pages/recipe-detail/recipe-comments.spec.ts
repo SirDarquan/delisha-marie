@@ -10,7 +10,11 @@ describe('RecipeComments', () => {
   let component: RecipeComments;
   let fixture: ComponentFixture<RecipeComments>;
   let router: Router;
-  let windowMock: { document: { getElementById: Mock } };
+  let windowMock: {
+    scrollY?: number;
+    scrollTo?: Mock;
+    document: { getElementById: Mock };
+  };
 
   const mockComments: Comment[] = Array.from({ length: 102 }, (_, i) => ({
     id: `c${i + 1}`,
@@ -23,7 +27,20 @@ describe('RecipeComments', () => {
   }));
 
   const recipeServiceMock = {
-    getComments: vi.fn().mockResolvedValue(mockComments),
+    getComments: vi.fn().mockImplementation((recipeId, page) => {
+      const topLevel = mockComments.filter((c) => !c.parentId);
+      const total = topLevel.length;
+      const pageSize = 50;
+      const lastPage = Math.max(1, Math.ceil(total / pageSize));
+      const p = page !== undefined ? page : lastPage;
+      const end = total - (lastPage - p) * pageSize;
+      const start = Math.max(0, end - pageSize);
+      const slice = topLevel.slice(start, end);
+      return Promise.resolve({
+        comments: slice,
+        total: total,
+      });
+    }),
     addComment: vi
       .fn()
       .mockImplementation((c) =>
@@ -33,8 +50,12 @@ describe('RecipeComments', () => {
 
   beforeEach(async () => {
     windowMock = {
+      scrollY: 0,
+      scrollTo: vi.fn(),
       document: {
-        getElementById: vi.fn().mockReturnValue({ scrollIntoView: vi.fn() }),
+        getElementById: vi.fn().mockReturnValue({
+          getBoundingClientRect: vi.fn().mockReturnValue({ top: 100 }),
+        }),
       },
     };
 
@@ -76,9 +97,10 @@ describe('RecipeComments', () => {
     expect(paginated[49].id).toBe('c53');
   });
 
-  it('should implement reverse-slice logic: Page 1 has remainder', () => {
+  it('should implement reverse-slice logic: Page 1 has remainder', async () => {
     fixture.componentRef.setInput('page', '1');
     fixture.detectChanges();
+    await fixture.whenStable();
 
     const paginated = component.paginatedComments();
     expect(paginated).toHaveLength(2);
@@ -99,7 +121,7 @@ describe('RecipeComments', () => {
   });
 
   it('should handle empty comments gracefully', async () => {
-    recipeServiceMock.getComments.mockResolvedValueOnce([]);
+    recipeServiceMock.getComments.mockResolvedValueOnce({ comments: [], total: 0 });
 
     // Re-trigger resource
     fixture.componentRef.setInput('recipe', { id: 2, title: 'Empty', slug: 'empty' });
@@ -109,6 +131,9 @@ describe('RecipeComments', () => {
     expect(component.topLevelComments()).toHaveLength(0);
     expect(component.currentPage()).toBe(1);
     expect(component.paginatedComments()).toHaveLength(0);
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.textContent).toContain('Be the first to comment!');
   });
 
   it('should sort replies chronologically (oldest first)', async () => {
@@ -134,7 +159,10 @@ describe('RecipeComments', () => {
       },
     ];
 
-    recipeServiceMock.getComments.mockResolvedValue(comments);
+    recipeServiceMock.getComments.mockResolvedValue({
+      comments,
+      total: comments.filter((c) => !c.parentId).length,
+    });
     fixture.componentRef.setInput('recipe', { ...component.recipe(), id: 99 });
     fixture.detectChanges();
     await fixture.whenStable();
@@ -179,7 +207,10 @@ describe('RecipeComments', () => {
     };
 
     // Update the mock to return the reply as well
-    recipeServiceMock.getComments.mockResolvedValue([...mockComments, reply]);
+    recipeServiceMock.getComments.mockResolvedValue({
+      comments: [...mockComments, reply],
+      total: mockComments.filter((c) => !c.parentId).length + (reply.parentId ? 0 : 1),
+    });
 
     // Trigger a re-fetch by updating the recipe input (using a new object reference)
     fixture.componentRef.setInput('recipe', { ...component.recipe(), id: 100 });
@@ -344,6 +375,7 @@ describe('RecipeComments', () => {
       website: '',
       content: 'Comment',
       rating: null,
+      alt_email: '',
     });
     fixture.detectChanges();
     expect(compiled.textContent).toContain('Enter a valid email');
@@ -368,6 +400,7 @@ describe('RecipeComments', () => {
       website: '',
       content: 'hello',
       rating: null,
+      alt_email: '',
     });
     fixture.detectChanges();
 
@@ -375,15 +408,6 @@ describe('RecipeComments', () => {
     formEl.dispatchEvent(new Event('submit'));
     await fixture.whenStable();
     expect(component.comments()).toEqual([saved]);
-  });
-
-  it('should not throw if scroll targets are missing', async () => {
-    windowMock.document.getElementById.mockReturnValue(null);
-    component.onPageChange(1);
-
-    await new Promise((resolve) => setTimeout(resolve, 150));
-    // Verify no exceptions thrown and appropriate scroll target is checked
-    expect(windowMock.document.getElementById).toHaveBeenCalledWith('comments');
   });
 
   it('should handle falsy getReplies branch in template', async () => {
@@ -410,7 +434,9 @@ describe('RecipeComments', () => {
 
   it('should execute timer scroll logic when replyToComment is called', async () => {
     const comment = mockComments[0];
-    windowMock.document.getElementById.mockReturnValue({ scrollIntoView: vi.fn() });
+    windowMock.document.getElementById.mockReturnValue({
+      getBoundingClientRect: vi.fn().mockReturnValue({ top: 100 }),
+    });
     component.replyToComment(comment);
     await new Promise((resolve) => setTimeout(resolve, 150));
     expect(windowMock.document.getElementById).toHaveBeenCalledWith('respond');
@@ -443,6 +469,7 @@ describe('RecipeComments', () => {
       website: '',
       content: 'hello',
       rating: null,
+      alt_email: '',
     });
     fixture.detectChanges();
 

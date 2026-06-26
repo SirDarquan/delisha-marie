@@ -39,7 +39,9 @@ vi.mock('@supabase/supabase-js', () => {
   return {
     createClient: vi.fn(() => ({
       from: (table: string) => {
-        const activeMockFrom = (globalThis as any).supabaseMockFrom || mockFrom;
+        const activeMockFrom =
+          (globalThis as typeof globalThis & { supabaseMockFrom?: (table: string) => unknown })
+            .supabaseMockFrom || mockFrom;
         return wrapQueryChain(activeMockFrom(table));
       },
     })),
@@ -183,7 +185,7 @@ describe('Recipe Index Router API', () => {
   ];
 
   beforeEach(() => {
-    (globalThis as any).supabaseMockFrom = mockFrom;
+    (globalThis as typeof globalThis & { supabaseMockFrom?: unknown }).supabaseMockFrom = mockFrom;
     resetSupabaseClient();
     vi.clearAllMocks();
     shouldFailRecipes = false;
