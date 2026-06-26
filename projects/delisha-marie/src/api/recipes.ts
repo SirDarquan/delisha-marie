@@ -445,7 +445,7 @@ recipesRouter.get('/recipes/:recipeId/comments', async (req: Request, res: Respo
     const lastPage = Math.max(1, Math.ceil(total / pageSize));
 
     // Default to the last page if not specified or invalid
-    const p = pageVal ? parseInt(pageVal as string, 10) : lastPage;
+    const p = pageVal ? Number.parseInt(pageVal as string, 10) : lastPage;
 
     // Calculate offset and limit for top-level comments
     const end = total - (lastPage - p) * pageSize;
@@ -497,6 +497,13 @@ recipesRouter.get('/recipes/:recipeId/comments', async (req: Request, res: Respo
   }
 });
 
+function isDomainBlocked(website: string | undefined, blockedDomainsStr: string | undefined): boolean {
+  if (!website || !blockedDomainsStr) return false;
+  const blockedDomains = blockedDomainsStr.split(',').map((d) => d.trim().toLowerCase());
+  const websiteLower = website.toLowerCase();
+  return blockedDomains.some((domain) => domain && websiteLower.includes(domain));
+}
+
 recipesRouter.post(
   '/recipes/:recipeId/comments',
   commentsLimiter,
@@ -524,14 +531,8 @@ recipesRouter.post(
           {} as Record<string, string>,
         ) || {};
 
-      if (website && settings['blocked_domains']) {
-        const blockedDomains = settings['blocked_domains']
-          .split(',')
-          .map((d) => d.trim().toLowerCase());
-        const websiteLower = website.toLowerCase();
-        if (blockedDomains.some((domain) => domain && websiteLower.includes(domain))) {
-          return res.status(400).json({ error: 'Sorry, you cannot link to this website.' });
-        }
+      if (isDomainBlocked(website, settings['blocked_domains'])) {
+        return res.status(400).json({ error: 'Sorry, you cannot link to this website.' });
       }
 
       if (alt_email) {
@@ -541,7 +542,7 @@ recipesRouter.post(
           author,
           email,
           content,
-          rating: rating !== undefined && rating !== null ? rating : null,
+          rating: rating ?? null,
           website: website || null,
           parent_id: parentId || null,
           trap_triggered: 'alt_email',
@@ -571,7 +572,7 @@ recipesRouter.post(
         author,
         email,
         content,
-        rating: rating !== undefined && rating !== null ? rating : null,
+        rating: rating ?? null,
         website: website || null,
         parent_id: parentId || null,
         status,
