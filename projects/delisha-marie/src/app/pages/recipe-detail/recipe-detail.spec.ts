@@ -3,8 +3,10 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Recipe, RecipeService } from '../../services/recipe.service';
+import { WINDOW } from '../../services/global-tokens';
 import { createMockRecipe } from '../../utils/test-recipe';
 import { RecipeDetail } from './recipe-detail';
+import { By } from '@angular/platform-browser';
 
 describe('RecipeDetail', () => {
   let component: RecipeDetail;
@@ -57,13 +59,26 @@ describe('RecipeDetail', () => {
   beforeEach(async () => {
     recipeServiceMock = {
       recipes: signal(mockRecipes),
-      getComments: vi.fn().mockResolvedValue([]),
+      getComments: vi.fn().mockResolvedValue({ comments: [], total: 0 }),
       getRecipeBySlug: vi.fn().mockResolvedValue(mockRecipe),
+    };
+
+    const windowMock = {
+      location: { hash: '' },
+      scrollY: 0,
+      scrollTo: vi.fn(),
+      document: {
+        getElementById: vi.fn().mockReturnValue(null),
+      },
     };
 
     await TestBed.configureTestingModule({
       imports: [RecipeDetail],
-      providers: [provideRouter([]), { provide: RecipeService, useValue: recipeServiceMock }],
+      providers: [
+        provideRouter([]),
+        { provide: RecipeService, useValue: recipeServiceMock },
+        { provide: WINDOW, useValue: windowMock },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(RecipeDetail);
@@ -203,5 +218,51 @@ describe('RecipeDetail', () => {
 
     const breadcrumbs = component.breadcrumbItems();
     expect(breadcrumbs).toHaveLength(0);
+  });
+
+  it('should update commentCountOverride when commentCountChange is emitted', async () => {
+    fixture.componentRef.setInput('recipe', mockRecipe);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const commentsEl = fixture.debugElement.query(By.css('dml-recipe-comments'));
+    commentsEl.triggerEventHandler('commentCountChange', 42);
+
+    expect(component.commentCountOverride()).toBe(42);
+  });
+
+  it('should execute setTimeout scroll logic when hash is present', async () => {
+    const customWindowMock = {
+      location: { hash: '#test-element' },
+      scrollY: 100,
+      scrollTo: vi.fn(),
+      document: {
+        getElementById: vi.fn().mockReturnValue({
+          getBoundingClientRect: () => ({ top: 200 }),
+        }),
+      },
+    };
+
+    TestBed.resetTestingModule();
+    await TestBed.configureTestingModule({
+      imports: [RecipeDetail],
+      providers: [
+        provideRouter([]),
+        { provide: RecipeService, useValue: recipeServiceMock },
+        { provide: WINDOW, useValue: customWindowMock },
+      ],
+    }).compileComponents();
+
+    vi.useFakeTimers();
+    const newFixture = TestBed.createComponent(RecipeDetail);
+    newFixture.componentRef.setInput('recipe', mockRecipe);
+    newFixture.detectChanges();
+
+    vi.advanceTimersByTime(150);
+
+    expect(customWindowMock.document.getElementById).toHaveBeenCalledWith('test-element');
+    expect(customWindowMock.scrollTo).toHaveBeenCalledWith({ top: 180, behavior: 'smooth' });
+    vi.useRealTimers();
   });
 });

@@ -1,15 +1,19 @@
-import { CommonModule } from '@angular/common';
+import { CommonModule, ViewportScroller } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  effect,
+  inject,
   input,
+  signal,
   ViewEncapsulation,
 } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { RouterLink } from '@angular/router';
 import { BreadcrumbItem, Breadcrumbs } from '../../components/breadcrumbs/breadcrumbs';
+import { WINDOW } from '../../services/global-tokens';
 import { Sidebar } from '../../components/sidebar/sidebar';
 import { SidebarQuickView } from '../../components/sidebar/sidebar-quick-view';
 import { Recipe } from '../../services/recipe.service';
@@ -78,7 +82,10 @@ import { RecipeTags } from './recipe-tags';
         <!-- Breadcrumbs -->
         <dml-breadcrumbs [items]="breadcrumbItems()" class="block mb-8 px-4 sm:px-0 mt-4 sm:mt-0" />
 
-        <dml-recipe-meta [recipe]="r" class="block mb-8 px-4 sm:px-0" />
+        <dml-recipe-meta
+          [recipe]="r"
+          [commentCountOverride]="commentCountOverride()"
+          class="block mb-8 px-4 sm:px-0" />
 
         <article class="w-full">
           <!-- Hero Section -->
@@ -105,7 +112,10 @@ import { RecipeTags } from './recipe-tags';
                 <dml-recipe-navigation [previous]="r.navigation.prev" [next]="r.navigation.next" />
 
                 <!-- Comments Section -->
-                <dml-recipe-comments [recipe]="r" [page]="page()" />
+                <dml-recipe-comments
+                  [recipe]="r"
+                  [page]="page()"
+                  (commentCountChange)="commentCountOverride.set($event)" />
               </div>
 
               <!-- Sidebar -->
@@ -178,6 +188,8 @@ export class RecipeDetail {
 
   page = input<string>();
 
+  commentCountOverride = signal<number | null>(null);
+
   readonly isLoading = computed(() => this.recipe() === undefined);
 
   readonly breadcrumbItems = computed((): BreadcrumbItem[] => {
@@ -186,4 +198,27 @@ export class RecipeDetail {
     const idx = r.breadcrumbs.main;
     return typeof idx === 'number' ? r.breadcrumbs.items[idx] : [];
   });
+
+  private readonly window = inject(WINDOW);
+  private readonly viewportScroller = inject(ViewportScroller);
+
+  constructor() {
+    effect(() => {
+      // Run when recipe finishes loading
+      if (!this.isLoading()) {
+        const hash = this.window.location.hash;
+        if (hash) {
+          // Wait a tick for the DOM to render the components
+          setTimeout(() => {
+            const id = hash.replace('#', '');
+            const el = this.window.document.getElementById(id);
+            if (el) {
+              const y = el.getBoundingClientRect().top + this.window.scrollY - 120;
+              this.window.scrollTo({ top: y, behavior: 'smooth' });
+            }
+          }, 100);
+        }
+      }
+    });
+  }
 }

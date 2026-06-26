@@ -39,7 +39,9 @@ vi.mock('@supabase/supabase-js', () => {
   return {
     createClient: vi.fn(() => ({
       from: (table: string) => {
-        const activeMockFrom = (globalThis as any).supabaseMockFrom || mockFrom;
+        const activeMockFrom =
+          (globalThis as typeof globalThis & { supabaseMockFrom?: (table: string) => unknown })
+            .supabaseMockFrom || mockFrom;
         return wrapQueryChain(activeMockFrom(table));
       },
     })),
@@ -53,6 +55,7 @@ import { resetSupabaseClient } from './supabase';
 
 describe('Recipes Router API', () => {
   const app = express();
+  app.use(express.json());
   app.use('/api', recipesRouter);
 
   let shouldFail = false;
@@ -64,7 +67,7 @@ describe('Recipes Router API', () => {
   ];
 
   beforeEach(() => {
-    (globalThis as any).supabaseMockFrom = mockFrom;
+    (globalThis as typeof globalThis & { supabaseMockFrom?: unknown }).supabaseMockFrom = mockFrom;
     vi.clearAllMocks();
     shouldFail = false;
     mockIngredientsData = [];
@@ -813,6 +816,671 @@ describe('Recipes Router API', () => {
       const res = await request(app).get('/api/recipes/r1');
       expect(res.status).toBe(500);
       expect(res.body.error).toBe('Adjacent query error');
+    });
+  });
+
+  describe('GET /api/recipes/:recipeId/comments', () => {
+    it('should return comments with pagination and default page size', async () => {
+      const mockComments = Array.from({ length: 60 }, (_, i) => ({
+        id: `c${i + 1}`,
+        recipe_id: '123',
+        parent_id: null,
+        author: `Author ${i + 1}`,
+        email: `author${i + 1}@example.com`,
+        content: `Comment ${i + 1}`,
+        created_at: new Date(2026, 0, i + 1).toISOString(),
+      }));
+
+      const mockReplies = [
+        {
+          id: 'r1',
+          recipe_id: '123',
+          parent_id: 'c59',
+          author: 'Replier 1',
+          email: 'replier1@example.com',
+          content: 'Reply 1',
+          created_at: new Date(2026, 0, 61).toISOString(),
+        },
+      ];
+
+      mockFrom.mockImplementation((table: string) => {
+        if (table === 'comments') {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const queryChain: any = {
+            select: vi.fn().mockImplementation((_selectString, options) => {
+              if (options && options.count === 'exact') {
+                return {
+                  eq: () => ({
+                    is: () => Promise.resolve({ count: 60, error: null }),
+                  }),
+                };
+              }
+              return queryChain;
+            }),
+            eq: vi.fn().mockImplementation(() => queryChain),
+            is: vi.fn().mockImplementation(() => queryChain),
+            in: vi.fn().mockImplementation(() => queryChain),
+            order: vi.fn().mockImplementation(() => queryChain),
+            range: vi.fn().mockImplementation((start, end) => {
+              const slice = mockComments.slice(start, end + 1);
+              return Promise.resolve({ data: slice, error: null });
+            }),
+            then: vi.fn().mockImplementation((onfulfilled) => {
+              return Promise.resolve({ data: mockReplies, error: null }).then(onfulfilled);
+            }),
+          };
+          return queryChain;
+        }
+        return {};
+      });
+
+      const res = await request(app).get('/api/recipes/123/comments');
+      expect(res.status).toBe(200);
+      expect(res.body.total).toBe(60);
+      expect(res.body.comments).toHaveLength(51);
+      expect(res.body.comments[0].id).toBe('c11');
+      expect(res.body.comments[50].id).toBe('r1');
+    });
+
+    it('should handle errors in comments fetching', async () => {
+      mockFrom.mockImplementation((table: string) => {
+        if (table === 'comments') {
+          return {
+            select: vi.fn().mockImplementation((selectString, options) => {
+              if (options && options.count === 'exact') {
+                return {
+                  eq: () => ({
+                    is: () => Promise.resolve({ count: null, error: new Error('Db error') }),
+                  }),
+                };
+              }
+              return {};
+            }),
+          };
+        }
+        return {};
+      });
+
+      const res = await request(app).get('/api/recipes/123/comments');
+      expect(res.status).toBe(500);
+      expect(res.body.error).toBe('Db error');
+    });
+
+    it('should return empty comments if total is 0', async () => {
+      mockFrom.mockImplementation((table: string) => {
+        if (table === 'comments') {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const queryChain: any = {
+            select: vi.fn().mockImplementation((_selectString, options) => {
+              if (options && options.count === 'exact') {
+                return {
+                  eq: () => ({
+                    is: () => Promise.resolve({ count: 0, error: null }),
+                  }),
+                };
+              }
+              return queryChain;
+            }),
+            eq: vi.fn().mockImplementation(() => queryChain),
+            is: vi.fn().mockImplementation(() => queryChain),
+          };
+          return queryChain;
+        }
+        return {};
+      });
+
+      const res = await request(app).get('/api/recipes/123/comments');
+      expect(res.status).toBe(200);
+      expect(res.body.total).toBe(0);
+      expect(res.body.comments).toEqual([]);
+    });
+
+    it('should handle specific page query parameter', async () => {
+      const mockComments = Array.from({ length: 60 }, (_, i) => ({
+        id: `c${i + 1}`,
+        recipe_id: '123',
+        parent_id: null,
+        author: `Author ${i + 1}`,
+        email: `author${i + 1}@example.com`,
+        content: `Comment ${i + 1}`,
+        created_at: new Date(2026, 0, i + 1).toISOString(),
+      }));
+
+      mockFrom.mockImplementation((table: string) => {
+        if (table === 'comments') {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const queryChain: any = {
+            select: vi.fn().mockImplementation((_selectString, options) => {
+              if (options && options.count === 'exact') {
+                return {
+                  eq: () => ({
+                    is: () => Promise.resolve({ count: 60, error: null }),
+                  }),
+                };
+              }
+              return queryChain;
+            }),
+            eq: vi.fn().mockImplementation(() => queryChain),
+            is: vi.fn().mockImplementation(() => queryChain),
+            in: vi.fn().mockImplementation(() => queryChain),
+            order: vi.fn().mockImplementation(() => queryChain),
+            range: vi.fn().mockImplementation((start, end) => {
+              const slice = mockComments.slice(start, end + 1);
+              return Promise.resolve({ data: slice, error: null });
+            }),
+            then: vi.fn().mockImplementation((onfulfilled) => {
+              return Promise.resolve({ data: [], error: null }).then(onfulfilled);
+            }),
+          };
+          return queryChain;
+        }
+        return {};
+      });
+
+      const res = await request(app).get('/api/recipes/123/comments?page=1');
+      expect(res.status).toBe(200);
+      expect(res.body.total).toBe(60);
+      expect(res.body.comments).toHaveLength(10);
+      expect(res.body.comments[0].id).toBe('c1');
+    });
+
+    it('should handle non-Error string exceptions in comments fetching', async () => {
+      mockFrom.mockImplementation((table: string) => {
+        if (table === 'comments') {
+          return {
+            select: vi.fn().mockImplementation(() => {
+              throw 'String database crash';
+            }),
+          };
+        }
+        return {};
+      });
+
+      const res = await request(app).get('/api/recipes/123/comments');
+      expect(res.status).toBe(500);
+      expect(res.body.error).toBe('String database crash');
+    });
+
+    it('should handle fetchError in top-level comments query', async () => {
+      mockFrom.mockImplementation((table: string) => {
+        if (table === 'comments') {
+          return {
+            select: vi.fn().mockImplementation((selectString, options) => {
+              if (options && options.count === 'exact') {
+                return {
+                  eq: () => ({
+                    is: () => Promise.resolve({ count: 10, error: null }),
+                  }),
+                };
+              }
+              return {
+                eq: () => ({
+                  is: () => ({
+                    order: () => ({
+                      range: () =>
+                        Promise.resolve({ data: null, error: new Error('Fetch comments failed') }),
+                    }),
+                  }),
+                }),
+              };
+            }),
+          };
+        }
+        return {};
+      });
+
+      const res = await request(app).get('/api/recipes/123/comments');
+      expect(res.status).toBe(500);
+      expect(res.body.error).toBe('Fetch comments failed');
+    });
+
+    it('should handle null data in top-level comments query', async () => {
+      mockFrom.mockImplementation((table: string) => {
+        if (table === 'comments') {
+          return {
+            select: vi.fn().mockImplementation((selectString, options) => {
+              if (options && options.count === 'exact') {
+                return {
+                  eq: () => ({
+                    is: () => Promise.resolve({ count: 10, error: null }),
+                  }),
+                };
+              }
+              return {
+                eq: () => ({
+                  is: () => ({
+                    order: () => ({
+                      range: () => Promise.resolve({ data: null, error: null }),
+                    }),
+                  }),
+                }),
+              };
+            }),
+          };
+        }
+        return {};
+      });
+
+      const res = await request(app).get('/api/recipes/123/comments');
+      expect(res.status).toBe(200);
+      expect(res.body.comments).toEqual([]);
+    });
+
+    it('should handle replyError in replies query', async () => {
+      const mockComments = [{ id: 'c1', recipe_id: '123', parent_id: null }];
+      mockFrom.mockImplementation((table: string) => {
+        if (table === 'comments') {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const queryChain: any = {
+            select: vi.fn().mockImplementation((_selectString, options) => {
+              if (options && options.count === 'exact') {
+                return {
+                  eq: () => ({
+                    is: () => Promise.resolve({ count: 1, error: null }),
+                  }),
+                };
+              }
+              return queryChain;
+            }),
+            eq: vi.fn().mockImplementation(() => queryChain),
+            is: vi.fn().mockImplementation(() => queryChain),
+            in: vi.fn().mockImplementation(() => queryChain),
+            order: vi.fn().mockImplementation(() => queryChain),
+            range: vi
+              .fn()
+              .mockImplementation(() => Promise.resolve({ data: mockComments, error: null })),
+            then: vi.fn().mockImplementation((onfulfilled) => {
+              return Promise.resolve({ data: null, error: new Error('Replies query failed') }).then(
+                onfulfilled,
+              );
+            }),
+          };
+          return queryChain;
+        }
+        return {};
+      });
+
+      const res = await request(app).get('/api/recipes/123/comments');
+      expect(res.status).toBe(500);
+      expect(res.body.error).toBe('Replies query failed');
+    });
+
+    it('should handle null data in replies query', async () => {
+      const mockComments = [{ id: 'c1', recipe_id: '123', parent_id: null }];
+      mockFrom.mockImplementation((table: string) => {
+        if (table === 'comments') {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const queryChain: any = {
+            select: vi.fn().mockImplementation((_selectString, options) => {
+              if (options && options.count === 'exact') {
+                return {
+                  eq: () => ({
+                    is: () => Promise.resolve({ count: 1, error: null }),
+                  }),
+                };
+              }
+              return queryChain;
+            }),
+            eq: vi.fn().mockImplementation(() => queryChain),
+            is: vi.fn().mockImplementation(() => queryChain),
+            in: vi.fn().mockImplementation(() => queryChain),
+            order: vi.fn().mockImplementation(() => queryChain),
+            range: vi
+              .fn()
+              .mockImplementation(() => Promise.resolve({ data: mockComments, error: null })),
+            then: vi.fn().mockImplementation((onfulfilled) => {
+              return Promise.resolve({ data: null, error: null }).then(onfulfilled);
+            }),
+          };
+          return queryChain;
+        }
+        return {};
+      });
+
+      const res = await request(app).get('/api/recipes/123/comments');
+      expect(res.status).toBe(200);
+      expect(res.body.comments).toHaveLength(1);
+    });
+  });
+
+  describe('POST /api/recipes/:recipeId/comments', () => {
+    it('should successfully post a comment', async () => {
+      const mockComment = {
+        id: 'new',
+        recipe_id: '123',
+        author: 'Tester',
+        email: 'tester@example.com',
+        content: 'Awesome!',
+        created_at: new Date().toISOString(),
+      };
+
+      mockFrom.mockImplementation((table: string) => {
+        if (table === 'site_settings') {
+          return {
+            select: vi.fn().mockReturnThis(),
+            in: vi.fn().mockResolvedValue({
+              data: [{ key: 'require_comment_approval', value: 'false' }],
+              error: null,
+            }),
+          };
+        }
+        if (table === 'comments') {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const queryChain: any = {
+            insert: vi.fn().mockImplementation(() => queryChain),
+            select: vi.fn().mockImplementation(() => queryChain),
+            single: vi.fn().mockResolvedValue({ data: mockComment, error: null }),
+          };
+          return queryChain;
+        }
+        return {};
+      });
+
+      const res = await request(app).post('/api/recipes/123/comments').send({
+        author: 'Tester',
+        email: 'tester@example.com',
+        content: 'Awesome!',
+      });
+
+      expect(res.status).toBe(201);
+      expect(res.body.id).toBe('new');
+      expect(res.body.recipeId).toBe('123');
+      expect(res.body.author).toBe('Tester');
+    });
+
+    it('should return 400 if required fields are missing', async () => {
+      const res = await request(app).post('/api/recipes/123/comments').send({
+        author: 'Tester',
+      });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe('Name, email, and content are required');
+    });
+
+    it('should return 400 if website contains blocked domain', async () => {
+      mockFrom.mockImplementation((table: string) => {
+        if (table === 'site_settings') {
+          return {
+            select: vi.fn().mockReturnThis(),
+            in: vi.fn().mockResolvedValue({
+              data: [
+                { key: 'require_comment_approval', value: 'false' },
+                { key: 'blocked_domains', value: 'delisha-marie' },
+              ],
+              error: null,
+            }),
+          };
+        }
+        return { select: vi.fn() };
+      });
+
+      const res = await request(app).post('/api/recipes/123/comments').send({
+        author: 'Bob',
+        email: 'bob@example.com',
+        content: 'Cool!',
+        website: 'https://www.delisha-marie.com/blog',
+      });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe('Sorry, you cannot link to this website.');
+    });
+
+    it('should allow website if blocked_domains is not set', async () => {
+      mockFrom.mockImplementation((table: string) => {
+        if (table === 'site_settings') {
+          return {
+            select: vi.fn().mockReturnThis(),
+            in: vi.fn().mockResolvedValue({
+              data: [{ key: 'require_comment_approval', value: 'false' }],
+              error: null,
+            }),
+          };
+        }
+        if (table === 'comments') {
+          const queryChain: Record<string, unknown> = {
+            insert: vi.fn().mockImplementation(() => queryChain),
+            select: vi.fn().mockImplementation(() => queryChain),
+            single: vi.fn().mockResolvedValue({ data: { id: 'allowed' }, error: null }),
+          };
+          return queryChain;
+        }
+        return {};
+      });
+
+      const res = await request(app).post('/api/recipes/123/comments').send({
+        author: 'Bob',
+        email: 'bob@example.com',
+        content: 'Cool!',
+        website: 'https://www.some-other-site.com',
+      });
+
+      expect(res.status).toBe(201);
+    });
+
+    it('should allow website if it does not match any blocked_domains', async () => {
+      mockFrom.mockImplementation((table: string) => {
+        if (table === 'site_settings') {
+          return {
+            select: vi.fn().mockReturnThis(),
+            in: vi.fn().mockResolvedValue({
+              data: [
+                { key: 'require_comment_approval', value: 'false' },
+                { key: 'blocked_domains', value: 'delisha-marie, bad-site.com' },
+              ],
+              error: null,
+            }),
+          };
+        }
+        if (table === 'comments') {
+          const queryChain: Record<string, unknown> = {
+            insert: vi.fn().mockImplementation(() => queryChain),
+            select: vi.fn().mockImplementation(() => queryChain),
+            single: vi.fn().mockResolvedValue({ data: { id: 'allowed' }, error: null }),
+          };
+          return queryChain;
+        }
+        return {};
+      });
+
+      const res = await request(app).post('/api/recipes/123/comments').send({
+        author: 'Bob',
+        email: 'bob@example.com',
+        content: 'Cool!',
+        website: 'https://www.some-other-site.com',
+      });
+
+      expect(res.status).toBe(201);
+    });
+
+    it('should handle insert errors', async () => {
+      mockFrom.mockImplementation((table: string) => {
+        if (table === 'site_settings') {
+          return {
+            select: vi.fn().mockReturnThis(),
+            in: vi.fn().mockResolvedValue({
+              data: [{ key: 'require_comment_approval', value: 'false' }],
+              error: null,
+            }),
+          };
+        }
+        if (table === 'comments') {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const queryChain: any = {
+            insert: vi.fn().mockImplementation(() => queryChain),
+            select: vi.fn().mockImplementation(() => queryChain),
+            single: vi.fn().mockResolvedValue({ data: null, error: new Error('Insert failed') }),
+          };
+          return queryChain;
+        }
+        return {};
+      });
+
+      const res = await request(app).post('/api/recipes/123/comments').send({
+        author: 'Tester',
+        email: 'tester@example.com',
+        content: 'Awesome!',
+      });
+
+      expect(res.status).toBe(500);
+      expect(res.body.error).toBe('Insert failed');
+    });
+
+    it('should successfully post a comment with all optional fields', async () => {
+      const mockComment = {
+        id: 'new-reply',
+        recipe_id: '123',
+        author: 'Tester',
+        email: 'tester@example.com',
+        content: 'Awesome reply!',
+        rating: 5,
+        website: 'https://tester.com',
+        parent_id: 'c1',
+        created_at: new Date().toISOString(),
+      };
+
+      mockFrom.mockImplementation((table: string) => {
+        if (table === 'site_settings') {
+          return {
+            select: vi.fn().mockReturnThis(),
+            in: vi.fn().mockResolvedValue({
+              data: [{ key: 'require_comment_approval', value: 'false' }],
+              error: null,
+            }),
+          };
+        }
+        if (table === 'comments') {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const queryChain: any = {
+            insert: vi.fn().mockImplementation(() => queryChain),
+            select: vi.fn().mockImplementation(() => queryChain),
+            single: vi.fn().mockResolvedValue({ data: mockComment, error: null }),
+          };
+          return queryChain;
+        }
+        return {};
+      });
+
+      const res = await request(app).post('/api/recipes/123/comments').send({
+        author: 'Tester',
+        email: 'tester@example.com',
+        content: 'Awesome reply!',
+        rating: 5,
+        website: 'https://tester.com',
+        parentId: 'c1',
+      });
+
+      expect(res.status).toBe(201);
+      expect(res.body.id).toBe('new-reply');
+      expect(res.body.rating).toBe(5);
+      expect(res.body.website).toBe('https://tester.com');
+      expect(res.body.parentId).toBe('c1');
+    });
+
+    it('should silently return 201 if honeypot (alt_email) is filled', async () => {
+      mockFrom.mockImplementation((table: string) => {
+        if (table === 'spam_comments') {
+          return {
+            insert: vi.fn().mockReturnThis(),
+          };
+        }
+        if (table === 'site_settings') {
+          return {
+            select: vi.fn().mockReturnThis(),
+            in: vi.fn().mockResolvedValue({
+              data: [{ key: 'require_comment_approval', value: 'false' }],
+              error: null,
+            }),
+          };
+        }
+        return {};
+      });
+
+      const res = await request(app).post('/api/recipes/123/comments').send({
+        author: 'SpamBot',
+        email: 'spam@bot.com',
+        content: 'Buy this!',
+        alt_email: 'spambot@bot.com',
+      });
+
+      expect(res.status).toBe(201);
+      expect(res.body.id).toMatch(/^bot-/);
+      expect(res.body.author).toBe('SpamBot');
+      expect(mockFrom).toHaveBeenCalledWith('spam_comments');
+      expect(mockFrom).not.toHaveBeenCalledWith('comments');
+    });
+
+    it('should set status to pending if moderation is enabled in site_settings', async () => {
+      const mockComment = {
+        id: 'new-pending',
+        recipe_id: '123',
+        author: 'Tester',
+        email: 'tester@example.com',
+        content: 'Awesome!',
+        status: 'pending',
+        created_at: new Date().toISOString(),
+      };
+
+      mockFrom.mockImplementation((table: string) => {
+        if (table === 'site_settings') {
+          return {
+            select: vi.fn().mockReturnThis(),
+            in: vi.fn().mockResolvedValue({
+              data: [{ key: 'require_comment_approval', value: 'true' }],
+              error: null,
+            }),
+          };
+        }
+        if (table === 'comments') {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const queryChain: any = {
+            insert: vi.fn().mockImplementation(() => queryChain),
+            select: vi.fn().mockImplementation(() => queryChain),
+            single: vi.fn().mockResolvedValue({ data: mockComment, error: null }),
+          };
+          return queryChain;
+        }
+        return {};
+      });
+
+      const res = await request(app).post('/api/recipes/123/comments').send({
+        author: 'Tester',
+        email: 'tester@example.com',
+        content: 'Awesome!',
+      });
+
+      expect(res.status).toBe(201);
+      expect(res.body.status).toBe('pending');
+    });
+
+    it('should handle non-Error string exceptions on insert', async () => {
+      mockFrom.mockImplementation((table: string) => {
+        if (table === 'site_settings') {
+          return {
+            select: vi.fn().mockReturnThis(),
+            in: vi.fn().mockResolvedValue({
+              data: [{ key: 'require_comment_approval', value: 'false' }],
+              error: null,
+            }),
+          };
+        }
+        if (table === 'comments') {
+          return {
+            insert: vi.fn().mockImplementation(() => {
+              throw 'String insert crash';
+            }),
+          };
+        }
+        return {};
+      });
+
+      const res = await request(app).post('/api/recipes/123/comments').send({
+        author: 'Tester',
+        email: 'tester@example.com',
+        content: 'Awesome!',
+      });
+
+      expect(res.status).toBe(500);
+      expect(res.body.error).toBe('String insert crash');
     });
   });
 });

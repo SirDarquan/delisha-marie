@@ -82,27 +82,20 @@ export class RecipeService {
   /**
    * Fetches all comments for a specific recipe.
    */
-  getComments(recipeId: string | number): Promise<Comment[]> {
-    return this.api.get<Comment[]>('/api/comments').then((all) => {
-      const id = String(recipeId);
-      return all.filter((c) => String(c.recipeId) === id);
-    });
+  getComments(
+    recipeId: string | number,
+    page?: number,
+  ): Promise<{ comments: Comment[]; total: number }> {
+    const url = `/api/recipes/${recipeId}/comments?page=${page || ''}`;
+    return this.api.get<{ comments: Comment[]; total: number }>(url);
   }
 
   /**
    * Adds a new comment to a recipe.
-   * Mock implementation for development.
    */
-  async addComment(comment: Omit<Comment, 'id' | 'createdAt'>): Promise<Comment> {
-    // Simulate API latency
-    await new Promise((resolve) => setTimeout(resolve, 800));
-
-    const newComment: Comment = {
-      ...comment,
-      id: `c${Date.now()}`,
-      createdAt: new Date().toISOString(),
-    };
-
-    return newComment;
+  addComment(
+    comment: Omit<Comment, 'id' | 'createdAt'> & { alt_email?: string },
+  ): Promise<Comment> {
+    return this.api.post<Comment>(`/api/recipes/${comment.recipeId}/comments`, comment);
   }
 }

@@ -55,17 +55,20 @@ describe('Single Recipe Detail View', () => {
     }).as('getRecipeDetail');
 
     // Stub comments list for this recipe
-    cy.intercept('GET', '/api/comments*', {
+    cy.intercept('GET', '**/recipes/*/comments*', {
       statusCode: 200,
-      body: [
-        {
-          id: 'c1',
-          recipeId: '101',
-          author: 'Grace Hopper',
-          content: 'Absolutely phenomenal stew! Reminds me of Sunday dinner.',
-          createdAt: new Date().toISOString(),
-        },
-      ],
+      body: {
+        comments: [
+          {
+            id: 'c1',
+            recipeId: '101',
+            author: 'Grace Hopper',
+            content: 'Absolutely phenomenal stew! Reminds me of Sunday dinner.',
+            createdAt: new Date().toISOString(),
+          },
+        ],
+        total: 1,
+      },
     }).as('getRecipeComments');
 
     cy.visit('/recipe/signature-beef-stew');

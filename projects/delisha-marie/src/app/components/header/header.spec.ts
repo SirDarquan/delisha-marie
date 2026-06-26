@@ -5,6 +5,7 @@ import { provideRouter } from '@angular/router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ThemeService } from '../../services/theme.service';
 import { Header } from './header';
+import { By } from '@angular/platform-browser';
 
 describe('Header', () => {
   let themeServiceMock: {
@@ -54,9 +55,16 @@ describe('Header', () => {
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.querySelector('mat-icon')?.textContent?.trim()).toContain('dark_mode');
 
-    // Toggle
-    const toggle = fixture.componentInstance['themeService'];
-    toggle.toggle();
+    // Toggle via template
+    const toggleElement = fixture.debugElement.query(By.css('mat-slide-toggle'));
+    toggleElement.triggerEventHandler('change', null);
+
+    // Fallback toggle for mobile version
+    const toggles = fixture.debugElement.queryAll(By.css('mat-slide-toggle'));
+    if (toggles.length > 1) {
+      toggles[1].triggerEventHandler('change', null);
+    }
+
     expect(themeServiceMock.toggle).toHaveBeenCalled();
   });
 });
