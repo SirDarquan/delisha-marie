@@ -80,4 +80,5 @@ export interface BaseRecipe {
   holidays?: string[];
   status: 'draft' | 'scheduled' | 'published' | 'updated';
   likes?: number;
+  source?: string;
 }
