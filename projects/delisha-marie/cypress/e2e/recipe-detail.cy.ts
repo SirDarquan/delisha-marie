@@ -110,7 +110,7 @@ describe('Single Recipe Detail View', () => {
   });
 
   it('should render the full recipe card with action triggers and metrics', () => {
-    cy.get('#recipe-card').within(() => {
+    cy.get('dml-recipe-card').within(() => {
       // Title & Author check
       cy.get('.recipe-card-title').should('contain.text', 'Signature Beef Stew');
 
@@ -119,9 +119,9 @@ describe('Single Recipe Detail View', () => {
       cy.get('.recipe-card-servings').contains('6 servings');
 
       // Buttons
-      cy.get('button').contains('Print').should('exist');
-      cy.get('button').contains('Rate').should('exist');
-      cy.get('button').contains('Save').should('exist');
+      cy.contains('button', 'Print').should('exist');
+      cy.contains('button', 'Rate').should('exist');
+      cy.contains('button', 'Save').should('exist');
 
       // List items
       cy.get('h3').contains('Ingredients').should('exist');

@@ -385,43 +385,48 @@ async function getBreadcrumbs(
   supabase: SupabaseClient,
   recipeId: string,
   formatted: FormattedRecipe,
-): Promise<{ label: string; url?: string }[][]> {
+): Promise<{ main: number; items: { label: string; url?: string }[][] }> {
   const { data: recipeCatsData, error: catsError } = await supabase
     .from('recipe_categories')
     .select('categories (id, name, url)')
     .eq('recipe_id', recipeId);
   if (catsError) throw catsError;
 
-  const prefixUrl = formatted.theBest ? '/the-best-recipes' : '/recipes';
-  let filteredCategories = (recipeCatsData || [])
+  const categories = (recipeCatsData || [])
     .map((rc) => (rc as unknown as CategoryRelation).categories)
-    .filter((cat): cat is CategoryInfo => !!cat?.url.startsWith(prefixUrl));
-
-  if (filteredCategories.length === 0 && recipeCatsData && recipeCatsData.length > 0) {
-    const fallbackCat = recipeCatsData
-      .map((rc) => (rc as unknown as CategoryRelation).categories)
-      .find((cat): cat is CategoryInfo => cat !== null);
-    if (fallbackCat) {
-      filteredCategories = [fallbackCat];
-    }
-  }
+    .filter((cat): cat is CategoryInfo => cat !== null);
 
   const breadcrumbItems: { label: string; url?: string }[][] = [];
-  const mainLabel = formatted.theBest ? 'The Best Recipes' : 'Recipes';
-  const mainUrl = formatted.theBest ? '/the-best-recipes' : '/recipes';
-  const prefix = [
-    { label: 'Home', url: '/' },
-    { label: mainLabel, url: mainUrl },
-  ];
 
-  const trails = filteredCategories.map((c) => ({ label: c.name, url: c.url }));
-  breadcrumbItems.push([
-    ...prefix,
-    ...trails,
-    { label: formatted.title, url: '/recipe/' + formatted.slug },
-  ]);
+  if (categories.length === 0) {
+    const mainLabel = formatted.theBest ? 'The Best Recipes' : 'Recipes';
+    const mainUrl = formatted.theBest ? '/the-best-recipes' : '/recipes';
+    breadcrumbItems.push([
+      { label: 'Home', url: '/' },
+      { label: mainLabel, url: mainUrl },
+      { label: formatted.title, url: '/recipe/' + formatted.slug },
+    ]);
+    return { main: 0, items: breadcrumbItems };
+  }
 
-  return breadcrumbItems;
+  categories.forEach((cat) => {
+    const isBest = cat.url.startsWith('/the-best-recipes');
+    const mainLabel = isBest ? 'The Best Recipes' : 'Recipes';
+    const mainUrl = isBest ? '/the-best-recipes' : '/recipes';
+
+    breadcrumbItems.push([
+      { label: 'Home', url: '/' },
+      { label: mainLabel, url: mainUrl },
+      { label: cat.name, url: cat.url },
+      { label: formatted.title, url: '/recipe/' + formatted.slug },
+    ]);
+  });
+
+  const prefixUrl = formatted.theBest ? '/the-best-recipes' : '/recipes';
+  let mainIndex = breadcrumbItems.findIndex((trail) => trail[1].url === prefixUrl);
+  if (mainIndex === -1) mainIndex = 0;
+
+  return { main: mainIndex, items: breadcrumbItems };
 }
 
 recipesRouter.get('/recipes/:recipeId/comments', async (req: Request, res: Response) => {
@@ -497,7 +502,10 @@ recipesRouter.get('/recipes/:recipeId/comments', async (req: Request, res: Respo
   }
 });
 
-function isDomainBlocked(website: string | undefined, blockedDomainsStr: string | undefined): boolean {
+function isDomainBlocked(
+  website: string | undefined,
+  blockedDomainsStr: string | undefined,
+): boolean {
   if (!website || !blockedDomainsStr) return false;
   const blockedDomains = blockedDomainsStr.split(',').map((d) => d.trim().toLowerCase());
   const websiteLower = website.toLowerCase();
@@ -622,16 +630,13 @@ recipesRouter.get('/recipes/:slug', async (req: Request, res: Response) => {
     formatted.rating = 5;
 
     // Fetch breadcrumbs and adjacent sibling navigation in parallel
-    const [breadcrumbs, prev, next] = await Promise.all([
+    const [breadcrumbsObj, prev, next] = await Promise.all([
       getBreadcrumbs(supabase, recipeData.id, formatted),
       getAdjacentRecipe(supabase, recipeData.id, 'prev'),
       getAdjacentRecipe(supabase, recipeData.id, 'next'),
     ]);
 
-    formatted.breadcrumbs = {
-      main: 0,
-      items: breadcrumbs,
-    };
+    formatted.breadcrumbs = breadcrumbsObj;
     formatted.navigation = {
       prev,
       next,

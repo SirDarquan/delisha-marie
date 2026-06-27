@@ -80,9 +80,9 @@ import { RecipeService } from '../../services/recipe.service';
                     [alt]="recipe.title"
                     class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
                   <div class="absolute top-4 left-4">
-                    <mat-chip class="!bg-black/50 !text-white backdrop-blur-sm">{{
-                      recipe.category
-                    }}</mat-chip>
+                    <mat-chip class="!bg-black/50 !text-white backdrop-blur-sm"
+                      >{{ recipe.category }}1</mat-chip
+                    >
                   </div>
                   <div
                     class="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">

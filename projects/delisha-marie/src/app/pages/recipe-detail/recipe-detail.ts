@@ -1,4 +1,4 @@
-import { CommonModule, ViewportScroller } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -23,6 +23,7 @@ import { RecipeHero } from './recipe-hero';
 import { RecipeMeta } from './recipe-meta';
 import { RecipeNavigation } from './recipe-navigation';
 import { RecipeTags } from './recipe-tags';
+import { RecipeSource } from './recipe-source';
 
 @Component({
   selector: 'dm-recipe-detail',
@@ -36,6 +37,7 @@ import { RecipeTags } from './recipe-tags';
     SidebarQuickView,
     RecipeCard,
     RecipeTags,
+    RecipeSource,
     RecipeNavigation,
     RecipeComments,
     RecipeMeta,
@@ -54,27 +56,27 @@ import { RecipeTags } from './recipe-tags';
           <div class="h-[300px] md:h-[450px] w-full skeleton rounded-3xl mb-8"></div>
 
           <div class="max-w-7xl mx-auto sm:px-4 lg:px-8">
-            <div class="flex flex-col lg:flex-row gap-8">
+            <div class="grid grid-cols-1 lg:grid-cols-[1fr_350px] gap-8">
               <!-- Main Content Skeleton -->
-              <div class="flex-1 space-y-12">
-                <div class="space-y-4 px-4 sm:px-0">
-                  <div class="h-10 w-3/4 skeleton rounded"></div>
-                  <div class="h-6 w-1/2 skeleton rounded"></div>
-                  <div class="space-y-2 mt-6">
-                    <div class="h-4 w-full skeleton rounded"></div>
-                    <div class="h-4 w-full skeleton rounded"></div>
-                    <div class="h-4 w-5/6 skeleton rounded"></div>
-                  </div>
+              <div class="order-1 lg:order-none space-y-4 px-4 sm:px-0 min-w-0">
+                <div class="h-10 w-3/4 skeleton rounded"></div>
+                <div class="h-6 w-1/2 skeleton rounded"></div>
+                <div class="space-y-2 mt-6">
+                  <div class="h-4 w-full skeleton rounded"></div>
+                  <div class="h-4 w-full skeleton rounded"></div>
+                  <div class="h-4 w-5/6 skeleton rounded"></div>
                 </div>
-
-                <!-- Card Skeleton -->
-                <div class="h-[400px] w-full skeleton rounded-3xl"></div>
               </div>
 
               <!-- Sidebar Skeleton -->
-              <aside class="w-full lg:w-[350px] shrink-0">
+              <aside class="order-3 lg:order-none w-full shrink-0">
                 <div class="h-[300px] w-full skeleton rounded-3xl"></div>
               </aside>
+
+              <!-- Card Skeleton -->
+              <div class="order-2 lg:order-none min-w-0 lg:col-start-1 lg:row-start-2">
+                <div class="h-[400px] w-full skeleton rounded-3xl"></div>
+              </div>
             </div>
           </div>
         </div>
@@ -93,17 +95,31 @@ import { RecipeTags } from './recipe-tags';
 
           <!-- Story & Metrics Area -->
           <div class="max-w-7xl mx-auto sm:px-4 lg:px-8">
-            <div class="flex flex-col lg:flex-row gap-8">
-              <!-- Main Content Area -->
-              <div class="flex-1 space-y-12">
-                <section class="prose prose-lg max-w-none px-4 sm:px-0 py-8 sm:py-0">
-                  <div
-                    class="recipe-story text-lg md:text-xl text-[var(--mat-sys-on-surface-variant)] leading-relaxed font-serif first-letter:text-6xl first-letter:font-black first-letter:mr-1 first-letter:text-[var(--mat-sys-primary)]"
-                    [innerHTML]="r.content"></div>
-                </section>
+            <div class="grid grid-cols-1 lg:grid-cols-[1fr_350px] gap-8">
+              <!-- Story Section (Row 1, Col 1 on Desktop) -->
+              <section
+                class="order-1 lg:order-none prose prose-lg max-w-none px-4 sm:px-0 py-8 sm:py-0 min-w-0">
+                <div
+                  class="recipe-story text-lg md:text-xl text-[var(--mat-sys-on-surface-variant)] leading-relaxed font-serif first-letter:text-6xl first-letter:font-black first-letter:mr-1 first-letter:text-[var(--mat-sys-primary)]"
+                  [innerHTML]="r.content"></div>
+              </section>
 
+              <!-- Sidebar (Row 1, Col 2 on Desktop) -->
+              <aside class="order-3 lg:order-none w-full shrink-0">
+                <dml-sidebar>
+                  <div class="sticky top-24">
+                    <dm-sidebar-quick-view [recipe]="r" />
+                  </div>
+                </dml-sidebar>
+              </aside>
+
+              <!-- Rest of the content (Row 2, Col 1 on Desktop) -->
+              <div class="order-2 lg:order-none space-y-12 min-w-0 lg:col-start-1 lg:row-start-2">
                 <!-- Premium Recipe Card -->
                 <dml-recipe-card [recipe]="r" />
+
+                <!-- Recipe Source -->
+                <dml-recipe-source [recipe]="r" />
 
                 <!-- Recipe Tags -->
                 <dml-recipe-tags [recipe]="r" />
@@ -117,15 +133,6 @@ import { RecipeTags } from './recipe-tags';
                   [page]="page()"
                   (commentCountChange)="commentCountOverride.set($event)" />
               </div>
-
-              <!-- Sidebar -->
-              <aside class="w-full lg:w-[350px] shrink-0">
-                <dml-sidebar>
-                  <div class="sticky top-24">
-                    <dm-sidebar-quick-view [recipe]="r" />
-                  </div>
-                </dml-sidebar>
-              </aside>
             </div>
           </div>
         </article>
@@ -200,7 +207,6 @@ export class RecipeDetail {
   });
 
   private readonly window = inject(WINDOW);
-  private readonly viewportScroller = inject(ViewportScroller);
 
   constructor() {
     effect(() => {

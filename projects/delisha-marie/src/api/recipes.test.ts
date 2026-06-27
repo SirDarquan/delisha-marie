@@ -442,11 +442,16 @@ describe('Recipes Router API', () => {
       expect(res.body.rating).toBe(5);
       expect(res.body.comments).toEqual([]);
       expect(res.body.breadcrumbs.main).toBe(0);
-      expect(res.body.breadcrumbs.items).toHaveLength(1);
+      expect(res.body.breadcrumbs.items).toHaveLength(2);
       expect(res.body.breadcrumbs.items[0]).toEqual([
         { label: 'Home', url: '/' },
         { label: 'Recipes', url: '/recipes' },
         { label: 'Dinner', url: '/recipes/dinner' },
+        { label: 'Recipe 1', url: '/recipe/r1' },
+      ]);
+      expect(res.body.breadcrumbs.items[1]).toEqual([
+        { label: 'Home', url: '/' },
+        { label: 'Recipes', url: '/recipes' },
         { label: 'Pasta', url: '/recipes/dinner/pasta' },
         { label: 'Recipe 1', url: '/recipe/r1' },
       ]);
@@ -680,7 +685,7 @@ describe('Recipes Router API', () => {
       expect(res.status).toBe(200);
       expect(res.body.breadcrumbs.items[0]).toEqual([
         { label: 'Home', url: '/' },
-        { label: 'The Best Recipes', url: '/the-best-recipes' },
+        { label: 'Recipes', url: '/recipes' },
         { label: 'Dinner', url: '/recipes/dinner' },
         { label: 'Recipe 5', url: '/recipe/r5' },
       ]);
