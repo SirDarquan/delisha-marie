@@ -32,27 +32,15 @@ describe('RecipeTags', () => {
         main: undefined,
         items: [],
       },
+      method: '',
     });
     fixture.componentRef.setInput('recipe', mockRecipe);
     fixture.detectChanges();
 
-    expect(component.tagGroups()).toEqual([]);
+    expect(component.allTags()).toEqual([]);
   });
 
-  it('should handle undefined breadcrumbs', () => {
-    const mockRecipe: Recipe = createMockRecipe({
-      breadcrumbs: undefined as unknown as Recipe['breadcrumbs'],
-    });
-    fixture.componentRef.setInput('recipe', {
-      ...mockRecipe,
-      breadcrumbs: { items: undefined as unknown as Recipe['breadcrumbs']['items'] },
-    } as unknown as Recipe);
-    fixture.detectChanges();
-
-    expect(component.tagGroups()).toEqual([]);
-  });
-
-  it('should extract correct tags and filter Home and Recipe title', () => {
+  it('should extract correct tags from breadcrumbs and filter Home and Recipe title', () => {
     const mockRecipe: Recipe = createMockRecipe({
       title: 'Banana Bread',
       breadcrumbs: {
@@ -62,24 +50,71 @@ describe('RecipeTags', () => {
             { label: 'Home', url: '/' },
             { label: 'Recipes', url: '/recipes' },
             { label: 'Breads', url: '/recipes/breads' },
-            { label: 'Banana Bread' },
+            { label: 'Banana Bread', url: '/recipe/banana-bread' },
           ],
         ],
       },
+      method: '',
     });
     fixture.componentRef.setInput('recipe', mockRecipe);
     fixture.detectChanges();
 
-    const tags = component.tagGroups();
-    expect(tags).toHaveLength(1);
-    expect(tags[0].items).toHaveLength(2);
-    expect(tags[0].items[0].label).toBe('Recipes');
-    expect(tags[0].items[1].label).toBe('Breads');
+    const tags = component.allTags();
+    expect(tags).toHaveLength(2);
+    expect(tags[0].label).toBe('Recipes');
+    expect(tags[1].label).toBe('Breads');
 
     const compiled = fixture.nativeElement as HTMLElement;
     const tagLinks = compiled.querySelectorAll('.tag-link');
     expect(tagLinks).toHaveLength(2);
     expect(tagLinks[0].textContent).toContain('Recipes');
     expect(tagLinks[1].textContent).toContain('Breads');
+  });
+
+  it('should extract method, holidays, and special diets and slugify them', () => {
+    const mockRecipe: Recipe = createMockRecipe({
+      title: 'Special Cake',
+      breadcrumbs: { main: 0, items: [] },
+      method: 'Baking',
+      holidays: ['Christmas', 'New Year'],
+      specialDiets: ['Gluten Free'],
+    });
+    fixture.componentRef.setInput('recipe', mockRecipe);
+    fixture.detectChanges();
+
+    const tags = component.allTags();
+    expect(tags).toHaveLength(4);
+    expect(tags[0].label).toBe('Baking');
+    expect(tags[0].url).toBe('/methods/baking');
+    expect(tags[1].label).toBe('Christmas');
+    expect(tags[1].url).toBe('/holidays/christmas');
+    expect(tags[2].label).toBe('New Year');
+    expect(tags[2].url).toBe('/holidays/new-year');
+    expect(tags[3].label).toBe('Gluten Free');
+    expect(tags[3].url).toBe('/special-diets/gluten-free');
+  });
+
+  it('should remove duplicate tags', () => {
+    const mockRecipe: Recipe = createMockRecipe({
+      title: 'Test',
+      breadcrumbs: {
+        main: 0,
+        items: [
+          [
+            { label: 'Recipes', url: '/recipes' },
+            { label: 'Baking', url: '/recipes/baking' },
+          ],
+        ],
+      },
+      method: 'Baking',
+    });
+    fixture.componentRef.setInput('recipe', mockRecipe);
+    fixture.detectChanges();
+
+    const tags = component.allTags();
+    // 'Baking' is in breadcrumbs and method, but should only appear once
+    expect(tags).toHaveLength(2);
+    expect(tags[0].label).toBe('Recipes');
+    expect(tags[1].label).toBe('Baking');
   });
 });

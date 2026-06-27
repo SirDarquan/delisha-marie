@@ -3,7 +3,7 @@ import { inject } from '@angular/core';
 import { ResolveFn } from '@angular/router';
 
 import { Recipe, RecipeService } from '../services/recipe.service';
-import { deslugify } from '../utils/slug';
+import { deslugify } from '@dm/library';
 
 export interface SchemaObject {
   '@context'?: string;

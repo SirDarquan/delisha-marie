@@ -18,7 +18,7 @@ import { BreadcrumbItem, Breadcrumbs } from '../../components/breadcrumbs/breadc
 import { RefineBy, RefineByItem } from '../../components/refine-by/refine-by';
 import { WINDOW } from '../../services/global-tokens';
 import { RecipeService } from '../../services/recipe.service';
-import { deslugify } from '../../utils/slug';
+import { deslugify } from '@dm/library';
 import { RecipeIndexService } from '../recipe-index/recipe-index.service';
 
 @Component({

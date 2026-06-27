@@ -21,10 +21,9 @@ import { Recipe } from '../../services/recipe.service';
   template: `
     <div
       id="recipe-card"
-      class="recipe-card bg-[var(--mat-sys-surface-container)] rounded-[2rem] p-4 sm:p-6 md:p-10 shadow-none sm:shadow-2xl border-y sm:border border-[var(--mat-sys-outline-variant)] relative overflow-hidden">
+      class="recipe-card bg-[var(--mat-sys-primary-container)] rounded-t-[2rem] shadow-none sm:shadow-2xl border-y sm:border border-[var(--mat-sys-outline-variant)] relative overflow-hidden">
       <!-- Recipe Header Container -->
-      <div
-        class="recipe-card-header bg-[var(--mat-sys-primary-container)] p-6 md:p-8 rounded-2xl mb-8 overflow-hidden relative z-10">
+      <div class="recipe-card-header p-6 md:p-8 rounded-2xl mb-8 overflow-hidden relative z-10">
         <!-- 1. Picture (Floated Right) -->
         <div
           class="recipe-card-image-float-right float-right ml-4 sm:ml-6 mb-4 w-[100px] h-[100px] sm:w-[120px] sm:h-[120px] md:w-[180px] md:h-[180px] rounded-lg overflow-hidden shadow-md border-4 border-white">
@@ -98,7 +97,9 @@ import { Recipe } from '../../services/recipe.service';
           }
         </div>
       </div>
-
+    </div>
+    <div
+      class="recipe-card bg-[var(--mat-sys-surface-container)] rounded-b-[2rem] p-4 sm:p-6 md:p-10 shadow-none sm:shadow-2xl border-y sm:border border-[var(--mat-sys-outline-variant)] relative overflow-hidden">
       <!-- Action Buttons -->
       <div class="flex flex-wrap md:flex-nowrap gap-4 w-full mb-10 relative z-10">
         <button
