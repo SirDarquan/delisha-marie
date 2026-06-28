@@ -220,9 +220,8 @@ export class RecipeDetail {
   readonly videoId = computed(() => {
     const r = this.recipe();
     if (!r?.video) return null;
-    const match = r.video.match(
-      /(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([^&]{11})/,
-    );
+    const regex = /(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?(?:.*&)?v=))([^&]{11})/;
+    const match = regex.exec(r.video);
     return match ? match[1] : r.video.trim();
   });
 
