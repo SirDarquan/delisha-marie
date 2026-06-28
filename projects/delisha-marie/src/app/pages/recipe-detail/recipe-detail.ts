@@ -15,6 +15,7 @@ import { RouterLink } from '@angular/router';
 import { BreadcrumbItem, Breadcrumbs } from '../../components/breadcrumbs/breadcrumbs';
 import { Sidebar } from '../../components/sidebar/sidebar';
 import { SidebarQuickView } from '../../components/sidebar/sidebar-quick-view';
+import { PinterestHoverDirective } from '../../directives/pinterest-hover.directive';
 import { WINDOW } from '../../services/global-tokens';
 import { Recipe } from '../../services/recipe.service';
 import { RecipeCard } from './recipe-card';
@@ -42,6 +43,7 @@ import { RecipeTags } from './recipe-tags';
     RecipeComments,
     RecipeMeta,
     RouterLink,
+    PinterestHoverDirective,
   ],
   template: `
     <div class="into-the-box pt-12 pb-12">
@@ -91,7 +93,7 @@ import { RecipeTags } from './recipe-tags';
 
         <article class="w-full">
           <!-- Hero Section -->
-          <dml-recipe-hero [recipe]="r" />
+          <dml-recipe-hero [recipe]="r" [dmPinterestHover]="r" />
 
           <!-- Story & Metrics Area -->
           <div class="max-w-7xl mx-auto sm:px-4 lg:px-8">
@@ -101,7 +103,8 @@ import { RecipeTags } from './recipe-tags';
                 class="order-1 lg:order-none prose prose-lg max-w-none px-4 sm:px-0 py-8 sm:py-0 min-w-0">
                 <div
                   class="recipe-story text-lg md:text-xl text-[var(--mat-sys-on-surface-variant)] leading-relaxed font-serif first-letter:text-6xl first-letter:font-black first-letter:mr-1 first-letter:text-[var(--mat-sys-primary)]"
-                  [innerHTML]="r.content"></div>
+                  [innerHTML]="r.content"
+                  [dmPinterestHover]="r"></div>
               </section>
 
               <!-- Sidebar (Row 1, Col 2 on Desktop) -->
