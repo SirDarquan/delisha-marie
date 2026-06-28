@@ -59,6 +59,7 @@ describe('RecipeFormComponent', () => {
     sodium: '50',
     cholesterol: '5',
     saturatedFat: '1',
+    video: '',
   });
 
   let mockRecipeById: Recipe | null = null;

@@ -16,7 +16,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { ActivatedRoute, Router } from '@angular/router';
-import { BaseTrail, CategoryTrails } from '@dm/library';
+import { BaseTrail, CategoryTrails, extractYouTubeVideoId } from '@dm/library';
 import { CategoryBoardComponent } from '../../components/category-board/category-board';
 import { ConfirmDialogComponent } from '../../components/confirm-dialog/confirm-dialog';
 import { CookingMethodSelectorComponent } from '../../components/cooking-method-selector/cooking-method-selector';
@@ -65,6 +65,7 @@ interface RecipeFormModel {
   sodium: string;
   cholesterol: string;
   saturatedFat: string;
+  video: string;
 }
 
 @Component({
@@ -248,6 +249,16 @@ interface RecipeFormModel {
                   type="text"
                   [formField]="recipeForm.course"
                   placeholder="e.g., Dinner, Breakfast" />
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="w-full md:col-span-2">
+                <mat-label>YouTube Video ID</mat-label>
+                <input
+                  matInput
+                  id="video"
+                  type="text"
+                  [formField]="recipeForm.video"
+                  placeholder="e.g., dQw4w9WgXcQ" />
               </mat-form-field>
 
               <div class="flex flex-col gap-3 md:col-span-2">
@@ -697,6 +708,7 @@ export class RecipeFormComponent implements OnInit {
     sodium: '',
     cholesterol: '',
     saturatedFat: '',
+    video: '',
   });
 
   protected readonly currentStatus = computed(() => this.recipeModel().status);
@@ -945,6 +957,7 @@ export class RecipeFormComponent implements OnInit {
       sodium: recipe.nutrition?.sodium || '',
       cholesterol: recipe.nutrition?.cholesterol || '',
       saturatedFat: recipe.nutrition?.saturatedFat || '',
+      video: recipe.video || '',
     };
   }
 
@@ -1122,6 +1135,7 @@ export class RecipeFormComponent implements OnInit {
       keywords,
       equipment,
       notes,
+      video: extractYouTubeVideoId(formValue.video),
     } as unknown as Omit<Recipe, 'id'>;
   }
 

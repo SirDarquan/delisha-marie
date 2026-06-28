@@ -139,3 +139,14 @@ export function mapTrailsToBreadcrumbs(
     items: mappedItems,
   };
 }
+
+/**
+ * Extracts a YouTube video ID from a URL.
+ * Supports various YouTube URL formats.
+ */
+export function extractYouTubeVideoId(url: string | null | undefined): string | null {
+  if (!url) return null;
+  const regex = /(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?(?:.*&)?v=))([^&]{11})/;
+  const match = regex.exec(url);
+  return match ? match[1] : url.trim();
+}
