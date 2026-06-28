@@ -11,6 +11,7 @@ import {
 } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { DomSanitizer } from '@angular/platform-browser';
 import { RouterLink } from '@angular/router';
 import { BreadcrumbItem, Breadcrumbs } from '../../components/breadcrumbs/breadcrumbs';
 import { Sidebar } from '../../components/sidebar/sidebar';
@@ -25,6 +26,7 @@ import { RecipeMeta } from './recipe-meta';
 import { RecipeNavigation } from './recipe-navigation';
 import { RecipeSource } from './recipe-source';
 import { RecipeTags } from './recipe-tags';
+
 
 @Component({
   selector: 'dm-recipe-detail',
@@ -105,6 +107,19 @@ import { RecipeTags } from './recipe-tags';
                   class="recipe-story text-lg md:text-xl text-[var(--mat-sys-on-surface-variant)] leading-relaxed font-serif first-letter:text-6xl first-letter:font-black first-letter:mr-1 first-letter:text-[var(--mat-sys-primary)]"
                   [innerHTML]="r.content"
                   [dmPinterestHover]="r"></div>
+
+                @if (videoId()) {
+                  <div
+                    class="mt-12 mb-8 flex justify-center w-full rounded-2xl overflow-hidden shadow-lg border border-slate-700/50">
+                    <iframe
+                      width="100%"
+                      height="400"
+                      [src]="safeVideoUrl()"
+                      frameborder="0"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowfullscreen></iframe>
+                  </div>
+                }
               </section>
 
               <!-- Sidebar (Row 1, Col 2 on Desktop) -->
@@ -202,11 +217,29 @@ export class RecipeDetail {
 
   readonly isLoading = computed(() => this.recipe() === undefined);
 
+  readonly videoId = computed(() => {
+    const r = this.recipe();
+    if (!r?.video) return null;
+    const match = r.video.match(
+      /(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([^&]{11})/,
+    );
+    return match ? match[1] : r.video.trim();
+  });
+
   readonly breadcrumbItems = computed((): BreadcrumbItem[] => {
     const r = this.recipe();
     if (!r) return [];
     const idx = r.breadcrumbs.main;
     return typeof idx === 'number' ? r.breadcrumbs.items[idx] : [];
+  });
+
+  private readonly sanitizer = inject(DomSanitizer);
+
+  readonly safeVideoUrl = computed(() => {
+    const id = this.videoId();
+    return id
+      ? this.sanitizer.bypassSecurityTrustResourceUrl(`https://www.youtube.com/embed/${id}`)
+      : null;
   });
 
   private readonly window = inject(WINDOW);

@@ -81,4 +81,5 @@ export interface BaseRecipe {
   status: 'draft' | 'scheduled' | 'published' | 'updated';
   likes?: number;
   source?: string;
+  video?: string | null;
 }

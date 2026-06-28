@@ -65,6 +65,7 @@ interface RecipeFormModel {
   sodium: string;
   cholesterol: string;
   saturatedFat: string;
+  video: string;
 }
 
 @Component({
@@ -248,6 +249,16 @@ interface RecipeFormModel {
                   type="text"
                   [formField]="recipeForm.course"
                   placeholder="e.g., Dinner, Breakfast" />
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="w-full md:col-span-2">
+                <mat-label>YouTube Video ID</mat-label>
+                <input
+                  matInput
+                  id="video"
+                  type="text"
+                  [formField]="recipeForm.video"
+                  placeholder="e.g., dQw4w9WgXcQ" />
               </mat-form-field>
 
               <div class="flex flex-col gap-3 md:col-span-2">
@@ -697,6 +708,7 @@ export class RecipeFormComponent implements OnInit {
     sodium: '',
     cholesterol: '',
     saturatedFat: '',
+    video: '',
   });
 
   protected readonly currentStatus = computed(() => this.recipeModel().status);
@@ -945,6 +957,7 @@ export class RecipeFormComponent implements OnInit {
       sodium: recipe.nutrition?.sodium || '',
       cholesterol: recipe.nutrition?.cholesterol || '',
       saturatedFat: recipe.nutrition?.saturatedFat || '',
+      video: recipe.video || '',
     };
   }
 
@@ -1122,6 +1135,7 @@ export class RecipeFormComponent implements OnInit {
       keywords,
       equipment,
       notes,
+      video: formValue.video?.trim() || null,
     } as unknown as Omit<Recipe, 'id'>;
   }
 
