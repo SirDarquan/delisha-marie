@@ -1,8 +1,8 @@
+import { SupabaseClient } from '@supabase/supabase-js';
 import { camelCase, snakeCase } from 'change-case';
 import { Response, Router } from 'express';
 import { authMiddleware, AuthRequest } from './middleware/auth.middleware';
 import { backendService } from './supabase-backend.service';
-import { SupabaseClient } from '@supabase/supabase-js';
 
 const recipesRouter = Router();
 
@@ -249,6 +249,7 @@ function filterRecipeColumns(obj: Record<string, unknown>): Record<string, unkno
     'keywords',
     'equipment',
     'notes',
+    'video',
   ];
   const result: Record<string, unknown> = {};
   for (const key of allowed) {
@@ -275,6 +276,7 @@ function normalizeDbBody(obj: Record<string, unknown>): Record<string, unknown> 
     'preview_token',
     'cuisine',
     'course',
+    'video',
   ];
   for (const key of nullable) {
     if (key in result && (result[key] === '' || result[key] === undefined)) {

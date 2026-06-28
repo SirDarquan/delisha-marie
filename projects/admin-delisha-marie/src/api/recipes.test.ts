@@ -1,5 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SupabaseClient, User } from '@supabase/supabase-js';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Ensure Env vars exist before static initialization in imported modules
 vi.hoisted(() => {
@@ -425,6 +425,7 @@ describe('Recipes Router API', () => {
         title: 'New Salad',
         prepTime: '',
         cuisine: '',
+        video: '',
         nutrition: {
           calories: '100 kcal',
           fatContent: '5g',
@@ -442,6 +443,7 @@ describe('Recipes Router API', () => {
         expect.objectContaining({
           prep_time: null,
           cuisine: null,
+          video: null,
           nutrition: {
             calories: '100 kcal',
             fat_content: '5g',
