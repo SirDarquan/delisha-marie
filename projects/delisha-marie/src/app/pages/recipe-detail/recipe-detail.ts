@@ -26,6 +26,7 @@ import { RecipeMeta } from './recipe-meta';
 import { RecipeNavigation } from './recipe-navigation';
 import { RecipeSource } from './recipe-source';
 import { RecipeTags } from './recipe-tags';
+import { extractYouTubeVideoId } from '@dm/library';
 
 
 @Component({
@@ -217,13 +218,7 @@ export class RecipeDetail {
 
   readonly isLoading = computed(() => this.recipe() === undefined);
 
-  readonly videoId = computed(() => {
-    const r = this.recipe();
-    if (!r?.video) return null;
-    const regex = /(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?(?:.*&)?v=))([^&]{11})/;
-    const match = regex.exec(r.video);
-    return match ? match[1] : r.video.trim();
-  });
+  readonly videoId = computed(() => extractYouTubeVideoId(this.recipe()?.video));
 
   readonly breadcrumbItems = computed((): BreadcrumbItem[] => {
     const r = this.recipe();

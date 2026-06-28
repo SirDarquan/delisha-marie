@@ -16,7 +16,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { ActivatedRoute, Router } from '@angular/router';
-import { BaseTrail, CategoryTrails } from '@dm/library';
+import { BaseTrail, CategoryTrails, extractYouTubeVideoId } from '@dm/library';
 import { CategoryBoardComponent } from '../../components/category-board/category-board';
 import { ConfirmDialogComponent } from '../../components/confirm-dialog/confirm-dialog';
 import { CookingMethodSelectorComponent } from '../../components/cooking-method-selector/cooking-method-selector';
@@ -1135,7 +1135,7 @@ export class RecipeFormComponent implements OnInit {
       keywords,
       equipment,
       notes,
-      video: formValue.video?.trim() || null,
+      video: extractYouTubeVideoId(formValue.video),
     } as unknown as Omit<Recipe, 'id'>;
   }
 
