@@ -8,23 +8,28 @@ import {
   signal,
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { Router, RouterOutlet, Scroll, NavigationEnd } from '@angular/router';
+import { NavigationEnd, Router, RouterOutlet, Scroll } from '@angular/router';
 import { filter } from 'rxjs';
 import { Footer } from './components/footer/footer';
 import { Header } from './components/header/header';
-import { NgClass } from '@angular/common';
 
 @Component({
   selector: 'dm-root',
-  imports: [RouterOutlet, Header, Footer, NgClass],
+  imports: [RouterOutlet, Header, Footer],
   template: `
     <div
       class="flex flex-col min-h-screen"
-      [ngClass]="isPrintPage() ? 'bg-white' : 'bg-[var(--mat-sys-surface)]'">
+      [class.bg-white]="isPrintPage()"
+      [class.bg-[var(--mat-sys-surface)]]="!isPrintPage()">
       @if (!isPrintPage()) {
         <dm-header />
       }
-      <main class="flex-grow" [ngClass]="isPrintPage() ? '' : 'container mx-auto px-4 py-8'">
+      <main
+        class="flex-grow"
+        [class.container]="!isPrintPage()"
+        [class.mx-auto]="!isPrintPage()"
+        [class.px-4]="!isPrintPage()"
+        [class.py-8]="!isPrintPage()">
         <router-outlet />
       </main>
       @if (!isPrintPage()) {
