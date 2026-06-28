@@ -265,4 +265,22 @@ describe('RecipeDetail', () => {
     expect(customWindowMock.scrollTo).toHaveBeenCalledWith({ top: 180, behavior: 'smooth' });
     vi.useRealTimers();
   });
+
+  it('should compute videoId and safeVideoUrl correctly', async () => {
+    const customRecipe = { ...mockRecipe, video: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' };
+    fixture.componentRef.setInput('recipe', customRecipe);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(component.videoId()).toBe('dQw4w9WgXcQ');
+    const safeUrl = component.safeVideoUrl();
+    expect(safeUrl).toBeTruthy();
+    // In test environment without proper DomSanitizer mocking, the object might be complex,
+    // but we can verify it's not null. We can also test the null case.
+    
+    fixture.componentRef.setInput('recipe', mockRecipe); // no video
+    fixture.detectChanges();
+    expect(component.videoId()).toBeNull();
+    expect(component.safeVideoUrl()).toBeNull();
+  });
 });
