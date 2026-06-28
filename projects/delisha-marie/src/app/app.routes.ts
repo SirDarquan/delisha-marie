@@ -85,6 +85,14 @@ export const routes: Routes = [
     },
   ]),
   {
+    path: 'recipe/:slug/print',
+    title: recipeTitleResolver,
+    loadComponent: () => import('./pages/recipe-print/recipe-print').then((m) => m.RecipePrint),
+    resolve: {
+      recipe: recipeResolver,
+    },
+  },
+  {
     path: 'recipe/:slug',
     title: recipeTitleResolver,
     loadComponent: () => import('./pages/recipe-detail/recipe-detail').then((m) => m.RecipeDetail),
