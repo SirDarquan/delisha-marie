@@ -64,9 +64,9 @@ import { Recipe, RecipeService } from '../../services/recipe.service';
       <div class="flex items-center gap-2">
         <mat-icon class="text-lg w-5 h-5 opacity-50">calendar_today</mat-icon>
         <span>
-          {{ recipe().updatedAt ? 'Updated' : 'Published' }}:
-          <time class="text-[var(--mat-sys-primary)]" [attr.datetime]="date()">{{
-            date() | date: 'MMM d, yyyy'
+          {{ isUpdated() ? 'Updated' : 'Published' }}:
+          <time class="text-[var(--mat-sys-primary)]" [attr.datetime]="displayDate()">{{
+            displayDate() | date: 'MMM d, yyyy'
           }}</time>
         </span>
       </div>
@@ -105,7 +105,20 @@ export class RecipeMeta {
     return this.commentsResource.value()?.total ?? 0;
   });
 
-  readonly date = computed(
-    () => this.recipe().updatedAt || this.recipe().createdAt || new Date().toISOString(),
-  );
+  readonly isUpdated = computed(() => {
+    const r = this.recipe();
+    if (!r.updatedAt || !r.createdAt) return false;
+    // Consider updated only if there's a difference of more than 1 second (1000ms)
+    // between createdAt and updatedAt to account for initial insert triggers.
+    const diff = Math.abs(new Date(r.updatedAt).getTime() - new Date(r.createdAt).getTime());
+    return diff > 1000;
+  });
+
+  readonly displayDate = computed(() => {
+    const r = this.recipe();
+    if (this.isUpdated()) {
+      return r.updatedAt;
+    }
+    return r.createdAt || r.updatedAt || new Date().toISOString();
+  });
 }

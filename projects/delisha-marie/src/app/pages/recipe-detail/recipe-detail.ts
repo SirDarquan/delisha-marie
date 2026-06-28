@@ -13,17 +13,17 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { RouterLink } from '@angular/router';
 import { BreadcrumbItem, Breadcrumbs } from '../../components/breadcrumbs/breadcrumbs';
-import { WINDOW } from '../../services/global-tokens';
 import { Sidebar } from '../../components/sidebar/sidebar';
 import { SidebarQuickView } from '../../components/sidebar/sidebar-quick-view';
+import { WINDOW } from '../../services/global-tokens';
 import { Recipe } from '../../services/recipe.service';
 import { RecipeCard } from './recipe-card';
 import { RecipeComments } from './recipe-comments';
 import { RecipeHero } from './recipe-hero';
 import { RecipeMeta } from './recipe-meta';
 import { RecipeNavigation } from './recipe-navigation';
-import { RecipeTags } from './recipe-tags';
 import { RecipeSource } from './recipe-source';
+import { RecipeTags } from './recipe-tags';
 
 @Component({
   selector: 'dm-recipe-detail',

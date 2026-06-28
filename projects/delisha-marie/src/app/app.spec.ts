@@ -15,7 +15,7 @@ describe('App', () => {
     await TestBed.configureTestingModule({
       imports: [App],
       providers: [
-        provideRouter([]),
+        provideRouter([{ path: '**', component: App }]),
         provideHttpClient(),
         provideHttpClientTesting(),
         {
@@ -87,5 +87,25 @@ describe('App', () => {
 
     expect(posSpy).not.toHaveBeenCalled();
     expect(anchorSpy).not.toHaveBeenCalled();
+  });
+
+  it('should set isPrintPage to true if router.url includes /print', () => {
+    const fixture = TestBed.createComponent(App);
+    const router = TestBed.inject(Router);
+    const app = fixture.componentInstance;
+
+    // Simulate router url and NavigationEnd
+    const urlSpy = vi.spyOn(router, 'url', 'get').mockReturnValue('/recipe/my-recipe/print');
+    const mockNavEvent = new NavigationEnd(1, '/recipe/my-recipe/print', '/recipe/my-recipe/print');
+    (router.events as Subject<Event>).next(mockNavEvent);
+
+    expect(app.isPrintPage()).toBe(true);
+
+    // Simulate router url without /print
+    urlSpy.mockReturnValue('/recipe/my-recipe');
+    const mockNavEvent2 = new NavigationEnd(2, '/recipe/my-recipe', '/recipe/my-recipe');
+    (router.events as Subject<Event>).next(mockNavEvent2);
+
+    expect(app.isPrintPage()).toBe(false);
   });
 });

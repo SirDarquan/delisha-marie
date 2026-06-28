@@ -1,5 +1,11 @@
-import { CommonModule, NgOptimizedImage } from '@angular/common';
-import { ChangeDetectionStrategy, Component, input, ViewEncapsulation } from '@angular/core';
+import { CommonModule, DOCUMENT, NgOptimizedImage } from '@angular/common';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  inject,
+  input,
+  ViewEncapsulation,
+} from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatIconModule } from '@angular/material/icon';
@@ -104,18 +110,34 @@ import { Recipe } from '../../services/recipe.service';
       <div class="flex flex-wrap md:flex-nowrap gap-4 w-full mb-10 relative z-10">
         <button
           mat-stroked-button
-          class="flex-1 rounded-full h-12 border-2 font-black hover:bg-[var(--mat-sys-primary-container)] hover:text-[var(--mat-sys-on-primary-container)] transition-all">
-          <mat-icon class="mr-2">star_border</mat-icon>
-          Rate
-        </button>
-        <button
-          mat-stroked-button
+          [routerLink]="['/recipe', recipe().slug, 'print']"
           class="flex-1 rounded-full h-12 border-2 font-black hover:bg-[var(--mat-sys-on-surface)] hover:text-[var(--mat-sys-surface)] transition-all">
           <mat-icon class="mr-2">print</mat-icon>
           Print
         </button>
         <button
           mat-stroked-button
+          routerLink="."
+          fragment="respond"
+          class="flex-1 rounded-full h-12 border-2 font-black hover:bg-[var(--mat-sys-primary-container)] hover:text-[var(--mat-sys-on-primary-container)] transition-all">
+          <mat-icon class="mr-2">star_border</mat-icon>
+          Rate
+        </button>
+        <button
+          mat-stroked-button
+          (click)="openPinterest($event)"
+          class="flex-1 rounded-full h-12 border-2 font-black hover:bg-[var(--mat-sys-primary-container)] hover:text-[var(--mat-sys-on-primary-container)] transition-all">
+          <mat-icon class="mr-2">
+            <svg viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg">
+              <path
+                d="M16.75 0.406c-6.413 0-12.75 4.275-12.75 11.194 0 4.4 2.475 6.9 3.975 6.9 0.619 0 0.975-1.725 0.975-2.212 0-0.581-1.481-1.819-1.481-4.238 0-5.025 3.825-8.588 8.775-8.588 4.256 0 7.406 2.419 7.406 6.863 0 3.319-1.331 9.544-5.644 9.544-1.556 0-2.888-1.125-2.888-2.737 0-2.363 1.65-4.65 1.65-7.088 0-4.137-5.869-3.387-5.869 1.613 0 1.050 0.131 2.212 0.6 3.169-0.863 3.713-2.625 9.244-2.625 13.069 0 1.181 0.169 2.344 0.281 3.525 0.212 0.238 0.106 0.213 0.431 0.094 3.15-4.313 3.038-5.156 4.463-10.8 0.769 1.463 2.756 2.25 4.331 2.25 6.637 0 9.619-6.469 9.619-12.3 0-6.206-5.363-10.256-11.25-10.256z" />
+            </svg>
+          </mat-icon>
+          Pinterest
+        </button>
+        <button
+          mat-stroked-button
+          disabled
           class="flex-1 rounded-full h-12 border-2 font-black hover:bg-[var(--mat-sys-on-surface)] hover:text-[var(--mat-sys-surface)] transition-all">
           <mat-icon class="mr-2">bookmark_border</mat-icon>
           Save
@@ -374,4 +396,20 @@ import { Recipe } from '../../services/recipe.service';
 })
 export class RecipeCard {
   recipe = input.required<Recipe>();
+
+  private readonly document = inject(DOCUMENT);
+
+  openPinterest(event: Event) {
+    event.preventDefault();
+    const window = this.document.defaultView;
+    if (!window) return;
+
+    const r = this.recipe();
+    const url = encodeURIComponent(window.location.href);
+    const media = encodeURIComponent(r.image || '');
+    const description = encodeURIComponent(r.title || '');
+
+    const pinterestUrl = `https://pinterest.com/pin/create/button/?url=${url}&media=${media}&description=${description}`;
+    window.open(pinterestUrl, 'pinterestShare', 'width=890,height=600,noreferrer');
+  }
 }

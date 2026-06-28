@@ -5,9 +5,10 @@ import {
   ViewEncapsulation,
   effect,
   inject,
+  signal,
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { Router, RouterOutlet, Scroll } from '@angular/router';
+import { NavigationEnd, Router, RouterOutlet, Scroll } from '@angular/router';
 import { filter } from 'rxjs';
 import { Footer } from './components/footer/footer';
 import { Header } from './components/header/header';
@@ -16,12 +17,24 @@ import { Header } from './components/header/header';
   selector: 'dm-root',
   imports: [RouterOutlet, Header, Footer],
   template: `
-    <div class="flex flex-col min-h-screen bg-[var(--mat-sys-surface)]">
-      <dm-header />
-      <main class="flex-grow container mx-auto px-4 py-8">
+    <div
+      class="flex flex-col min-h-screen"
+      [class.bg-white]="isPrintPage()"
+      [class.bg-[var(--mat-sys-surface)]]="!isPrintPage()">
+      @if (!isPrintPage()) {
+        <dm-header />
+      }
+      <main
+        class="flex-grow"
+        [class.container]="!isPrintPage()"
+        [class.mx-auto]="!isPrintPage()"
+        [class.px-4]="!isPrintPage()"
+        [class.py-8]="!isPrintPage()">
         <router-outlet />
       </main>
-      <dm-footer />
+      @if (!isPrintPage()) {
+        <dm-footer />
+      }
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
@@ -29,8 +42,14 @@ import { Header } from './components/header/header';
 })
 export class App {
   private readonly viewportScroller = inject(ViewportScroller);
+  readonly isPrintPage = signal(false);
 
   constructor() {
+    const router = inject(Router);
+    router.events.pipe(filter((event) => event instanceof NavigationEnd)).subscribe(() => {
+      this.isPrintPage.set(router.url.includes('/print'));
+    });
+
     const scrollEvent = toSignal(
       inject(Router).events.pipe(filter((event): event is Scroll => event instanceof Scroll)),
     );
