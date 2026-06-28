@@ -58,15 +58,21 @@ export class PinterestHoverDirective implements OnDestroy {
     this.renderer.setAttribute(this.buttonEl, 'id', 'pinterest-hover-btn');
 
     const styles = {
-      position: 'absolute', 'z-index': '40',
-      display: 'flex', 'align-items': 'center', 
-      gap: '6px', 'background-color': '#e60023',
-      color: 'white', 
-      border: 'none', 'border-radius': '9999px', 
+      position: 'absolute',
+      'z-index': '40',
+      display: 'flex',
+      'align-items': 'center',
+      gap: '6px',
+      'background-color': '#e60023',
+      color: 'white',
+      border: 'none',
+      'border-radius': '9999px',
       padding: '8px 14px',
-        'font-family': 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-        'font-weight': '700', 'font-size': '14px',
-      cursor: 'pointer', 'box-shadow': '0 4px 12px rgba(0, 0, 0, 0.2)',
+      'font-family': 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+      'font-weight': '700',
+      'font-size': '14px',
+      cursor: 'pointer',
+      'box-shadow': '0 4px 12px rgba(0, 0, 0, 0.2)',
       transition: 'transform 0.15s ease, background-color 0.15s ease',
     };
 
