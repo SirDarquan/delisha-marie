@@ -28,7 +28,6 @@ import { RecipeSource } from './recipe-source';
 import { RecipeTags } from './recipe-tags';
 import { extractYouTubeVideoId } from '@dm/library';
 
-
 @Component({
   selector: 'dm-recipe-detail',
   imports: [

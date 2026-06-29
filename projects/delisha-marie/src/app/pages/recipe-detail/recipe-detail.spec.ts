@@ -277,7 +277,7 @@ describe('RecipeDetail', () => {
     expect(safeUrl).toBeTruthy();
     // In test environment without proper DomSanitizer mocking, the object might be complex,
     // but we can verify it's not null. We can also test the null case.
-    
+
     fixture.componentRef.setInput('recipe', mockRecipe); // no video
     fixture.detectChanges();
     expect(component.videoId()).toBeNull();
