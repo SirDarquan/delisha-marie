@@ -56,6 +56,81 @@ recipesRouter.get('/recipes', async (req: AuthRequest, res: Response) => {
   }
 });
 
+interface RecipeCategoryRelation {
+  categories: { name: string } | null;
+}
+
+interface RecentRecipeRow {
+  id: string | number;
+  title: string;
+  prep_time?: string | null;
+  author?: string | null;
+  created_at?: string | null;
+  recipe_categories?: RecipeCategoryRelation[];
+}
+
+recipesRouter.get('/home', async (req: AuthRequest, res: Response) => {
+  try {
+    const client = backendService.getClient(req.token);
+
+    // 1. Get total recipes count
+    const { count, error: countError } = await client
+      .from('recipes')
+      .select('*', { count: 'exact', head: true });
+
+    if (countError) throw countError;
+
+    // 2. Get recent recipes (last 3)
+    const { data: recentData, error: recentError } = await client
+      .from('recipes')
+      .select(
+        `
+        id,
+        title,
+        prep_time,
+        author,
+        created_at,
+        recipe_categories (
+          categories (name)
+        )
+      `,
+      )
+      .order('created_at', { ascending: false })
+      .limit(3);
+
+    if (recentError) throw recentError;
+
+    const recentRecipes = ((recentData as unknown as RecentRecipeRow[]) || []).map((recipe) => {
+      let category = 'Uncategorized';
+      if (recipe.recipe_categories && recipe.recipe_categories.length > 0) {
+        const cats = recipe.recipe_categories
+          .map((rc) => rc.categories?.name)
+          .filter((name): name is string => !!name);
+        if (cats.length > 0) {
+          category = cats[0];
+        }
+      }
+
+      return {
+        id: recipe.id,
+        title: recipe.title,
+        author: recipe.author || 'Delisha Marie',
+        prepTime: recipe.prep_time || '',
+        category,
+        createdAt: recipe.created_at,
+      };
+    });
+
+    return res.json({
+      totalRecipes: count || 0,
+      recentRecipes,
+    });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    return res.status(500).json({ error: msg });
+  }
+});
+
 recipesRouter.get('/holidays', async (req: AuthRequest, res: Response) => {
   try {
     const client = backendService.getClient(req.token);
@@ -336,7 +411,7 @@ async function saveTrailParts(
 ): Promise<void> {
   for (let i = 2; i < trail.length; i++) {
     const part = trail[i] as { name?: string; url?: string } | null;
-    if (part?.name && part.url && !part.url.startsWith('/recipe/')) {
+    if (part?.name && typeof part.url === 'string' && !part.url.startsWith('/recipe/')) {
       const catId = await getOrCreateLookupItem(client, 'categories', part.name, part.url);
       const { error } = await client
         .from('recipe_categories')
