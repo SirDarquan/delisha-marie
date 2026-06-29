@@ -500,6 +500,34 @@ describe('Recipes Router API', () => {
       expect(res.status).toBe(400);
       expect(res.body.error).toBe('Raw DELETE string exception');
     });
+
+    it('should return 500 when GET /home receives a non-Error string exception', async () => {
+      mockSelect.mockRejectedValueOnce('Raw GET /home string exception');
+      const res = await request(app).get('/home');
+      expect(res.status).toBe(500);
+      expect(res.body.error).toBe('Raw GET /home string exception');
+    });
+
+    it('should return 500 when GET /holidays receives a non-Error string exception', async () => {
+      mockOrder.mockRejectedValue('Raw GET /holidays string exception');
+      const res = await request(app).get('/holidays');
+      expect(res.status).toBe(500);
+      expect(res.body.error).toBe('Raw GET /holidays string exception');
+    });
+
+    it('should return 500 when GET /special-diets receives a non-Error string exception', async () => {
+      mockOrder.mockRejectedValue('Raw GET /special-diets string exception');
+      const res = await request(app).get('/special-diets');
+      expect(res.status).toBe(500);
+      expect(res.body.error).toBe('Raw GET /special-diets string exception');
+    });
+
+    it('should return 500 when GET /methods receives a non-Error string exception', async () => {
+      mockOrder.mockRejectedValue('Raw GET /methods string exception');
+      const res = await request(app).get('/methods');
+      expect(res.status).toBe(500);
+      expect(res.body.error).toBe('Raw GET /methods string exception');
+    });
   });
 
   describe('Recipes Router API Coverage Boosters', () => {
