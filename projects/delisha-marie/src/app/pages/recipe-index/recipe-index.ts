@@ -46,44 +46,129 @@ import { RecipeIndexService } from './recipe-index.service';
         </header>
       </div>
 
-      <!-- Featured Image Sections -->
-      <dm-recipe-index-category-images [categories]="featuredCategories()" />
-      <dm-recipe-index-method-images [methods]="featuredMethods()" />
+      @if (isLoading()) {
+        <!-- Skeleton for Category Images Breakout -->
+        <section
+          class="break-out bg-[var(--mat-sys-surface-container-low)] pt-16 pb-12 mb-20 border-y border-[var(--mat-sys-outline-variant)]">
+          <div class="into-the-box">
+            <div class="mb-12 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-6">
+              @for (placeholder of [1, 2, 3, 4, 5, 6, 7, 8]; track placeholder) {
+                <div class="flex flex-col items-center">
+                  <div
+                    class="w-full aspect-square rounded-2xl bg-[var(--mat-sys-surface-container-highest)] animate-pulse"></div>
+                  <div class="py-4 w-full flex justify-center">
+                    <div
+                      class="h-3 w-16 bg-[var(--mat-sys-surface-container-highest)] rounded animate-pulse"></div>
+                  </div>
+                </div>
+              }
+            </div>
+            <!-- Skeleton for Search Bar -->
+            <div
+              class="max-w-md mx-auto h-14 bg-[var(--mat-sys-surface-container-highest)] rounded-full animate-pulse"></div>
+          </div>
+        </section>
 
-      <!-- Full Link Index Sections -->
-      <section class="space-y-4">
-        <dm-recipe-index-link-list
-          [items]="categoriesList()"
-          titlePrefix="Recipes By"
-          titleHighlight="Category"
-          titleId="category-list-title" />
+        <!-- Skeleton for Method Images -->
+        <section class="mb-20">
+          <div class="into-the-box">
+            <header class="mb-10 text-left">
+              <div
+                class="h-10 w-64 bg-[var(--mat-sys-surface-container-highest)] rounded animate-pulse"></div>
+              <div class="h-1 w-16 bg-[var(--mat-sys-primary)] mt-4 rounded-full opacity-50"></div>
+            </header>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              @for (placeholder of [1, 2, 3]; track placeholder) {
+                <div class="flex flex-col items-center">
+                  <div
+                    class="w-full aspect-[4/3] rounded-2xl bg-[var(--mat-sys-surface-container-highest)] animate-pulse"></div>
+                  <div class="py-6 w-full flex justify-center">
+                    <div
+                      class="h-4 w-32 bg-[var(--mat-sys-surface-container-highest)] rounded animate-pulse"></div>
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        </section>
 
-        <dm-recipe-index-link-list
-          [items]="methodsList()"
-          titlePrefix="Recipes By"
-          titleHighlight="Method"
-          titleId="methods-list-title" />
+        <!-- Skeleton for Link Lists -->
+        <section class="space-y-4">
+          @for (placeholder of [1, 2, 3, 4, 5]; track placeholder) {
+            <section class="py-16 bg-[var(--mat-sys-surface)]">
+              <div class="into-the-box">
+                <header class="mb-10 text-left">
+                  <div
+                    class="h-10 w-64 bg-[var(--mat-sys-surface-container-highest)] rounded animate-pulse"></div>
+                  <div
+                    class="h-1 w-16 bg-[var(--mat-sys-primary)] mt-4 rounded-full opacity-50"></div>
+                </header>
+                <div class="columns-1 sm:columns-2 md:columns-3 lg:columns-4 gap-x-12">
+                  @for (item of [1, 2, 3, 4, 5, 6, 7, 8]; track item) {
+                    <div class="flex flex-col break-inside-avoid mb-2 animate-pulse">
+                      <div
+                        class="h-6 w-32 bg-[var(--mat-sys-surface-container-highest)] rounded mb-4 mt-2"></div>
+                      <ul class="list-none p-0 m-0 space-y-3 mb-2">
+                        <li class="pl-6">
+                          <div
+                            class="h-4 w-24 bg-[var(--mat-sys-surface-container-highest)] rounded"></div>
+                        </li>
+                        <li class="pl-6">
+                          <div
+                            class="h-4 w-32 bg-[var(--mat-sys-surface-container-highest)] rounded"></div>
+                        </li>
+                        <li class="pl-6">
+                          <div
+                            class="h-4 w-20 bg-[var(--mat-sys-surface-container-highest)] rounded"></div>
+                        </li>
+                      </ul>
+                    </div>
+                  }
+                </div>
+              </div>
+            </section>
+          }
+        </section>
+      } @else {
+        <!-- Featured Image Sections -->
+        <dm-recipe-index-category-images [categories]="featuredCategories()" />
+        <dm-recipe-index-method-images [methods]="featuredMethods()" />
 
-        <dm-recipe-index-link-list
-          [items]="holidays()"
-          titlePrefix="Recipes By"
-          titleHighlight="Holiday"
-          titleId="holidays-title" />
+        <!-- Full Link Index Sections -->
+        <section class="space-y-4">
+          <dm-recipe-index-link-list
+            [items]="categoriesList()"
+            titlePrefix="Recipes By"
+            titleHighlight="Category"
+            titleId="category-list-title" />
 
-        <dm-recipe-index-link-list
-          [items]="specialDiets()"
-          titlePrefix="Special"
-          titleHighlight="Diets"
-          titleId="diets-title" />
+          <dm-recipe-index-link-list
+            [items]="methodsList()"
+            titlePrefix="Recipes By"
+            titleHighlight="Method"
+            titleId="methods-list-title" />
 
-        <dm-recipe-index-link-list
-          [items]="bestRecipes()"
-          titlePrefix="The Best"
-          titleHighlight="Recipes"
-          titleId="best-recipes-title" />
+          <dm-recipe-index-link-list
+            [items]="holidays()"
+            titlePrefix="Recipes By"
+            titleHighlight="Holiday"
+            titleId="holidays-title" />
 
-        <dm-recipe-index-ingredients [ingredients]="ingredients()" />
-      </section>
+          <dm-recipe-index-link-list
+            [items]="specialDiets()"
+            titlePrefix="Special"
+            titleHighlight="Diets"
+            titleId="diets-title" />
+
+          <dm-recipe-index-link-list
+            [items]="bestRecipes()"
+            titlePrefix="The Best"
+            titleHighlight="Recipes"
+            titleId="best-recipes-title" />
+
+          <dm-recipe-index-ingredients [ingredients]="ingredients()" />
+        </section>
+      }
       <!-- Newsletter CTA -->
       <footer
         class="mt-24 mb-12 p-16 bg-[var(--mat-sys-on-surface)] text-[var(--mat-sys-surface)] rounded-[3rem] text-center space-y-8 relative overflow-hidden group/footer">
@@ -119,6 +204,7 @@ export class RecipeIndex {
   });
 
   private readonly _data = computed(() => this._indexResource.value());
+  readonly isLoading = computed(() => this._indexResource.isLoading());
 
   readonly featuredCategories = computed(() => this._data()?.featuredCategories || []);
   readonly featuredMethods = computed(() => this._data()?.cookingMethods || []);

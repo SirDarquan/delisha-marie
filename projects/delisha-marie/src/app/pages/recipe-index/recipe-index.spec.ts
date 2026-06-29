@@ -75,6 +75,8 @@ describe('RecipeIndex', () => {
     fixture = TestBed.createComponent(RecipeIndex);
     component = fixture.componentInstance;
     fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
   });
 
   it('should create', () => {
