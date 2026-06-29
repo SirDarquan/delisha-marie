@@ -1,77 +1,74 @@
-import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import { vi } from 'vitest';
-import { RecipeService } from '../../services/recipe.service';
+import { ApiService } from '../../services/api.service';
 import { HomeComponent } from './home';
 
-interface MockRecipeService {
-  recipes: unknown;
+interface HomeData {
+  totalRecipes: number;
+  recentRecipes: unknown[];
 }
 
 describe('HomeComponent', () => {
   let component: HomeComponent;
   let fixture: ComponentFixture<HomeComponent>;
   let router: Router;
+  let fakeApiService: { get: unknown };
 
-  let fakeRecipeService: MockRecipeService;
-  const fakeRecipes = signal<unknown[]>([]);
-
-  beforeEach(async () => {
-    fakeRecipes.set([]);
-
-    fakeRecipeService = {
-      recipes: fakeRecipes,
+  async function createComponent(data: HomeData) {
+    fakeApiService = {
+      get: vi.fn().mockResolvedValue(data),
     };
 
     await TestBed.configureTestingModule({
       imports: [HomeComponent],
-      providers: [provideRouter([]), { provide: RecipeService, useValue: fakeRecipeService }],
+      providers: [provideRouter([]), { provide: ApiService, useValue: fakeApiService }],
     }).compileComponents();
 
     fixture = TestBed.createComponent(HomeComponent);
     component = fixture.componentInstance;
     router = TestBed.inject(Router);
     vi.spyOn(router, 'navigate');
-    fixture.detectChanges();
-  });
 
-  it('should create the home component', () => {
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+  }
+
+  it('should create the home component', async () => {
+    await createComponent({ totalRecipes: 0, recentRecipes: [] });
     expect(component).toBeTruthy();
   });
 
-  it('should display 0 as total recipes when recipe list is empty', () => {
+  it('should display 0 as total recipes when recipe list is empty', async () => {
+    await createComponent({ totalRecipes: 0, recentRecipes: [] });
     expect(component.totalRecipes()).toBe(0);
     const compiled = fixture.nativeElement as HTMLElement;
     const totalCountText = compiled.querySelector('main p')?.textContent;
     expect(totalCountText).toBe('0');
   });
 
-  it('should list the recent recipes in reversed order and limited to 3', () => {
+  it('should list the recent recipes in reversed order and limited to 3', async () => {
     const mockList = [
-      { id: '1', title: 'Recipe One', category: 'Dinner', prepTime: '10m', author: 'Chef A' },
-      { id: '2', title: 'Recipe Two', category: 'Breakfast', prepTime: '15m', author: 'Chef B' },
-      { id: '3', title: 'Recipe Three', category: 'Lunch', prepTime: '20m', author: 'Chef C' },
       { id: '4', title: 'Recipe Four', category: 'Dessert', prepTime: '25m', author: 'Chef D' },
+      { id: '3', title: 'Recipe Three', category: 'Lunch', prepTime: '20m', author: 'Chef C' },
+      { id: '2', title: 'Recipe Two', category: 'Breakfast', prepTime: '15m', author: 'Chef B' },
     ];
-    fakeRecipes.set(mockList);
-    fixture.detectChanges();
+    await createComponent({ totalRecipes: 4, recentRecipes: mockList });
 
     expect(component.totalRecipes()).toBe(4);
     const recent = component.recentRecipes();
     expect(recent).toHaveLength(3);
-    // last element is sliced and reversed, so first should be 'Recipe Four' (id: '4')
     expect(recent[0].id).toBe('4');
     expect(recent[1].id).toBe('3');
     expect(recent[2].id).toBe('2');
   });
 
-  it('should fallback to Chef when author is missing or falsy', () => {
+  it('should fallback to Chef when author is missing or falsy', async () => {
     const mockList = [
       { id: '1', title: 'Recipe One', category: 'Dinner', prepTime: '10m', author: '' },
     ];
-    fakeRecipes.set(mockList);
-    fixture.detectChanges();
+    await createComponent({ totalRecipes: 1, recentRecipes: mockList });
 
     const compiled = fixture.nativeElement as HTMLElement;
     const authorText = compiled.querySelector('p.text-slate-400')?.textContent;

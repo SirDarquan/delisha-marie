@@ -19,6 +19,7 @@ const {
   mockSingle,
   mockMaybeSingle,
   mockUpsert,
+  mockLimit,
 } = vi.hoisted(() => ({
   mockFrom: vi.fn(),
   mockSelect: vi.fn(),
@@ -30,6 +31,7 @@ const {
   mockSingle: vi.fn(),
   mockMaybeSingle: vi.fn(),
   mockUpsert: vi.fn(),
+  mockLimit: vi.fn(),
 }));
 
 // 2. Setup the chain linkages
@@ -44,6 +46,7 @@ const mockChain = {
   single: mockSingle,
   maybeSingle: mockMaybeSingle,
   upsert: mockUpsert,
+  limit: mockLimit,
   then: (resolve: (val: { data: null; error: null }) => void) =>
     resolve({ data: null, error: null }),
 };
@@ -72,6 +75,7 @@ describe('Recipes Router API', () => {
     mockUpdate.mockReturnValue(mockChain);
     mockDelete.mockReturnValue(mockChain);
     mockEq.mockReturnValue(mockChain);
+    mockLimit.mockReturnValue(mockChain);
     mockSingle.mockResolvedValue({ data: null, error: null });
     mockMaybeSingle.mockResolvedValue({ data: null, error: null });
     mockUpsert.mockResolvedValue({ data: null, error: null });
@@ -131,6 +135,85 @@ describe('Recipes Router API', () => {
 
       expect(res.status).toBe(500);
       expect(res.body.error).toBe('Database error');
+    });
+  });
+
+  describe('GET /home', () => {
+    it('should successfully return home stats', async () => {
+      mockSelect.mockReturnValueOnce({
+        then: (resolve: (val: unknown) => void) => resolve({ count: 12, error: null }),
+      });
+
+      const mockRecent = [
+        {
+          id: 'r-1',
+          title: 'Recipe 1',
+          prep_time: '10 mins',
+          author: 'Chef A',
+          created_at: '2026-06-29T10:00:00Z',
+          recipe_categories: [{ categories: { name: 'Dessert' } }],
+        },
+      ];
+      mockLimit.mockResolvedValueOnce({ data: mockRecent, error: null });
+
+      const res = await request(app).get('/home');
+
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual({
+        totalRecipes: 12,
+        recentRecipes: [
+          {
+            id: 'r-1',
+            title: 'Recipe 1',
+            prepTime: '10 mins',
+            author: 'Chef A',
+            category: 'Dessert',
+            createdAt: '2026-06-29T10:00:00Z',
+          },
+        ],
+      });
+      expect(mockFrom).toHaveBeenNthCalledWith(1, 'recipes');
+      expect(mockSelect).toHaveBeenNthCalledWith(1, '*', { count: 'exact', head: true });
+      expect(mockFrom).toHaveBeenNthCalledWith(2, 'recipes');
+      expect(mockSelect).toHaveBeenNthCalledWith(
+        2,
+        `
+        id,
+        title,
+        prep_time,
+        author,
+        created_at,
+        recipe_categories (
+          categories (name)
+        )
+      `,
+      );
+      expect(mockOrder).toHaveBeenCalledWith('created_at', { ascending: false });
+      expect(mockLimit).toHaveBeenCalledWith(3);
+    });
+
+    it('should handle count query error', async () => {
+      mockSelect.mockReturnValueOnce({
+        then: (resolve: (val: unknown) => void) =>
+          resolve({ count: null, error: new Error('Count error') }),
+      });
+
+      const res = await request(app).get('/home');
+
+      expect(res.status).toBe(500);
+      expect(res.body.error).toBe('Count error');
+    });
+
+    it('should handle recent query error', async () => {
+      mockSelect.mockReturnValueOnce({
+        then: (resolve: (val: unknown) => void) => resolve({ count: 12, error: null }),
+      });
+      mockLimit.mockResolvedValueOnce({ data: null, error: new Error('Recent error') });
+
+      const res = await request(app).get('/home');
+
+      expect(res.status).toBe(500);
+      expect(res.body.error).toBe('Recent error');
     });
   });
 
@@ -417,6 +500,34 @@ describe('Recipes Router API', () => {
       expect(res.status).toBe(400);
       expect(res.body.error).toBe('Raw DELETE string exception');
     });
+
+    it('should return 500 when GET /home receives a non-Error string exception', async () => {
+      mockSelect.mockRejectedValueOnce('Raw GET /home string exception');
+      const res = await request(app).get('/home');
+      expect(res.status).toBe(500);
+      expect(res.body.error).toBe('Raw GET /home string exception');
+    });
+
+    it('should return 500 when GET /holidays receives a non-Error string exception', async () => {
+      mockOrder.mockRejectedValue('Raw GET /holidays string exception');
+      const res = await request(app).get('/holidays');
+      expect(res.status).toBe(500);
+      expect(res.body.error).toBe('Raw GET /holidays string exception');
+    });
+
+    it('should return 500 when GET /special-diets receives a non-Error string exception', async () => {
+      mockOrder.mockRejectedValue('Raw GET /special-diets string exception');
+      const res = await request(app).get('/special-diets');
+      expect(res.status).toBe(500);
+      expect(res.body.error).toBe('Raw GET /special-diets string exception');
+    });
+
+    it('should return 500 when GET /methods receives a non-Error string exception', async () => {
+      mockOrder.mockRejectedValue('Raw GET /methods string exception');
+      const res = await request(app).get('/methods');
+      expect(res.status).toBe(500);
+      expect(res.body.error).toBe('Raw GET /methods string exception');
+    });
   });
 
   describe('Recipes Router API Coverage Boosters', () => {
@@ -473,7 +584,11 @@ describe('Recipes Router API', () => {
       // Mock recipes insert
       mockSingle.mockResolvedValueOnce({ data: createdRecipe, error: null });
 
-      // Mock category lookup - returns null (category doesn't exist)
+      // Mock category lookup for "Dinner" (url: '')
+      mockMaybeSingle.mockResolvedValueOnce({ data: null, error: null });
+      mockSingle.mockResolvedValueOnce({ data: { id: 'cat-dinner' }, error: null });
+
+      // Mock category lookup for "Salads"
       mockMaybeSingle.mockResolvedValueOnce({ data: null, error: null });
       // Mock category insert
       mockSingle.mockResolvedValueOnce({ data: { id: 'cat-new-99' }, error: null });
@@ -746,6 +861,79 @@ describe('Recipes Router API', () => {
       const res = await request(app).post('/recipes').send(inputRecipe);
       expect(res.status).toBe(400);
       expect(res.body.error).toBe('Diet rel upsert failed');
+    });
+
+    it('should cover saveAllRecipeRelations delete error', async () => {
+      const inputRecipe = { title: 'New Salad', method: 'Baking' };
+      mockSingle.mockResolvedValueOnce({ data: { id: 'recipe-8' }, error: null }); // insert success
+      // Mock delete to throw error
+      mockEq.mockResolvedValueOnce({ data: null, error: new Error('Delete relation error') });
+
+      const res = await request(app).post('/recipes').send(inputRecipe);
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe('Delete relation error');
+    });
+
+    it('should cover non-array trails in saveRecipeCategoryTrail', async () => {
+      const inputRecipe = {
+        title: 'New Salad',
+        category: {
+          trails: [
+            'not-an-array', // Hits the !Array.isArray(trail) branch
+          ],
+        },
+      };
+      mockSingle.mockResolvedValueOnce({ data: { id: 'recipe-9' }, error: null });
+      const res = await request(app).post('/recipes').send(inputRecipe);
+      expect(res.status).toBe(200);
+    });
+
+    it('should cover empty string url in trails', async () => {
+      const inputRecipe = {
+        title: 'New Salad',
+        category: {
+          trails: [
+            [
+              { name: 'Home', url: '/' },
+              { name: 'Recipes', url: '/recipes' },
+              { name: 'Dinner', url: '' }, // Hits the empty string urlOverride fallback branch if we modify recipes.ts slightly
+            ],
+          ],
+        },
+      };
+      mockSingle.mockResolvedValueOnce({ data: { id: 'recipe-10' }, error: null });
+      mockMaybeSingle.mockResolvedValueOnce({ data: null, error: null }); // lookup Dinner
+      mockSingle.mockResolvedValueOnce({ data: { id: 'cat-dinner' }, error: null }); // insert Dinner
+      const res = await request(app).post('/recipes').send(inputRecipe);
+      expect(res.status).toBe(200);
+    });
+
+    it('should cover empty string or non-string in saveRecipeListRelations', async () => {
+      const inputRecipe = {
+        title: 'New Salad',
+        holidays: [123, '  '], // Hits the false branch of typeof name === 'string' && name.trim() !== ''
+        specialDiets: [null, undefined],
+      };
+      mockSingle.mockResolvedValueOnce({ data: { id: 'recipe-11' }, error: null });
+      const res = await request(app).post('/recipes').send(inputRecipe);
+      expect(res.status).toBe(200);
+    });
+
+    it('should cover valid nullable string fields in normalizeDbBody', async () => {
+      const inputRecipe = {
+        title: 'New Salad',
+        prep_time: '10 mins', // Hits false branch of result[key] === ''
+        cuisine: 'Italian',
+      };
+      mockSingle.mockResolvedValueOnce({ data: { id: 'recipe-12' }, error: null });
+      const res = await request(app).post('/recipes').send(inputRecipe);
+      expect(res.status).toBe(200);
+      expect(mockInsert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          prep_time: '10 mins',
+          cuisine: 'Italian',
+        }),
+      );
     });
   });
 });
