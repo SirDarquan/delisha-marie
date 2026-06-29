@@ -1,7 +1,18 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, resource } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { RouterLink } from '@angular/router';
-import { RecipeService } from '../../services/recipe.service';
+import { ApiService } from '../../services/api.service';
+
+interface HomeData {
+  totalRecipes: number;
+  recentRecipes: {
+    id: string | number;
+    title: string;
+    category: string;
+    prepTime: string;
+    author: string;
+  }[];
+}
 
 @Component({
   selector: 'app-home',
@@ -117,8 +128,12 @@ import { RecipeService } from '../../services/recipe.service';
   `,
 })
 export class HomeComponent {
-  private readonly recipeService = inject(RecipeService);
+  private readonly api = inject(ApiService);
 
-  readonly totalRecipes = computed(() => this.recipeService.recipes().length);
-  readonly recentRecipes = computed(() => this.recipeService.recipes().slice(-3).reverse());
+  private readonly _homeResource = resource({
+    loader: () => this.api.get<HomeData>('/home'),
+  });
+
+  readonly totalRecipes = computed(() => this._homeResource.value()?.totalRecipes ?? 0);
+  readonly recentRecipes = computed(() => this._homeResource.value()?.recentRecipes ?? []);
 }
