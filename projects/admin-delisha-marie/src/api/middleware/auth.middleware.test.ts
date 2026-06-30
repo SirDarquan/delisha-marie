@@ -135,7 +135,10 @@ describe('Auth Middleware', () => {
   });
 
   it('should return 401 if refresh session returns error', async () => {
-    mockRefreshSession.mockResolvedValue({ data: { user: null, session: null }, error: new Error('Refresh failed') });
+    mockRefreshSession.mockResolvedValue({
+      data: { user: null, session: null },
+      error: new Error('Refresh failed'),
+    });
 
     const res = await request(app)
       .get('/test-secure')

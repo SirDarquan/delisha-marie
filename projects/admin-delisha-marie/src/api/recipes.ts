@@ -27,33 +27,33 @@ recipesRouter.get('/recipes', async (req: AuthRequest, res: Response) => {
       const search = req.query['search'] as string | undefined;
 
       // 1. Fetch lightweight skeleton
-      let skeletonQuery = client
-        .from('recipes')
-        .select('id, status, updated_at');
+      let skeletonQuery = client.from('recipes').select('id, status, updated_at');
 
       if (search) {
         skeletonQuery = skeletonQuery.ilike('title', `%${search}%`);
       }
 
       const { data: skeletonData, error: skeletonError } = await skeletonQuery;
-        
+
       if (skeletonError) throw skeletonError;
 
       // 2. Sort skeleton in memory
-      const sortedSkeleton = (skeletonData || []).sort((a: any, b: any) => {
-        const aStatus = a.status ? String(a.status).toLowerCase() : '';
-        const bStatus = b.status ? String(b.status).toLowerCase() : '';
-        const aOrder = statusOrder[aStatus] || 99;
-        const bOrder = statusOrder[bStatus] || 99;
-        
-        if (aOrder !== bOrder) {
-          return aOrder - bOrder;
-        }
-        
-        const aTime = a.updated_at ? new Date(String(a.updated_at)).getTime() : 0;
-        const bTime = b.updated_at ? new Date(String(b.updated_at)).getTime() : 0;
-        return bTime - aTime;
-      });
+      const sortedSkeleton = (skeletonData || []).sort(
+        (a: Record<string, unknown>, b: Record<string, unknown>) => {
+          const aStatus = a.status ? String(a.status).toLowerCase() : '';
+          const bStatus = b.status ? String(b.status).toLowerCase() : '';
+          const aOrder = statusOrder[aStatus] || 99;
+          const bOrder = statusOrder[bStatus] || 99;
+
+          if (aOrder !== bOrder) {
+            return aOrder - bOrder;
+          }
+
+          const aTime = a.updated_at ? new Date(String(a.updated_at)).getTime() : 0;
+          const bTime = b.updated_at ? new Date(String(b.updated_at)).getTime() : 0;
+          return bTime - aTime;
+        },
+      );
 
       // 3. Slice for current page
       const pageIds = sortedSkeleton.slice(offset, offset + limit).map((r) => r.id);
@@ -65,7 +65,8 @@ recipesRouter.get('/recipes', async (req: AuthRequest, res: Response) => {
       // 4. Fetch full data for just those IDs
       const { data: pageData, error: pageError } = await client
         .from('recipes')
-        .select(`
+        .select(
+          `
           *,
           recipe_holidays (
             holidays (name)
@@ -73,7 +74,8 @@ recipesRouter.get('/recipes', async (req: AuthRequest, res: Response) => {
           recipe_special_diets (
             special_diets (name)
           )
-        `)
+        `,
+        )
         .in('id', pageIds);
 
       if (pageError) throw pageError;
@@ -101,7 +103,7 @@ recipesRouter.get('/recipes', async (req: AuthRequest, res: Response) => {
         };
       });
 
-      formatted.sort((a: any, b: any) => {
+      formatted.sort((a: Record<string, unknown>, b: Record<string, unknown>) => {
         return pageIds.indexOf(a.id) - pageIds.indexOf(b.id);
       });
 
@@ -109,7 +111,7 @@ recipesRouter.get('/recipes', async (req: AuthRequest, res: Response) => {
     }
 
     // Fallback: Fetch everything for unpaginated requests
-    const allData: any[] = [];
+    const allData: Record<string, unknown>[] = [];
     let from = 0;
     const step = 1000;
     let hasMore = true;
@@ -131,7 +133,7 @@ recipesRouter.get('/recipes', async (req: AuthRequest, res: Response) => {
         .order('updated_at', { ascending: false })
         .range(from, from + step - 1);
       if (error) throw error;
-      
+
       if (data && data.length > 0) {
         allData.push(...data);
       }
@@ -164,16 +166,16 @@ recipesRouter.get('/recipes', async (req: AuthRequest, res: Response) => {
       };
     });
 
-    formatted.sort((a: any, b: any) => {
+    formatted.sort((a: Record<string, unknown>, b: Record<string, unknown>) => {
       const aStatus = a.status ? String(a.status).toLowerCase() : '';
       const bStatus = b.status ? String(b.status).toLowerCase() : '';
       const aOrder = statusOrder[aStatus] || 99;
       const bOrder = statusOrder[bStatus] || 99;
-      
+
       if (aOrder !== bOrder) {
         return aOrder - bOrder;
       }
-      
+
       const aTime = a.updatedAt ? new Date(String(a.updatedAt)).getTime() : 0;
       const bTime = b.updatedAt ? new Date(String(b.updatedAt)).getTime() : 0;
       return bTime - aTime;

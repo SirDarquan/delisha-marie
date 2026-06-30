@@ -166,7 +166,7 @@ describe('RecipeService', () => {
       expect(req.request.method).toBe('POST');
       expect(typeof req.request.body.id).toBe('string');
       expect(req.request.body.title).toBe('Salad');
-      
+
       const returnedRecipe = { ...newRecipe, id: req.request.body.id };
       req.flush(returnedRecipe);
 
@@ -184,7 +184,7 @@ describe('RecipeService', () => {
       const req = httpMock.expectOne('/api/recipes/1');
       expect(req.request.method).toBe('PUT');
       expect(req.request.body).toEqual({ title: 'Updated Pasta' });
-      
+
       const returnedRecipe = { ...mockRecipes[0], title: 'Updated Pasta' };
       req.flush(returnedRecipe);
 

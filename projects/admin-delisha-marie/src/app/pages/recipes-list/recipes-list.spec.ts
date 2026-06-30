@@ -21,14 +21,12 @@ describe('RecipesListComponent', () => {
     },
     getLastActiveRecipeId: () => null as number | string | null,
     getLastScrollOffset: () => 0,
-    setLastActiveRecipeId: () => {},
-    setLastScrollOffset: () => {},
-    setCachedRecipesList: () => {},
+    setLastActiveRecipeId: vi.fn(),
+    setLastScrollOffset: vi.fn(),
+    setCachedRecipesList: vi.fn(),
   };
 
-  beforeAll(() => {
-    Element.prototype.scrollTo = () => {};
-  });
+  Element.prototype.scrollTo = vi.fn();
 
   beforeEach(async () => {
     deletedId = null;
@@ -91,10 +89,10 @@ describe('RecipesListComponent', () => {
     fakeRecipeService.fetchRecipes.mockClear();
 
     component.onSearchChange({ target: { value: 'pasta' } } as unknown as Event);
-    await new Promise(r => setTimeout(r, 150));
+    await new Promise((r) => setTimeout(r, 150));
     expect(fakeRecipeService.fetchRecipes).not.toHaveBeenCalled();
 
-    await new Promise(r => setTimeout(r, 600));
+    await new Promise((r) => setTimeout(r, 600));
     expect(fakeRecipeService.fetchRecipes).toHaveBeenCalledWith(0, 50, 'pasta');
   });
 
@@ -121,9 +119,9 @@ describe('RecipesListComponent', () => {
   it('should render no results message when search returns empty', async () => {
     fakeRecipeService.fetchRecipes.mockResolvedValueOnce([]);
     component.onSearchChange({ target: { value: 'nonexistent' } } as unknown as Event);
-    await new Promise(r => setTimeout(r, 600)); // debounceTime is 500
+    await new Promise((r) => setTimeout(r, 600)); // debounceTime is 500
     fixture.detectChanges();
-    await new Promise(r => setTimeout(r, 100)); // wait for fetch
+    await new Promise((r) => setTimeout(r, 100)); // wait for fetch
     fixture.detectChanges();
 
     const emptyMessage = fixture.nativeElement.querySelector('.p-8.text-center');
@@ -133,28 +131,28 @@ describe('RecipesListComponent', () => {
   it('should render image when provided in recipe object', async () => {
     mockRecipesData[0].image = 'https://example.com/pasta.jpg';
     fakeRecipeService.getCachedRecipesList = () => mockRecipesData;
-    
+
     // Recreate fixture to reload resource
     fixture = TestBed.createComponent(RecipesListComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
-    
+
     expect(component['recipes']()[0].image).toContain('pasta.jpg');
-    
+
     // reset
     fakeRecipeService.getCachedRecipesList = () => [];
   });
 
   it('should fallback difficulty to Easy if not provided', async () => {
-    mockRecipesData[0].difficulty = ''; 
+    mockRecipesData[0].difficulty = '';
     fakeRecipeService.getCachedRecipesList = () => mockRecipesData;
-    
+
     fixture = TestBed.createComponent(RecipesListComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
 
     expect(component['recipes']()[0].difficulty).toBe('');
-    
+
     // reset
     fakeRecipeService.getCachedRecipesList = () => [];
   });
@@ -176,11 +174,11 @@ describe('RecipesListComponent', () => {
 
     it('should handle fetch errors gracefully', async () => {
       component['hasMore'] = true;
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(vi.fn());
       fakeRecipeService.fetchRecipes.mockRejectedValueOnce(new Error('Network Error'));
-      
+
       await component.fetchNextBatch();
-      
+
       expect(consoleSpy).toHaveBeenCalledWith('Failed to load recipes', expect.any(Error));
       expect(component['isLoading']()).toBe(false);
       consoleSpy.mockRestore();
@@ -191,21 +189,33 @@ describe('RecipesListComponent', () => {
     it('should trigger fetchNextBatch if scrolled near the end', () => {
       const fetchSpy = vi.spyOn(component, 'fetchNextBatch');
       // Mock viewport
-      vi.spyOn(component.viewport() as any, 'getRenderedRange').mockReturnValue({ start: 0, end: 45 });
-      component['recipes'].set(Array(50).fill({}) as any);
-      
+      vi.spyOn(
+        component.viewport() as unknown as Record<string, unknown>,
+        'getRenderedRange',
+      ).mockReturnValue({
+        start: 0,
+        end: 45,
+      });
+      component['recipes'].set(Array(50).fill({}) as never);
+
       component.onScroll(45);
-      
+
       expect(fetchSpy).toHaveBeenCalled();
     });
 
     it('should not trigger fetchNextBatch if not near the end', () => {
       const fetchSpy = vi.spyOn(component, 'fetchNextBatch');
-      vi.spyOn(component.viewport() as any, 'getRenderedRange').mockReturnValue({ start: 0, end: 10 });
-      component['recipes'].set(Array(50).fill({}) as any);
-      
+      vi.spyOn(
+        component.viewport() as unknown as Record<string, unknown>,
+        'getRenderedRange',
+      ).mockReturnValue({
+        start: 0,
+        end: 10,
+      });
+      component['recipes'].set(Array(50).fill({}) as never);
+
       component.onScroll(10);
-      
+
       expect(fetchSpy).not.toHaveBeenCalled();
     });
   });
@@ -216,40 +226,47 @@ describe('RecipesListComponent', () => {
 
   describe('ngAfterViewInit', () => {
     it('should restore last active recipe id', async () => {
-      const scrollSpy = vi.spyOn(component.viewport() as any, 'scrollToIndex').mockImplementation(() => {});
+      const scrollSpy = vi
+        .spyOn(component.viewport() as unknown as Record<string, unknown>, 'scrollToIndex')
+        .mockImplementation(vi.fn());
       vi.spyOn(fakeRecipeService, 'getLastActiveRecipeId').mockReturnValue(2);
-      
+
       component['recipes'].set(mockRecipesData);
       component.ngAfterViewInit();
       fixture.detectChanges();
-      await new Promise(r => setTimeout(r, 300)); // Increased wait time for flakiness
-      
+      await new Promise((r) => setTimeout(r, 300)); // Increased wait time for flakiness
+
       expect(scrollSpy).toHaveBeenCalledWith(1, 'smooth');
       expect(component['highlightedRecipeId']()).toBe(2);
     });
 
     it('should restore scroll offset if no active id', async () => {
-      const scrollSpy = vi.spyOn(component.viewport() as any, 'scrollToOffset').mockImplementation(() => {});
+      const scrollSpy = vi
+        .spyOn(component.viewport() as unknown as Record<string, unknown>, 'scrollToOffset')
+        .mockImplementation(vi.fn());
       vi.spyOn(fakeRecipeService, 'getLastActiveRecipeId').mockReturnValue(null);
       vi.spyOn(fakeRecipeService, 'getLastScrollOffset').mockReturnValue(150);
-      
+
       component.ngAfterViewInit();
-      
-      await new Promise(r => setTimeout(r, 100)); 
-      
+
+      await new Promise((r) => setTimeout(r, 100));
+
       expect(scrollSpy).toHaveBeenCalledWith(150);
     });
   });
 
   describe('ngOnDestroy', () => {
     it('should save scroll offset and cached list', () => {
-      vi.spyOn(component.viewport() as any, 'measureScrollOffset').mockReturnValue(300);
+      vi.spyOn(
+        component.viewport() as unknown as Record<string, unknown>,
+        'measureScrollOffset',
+      ).mockReturnValue(300);
       const setOffsetSpy = vi.spyOn(fakeRecipeService, 'setLastScrollOffset');
       const setCacheSpy = vi.spyOn(fakeRecipeService, 'setCachedRecipesList');
-      
+
       component['recipes'].set(mockRecipesData);
       component.ngOnDestroy();
-      
+
       expect(setOffsetSpy).toHaveBeenCalledWith(300);
       expect(setCacheSpy).toHaveBeenCalledWith(mockRecipesData);
     });

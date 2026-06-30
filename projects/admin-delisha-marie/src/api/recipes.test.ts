@@ -89,7 +89,7 @@ describe('Recipes Router API', () => {
     mockSingle.mockResolvedValue({ data: null, error: null });
     mockMaybeSingle.mockResolvedValue({ data: null, error: null });
     mockUpsert.mockResolvedValue({ data: null, error: null });
-    mockChain.then = (resolve: (val: { data: any; error: any }) => void) =>
+    mockChain.then = (resolve: (val: { data: unknown; error: unknown }) => void) =>
       resolve({ data: null, error: null });
 
     vi.mocked(backendService.getClient).mockReturnValue({
@@ -123,9 +123,7 @@ describe('Recipes Router API', () => {
       const res = await request(app).get('/recipes');
 
       expect(res.status).toBe(200);
-      expect(res.body).toEqual([
-        expect.objectContaining({ id: 'recipe-1', title: 'Salad' }),
-      ]);
+      expect(res.body).toEqual([expect.objectContaining({ id: 'recipe-1', title: 'Salad' })]);
       expect(backendService.getClient).toHaveBeenCalledWith('test-token-xyz');
       expect(mockFrom).toHaveBeenCalledWith('recipes');
       expect(mockSelect).toHaveBeenCalledWith(`
@@ -159,7 +157,9 @@ describe('Recipes Router API', () => {
       // Skeleton query
       mockSelect.mockReturnValueOnce(mockChain);
       mockChain.ilike = vi.fn().mockReturnValue(mockChain);
-      mockChain.then = vi.fn().mockImplementationOnce((resolve) => resolve({ data: mockSkeleton, error: null }));
+      mockChain.then = vi
+        .fn()
+        .mockImplementationOnce((resolve) => resolve({ data: mockSkeleton, error: null }));
 
       // Page query
       mockSelect.mockReturnValueOnce(mockChain);
@@ -194,7 +194,11 @@ describe('Recipes Router API', () => {
 
     it('should handle skeleton error in paginated query', async () => {
       mockSelect.mockReturnValueOnce(mockChain);
-      mockChain.then = vi.fn().mockImplementationOnce((resolve) => resolve({ data: null, error: new Error('Skeleton error') }));
+      mockChain.then = vi
+        .fn()
+        .mockImplementationOnce((resolve) =>
+          resolve({ data: null, error: new Error('Skeleton error') }),
+        );
 
       const res = await request(app).get('/recipes?offset=0&limit=10');
       expect(res.status).toBe(500);
@@ -203,7 +207,9 @@ describe('Recipes Router API', () => {
 
     it('should return empty array if pageIds is empty', async () => {
       mockSelect.mockReturnValueOnce(mockChain);
-      mockChain.then = vi.fn().mockImplementationOnce((resolve) => resolve({ data: [], error: null }));
+      mockChain.then = vi
+        .fn()
+        .mockImplementationOnce((resolve) => resolve({ data: [], error: null }));
 
       const res = await request(app).get('/recipes?offset=0&limit=10');
       expect(res.status).toBe(200);
@@ -212,7 +218,9 @@ describe('Recipes Router API', () => {
 
     it('should handle page error in paginated query', async () => {
       mockSelect.mockReturnValueOnce(mockChain);
-      mockChain.then = vi.fn().mockImplementationOnce((resolve) => resolve({ data: [{ id: '1' }], error: null }));
+      mockChain.then = vi
+        .fn()
+        .mockImplementationOnce((resolve) => resolve({ data: [{ id: '1' }], error: null }));
 
       mockSelect.mockReturnValueOnce(mockChain);
       mockChain.in = vi.fn().mockResolvedValueOnce({ data: null, error: new Error('Page error') });
@@ -226,7 +234,8 @@ describe('Recipes Router API', () => {
       mockSelect.mockReturnValueOnce(mockChain);
       mockOrder.mockReturnValueOnce(mockChain);
       mockRange.mockReturnValueOnce(mockChain);
-      mockChain.then = (resolve: any) => resolve({ data: null, error: new Error('Database error') });
+      mockChain.then = (resolve: (val: { data: unknown; error: unknown }) => void) =>
+        resolve({ data: null, error: new Error('Database error') });
 
       const res = await request(app).get('/recipes');
 
@@ -236,27 +245,38 @@ describe('Recipes Router API', () => {
 
     it('should sort recipes by status and updatedAt correctly', async () => {
       const mockList = [
-        { id: '1', status: 'draft', updated_at: '2026-06-02T00:00:00Z', recipe_holidays: [{ holidays: { name: 'A' } }] },
-        { id: '2', status: 'published', updated_at: '2026-06-01T00:00:00Z', recipe_special_diets: [{ special_diets: { name: 'B' } }] },
+        {
+          id: '1',
+          status: 'draft',
+          updated_at: '2026-06-02T00:00:00Z',
+          recipe_holidays: [{ holidays: { name: 'A' } }],
+        },
+        {
+          id: '2',
+          status: 'published',
+          updated_at: '2026-06-01T00:00:00Z',
+          recipe_special_diets: [{ special_diets: { name: 'B' } }],
+        },
         { id: '3', status: 'published', updated_at: '2026-06-05T00:00:00Z' },
         { id: '4', status: null, updated_at: null },
       ];
       mockSelect.mockReturnValueOnce(mockChain);
       mockOrder.mockReturnValueOnce(mockChain);
-  mockChain.then = (resolve: any) => resolve({ data: mockList, error: null });
+      mockChain.then = (resolve: (val: { data: unknown; error: unknown }) => void) =>
+        resolve({ data: mockList, error: null });
 
       const res = await request(app).get('/recipes');
-      
+
       expect(res.status).toBe(200);
-      expect(res.body.map((r: any) => r.id)).toEqual(['1', '3', '2', '4']);
+      expect(res.body.map((r: Record<string, unknown>) => r['id'])).toEqual(['1', '3', '2', '4']);
     });
-    
+
     it('should cover massive branches for GET /recipes', async () => {
       // 1. limit without offset, offset without limit
       mockSelect.mockReturnValue(mockChain);
       mockOrder.mockReturnValue(mockChain);
       mockRange.mockReturnValue(mockChain);
-      
+
       const messyData = [
         {
           id: '1',
@@ -271,20 +291,36 @@ describe('Recipes Router API', () => {
           recipe_special_diets: [],
         },
       ];
-      
-      mockChain.then = vi.fn().mockImplementationOnce((resolve: any) => resolve({ data: messyData, error: null }));
+
+      mockChain.then = vi
+        .fn()
+        .mockImplementationOnce((resolve: (val: { data: unknown; error: unknown }) => void) =>
+          resolve({ data: messyData, error: null }),
+        );
       await request(app).get('/recipes?limit=1');
-      
-      mockChain.then = vi.fn().mockImplementationOnce((resolve: any) => resolve({ data: messyData, error: null }));
+
+      mockChain.then = vi
+        .fn()
+        .mockImplementationOnce((resolve: (val: { data: unknown; error: unknown }) => void) =>
+          resolve({ data: messyData, error: null }),
+        );
       await request(app).get('/recipes?offset=0');
-      
+
       // pageData is null
-      mockChain.then = vi.fn().mockImplementationOnce((resolve: any) => resolve({ data: null, error: null }));
+      mockChain.then = vi
+        .fn()
+        .mockImplementationOnce((resolve: (val: { data: unknown; error: unknown }) => void) =>
+          resolve({ data: null, error: null }),
+        );
       await request(app).get('/recipes?limit=1');
     });
 
     it('should cover pagination fallback branches with null data', async () => {
-      mockChain.then = vi.fn().mockImplementationOnce((resolve: any) => resolve({ data: null, error: null }));
+      mockChain.then = vi
+        .fn()
+        .mockImplementationOnce((resolve: (val: { data: unknown; error: unknown }) => void) =>
+          resolve({ data: null, error: null }),
+        );
       await request(app).get('/recipes');
     });
 
@@ -296,24 +332,36 @@ describe('Recipes Router API', () => {
           recipe_special_diets: [null, {}],
         },
       ];
-      mockChain.then = vi.fn().mockImplementationOnce((resolve: any) => resolve({ data: messyData, error: null }));
+      mockChain.then = vi
+        .fn()
+        .mockImplementationOnce((resolve: (val: { data: unknown; error: unknown }) => void) =>
+          resolve({ data: messyData, error: null }),
+        );
       await request(app).get('/recipes');
     });
 
     it('should fetch multiple batches if fallback returns 1000 items', async () => {
-      const batch1 = Array.from({ length: 1000 }).map((_, i) => ({ id: `id-${i}`, status: 'published' }));
+      const batch1 = Array.from({ length: 1000 }).map((_, i) => ({
+        id: `id-${i}`,
+        status: 'published',
+      }));
       const batch2 = [{ id: 'id-1000', status: 'published' }];
 
       mockSelect.mockReturnValue(mockChain);
       mockOrder.mockReturnValue(mockChain);
       mockRange.mockReturnValue(mockChain);
-      
-      mockChain.then = vi.fn()
-        .mockImplementationOnce((resolve: any) => resolve({ data: batch1, error: null }))
-        .mockImplementationOnce((resolve: any) => resolve({ data: batch2, error: null }));
+
+      mockChain.then = vi
+        .fn()
+        .mockImplementationOnce((resolve: (val: { data: unknown; error: unknown }) => void) =>
+          resolve({ data: batch1, error: null }),
+        )
+        .mockImplementationOnce((resolve: (val: { data: unknown; error: unknown }) => void) =>
+          resolve({ data: batch2, error: null }),
+        );
 
       const res = await request(app).get('/recipes');
-      
+
       expect(res.status).toBe(200);
       expect(res.body.length).toBe(1001);
     });

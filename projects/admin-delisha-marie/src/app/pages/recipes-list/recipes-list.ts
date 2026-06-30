@@ -82,13 +82,16 @@ import { RecipeService } from '../../services/recipe.service';
             </div>
 
             <!-- Virtual Scroll Viewport -->
-            <cdk-virtual-scroll-viewport itemSize="72" class="h-[55vh] w-full custom-scroll" (scrolledIndexChange)="onScroll($event)">
+            <cdk-virtual-scroll-viewport
+              itemSize="72"
+              class="h-[55vh] w-full custom-scroll"
+              (scrolledIndexChange)="onScroll($event)">
               <div class="divide-y divide-slate-800/40">
-                <div *cdkVirtualFor="let recipe of filteredRecipes(); trackBy: trackByRecipeId"
-                     role="row"
-                     class="flex items-center hover:bg-slate-800/20 transition h-[72px]"
-                     [class.bg-purple-900/20]="recipe.id === highlightedRecipeId()">
-                  
+                <div
+                  *cdkVirtualFor="let recipe of filteredRecipes(); trackBy: trackByRecipeId"
+                  role="row"
+                  class="flex items-center hover:bg-slate-800/20 transition h-[72px]"
+                  [class.bg-purple-900/20]="recipe.id === highlightedRecipeId()">
                   <div role="cell" class="flex-1 px-4 flex items-center gap-3 overflow-hidden">
                     @if (recipe.image) {
                       <img
@@ -96,7 +99,9 @@ import { RecipeService } from '../../services/recipe.service';
                         alt=""
                         class="w-11 h-11 object-cover rounded-lg border border-slate-700/50 bg-slate-800 flex-shrink-0" />
                     }
-                    <strong class="text-sm font-semibold text-white truncate">{{ recipe.title }}</strong>
+                    <strong class="text-sm font-semibold text-white truncate">{{
+                      recipe.title
+                    }}</strong>
                   </div>
 
                   <div role="cell" class="w-32 px-4 text-sm text-slate-300 truncate">
@@ -150,9 +155,22 @@ import { RecipeService } from '../../services/recipe.service';
 
                 @if (isLoading()) {
                   <div class="p-6 flex items-center justify-center space-x-3 text-slate-400">
-                    <svg class="animate-spin h-5 w-5 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    <svg
+                      class="animate-spin h-5 w-5 text-indigo-500"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24">
+                      <circle
+                        class="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        stroke-width="4"></circle>
+                      <path
+                        class="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
                     <span class="text-sm font-medium">Fetching recipes...</span>
                   </div>
@@ -183,10 +201,7 @@ export class RecipesListComponent implements OnInit, AfterViewInit, OnDestroy {
 
   constructor() {
     toObservable(this.searchTerm)
-      .pipe(
-        skip(1),
-        debounceTime(500)
-      )
+      .pipe(skip(1), debounceTime(500))
       .subscribe(() => {
         this.recipes.set([]);
         this.offset = 0;
@@ -205,7 +220,7 @@ export class RecipesListComponent implements OnInit, AfterViewInit, OnDestroy {
 
   async fetchNextBatch(): Promise<void> {
     if (this.isLoading() || !this.hasMore) return;
-    
+
     this.isLoading.set(true);
     try {
       const term = this.searchTerm().trim();
@@ -213,7 +228,7 @@ export class RecipesListComponent implements OnInit, AfterViewInit, OnDestroy {
       if (data.length < this.limit) {
         this.hasMore = false;
       }
-      this.recipes.update(list => [...list, ...data]);
+      this.recipes.update((list) => [...list, ...data]);
       this.offset += data.length;
     } catch (err) {
       console.error('Failed to load recipes', err);
@@ -222,7 +237,8 @@ export class RecipesListComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  onScroll(index: number): void {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  onScroll(_index: number): void {
     const end = this.viewport()?.getRenderedRange().end;
     const total = this.recipes().length;
     // Fetch more when we are within 10 items of the end
@@ -231,7 +247,7 @@ export class RecipesListComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  trackByRecipeId(index: number, recipe: any): string | number {
+  trackByRecipeId(_index: number, recipe: { id: string | number }): string | number {
     return recipe.id;
   }
 

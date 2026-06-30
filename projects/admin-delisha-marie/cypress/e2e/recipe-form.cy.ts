@@ -72,12 +72,12 @@ describe('Admin Recipe Form Flow', () => {
 
     cy.intercept('GET', '**/api/recipes/holidays*', {
       statusCode: 200,
-      body: []
+      body: [],
     }).as('getHolidays');
 
     cy.intercept('GET', '**/api/recipes/special-diets*', {
       statusCode: 200,
-      body: []
+      body: [],
     }).as('getDiets');
   });
 

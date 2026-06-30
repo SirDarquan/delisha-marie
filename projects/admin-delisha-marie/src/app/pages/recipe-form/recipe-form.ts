@@ -880,22 +880,25 @@ export class RecipeFormComponent implements OnInit {
     if (id) {
       this.isEdit.set(true);
       this.idToEdit.set(id);
-      this.recipeService.fetchRecipeById(id).then(recipe => {
-        console.log(recipe);
-        if (recipe) {
-          this.originalRecipe.set(recipe);
-          const mapped = this.mapRecipeToForm(recipe);
-          this.recipeModel.set(mapped);
-          this.initialModel.set(mapped);
+      this.recipeService
+        .fetchRecipeById(id)
+        .then((recipe) => {
+          console.log(recipe);
+          if (recipe) {
+            this.originalRecipe.set(recipe);
+            const mapped = this.mapRecipeToForm(recipe);
+            this.recipeModel.set(mapped);
+            this.initialModel.set(mapped);
 
-          // Propagate loaded image metadata values directly to the form controls (targets)
-          this.recipeForm.imageWidth().value.set(mapped.imageWidth);
-          this.recipeForm.imageHeight().value.set(mapped.imageHeight);
-          this.recipeForm.imageType().value.set(mapped.imageType);
-        } else {
-          this.initialModel.set({ ...this.recipeModel() });
-        }
-      }).catch(err => console.error('Failed to load recipe:', err));
+            // Propagate loaded image metadata values directly to the form controls (targets)
+            this.recipeForm.imageWidth().value.set(mapped.imageWidth);
+            this.recipeForm.imageHeight().value.set(mapped.imageHeight);
+            this.recipeForm.imageType().value.set(mapped.imageType);
+          } else {
+            this.initialModel.set({ ...this.recipeModel() });
+          }
+        })
+        .catch((err) => console.error('Failed to load recipe:', err));
     } else {
       this.initialModel.set({ ...this.recipeModel() });
     }

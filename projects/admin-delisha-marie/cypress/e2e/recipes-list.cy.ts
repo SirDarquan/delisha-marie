@@ -43,7 +43,11 @@ describe('Admin Recipes List Page', () => {
       if (search) {
         req.reply({
           statusCode: 200,
-          body: mockRecipes.filter(r => r.title.toLowerCase().includes(search.toLowerCase()) || r.category.toLowerCase().includes(search.toLowerCase()))
+          body: mockRecipes.filter(
+            (r) =>
+              r.title.toLowerCase().includes(search.toLowerCase()) ||
+              r.category.toLowerCase().includes(search.toLowerCase()),
+          ),
         });
       } else {
         req.reply({ statusCode: 200, body: mockRecipes });
@@ -52,12 +56,12 @@ describe('Admin Recipes List Page', () => {
 
     cy.intercept('GET', '**/api/recipes/holidays*', {
       statusCode: 200,
-      body: []
+      body: [],
     }).as('getHolidays');
 
     cy.intercept('GET', '**/api/recipes/special-diets*', {
       statusCode: 200,
-      body: []
+      body: [],
     }).as('getDiets');
 
     cy.visit('/recipes');
@@ -70,8 +74,12 @@ describe('Admin Recipes List Page', () => {
     // Check table structure
     cy.get('div[aria-label="List of all recipes"]').should('exist');
     cy.get('cdk-virtual-scroll-viewport div[role="row"]').should('have.length', 2);
-    cy.get('cdk-virtual-scroll-viewport div[role="row"]').eq(0).should('contain.text', 'Creamy Garlic Pasta');
-    cy.get('cdk-virtual-scroll-viewport div[role="row"]').eq(1).should('contain.text', 'Chocolate Cake');
+    cy.get('cdk-virtual-scroll-viewport div[role="row"]')
+      .eq(0)
+      .should('contain.text', 'Creamy Garlic Pasta');
+    cy.get('cdk-virtual-scroll-viewport div[role="row"]')
+      .eq(1)
+      .should('contain.text', 'Chocolate Cake');
   });
 
   it('should filter recipes based on query search strings', () => {
@@ -82,8 +90,14 @@ describe('Admin Recipes List Page', () => {
 
     // Matching should filter client-side reactively
     cy.get('cdk-virtual-scroll-viewport div[role="row"]').should('have.length', 1);
-    cy.get('cdk-virtual-scroll-viewport div[role="row"]').should('contain.text', 'Creamy Garlic Pasta');
-    cy.get('cdk-virtual-scroll-viewport div[role="row"]').should('not.contain.text', 'Chocolate Cake');
+    cy.get('cdk-virtual-scroll-viewport div[role="row"]').should(
+      'contain.text',
+      'Creamy Garlic Pasta',
+    );
+    cy.get('cdk-virtual-scroll-viewport div[role="row"]').should(
+      'not.contain.text',
+      'Chocolate Cake',
+    );
   });
 
   it('should show empty state display when query matches nothing', () => {
@@ -106,7 +120,10 @@ describe('Admin Recipes List Page', () => {
     }).as('deleteRequest');
 
     // Find the first Delete button and trigger click
-    cy.get('cdk-virtual-scroll-viewport div[role="row"]').first().contains('Delete').click({ force: true });
+    cy.get('cdk-virtual-scroll-viewport div[role="row"]')
+      .first()
+      .contains('Delete')
+      .click({ force: true });
 
     cy.wait('@deleteRequest');
   });

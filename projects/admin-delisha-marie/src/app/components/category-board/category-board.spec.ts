@@ -325,11 +325,11 @@ describe('CategoryBoardComponent', () => {
       fixture.detectChanges();
 
       expect(component.boardPiecesList()[0].length).toBe(4);
-      
+
       // Remove subcategory (index 3)
       component.removePiece(3);
       fixture.detectChanges();
-      
+
       expect(component.boardPiecesList()[0].length).toBe(3);
       expect(component.boardPiecesList()[0][2].name).toBe('Dinner'); // parent intact
     });
@@ -348,13 +348,13 @@ describe('CategoryBoardComponent', () => {
       component.deleteTrail(0, mockEvent);
       expect(component.boardPiecesList().length).toBe(1);
     });
-    
+
     it('should handle value effect gracefully if trails is empty array', async () => {
       const value: CategoryTrails = { trails: [[]] };
       const customFixture = TestBed.createComponent(CategoryBoardComponent);
       customFixture.componentRef.setInput('value', value);
       customFixture.detectChanges();
-      await new Promise(r => setTimeout(r, 0));
+      await new Promise((r) => setTimeout(r, 0));
       expect(customFixture.componentInstance.boardPiecesList().length).toBe(1);
     });
 
@@ -364,15 +364,15 @@ describe('CategoryBoardComponent', () => {
       const dinnerCat = categories.find((c) => c.name === 'Dinner')!;
       const chickenSub = dinnerCat.children![0];
       const otherSub = { name: 'Beef', url: '/recipes/dinner/beef' };
-      
+
       component.toggleCategory(dinnerCat);
       component.toggleSubcategory(chickenSub);
       fixture.detectChanges();
-      
+
       // Toggle a different subcategory (simulated)
       component.toggleSubcategory(otherSub);
       fixture.detectChanges();
-      
+
       const pieces = component.boardPiecesList()[0];
       expect(pieces[pieces.length - 1].name).toBe('Beef');
     });
@@ -383,7 +383,7 @@ describe('CategoryBoardComponent', () => {
       component.boardPiecesList.set([[]]);
       expect(component.currentUrlPrefix()).toBe('/');
       expect(component.isCustomPanelActive()).toBe(false);
-      
+
       // Force only recipe piece
       component.boardPiecesList.set([[{ name: 'Recipe', url: '/recipe/slug' }]]);
       expect(component.currentUrlPrefix()).toBe('/');
@@ -396,7 +396,7 @@ describe('CategoryBoardComponent', () => {
       const dinnerCat = categories.find((c) => c.name === 'Dinner')!;
       component.toggleCategory(dinnerCat);
       fixture.detectChanges();
-      
+
       const event = { target: { value: '/recipes/dinner' } } as unknown as Event;
       component.updateCustomUrl(event);
       expect(component.customUrl()).toBe('');

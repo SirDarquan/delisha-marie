@@ -203,7 +203,8 @@ describe('RecipeFormComponent', () => {
       holidays: ['Christmas', 'Thanksgiving'],
       specialDiets: ['Gluten-Free', 'Vegan'],
     } as unknown as Recipe;
-    component.ngOnInit(); await fixture.whenStable();
+    component.ngOnInit();
+    await fixture.whenStable();
     await fixture.whenStable();
     fixture.detectChanges();
     await fixture.whenStable();
@@ -528,7 +529,7 @@ describe('RecipeFormComponent', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    component['recipeModel'].update(m => ({
+    component['recipeModel'].update((m) => ({
       ...m,
       ...getValidPublishedModel(),
       title: 'Published Recipe Updated',
@@ -723,11 +724,14 @@ describe('RecipeFormComponent', () => {
   });
 
   it('should save draft and navigate to edit mode for new recipe', async () => {
-    component.ngOnInit(); await fixture.whenStable();
+    component.ngOnInit();
+    await fixture.whenStable();
     await fixture.whenStable();
     fixture.detectChanges();
 
-    vi.spyOn(component as any, 'getFieldValue').mockReturnValue('test');
+    vi.spyOn(component as unknown as Record<string, unknown>, 'getFieldValue').mockReturnValue(
+      'test',
+    );
     await await component.saveDraft();
 
     expect(navigated).toEqual(['/recipes/edit', 1]);
@@ -873,14 +877,31 @@ describe('RecipeFormComponent', () => {
   });
 
   it('should create published recipe successfully', async () => {
-    component.ngOnInit(); await fixture.whenStable();
+    component.ngOnInit();
+    await fixture.whenStable();
     await fixture.whenStable();
     fixture.detectChanges();
 
     // Mock form valid
-    Object.defineProperty((component as any).recipeForm(), 'invalid', { get: () => false, configurable: true });
-    vi.spyOn(component as any, 'getFieldValue').mockReturnValue('test');
-    Object.defineProperty(component['recipeForm']() as any, 'invalid', { value: vi.fn().mockReturnValue(false), configurable: true });
+    Object.defineProperty(
+      (component as unknown as Record<string, unknown>)['recipeForm'](),
+      'invalid',
+      {
+        get: () => false,
+        configurable: true,
+      },
+    );
+    vi.spyOn(component as unknown as Record<string, unknown>, 'getFieldValue').mockReturnValue(
+      'test',
+    );
+    Object.defineProperty(
+      component['recipeForm']() as unknown as Record<string, unknown>,
+      'invalid',
+      {
+        value: vi.fn().mockReturnValue(false),
+        configurable: true,
+      },
+    );
 
     await component.saveRequired('published');
 
@@ -890,7 +911,8 @@ describe('RecipeFormComponent', () => {
   it('should load recipe data into form when in edit mode', async () => {
     routeParams['id'] = '1';
     mockRecipeById = { id: 1 } as unknown as Recipe;
-    component.ngOnInit(); await fixture.whenStable();
+    component.ngOnInit();
+    await fixture.whenStable();
     await fixture.whenStable();
     fixture.detectChanges();
 

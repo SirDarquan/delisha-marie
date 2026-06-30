@@ -8,7 +8,6 @@ import { ApiService } from './api.service';
 export class RecipeService {
   private readonly api = inject(ApiService);
 
-
   // Core state: signal of all methods from database
   private readonly _methods = signal<{ id: string; name: string; slug: string }[]>([]);
   readonly methods = computed(() => this._methods());
@@ -47,8 +46,6 @@ export class RecipeService {
     return this._lastActiveRecipeId;
   }
 
-
-
   private _cachedRecipesList: Recipe[] = [];
 
   getCachedRecipesList(): Recipe[] {
@@ -62,7 +59,7 @@ export class RecipeService {
   fetchRecipes(offset?: number, limit?: number, search?: string): Promise<Recipe[]> {
     let url = '/recipes';
     const params = new URLSearchParams();
-    
+
     if (offset !== undefined) params.append('offset', offset.toString());
     if (limit !== undefined) params.append('limit', limit.toString());
     if (search) params.append('search', search);
