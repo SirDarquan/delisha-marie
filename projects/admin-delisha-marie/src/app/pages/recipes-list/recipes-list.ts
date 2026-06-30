@@ -1,19 +1,26 @@
+import { CdkVirtualScrollViewport, ScrollingModule } from '@angular/cdk/scrolling';
 import { LowerCasePipe } from '@angular/common';
 import {
+  AfterViewInit,
   ChangeDetectionStrategy,
   Component,
-  computed,
   inject,
+  OnDestroy,
+  OnInit,
   signal,
+  viewChild,
   ViewEncapsulation,
 } from '@angular/core';
+import { toObservable } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { RouterLink } from '@angular/router';
+import { debounceTime, skip } from 'rxjs/operators';
+import { Recipe } from '../../models/recipe.model';
 import { RecipeService } from '../../services/recipe.service';
 
 @Component({
   selector: 'app-recipes-list',
-  imports: [RouterLink, LowerCasePipe, MatButtonModule],
+  imports: [RouterLink, LowerCasePipe, MatButtonModule, ScrollingModule],
   template: `
     <div class="p-4 md:p-8">
       <div class="mb-6 flex justify-between items-center">
@@ -43,54 +50,64 @@ import { RecipeService } from '../../services/recipe.service';
           </a>
         </div>
 
-        <div class="overflow-x-auto border border-slate-800/60 rounded-xl">
-          <table class="w-full text-left border-collapse" aria-label="List of all recipes">
-            <thead>
-              <tr class="bg-slate-800/30">
-                <th
-                  scope="col"
-                  class="px-4 py-3 text-xs font-bold uppercase tracking-wider text-slate-400 border-b border-slate-800">
-                  Title
-                </th>
-                <th
-                  scope="col"
-                  class="px-4 py-3 text-xs font-bold uppercase tracking-wider text-slate-400 border-b border-slate-800">
-                  Prep Time
-                </th>
-                <th
-                  scope="col"
-                  class="px-4 py-3 text-xs font-bold uppercase tracking-wider text-slate-400 border-b border-slate-800">
-                  Cook Time
-                </th>
-                <th
-                  scope="col"
-                  class="px-4 py-3 text-xs font-bold uppercase tracking-wider text-slate-400 border-b border-slate-800">
-                  Difficulty
-                </th>
-                <th
-                  scope="col"
-                  class="px-4 py-3 text-xs font-bold uppercase tracking-wider text-slate-400 border-b border-slate-800 text-center">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-slate-800/40">
-              @for (recipe of filteredRecipes(); track recipe.id) {
-                <tr class="hover:bg-slate-800/20 transition">
-                  <td class="px-4 py-4">
-                    <div class="flex items-center gap-3">
-                      @if (recipe.image) {
-                        <img
-                          [src]="recipe.image"
-                          alt=""
-                          class="w-11 h-11 object-cover rounded-lg border border-slate-700/50 bg-slate-800" />
-                      }
-                      <strong class="text-sm font-semibold text-white">{{ recipe.title }}</strong>
-                    </div>
-                  </td>
-                  <td class="px-4 py-4 text-sm text-slate-300">{{ recipe.prepTime || 'N/A' }}</td>
-                  <td class="px-4 py-4 text-sm text-slate-300">{{ recipe.cookTime || 'N/A' }}</td>
-                  <td class="px-4 py-4 text-sm">
+        <div class="border border-slate-800/60 rounded-xl overflow-hidden">
+          <div class="w-full text-left bg-slate-900" role="table" aria-label="List of all recipes">
+            <!-- Table Header -->
+            <div role="row" class="flex bg-slate-800/60 border-b border-slate-800">
+              <div
+                role="columnheader"
+                class="flex-1 px-4 py-3 text-xs font-bold uppercase tracking-wider text-slate-400">
+                Title
+              </div>
+              <div
+                role="columnheader"
+                class="w-32 px-4 py-3 text-xs font-bold uppercase tracking-wider text-slate-400">
+                Prep Time
+              </div>
+              <div
+                role="columnheader"
+                class="w-32 px-4 py-3 text-xs font-bold uppercase tracking-wider text-slate-400">
+                Cook Time
+              </div>
+              <div
+                role="columnheader"
+                class="w-32 px-4 py-3 text-xs font-bold uppercase tracking-wider text-slate-400">
+                Difficulty
+              </div>
+              <div
+                role="columnheader"
+                class="w-40 px-4 py-3 text-xs font-bold uppercase tracking-wider text-slate-400 text-center">
+                Actions
+              </div>
+            </div>
+
+            <!-- Virtual Scroll Viewport -->
+            <cdk-virtual-scroll-viewport itemSize="72" class="h-[55vh] w-full custom-scroll" (scrolledIndexChange)="onScroll($event)">
+              <div class="divide-y divide-slate-800/40">
+                <div *cdkVirtualFor="let recipe of filteredRecipes(); trackBy: trackByRecipeId"
+                     role="row"
+                     class="flex items-center hover:bg-slate-800/20 transition h-[72px]"
+                     [class.bg-purple-900/20]="recipe.id === highlightedRecipeId()">
+                  
+                  <div role="cell" class="flex-1 px-4 flex items-center gap-3 overflow-hidden">
+                    @if (recipe.image) {
+                      <img
+                        [src]="recipe.image"
+                        alt=""
+                        class="w-11 h-11 object-cover rounded-lg border border-slate-700/50 bg-slate-800 flex-shrink-0" />
+                    }
+                    <strong class="text-sm font-semibold text-white truncate">{{ recipe.title }}</strong>
+                  </div>
+
+                  <div role="cell" class="w-32 px-4 text-sm text-slate-300 truncate">
+                    {{ recipe.prepTime || 'N/A' }}
+                  </div>
+
+                  <div role="cell" class="w-32 px-4 text-sm text-slate-300 truncate">
+                    {{ recipe.cookTime || 'N/A' }}
+                  </div>
+
+                  <div role="cell" class="w-32 px-4 text-sm">
                     @let diff = recipe.difficulty || 'Easy' | lowercase;
                     <span
                       class="px-2.5 py-1 rounded-full text-xs font-bold tracking-wide capitalize"
@@ -102,11 +119,13 @@ import { RecipeService } from '../../services/recipe.service';
                       [class.text-rose-400]="diff === 'advanced'">
                       {{ recipe.difficulty || 'Easy' }}
                     </span>
-                  </td>
-                  <td class="px-4 py-4 text-center">
+                  </div>
+
+                  <div role="cell" class="w-40 px-4 text-center">
                     <div class="flex items-center justify-center gap-2">
                       <a
                         [routerLink]="['/recipes/edit', recipe.id]"
+                        (click)="setLastActiveRecipe(recipe.id)"
                         class="px-3 py-1.5 rounded-lg text-xs font-bold bg-purple-500/15 text-purple-400 hover:bg-purple-500/30 transition cursor-pointer"
                         aria-label="Edit recipe">
                         Edit
@@ -120,17 +139,27 @@ import { RecipeService } from '../../services/recipe.service';
                         Delete
                       </button>
                     </div>
-                  </td>
-                </tr>
-              } @empty {
-                <tr>
-                  <td colspan="6" class="px-4 py-8 text-center text-slate-400 font-medium text-sm">
+                  </div>
+                </div>
+
+                @if (filteredRecipes().length === 0 && !isLoading()) {
+                  <div class="p-8 text-center text-slate-400 font-medium text-sm">
                     No recipes found. Try a different search term.
-                  </td>
-                </tr>
-              }
-            </tbody>
-          </table>
+                  </div>
+                }
+
+                @if (isLoading()) {
+                  <div class="p-6 flex items-center justify-center space-x-3 text-slate-400">
+                    <svg class="animate-spin h-5 w-5 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span class="text-sm font-medium">Fetching recipes...</span>
+                  </div>
+                }
+              </div>
+            </cdk-virtual-scroll-viewport>
+          </div>
         </div>
       </main>
     </div>
@@ -138,26 +167,118 @@ import { RecipeService } from '../../services/recipe.service';
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class RecipesListComponent {
+export class RecipesListComponent implements OnInit, AfterViewInit, OnDestroy {
   private readonly recipeService = inject(RecipeService);
 
-  protected readonly searchTerm = signal<string>('');
+  readonly viewport = viewChild<CdkVirtualScrollViewport>(CdkVirtualScrollViewport);
 
-  protected readonly filteredRecipes = computed(() => {
-    const term = this.searchTerm().trim().toLowerCase();
-    const all = this.recipeService.recipes();
-    if (!term) return all;
-    return all.filter((r) => r.title.toLowerCase().includes(term));
-  });
+  protected readonly searchTerm = signal<string>('');
+  protected readonly highlightedRecipeId = signal<string | number | null>(null);
+
+  protected readonly recipes = signal<Recipe[]>(this.recipeService.getCachedRecipesList());
+  protected readonly isLoading = signal<boolean>(false);
+  private hasMore = true;
+  private limit = 50;
+  private offset = this.recipes().length;
+
+  constructor() {
+    toObservable(this.searchTerm)
+      .pipe(
+        skip(1),
+        debounceTime(500)
+      )
+      .subscribe(() => {
+        this.recipes.set([]);
+        this.offset = 0;
+        this.hasMore = true;
+        this.fetchNextBatch();
+      });
+  }
+
+  protected readonly filteredRecipes = this.recipes;
+
+  ngOnInit(): void {
+    if (this.recipes().length === 0) {
+      this.fetchNextBatch();
+    }
+  }
+
+  async fetchNextBatch(): Promise<void> {
+    if (this.isLoading() || !this.hasMore) return;
+    
+    this.isLoading.set(true);
+    try {
+      const term = this.searchTerm().trim();
+      const data = await this.recipeService.fetchRecipes(this.offset, this.limit, term);
+      if (data.length < this.limit) {
+        this.hasMore = false;
+      }
+      this.recipes.update(list => [...list, ...data]);
+      this.offset += data.length;
+    } catch (err) {
+      console.error('Failed to load recipes', err);
+    } finally {
+      this.isLoading.set(false);
+    }
+  }
+
+  onScroll(index: number): void {
+    const end = this.viewport()?.getRenderedRange().end;
+    const total = this.recipes().length;
+    // Fetch more when we are within 10 items of the end
+    if (end && end >= total - 10) {
+      this.fetchNextBatch();
+    }
+  }
+
+  trackByRecipeId(index: number, recipe: any): string | number {
+    return recipe.id;
+  }
+
+  ngAfterViewInit(): void {
+    // Restore state if available
+    const lastActiveId = this.recipeService.getLastActiveRecipeId();
+    const lastOffset = this.recipeService.getLastScrollOffset();
+    const vp = this.viewport();
+
+    if (vp) {
+      setTimeout(() => {
+        if (lastActiveId) {
+          const index = this.filteredRecipes().findIndex((r) => r.id === lastActiveId);
+          if (index !== -1) {
+            vp.scrollToIndex(index, 'smooth');
+            this.highlightedRecipeId.set(lastActiveId);
+          }
+        } else if (lastOffset > 0) {
+          vp.scrollToOffset(lastOffset);
+        }
+      }, 50); // Small delay to ensure virtual scroll items are calculated
+    }
+  }
+
+  ngOnDestroy(): void {
+    // Save scroll state when navigating away
+    const vp = this.viewport();
+    if (vp) {
+      this.recipeService.setLastScrollOffset(vp.measureScrollOffset());
+    }
+    this.recipeService.setCachedRecipesList(this.recipes());
+  }
+
+  setLastActiveRecipe(id: string | number): void {
+    this.recipeService.setLastActiveRecipeId(id);
+  }
 
   onSearchChange(event: Event): void {
     const value = (event.target as HTMLInputElement).value;
     this.searchTerm.set(value);
   }
 
-  onDelete(id: string | number): void {
+  async onDelete(id: string | number): Promise<void> {
     if (confirm('Are you sure you want to delete this recipe? This action cannot be undone.')) {
-      this.recipeService.deleteRecipe(id);
+      await this.recipeService.deleteRecipe(id);
+      this.recipes.update((list) => list.filter((r) => r.id !== id));
+      this.recipeService.setCachedRecipesList(this.recipes());
     }
   }
 }
