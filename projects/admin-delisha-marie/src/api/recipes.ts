@@ -390,6 +390,7 @@ recipesRouter.put('/recipes/:id', async (req: AuthRequest, res: Response) => {
       specialDiets: specialDietsData || [],
     });
   } catch (err: unknown) {
+    console.log('caught error in POST /recipes:', err);
     const msg = err instanceof Error ? err.message : String(err);
     return res.status(400).json({ error: msg });
   }
@@ -519,6 +520,7 @@ async function getOrCreateLookupItem(
     .insert({ name, [matchField]: matchValue })
     .select('id')
     .single();
+  console.log('insert completed for', name, 'error:', insertError?.message);
   if (insertError) throw insertError;
   return newItem.id as string;
 }

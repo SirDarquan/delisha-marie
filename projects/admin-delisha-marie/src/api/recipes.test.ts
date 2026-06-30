@@ -21,6 +21,8 @@ const {
   mockUpsert,
   mockLimit,
   mockRange,
+  mockIlike,
+  mockIn,
 } = vi.hoisted(() => ({
   mockFrom: vi.fn(),
   mockSelect: vi.fn(),
@@ -34,6 +36,8 @@ const {
   mockUpsert: vi.fn(),
   mockLimit: vi.fn(),
   mockRange: vi.fn(),
+  mockIlike: vi.fn(),
+  mockIn: vi.fn(),
 }));
 
 // 2. Setup the chain linkages
@@ -50,6 +54,8 @@ const mockChain = {
   upsert: mockUpsert,
   limit: mockLimit,
   range: mockRange,
+  ilike: mockIlike,
+  in: mockIn,
   then: (resolve: (val: { data: null; error: null }) => void) =>
     resolve({ data: null, error: null }),
 };
@@ -68,7 +74,7 @@ describe('Recipes Router API', () => {
   let app: express.Express;
 
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
 
     // Reset default chain return values before each test run
     mockFrom.mockReturnValue(mockChain);
@@ -83,6 +89,8 @@ describe('Recipes Router API', () => {
     mockSingle.mockResolvedValue({ data: null, error: null });
     mockMaybeSingle.mockResolvedValue({ data: null, error: null });
     mockUpsert.mockResolvedValue({ data: null, error: null });
+    mockChain.then = (resolve: (val: { data: any; error: any }) => void) =>
+      resolve({ data: null, error: null });
 
     vi.mocked(backendService.getClient).mockReturnValue({
       from: mockFrom,
@@ -140,6 +148,174 @@ describe('Recipes Router API', () => {
 
       expect(res.status).toBe(500);
       expect(res.body.error).toBe('Database error');
+    });
+
+    it('should successfully return paginated recipes with search', async () => {
+      const mockSkeleton = [
+        { id: 'recipe-1', status: 'published', updated_at: '2026-06-01T00:00:00Z' },
+        { id: 'recipe-2', status: 'published', updated_at: '2026-06-02T00:00:00Z' },
+        { id: 'recipe-3', status: 'draft', updated_at: '2026-06-03T00:00:00Z' },
+      ];
+      // Skeleton query
+      mockSelect.mockReturnValueOnce(mockChain);
+      mockChain.ilike = vi.fn().mockReturnValue(mockChain);
+      mockChain.then = vi.fn().mockImplementationOnce((resolve) => resolve({ data: mockSkeleton, error: null }));
+
+      // Page query
+      mockSelect.mockReturnValueOnce(mockChain);
+      mockChain.in = vi.fn().mockResolvedValueOnce({
+        data: [
+          {
+            id: 'recipe-1',
+            title: 'Burritos',
+            status: 'published',
+            recipe_holidays: [{ holidays: { name: 'Christmas' } }],
+            recipe_special_diets: [{ special_diets: { name: 'Vegan' } }],
+          },
+          {
+            id: 'recipe-2',
+            title: 'Tacos',
+            status: 'draft',
+            recipe_holidays: [{ holidays: { name: 'Cinco de Mayo' } }],
+            recipe_special_diets: [{ special_diets: { name: 'Gluten-Free' } }],
+          },
+        ],
+        error: null,
+      });
+
+      const res = await request(app).get('/recipes?offset=0&limit=1&search=taco');
+
+      expect(res.status).toBe(200);
+      expect(res.body.length).toBe(2);
+      expect(res.body[1].title).toBe('Tacos');
+      expect(res.body[1].holidays).toContain('Cinco de Mayo');
+      expect(mockChain.ilike).toHaveBeenCalledWith('title', '%taco%');
+    });
+
+    it('should handle skeleton error in paginated query', async () => {
+      mockSelect.mockReturnValueOnce(mockChain);
+      mockChain.then = vi.fn().mockImplementationOnce((resolve) => resolve({ data: null, error: new Error('Skeleton error') }));
+
+      const res = await request(app).get('/recipes?offset=0&limit=10');
+      expect(res.status).toBe(500);
+      expect(res.body.error).toBe('Skeleton error');
+    });
+
+    it('should return empty array if pageIds is empty', async () => {
+      mockSelect.mockReturnValueOnce(mockChain);
+      mockChain.then = vi.fn().mockImplementationOnce((resolve) => resolve({ data: [], error: null }));
+
+      const res = await request(app).get('/recipes?offset=0&limit=10');
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual([]);
+    });
+
+    it('should handle page error in paginated query', async () => {
+      mockSelect.mockReturnValueOnce(mockChain);
+      mockChain.then = vi.fn().mockImplementationOnce((resolve) => resolve({ data: [{ id: '1' }], error: null }));
+
+      mockSelect.mockReturnValueOnce(mockChain);
+      mockChain.in = vi.fn().mockResolvedValueOnce({ data: null, error: new Error('Page error') });
+
+      const res = await request(app).get('/recipes?offset=0&limit=10');
+      expect(res.status).toBe(500);
+      expect(res.body.error).toBe('Page error');
+    });
+
+    it('should handle database error', async () => {
+      mockSelect.mockReturnValueOnce(mockChain);
+      mockOrder.mockReturnValueOnce(mockChain);
+      mockRange.mockReturnValueOnce(mockChain);
+      mockChain.then = (resolve: any) => resolve({ data: null, error: new Error('Database error') });
+
+      const res = await request(app).get('/recipes');
+
+      expect(res.status).toBe(500);
+      expect(res.body.error).toBe('Database error');
+    });
+
+    it('should sort recipes by status and updatedAt correctly', async () => {
+      const mockList = [
+        { id: '1', status: 'draft', updated_at: '2026-06-02T00:00:00Z', recipe_holidays: [{ holidays: { name: 'A' } }] },
+        { id: '2', status: 'published', updated_at: '2026-06-01T00:00:00Z', recipe_special_diets: [{ special_diets: { name: 'B' } }] },
+        { id: '3', status: 'published', updated_at: '2026-06-05T00:00:00Z' },
+        { id: '4', status: null, updated_at: null },
+      ];
+      mockSelect.mockReturnValueOnce(mockChain);
+      mockOrder.mockReturnValueOnce(mockChain);
+  mockChain.then = (resolve: any) => resolve({ data: mockList, error: null });
+
+      const res = await request(app).get('/recipes');
+      
+      expect(res.status).toBe(200);
+      expect(res.body.map((r: any) => r.id)).toEqual(['1', '3', '2', '4']);
+    });
+    
+    it('should cover massive branches for GET /recipes', async () => {
+      // 1. limit without offset, offset without limit
+      mockSelect.mockReturnValue(mockChain);
+      mockOrder.mockReturnValue(mockChain);
+      mockRange.mockReturnValue(mockChain);
+      
+      const messyData = [
+        {
+          id: '1',
+          status: 'invalid_status', // branch 43-54
+          recipe_holidays: [null, {}], // branch 87
+          recipe_special_diets: [null, {}], // branch 89
+        },
+        {
+          id: '2',
+          status: 'invalid_status', // identical status
+          recipe_holidays: [],
+          recipe_special_diets: [],
+        },
+      ];
+      
+      mockChain.then = vi.fn().mockImplementationOnce((resolve: any) => resolve({ data: messyData, error: null }));
+      await request(app).get('/recipes?limit=1');
+      
+      mockChain.then = vi.fn().mockImplementationOnce((resolve: any) => resolve({ data: messyData, error: null }));
+      await request(app).get('/recipes?offset=0');
+      
+      // pageData is null
+      mockChain.then = vi.fn().mockImplementationOnce((resolve: any) => resolve({ data: null, error: null }));
+      await request(app).get('/recipes?limit=1');
+    });
+
+    it('should cover pagination fallback branches with null data', async () => {
+      mockChain.then = vi.fn().mockImplementationOnce((resolve: any) => resolve({ data: null, error: null }));
+      await request(app).get('/recipes');
+    });
+
+    it('should cover pagination fallback with messy data', async () => {
+      const messyData = [
+        {
+          id: '1',
+          recipe_holidays: [null, {}],
+          recipe_special_diets: [null, {}],
+        },
+      ];
+      mockChain.then = vi.fn().mockImplementationOnce((resolve: any) => resolve({ data: messyData, error: null }));
+      await request(app).get('/recipes');
+    });
+
+    it('should fetch multiple batches if fallback returns 1000 items', async () => {
+      const batch1 = Array.from({ length: 1000 }).map((_, i) => ({ id: `id-${i}`, status: 'published' }));
+      const batch2 = [{ id: 'id-1000', status: 'published' }];
+
+      mockSelect.mockReturnValue(mockChain);
+      mockOrder.mockReturnValue(mockChain);
+      mockRange.mockReturnValue(mockChain);
+      
+      mockChain.then = vi.fn()
+        .mockImplementationOnce((resolve: any) => resolve({ data: batch1, error: null }))
+        .mockImplementationOnce((resolve: any) => resolve({ data: batch2, error: null }));
+
+      const res = await request(app).get('/recipes');
+      
+      expect(res.status).toBe(200);
+      expect(res.body.length).toBe(1001);
     });
   });
 

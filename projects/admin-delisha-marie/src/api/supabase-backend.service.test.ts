@@ -73,6 +73,34 @@ describe('BackendSupabaseService', () => {
     });
   });
 
+  describe('getters', () => {
+    it('should initialize supabase', () => {
+      service['_supabase'] = null as any;
+      const client = service.supabase;
+      expect(client).toBeDefined();
+    });
+
+    it('should initialize supabaseAdmin', () => {
+      service['_supabaseAdmin'] = null as any;
+      const client = service.supabaseAdmin;
+      expect(client).toBeDefined();
+    });
+
+    it('should cache supabase', () => {
+      service['_supabase'] = null as any;
+      const client1 = service.supabase;
+      const client2 = service.supabase;
+      expect(client1).toBe(client2);
+    });
+
+    it('should cache supabaseAdmin', () => {
+      service['_supabaseAdmin'] = null as any;
+      const client1 = service.supabaseAdmin;
+      const client2 = service.supabaseAdmin;
+      expect(client1).toBe(client2);
+    });
+  });
+
   describe('lazy client initialization', () => {
     it('should lazily create standard and admin clients', () => {
       const freshService = new BackendSupabaseService();
