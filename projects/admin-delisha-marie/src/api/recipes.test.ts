@@ -89,9 +89,8 @@ describe('Recipes Router API', () => {
     mockSingle.mockResolvedValue({ data: null, error: null });
     mockMaybeSingle.mockResolvedValue({ data: null, error: null });
     mockUpsert.mockResolvedValue({ data: null, error: null });
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    mockChain.then = (resolve: (val: { data: any; error: any }) => void) =>
-      resolve({ data: null, error: null });
+    mockChain.then = <T>(resolve: (val: T) => void) =>
+      resolve({ data: null, error: null } as unknown as T);
 
     vi.mocked(backendService.getClient).mockReturnValue({
       from: mockFrom,
@@ -235,9 +234,8 @@ describe('Recipes Router API', () => {
       mockSelect.mockReturnValueOnce(mockChain);
       mockOrder.mockReturnValueOnce(mockChain);
       mockRange.mockReturnValueOnce(mockChain);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      mockChain.then = (resolve: (val: { data: any; error: any }) => void) =>
-        resolve({ data: null, error: new Error('Database error') });
+      mockChain.then = <T>(resolve: (val: T) => void) =>
+        resolve({ data: null, error: new Error('Database error') } as unknown as T);
 
       const res = await request(app).get('/recipes');
 
@@ -264,9 +262,7 @@ describe('Recipes Router API', () => {
       ];
       mockSelect.mockReturnValueOnce(mockChain);
       mockOrder.mockReturnValueOnce(mockChain);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      mockChain.then = (resolve: (val: { data: any; error: any }) => void) =>
-        resolve({ data: mockList, error: null });
+      mockChain.then = <T>(resolve: (val: T) => void) => resolve({ data: mockList, error: null } as unknown as T);
 
       const res = await request(app).get('/recipes');
 
@@ -297,23 +293,23 @@ describe('Recipes Router API', () => {
 
       mockChain.then = vi
         .fn()
-        .mockImplementationOnce((resolve: (val: { data: unknown; error: unknown }) => void) =>
-          resolve({ data: messyData, error: null }),
+        .mockImplementationOnce(<T>(resolve: (val: T) => void) =>
+          resolve({ data: messyData, error: null } as unknown as T),
         );
       await request(app).get('/recipes?limit=1');
 
       mockChain.then = vi
         .fn()
-        .mockImplementationOnce((resolve: (val: { data: unknown; error: unknown }) => void) =>
-          resolve({ data: messyData, error: null }),
+        .mockImplementationOnce(<T>(resolve: (val: T) => void) =>
+          resolve({ data: messyData, error: null } as unknown as T),
         );
       await request(app).get('/recipes?offset=0');
 
       // pageData is null
       mockChain.then = vi
         .fn()
-        .mockImplementationOnce((resolve: (val: { data: unknown; error: unknown }) => void) =>
-          resolve({ data: null, error: null }),
+        .mockImplementationOnce(<T>(resolve: (val: T) => void) =>
+          resolve({ data: null, error: null } as unknown as T),
         );
       await request(app).get('/recipes?limit=1');
     });
@@ -321,8 +317,8 @@ describe('Recipes Router API', () => {
     it('should cover pagination fallback branches with null data', async () => {
       mockChain.then = vi
         .fn()
-        .mockImplementationOnce((resolve: (val: { data: unknown; error: unknown }) => void) =>
-          resolve({ data: null, error: null }),
+        .mockImplementationOnce(<T>(resolve: (val: T) => void) =>
+          resolve({ data: null, error: null } as unknown as T),
         );
       await request(app).get('/recipes');
     });
@@ -337,8 +333,8 @@ describe('Recipes Router API', () => {
       ];
       mockChain.then = vi
         .fn()
-        .mockImplementationOnce((resolve: (val: { data: unknown; error: unknown }) => void) =>
-          resolve({ data: messyData, error: null }),
+        .mockImplementationOnce(<T>(resolve: (val: T) => void) =>
+          resolve({ data: messyData, error: null } as unknown as T),
         );
       await request(app).get('/recipes');
     });
@@ -356,13 +352,11 @@ describe('Recipes Router API', () => {
 
       mockChain.then = vi
         .fn()
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .mockImplementationOnce((resolve: (val: { data: any; error: any }) => void) =>
-          resolve({ data: batch1, error: null }),
+        .mockImplementationOnce(<T>(resolve: (val: T) => void) =>
+          resolve({ data: batch1, error: null } as unknown as T),
         )
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .mockImplementationOnce((resolve: (val: { data: any; error: any }) => void) =>
-          resolve({ data: batch2, error: null }),
+        .mockImplementationOnce(<T>(resolve: (val: T) => void) =>
+          resolve({ data: batch2, error: null } as unknown as T),
         );
 
       const res = await request(app).get('/recipes');

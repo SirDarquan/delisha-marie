@@ -18,6 +18,7 @@ vi.hoisted(() => {
 });
 
 // 3. Import the implementation
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { BackendSupabaseService } from './supabase-backend.service';
 
 describe('BackendSupabaseService', () => {
@@ -75,30 +76,26 @@ describe('BackendSupabaseService', () => {
 
   describe('getters', () => {
     it('should initialize supabase', () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      service['_supabase'] = null as unknown as any;
+      service['_supabase'] = null as unknown as SupabaseClient;
       const client = service.supabase;
       expect(client).toBeDefined();
     });
 
     it('should initialize supabaseAdmin', () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      service['_supabaseAdmin'] = null as unknown as any;
+      service['_supabaseAdmin'] = null as unknown as SupabaseClient;
       const client = service.supabaseAdmin;
       expect(client).toBeDefined();
     });
 
     it('should cache supabase', () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      service['_supabase'] = null as unknown as any;
+      service['_supabase'] = null as unknown as SupabaseClient;
       const client1 = service.supabase;
       const client2 = service.supabase;
       expect(client1).toBe(client2);
     });
 
     it('should cache supabaseAdmin', () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      service['_supabaseAdmin'] = null as unknown as any;
+      service['_supabaseAdmin'] = null as unknown as SupabaseClient;
       const client1 = service.supabaseAdmin;
       const client2 = service.supabaseAdmin;
       expect(client1).toBe(client2);
