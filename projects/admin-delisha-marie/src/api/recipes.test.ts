@@ -89,7 +89,8 @@ describe('Recipes Router API', () => {
     mockSingle.mockResolvedValue({ data: null, error: null });
     mockMaybeSingle.mockResolvedValue({ data: null, error: null });
     mockUpsert.mockResolvedValue({ data: null, error: null });
-    mockChain.then = (resolve: (val: { data: unknown; error: unknown }) => void) =>
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    mockChain.then = (resolve: (val: { data: any; error: any }) => void) =>
       resolve({ data: null, error: null });
 
     vi.mocked(backendService.getClient).mockReturnValue({
@@ -234,7 +235,8 @@ describe('Recipes Router API', () => {
       mockSelect.mockReturnValueOnce(mockChain);
       mockOrder.mockReturnValueOnce(mockChain);
       mockRange.mockReturnValueOnce(mockChain);
-      mockChain.then = (resolve: (val: { data: unknown; error: unknown }) => void) =>
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      mockChain.then = (resolve: (val: { data: any; error: any }) => void) =>
         resolve({ data: null, error: new Error('Database error') });
 
       const res = await request(app).get('/recipes');
@@ -262,8 +264,8 @@ describe('Recipes Router API', () => {
       ];
       mockSelect.mockReturnValueOnce(mockChain);
       mockOrder.mockReturnValueOnce(mockChain);
-      mockChain.then = (resolve: (val: { data: unknown; error: unknown }) => void) =>
-        resolve({ data: mockList, error: null });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      mockChain.then = (resolve: (val: { data: any; error: any }) => void) => resolve({ data: mockList, error: null });
 
       const res = await request(app).get('/recipes');
 
@@ -353,12 +355,10 @@ describe('Recipes Router API', () => {
 
       mockChain.then = vi
         .fn()
-        .mockImplementationOnce((resolve: (val: { data: unknown; error: unknown }) => void) =>
-          resolve({ data: batch1, error: null }),
-        )
-        .mockImplementationOnce((resolve: (val: { data: unknown; error: unknown }) => void) =>
-          resolve({ data: batch2, error: null }),
-        );
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .mockImplementationOnce((resolve: (val: { data: any; error: any }) => void) => resolve({ data: batch1, error: null }))
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .mockImplementationOnce((resolve: (val: { data: any; error: any }) => void) => resolve({ data: batch2, error: null }));
 
       const res = await request(app).get('/recipes');
 

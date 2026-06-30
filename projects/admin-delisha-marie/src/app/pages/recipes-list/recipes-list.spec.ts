@@ -189,8 +189,9 @@ describe('RecipesListComponent', () => {
     it('should trigger fetchNextBatch if scrolled near the end', () => {
       const fetchSpy = vi.spyOn(component, 'fetchNextBatch');
       // Mock viewport
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       vi.spyOn(
-        component.viewport() as unknown as Record<string, unknown>,
+        component.viewport() as any,
         'getRenderedRange',
       ).mockReturnValue({
         start: 0,
@@ -205,8 +206,9 @@ describe('RecipesListComponent', () => {
 
     it('should not trigger fetchNextBatch if not near the end', () => {
       const fetchSpy = vi.spyOn(component, 'fetchNextBatch');
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       vi.spyOn(
-        component.viewport() as unknown as Record<string, unknown>,
+        component.viewport() as any,
         'getRenderedRange',
       ).mockReturnValue({
         start: 0,
@@ -227,7 +229,8 @@ describe('RecipesListComponent', () => {
   describe('ngAfterViewInit', () => {
     it('should restore last active recipe id', async () => {
       const scrollSpy = vi
-        .spyOn(component.viewport() as unknown as Record<string, unknown>, 'scrollToIndex')
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .spyOn(component.viewport() as any, 'scrollToIndex')
         .mockImplementation(vi.fn());
       vi.spyOn(fakeRecipeService, 'getLastActiveRecipeId').mockReturnValue(2);
 
@@ -242,7 +245,8 @@ describe('RecipesListComponent', () => {
 
     it('should restore scroll offset if no active id', async () => {
       const scrollSpy = vi
-        .spyOn(component.viewport() as unknown as Record<string, unknown>, 'scrollToOffset')
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .spyOn(component.viewport() as any, 'scrollToOffset')
         .mockImplementation(vi.fn());
       vi.spyOn(fakeRecipeService, 'getLastActiveRecipeId').mockReturnValue(null);
       vi.spyOn(fakeRecipeService, 'getLastScrollOffset').mockReturnValue(150);
@@ -257,8 +261,9 @@ describe('RecipesListComponent', () => {
 
   describe('ngOnDestroy', () => {
     it('should save scroll offset and cached list', () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       vi.spyOn(
-        component.viewport() as unknown as Record<string, unknown>,
+        component.viewport() as any,
         'measureScrollOffset',
       ).mockReturnValue(300);
       const setOffsetSpy = vi.spyOn(fakeRecipeService, 'setLastScrollOffset');

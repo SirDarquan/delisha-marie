@@ -729,9 +729,8 @@ describe('RecipeFormComponent', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    vi.spyOn(component as unknown as Record<string, unknown>, 'getFieldValue').mockReturnValue(
-      'test',
-    );
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    vi.spyOn(component as any, 'getFieldValue').mockReturnValue('test');
     await await component.saveDraft();
 
     expect(navigated).toEqual(['/recipes/edit', 1]);
@@ -883,25 +882,18 @@ describe('RecipeFormComponent', () => {
     fixture.detectChanges();
 
     // Mock form valid
-    Object.defineProperty(
-      (component as unknown as Record<string, unknown>)['recipeForm'](),
-      'invalid',
-      {
-        get: () => false,
-        configurable: true,
-      },
-    );
-    vi.spyOn(component as unknown as Record<string, unknown>, 'getFieldValue').mockReturnValue(
-      'test',
-    );
-    Object.defineProperty(
-      component['recipeForm']() as unknown as Record<string, unknown>,
-      'invalid',
-      {
-        value: vi.fn().mockReturnValue(false),
-        configurable: true,
-      },
-    );
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    Object.defineProperty((component as any)['recipeForm'](), 'invalid', {
+      get: () => false,
+      configurable: true,
+    });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    vi.spyOn(component as any, 'getFieldValue').mockReturnValue('test');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    Object.defineProperty((component as any)['recipeForm'](), 'invalid', {
+      value: vi.fn().mockReturnValue(false),
+      configurable: true,
+    });
 
     await component.saveRequired('published');
 
