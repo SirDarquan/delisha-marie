@@ -263,41 +263,21 @@ recipesRouter.get('/home', async (req: AuthRequest, res: Response) => {
   }
 });
 
-recipesRouter.get('/holidays', async (req: AuthRequest, res: Response) => {
+async function fetchLookupTable(req: AuthRequest, res: Response, tableName: string, columns: string = 'id, name') {
   try {
     const client = backendService.getClient(req.token);
-    const { data, error } = await client.from('holidays').select('id, name').order('name');
+    const { data, error } = await client.from(tableName).select(columns).order('name');
     if (error) throw error;
     return res.json(data);
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     return res.status(500).json({ error: msg });
   }
-});
+}
 
-recipesRouter.get('/special-diets', async (req: AuthRequest, res: Response) => {
-  try {
-    const client = backendService.getClient(req.token);
-    const { data, error } = await client.from('special_diets').select('id, name').order('name');
-    if (error) throw error;
-    return res.json(data);
-  } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : String(err);
-    return res.status(500).json({ error: msg });
-  }
-});
-
-recipesRouter.get('/methods', async (req: AuthRequest, res: Response) => {
-  try {
-    const client = backendService.getClient(req.token);
-    const { data, error } = await client.from('methods').select('id, name, slug').order('name');
-    if (error) throw error;
-    return res.json(data);
-  } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : String(err);
-    return res.status(500).json({ error: msg });
-  }
-});
+recipesRouter.get('/holidays', (req: AuthRequest, res: Response) => fetchLookupTable(req, res, 'holidays'));
+recipesRouter.get('/special-diets', (req: AuthRequest, res: Response) => fetchLookupTable(req, res, 'special_diets'));
+recipesRouter.get('/methods', (req: AuthRequest, res: Response) => fetchLookupTable(req, res, 'methods', 'id, name, slug'));
 
 recipesRouter.post('/recipes', async (req: AuthRequest, res: Response) => {
   try {
