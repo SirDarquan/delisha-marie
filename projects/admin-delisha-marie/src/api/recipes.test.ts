@@ -262,7 +262,8 @@ describe('Recipes Router API', () => {
       ];
       mockSelect.mockReturnValueOnce(mockChain);
       mockOrder.mockReturnValueOnce(mockChain);
-      mockChain.then = <T>(resolve: (val: T) => void) => resolve({ data: mockList, error: null } as unknown as T);
+      mockChain.then = <T>(resolve: (val: T) => void) =>
+        resolve({ data: mockList, error: null } as unknown as T);
 
       const res = await request(app).get('/recipes');
 

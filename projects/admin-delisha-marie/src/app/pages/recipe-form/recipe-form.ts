@@ -733,8 +733,7 @@ export class RecipeFormComponent implements OnInit {
       required(fields.description, { message: 'Description is required' });
       required(fields.content, { message: 'Content is required' });
       required(fields.ingredients, { message: 'Ingredients is required' });
-      required(fields.instructions, { message: 'Instructions is required' });
-      required(fields.method, { message: 'Method is required' });
+      required(fields.instructions, { message: 'Instructions are required' });
       required(fields.cuisine, { message: 'Cuisine is required' });
       required(fields.course, { message: 'Course is required' });
       required(fields.servingSize, { message: 'Serving size is required' });
@@ -859,7 +858,6 @@ export class RecipeFormComponent implements OnInit {
       isMissing(this.getFieldValue('content')) ||
       isMissing(this.getFieldValue('ingredients')) ||
       isMissing(this.getFieldValue('instructions')) ||
-      isMissing(this.getFieldValue('method')) ||
       isMissing(this.getFieldValue('cuisine')) ||
       isMissing(this.getFieldValue('course')) ||
       isMissing(this.getFieldValue('servingSize')) ||

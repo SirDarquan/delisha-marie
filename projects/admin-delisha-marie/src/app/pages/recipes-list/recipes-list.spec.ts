@@ -190,7 +190,9 @@ describe('RecipesListComponent', () => {
       const fetchSpy = vi.spyOn(component, 'fetchNextBatch');
       // Mock viewport
       vi.spyOn(
-        component.viewport() as unknown as { getRenderedRange: () => { start: number; end: number } },
+        component.viewport() as unknown as {
+          getRenderedRange: () => { start: number; end: number };
+        },
         'getRenderedRange',
       ).mockReturnValue({
         start: 0,
@@ -206,7 +208,9 @@ describe('RecipesListComponent', () => {
     it('should not trigger fetchNextBatch if not near the end', () => {
       const fetchSpy = vi.spyOn(component, 'fetchNextBatch');
       vi.spyOn(
-        component.viewport() as unknown as { getRenderedRange: () => { start: number; end: number } },
+        component.viewport() as unknown as {
+          getRenderedRange: () => { start: number; end: number };
+        },
         'getRenderedRange',
       ).mockReturnValue({
         start: 0,
