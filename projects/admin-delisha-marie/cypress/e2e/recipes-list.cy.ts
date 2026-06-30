@@ -38,10 +38,27 @@ describe('Admin Recipes List Page', () => {
 
     // Note: The app service fetches items from `/recipes` on init.
     // Intercept this endpoint to mock our test repository list.
-    cy.intercept('GET', '**/api/recipes*', {
-      statusCode: 200,
-      body: mockRecipes,
+    cy.intercept('GET', '**/api/recipes*', (req) => {
+      const search = req.query.search as string;
+      if (search) {
+        req.reply({
+          statusCode: 200,
+          body: mockRecipes.filter(r => r.title.toLowerCase().includes(search.toLowerCase()) || r.category.toLowerCase().includes(search.toLowerCase()))
+        });
+      } else {
+        req.reply({ statusCode: 200, body: mockRecipes });
+      }
     }).as('getRecipes');
+
+    cy.intercept('GET', '**/api/recipes/holidays*', {
+      statusCode: 200,
+      body: []
+    }).as('getHolidays');
+
+    cy.intercept('GET', '**/api/recipes/special-diets*', {
+      statusCode: 200,
+      body: []
+    }).as('getDiets');
 
     cy.visit('/recipes');
     cy.wait('@getRecipes');
@@ -51,29 +68,31 @@ describe('Admin Recipes List Page', () => {
     cy.get('h1').should('contain.text', 'Recipe Directory');
 
     // Check table structure
-    cy.get('table[aria-label="List of all recipes"]').should('exist');
-    cy.get('tbody tr').should('have.length', 2);
-    cy.get('tbody tr').eq(0).should('contain.text', 'Creamy Garlic Pasta');
-    cy.get('tbody tr').eq(1).should('contain.text', 'Chocolate Cake');
+    cy.get('div[aria-label="List of all recipes"]').should('exist');
+    cy.get('cdk-virtual-scroll-viewport div[role="row"]').should('have.length', 2);
+    cy.get('cdk-virtual-scroll-viewport div[role="row"]').eq(0).should('contain.text', 'Creamy Garlic Pasta');
+    cy.get('cdk-virtual-scroll-viewport div[role="row"]').eq(1).should('contain.text', 'Chocolate Cake');
   });
 
   it('should filter recipes based on query search strings', () => {
     // Filter by "Pasta"
     cy.get('#search').type('Pasta');
     cy.get('#search').blur();
+    cy.wait(600);
 
     // Matching should filter client-side reactively
-    cy.get('tbody tr').should('have.length', 1);
-    cy.get('tbody tr').should('contain.text', 'Creamy Garlic Pasta');
-    cy.get('tbody tr').should('not.contain.text', 'Chocolate Cake');
+    cy.get('cdk-virtual-scroll-viewport div[role="row"]').should('have.length', 1);
+    cy.get('cdk-virtual-scroll-viewport div[role="row"]').should('contain.text', 'Creamy Garlic Pasta');
+    cy.get('cdk-virtual-scroll-viewport div[role="row"]').should('not.contain.text', 'Chocolate Cake');
   });
 
   it('should show empty state display when query matches nothing', () => {
     cy.get('#search').type('UnknownMysteryDish');
     cy.get('#search').blur();
+    cy.wait(600);
 
-    cy.get('tbody tr').should('have.length', 1); // The empty <tr> colspan=6
-    cy.get('tbody td').should('contain.text', 'No recipes found');
+    cy.contains('No recipes found. Try a different search term.').should('exist');
+    cy.get('cdk-virtual-scroll-viewport div[role="row"]').should('not.exist');
   });
 
   it('should trigger native delete confirmation', () => {
@@ -87,7 +106,7 @@ describe('Admin Recipes List Page', () => {
     }).as('deleteRequest');
 
     // Find the first Delete button and trigger click
-    cy.get('tbody tr').first().contains('Delete').click({ force: true });
+    cy.get('cdk-virtual-scroll-viewport div[role="row"]').first().contains('Delete').click({ force: true });
 
     cy.wait('@deleteRequest');
   });

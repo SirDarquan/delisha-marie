@@ -69,6 +69,16 @@ describe('Admin Recipe Form Flow', () => {
         },
       },
     }).as('getCurrentUser');
+
+    cy.intercept('GET', '**/api/recipes/holidays*', {
+      statusCode: 200,
+      body: []
+    }).as('getHolidays');
+
+    cy.intercept('GET', '**/api/recipes/special-diets*', {
+      statusCode: 200,
+      body: []
+    }).as('getDiets');
   });
 
   it('should handle NEW Recipe creation form flow', () => {
@@ -231,20 +241,23 @@ describe('Admin Recipe Form Flow', () => {
   });
 
   it('should preload data and handle EDIT Recipe update flow', () => {
-    // Seed the specific mock recipe into localStorage BEFORE visit.
-    // The service constructor runs immediately and reads it into memory synchronously.
-    // This guarantees that by the time ngOnInit executes, the cache contains ID 99!
-    cy.visit('/recipes/edit/99', {
-      onBeforeLoad: (win) => {
-        win.localStorage.setItem('admin_recipes', JSON.stringify([mockRecipe]));
-      },
-    });
+    cy.intercept('GET', '**/api/recipes/99', {
+      statusCode: 200,
+      body: mockRecipe,
+    }).as('getRecipe');
 
     cy.intercept('PUT', '**/api/recipes/*', {
       statusCode: 200,
       body: { ...mockRecipe, title: 'Updated Chicken Title' },
     }).as('updateRecipe');
 
+    cy.visit('/recipes/edit/99', {
+      onBeforeLoad: (win) => {
+        win.localStorage.setItem('admin_recipes', JSON.stringify([mockRecipe]));
+      },
+    });
+
+    cy.wait('@getRecipe');
     cy.get('h1').should('contain.text', 'Edit Recipe');
 
     // Form values should now be preloaded instantly!
