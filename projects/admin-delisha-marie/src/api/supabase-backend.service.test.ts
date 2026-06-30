@@ -1,18 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // 1. Mock @supabase/supabase-js
-vi.mock('@supabase/supabase-js', () => {
-  const mockClient = {
-    auth: {
-      getUser: vi.fn(),
-    },
-  };
-  return {
-    __esModule: true,
-    createClient: vi.fn().mockReturnValue(mockClient),
-    SupabaseClient: class {}, // Provide mock class for reflection
-  };
-});
+vi.mock('@supabase/supabase-js');
+import { createClient } from '@supabase/supabase-js';
 
 // 2. Ensure Env vars exist for static initialization
 vi.hoisted(() => {
@@ -29,12 +19,20 @@ describe('BackendSupabaseService', () => {
   let service: BackendSupabaseService;
 
   beforeEach(() => {
-    vi.restoreAllMocks(); // Use restoreAllMocks instead of clearAllMocks to ensure clean slate without wiping hoisted mock implementations if there's a bug
+    vi.clearAllMocks(); 
     vi.stubEnv('SUPABASE_URL', 'https://example.supabase.co');
     vi.stubEnv('SUPABASE_KEY', 'test-key');
     vi.stubEnv('SUPABASE_SERVICE_ROLE_KEY', 'test-service-key');
+    
+    // Explicitly mock the createClient return value for each test
+    vi.mocked(createClient).mockReturnValue({
+      auth: {
+        getUser: vi.fn(),
+      },
+    } as any);
+
     service = new BackendSupabaseService();
-    // Explicitly override internal client with hermetic mock instance
+    // Override internal client to prevent pollution
     service.supabase = {
       auth: {
         getUser: vi.fn(),
