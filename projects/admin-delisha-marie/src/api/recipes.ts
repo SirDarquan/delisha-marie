@@ -11,23 +11,138 @@ recipesRouter.use(authMiddleware);
 recipesRouter.get('/recipes', async (req: AuthRequest, res: Response) => {
   try {
     const client = backendService.getClient(req.token);
-    const { data, error } = await client
-      .from('recipes')
-      .select(
-        `
-        *,
-        recipe_holidays (
-          holidays (name)
-        ),
-        recipe_special_diets (
-          special_diets (name)
-        )
-      `,
-      )
-      .order('created_at', { ascending: false });
-    if (error) throw error;
 
-    const formatted = (data || []).map((rawRecipe: unknown) => {
+    const offsetStr = req.query['offset'] as string | undefined;
+    const limitStr = req.query['limit'] as string | undefined;
+
+    const statusOrder: Record<string, number> = {
+      draft: 1,
+      scheduled: 2,
+      published: 3,
+    };
+
+    if (offsetStr !== undefined || limitStr !== undefined) {
+      const offset = parseInt(offsetStr || '0', 10);
+      const limit = parseInt(limitStr || '100', 10);
+      const search = req.query['search'] as string | undefined;
+
+      // 1. Fetch lightweight skeleton
+      let skeletonQuery = client
+        .from('recipes')
+        .select('id, status, updated_at');
+
+      if (search) {
+        skeletonQuery = skeletonQuery.ilike('title', `%${search}%`);
+      }
+
+      const { data: skeletonData, error: skeletonError } = await skeletonQuery;
+        
+      if (skeletonError) throw skeletonError;
+
+      // 2. Sort skeleton in memory
+      const sortedSkeleton = (skeletonData || []).sort((a: any, b: any) => {
+        const aStatus = a.status ? String(a.status).toLowerCase() : '';
+        const bStatus = b.status ? String(b.status).toLowerCase() : '';
+        const aOrder = statusOrder[aStatus] || 99;
+        const bOrder = statusOrder[bStatus] || 99;
+        
+        if (aOrder !== bOrder) {
+          return aOrder - bOrder;
+        }
+        
+        const aTime = a.updated_at ? new Date(String(a.updated_at)).getTime() : 0;
+        const bTime = b.updated_at ? new Date(String(b.updated_at)).getTime() : 0;
+        return bTime - aTime;
+      });
+
+      // 3. Slice for current page
+      const pageIds = sortedSkeleton.slice(offset, offset + limit).map((r) => r.id);
+
+      if (pageIds.length === 0) {
+        return res.json([]);
+      }
+
+      // 4. Fetch full data for just those IDs
+      const { data: pageData, error: pageError } = await client
+        .from('recipes')
+        .select(`
+          *,
+          recipe_holidays (
+            holidays (name)
+          ),
+          recipe_special_diets (
+            special_diets (name)
+          )
+        `)
+        .in('id', pageIds);
+
+      if (pageError) throw pageError;
+
+      // 5. Format and re-sort
+      const formatted = (pageData || []).map((rawRecipe: unknown) => {
+        const recipe = rawRecipe as Record<string, unknown> & {
+          recipe_holidays?: { holidays: { name: string } | null }[];
+          recipe_special_diets?: { special_diets: { name: string } | null }[];
+        };
+        const holidays = recipe.recipe_holidays?.map((h) => h.holidays?.name).filter(Boolean) || [];
+        const specialDiets =
+          recipe.recipe_special_diets?.map((d) => d.special_diets?.name).filter(Boolean) || [];
+
+        const cleanRecipe = { ...recipe };
+        delete cleanRecipe.recipe_holidays;
+        delete cleanRecipe.recipe_special_diets;
+
+        const camelRecipe = camelCaseKeys(cleanRecipe);
+
+        return {
+          ...camelRecipe,
+          holidays,
+          specialDiets,
+        };
+      });
+
+      formatted.sort((a: any, b: any) => {
+        return pageIds.indexOf(a.id) - pageIds.indexOf(b.id);
+      });
+
+      return res.json(formatted);
+    }
+
+    // Fallback: Fetch everything for unpaginated requests
+    const allData: any[] = [];
+    let from = 0;
+    const step = 1000;
+    let hasMore = true;
+
+    while (hasMore) {
+      const { data, error } = await client
+        .from('recipes')
+        .select(
+          `
+          *,
+          recipe_holidays (
+            holidays (name)
+          ),
+          recipe_special_diets (
+            special_diets (name)
+          )
+        `,
+        )
+        .order('updated_at', { ascending: false })
+        .range(from, from + step - 1);
+      if (error) throw error;
+      
+      if (data && data.length > 0) {
+        allData.push(...data);
+      }
+      if (!data || data.length < step) {
+        hasMore = false;
+      } else {
+        from += step;
+      }
+    }
+
+    const formatted = allData.map((rawRecipe: unknown) => {
       const recipe = rawRecipe as Record<string, unknown> & {
         recipe_holidays?: { holidays: { name: string } | null }[];
         recipe_special_diets?: { special_diets: { name: string } | null }[];
@@ -47,6 +162,21 @@ recipesRouter.get('/recipes', async (req: AuthRequest, res: Response) => {
         holidays,
         specialDiets,
       };
+    });
+
+    formatted.sort((a: any, b: any) => {
+      const aStatus = a.status ? String(a.status).toLowerCase() : '';
+      const bStatus = b.status ? String(b.status).toLowerCase() : '';
+      const aOrder = statusOrder[aStatus] || 99;
+      const bOrder = statusOrder[bStatus] || 99;
+      
+      if (aOrder !== bOrder) {
+        return aOrder - bOrder;
+      }
+      
+      const aTime = a.updatedAt ? new Date(String(a.updatedAt)).getTime() : 0;
+      const bTime = b.updatedAt ? new Date(String(b.updatedAt)).getTime() : 0;
+      return bTime - aTime;
     });
 
     return res.json(formatted);

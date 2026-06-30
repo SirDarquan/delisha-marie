@@ -20,6 +20,7 @@ const {
   mockMaybeSingle,
   mockUpsert,
   mockLimit,
+  mockRange,
 } = vi.hoisted(() => ({
   mockFrom: vi.fn(),
   mockSelect: vi.fn(),
@@ -32,6 +33,7 @@ const {
   mockMaybeSingle: vi.fn(),
   mockUpsert: vi.fn(),
   mockLimit: vi.fn(),
+  mockRange: vi.fn(),
 }));
 
 // 2. Setup the chain linkages
@@ -47,6 +49,7 @@ const mockChain = {
   maybeSingle: mockMaybeSingle,
   upsert: mockUpsert,
   limit: mockLimit,
+  range: mockRange,
   then: (resolve: (val: { data: null; error: null }) => void) =>
     resolve({ data: null, error: null }),
 };
@@ -76,6 +79,7 @@ describe('Recipes Router API', () => {
     mockDelete.mockReturnValue(mockChain);
     mockEq.mockReturnValue(mockChain);
     mockLimit.mockReturnValue(mockChain);
+    mockRange.mockReturnValue(mockChain);
     mockSingle.mockResolvedValue({ data: null, error: null });
     mockMaybeSingle.mockResolvedValue({ data: null, error: null });
     mockUpsert.mockResolvedValue({ data: null, error: null });
@@ -105,31 +109,32 @@ describe('Recipes Router API', () => {
 
   describe('GET /recipes', () => {
     it('should successfully return all recipes', async () => {
-      const mockList = [{ id: 'recipe-1', title: 'Salad' }];
-      mockOrder.mockResolvedValue({ data: mockList, error: null });
+      const mockList = [{ id: 'recipe-1', title: 'Salad', updated_at: new Date().toISOString() }];
+      mockRange.mockResolvedValueOnce({ data: mockList, error: null });
 
       const res = await request(app).get('/recipes');
 
       expect(res.status).toBe(200);
       expect(res.body).toEqual([
-        { id: 'recipe-1', title: 'Salad', holidays: [], specialDiets: [] },
+        expect.objectContaining({ id: 'recipe-1', title: 'Salad' }),
       ]);
       expect(backendService.getClient).toHaveBeenCalledWith('test-token-xyz');
       expect(mockFrom).toHaveBeenCalledWith('recipes');
       expect(mockSelect).toHaveBeenCalledWith(`
-        *,
-        recipe_holidays (
-          holidays (name)
-        ),
-        recipe_special_diets (
-          special_diets (name)
-        )
-      `);
-      expect(mockOrder).toHaveBeenCalledWith('created_at', { ascending: false });
+          *,
+          recipe_holidays (
+            holidays (name)
+          ),
+          recipe_special_diets (
+            special_diets (name)
+          )
+        `);
+      expect(mockOrder).toHaveBeenCalledWith('updated_at', { ascending: false });
+      expect(mockRange).toHaveBeenCalledWith(0, 999);
     });
 
     it('should return 500 when fetching recipes throws an error', async () => {
-      mockOrder.mockResolvedValue({ data: null, error: new Error('Database error') });
+      mockRange.mockResolvedValueOnce({ data: null, error: new Error('Database error') });
 
       const res = await request(app).get('/recipes');
 
@@ -474,7 +479,7 @@ describe('Recipes Router API', () => {
 
   describe('Non-Error Error Handling Catch-block Boosters', () => {
     it('should return 500 when GET /recipes receives a non-Error string exception', async () => {
-      mockOrder.mockRejectedValue('Raw GET string exception');
+      mockRange.mockRejectedValue('Raw GET string exception');
       const res = await request(app).get('/recipes');
       expect(res.status).toBe(500);
       expect(res.body.error).toBe('Raw GET string exception');
