@@ -40,8 +40,8 @@ recipesRouter.get('/recipes', async (req: AuthRequest, res: Response) => {
       // 2. Sort skeleton in memory
       const sortedSkeleton = (skeletonData || []).sort(
         (a: Record<string, unknown>, b: Record<string, unknown>) => {
-          const aStatus = a.status ? String(a.status).toLowerCase() : '';
-          const bStatus = b.status ? String(b.status).toLowerCase() : '';
+          const aStatus = a['status'] ? String(a['status']).toLowerCase() : '';
+          const bStatus = b['status'] ? String(b['status']).toLowerCase() : '';
           const aOrder = statusOrder[aStatus] || 99;
           const bOrder = statusOrder[bStatus] || 99;
 
@@ -49,8 +49,8 @@ recipesRouter.get('/recipes', async (req: AuthRequest, res: Response) => {
             return aOrder - bOrder;
           }
 
-          const aTime = a.updated_at ? new Date(String(a.updated_at)).getTime() : 0;
-          const bTime = b.updated_at ? new Date(String(b.updated_at)).getTime() : 0;
+          const aTime = a['updated_at'] ? new Date(String(a['updated_at'])).getTime() : 0;
+          const bTime = b['updated_at'] ? new Date(String(b['updated_at'])).getTime() : 0;
           return bTime - aTime;
         },
       );
@@ -104,7 +104,7 @@ recipesRouter.get('/recipes', async (req: AuthRequest, res: Response) => {
       });
 
       formatted.sort((a: Record<string, unknown>, b: Record<string, unknown>) => {
-        return pageIds.indexOf(a.id) - pageIds.indexOf(b.id);
+        return pageIds.indexOf(String(a['id'])) - pageIds.indexOf(String(b['id']));
       });
 
       return res.json(formatted);
@@ -167,8 +167,8 @@ recipesRouter.get('/recipes', async (req: AuthRequest, res: Response) => {
     });
 
     formatted.sort((a: Record<string, unknown>, b: Record<string, unknown>) => {
-      const aStatus = a.status ? String(a.status).toLowerCase() : '';
-      const bStatus = b.status ? String(b.status).toLowerCase() : '';
+      const aStatus = a['status'] ? String(a['status']).toLowerCase() : '';
+      const bStatus = b['status'] ? String(b['status']).toLowerCase() : '';
       const aOrder = statusOrder[aStatus] || 99;
       const bOrder = statusOrder[bStatus] || 99;
 
@@ -176,8 +176,8 @@ recipesRouter.get('/recipes', async (req: AuthRequest, res: Response) => {
         return aOrder - bOrder;
       }
 
-      const aTime = a.updatedAt ? new Date(String(a.updatedAt)).getTime() : 0;
-      const bTime = b.updatedAt ? new Date(String(b.updatedAt)).getTime() : 0;
+      const aTime = a['updatedAt'] ? new Date(String(a['updatedAt'])).getTime() : 0;
+      const bTime = b['updatedAt'] ? new Date(String(b['updatedAt'])).getTime() : 0;
       return bTime - aTime;
     });
 
