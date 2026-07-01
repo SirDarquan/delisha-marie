@@ -44,31 +44,6 @@ describe('CategoryBoardComponent', () => {
     fetchRecipes: () => Promise.resolve(mockRecipesData),
   };
 
-  describe('Fallback behaviors without category map', () => {
-    beforeEach(async () => {
-      mockRecipesData = [];
-      await TestBed.resetTestingModule();
-      await TestBed.configureTestingModule({
-        imports: [CategoryBoardComponent],
-        providers: [{ provide: RecipeService, useValue: fakeRecipeService }],
-      }).compileComponents();
-
-      fixture = TestBed.createComponent(CategoryBoardComponent);
-      component = fixture.componentInstance;
-      await fixture.whenStable();
-      fixture.detectChanges();
-    });
-
-    it('should fallback to baseline configuration if recipe service provides no categories', () => {
-      expect(component).toBeTruthy();
-
-      const previewVal = component.compiledPreview();
-      // Default trail starts with Home and Recipes
-      expect(previewVal).toContain('Home (/)');
-      expect(previewVal).toContain('Recipes (/recipes)');
-    });
-  });
-
   beforeEach(async () => {
     mockRecipesData = [
       {
@@ -110,6 +85,31 @@ describe('CategoryBoardComponent', () => {
     component = fixture.componentInstance;
     await fixture.whenStable();
     fixture.detectChanges();
+  });
+
+  describe('Fallback behaviors without category map', () => {
+    beforeEach(async () => {
+      mockRecipesData = [];
+      await TestBed.resetTestingModule();
+      await TestBed.configureTestingModule({
+        imports: [CategoryBoardComponent],
+        providers: [{ provide: RecipeService, useValue: fakeRecipeService }],
+      }).compileComponents();
+
+      fixture = TestBed.createComponent(CategoryBoardComponent);
+      component = fixture.componentInstance;
+      await fixture.whenStable();
+      fixture.detectChanges();
+    });
+
+    it('should fallback to baseline configuration if recipe service provides no categories', () => {
+      expect(component).toBeTruthy();
+
+      const previewVal = component.compiledPreview();
+      // Default trail starts with Home and Recipes
+      expect(previewVal).toContain('Home (/)');
+      expect(previewVal).toContain('Recipes (/recipes)');
+    });
   });
 
   it('should create and render base board pieces', async () => {

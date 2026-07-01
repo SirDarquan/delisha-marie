@@ -2,6 +2,8 @@ import { computed, inject, Injectable, signal } from '@angular/core';
 import { Recipe } from '../models/recipe.model';
 import { ApiService } from './api.service';
 
+export type ActiveRecipeId = string | number | null;
+
 @Injectable({
   providedIn: 'root',
 })
@@ -28,7 +30,7 @@ export class RecipeService {
 
   // State Restoration Methods
   private _lastScrollOffset = 0;
-  private _lastActiveRecipeId: string | number | null = null;
+  private _lastActiveRecipeId: ActiveRecipeId = null;
 
   setLastScrollOffset(offset: number): void {
     this._lastScrollOffset = offset;

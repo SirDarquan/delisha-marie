@@ -8,6 +8,58 @@ const recipesRouter = Router();
 
 recipesRouter.use(authMiddleware);
 
+function formatRecipeList(
+  data: unknown[],
+  statusOrder: Record<string, number>,
+  pageIds?: string[],
+): Record<string, unknown>[] {
+  const formatted = (data || []).map((rawRecipe: unknown) => {
+    const recipe = rawRecipe as Record<string, unknown> & {
+      recipe_holidays?: { holidays: { name: string } | null }[];
+      recipe_special_diets?: { special_diets: { name: string } | null }[];
+    };
+    const holidays = recipe.recipe_holidays?.map((h) => h?.holidays?.name).filter(Boolean) || [];
+    const specialDiets =
+      recipe.recipe_special_diets?.map((d) => d?.special_diets?.name).filter(Boolean) || [];
+
+    const cleanRecipe = { ...recipe };
+    delete cleanRecipe.recipe_holidays;
+    delete cleanRecipe.recipe_special_diets;
+
+    const camelRecipe = camelCaseKeys(cleanRecipe);
+
+    return {
+      ...camelRecipe,
+      holidays,
+      specialDiets,
+    };
+  });
+
+  formatted.sort((a: Record<string, unknown>, b: Record<string, unknown>) => {
+    if (pageIds) {
+      return pageIds.indexOf(String(a['id'])) - pageIds.indexOf(String(b['id']));
+    }
+    const aStatusVal = a['status'];
+    const bStatusVal = b['status'];
+    const aStatus = typeof aStatusVal === 'string' ? aStatusVal.toLowerCase() : '';
+    const bStatus = typeof bStatusVal === 'string' ? bStatusVal.toLowerCase() : '';
+    const aOrder = statusOrder[aStatus] || 99;
+    const bOrder = statusOrder[bStatus] || 99;
+
+    if (aOrder !== bOrder) {
+      return aOrder - bOrder;
+    }
+
+    const aTimeVal = a['updatedAt'];
+    const bTimeVal = b['updatedAt'];
+    const aTime = typeof aTimeVal === 'string' ? new Date(aTimeVal).getTime() : 0;
+    const bTime = typeof bTimeVal === 'string' ? new Date(bTimeVal).getTime() : 0;
+    return bTime - aTime;
+  });
+
+  return formatted;
+}
+
 recipesRouter.get('/recipes', async (req: AuthRequest, res: Response) => {
   try {
     const client = backendService.getClient(req.token);
@@ -22,8 +74,8 @@ recipesRouter.get('/recipes', async (req: AuthRequest, res: Response) => {
     };
 
     if (offsetStr !== undefined || limitStr !== undefined) {
-      const offset = parseInt(offsetStr || '0', 10);
-      const limit = parseInt(limitStr || '100', 10);
+      const offset = Number.parseInt(offsetStr || '0', 10);
+      const limit = Number.parseInt(limitStr || '100', 10);
       const search = req.query['search'] as string | undefined;
 
       // 1. Fetch lightweight skeleton
@@ -40,8 +92,10 @@ recipesRouter.get('/recipes', async (req: AuthRequest, res: Response) => {
       // 2. Sort skeleton in memory
       const sortedSkeleton = (skeletonData || []).sort(
         (a: Record<string, unknown>, b: Record<string, unknown>) => {
-          const aStatus = a['status'] ? String(a['status']).toLowerCase() : '';
-          const bStatus = b['status'] ? String(b['status']).toLowerCase() : '';
+          const aStatusVal = a['status'];
+          const bStatusVal = b['status'];
+          const aStatus = typeof aStatusVal === 'string' ? aStatusVal.toLowerCase() : '';
+          const bStatus = typeof bStatusVal === 'string' ? bStatusVal.toLowerCase() : '';
           const aOrder = statusOrder[aStatus] || 99;
           const bOrder = statusOrder[bStatus] || 99;
 
@@ -49,8 +103,10 @@ recipesRouter.get('/recipes', async (req: AuthRequest, res: Response) => {
             return aOrder - bOrder;
           }
 
-          const aTime = a['updated_at'] ? new Date(String(a['updated_at'])).getTime() : 0;
-          const bTime = b['updated_at'] ? new Date(String(b['updated_at'])).getTime() : 0;
+          const aTimeVal = a['updated_at'];
+          const bTimeVal = b['updated_at'];
+          const aTime = typeof aTimeVal === 'string' ? new Date(aTimeVal).getTime() : 0;
+          const bTime = typeof bTimeVal === 'string' ? new Date(bTimeVal).getTime() : 0;
           return bTime - aTime;
         },
       );
@@ -81,31 +137,7 @@ recipesRouter.get('/recipes', async (req: AuthRequest, res: Response) => {
       if (pageError) throw pageError;
 
       // 5. Format and re-sort
-      const formatted = (pageData || []).map((rawRecipe: unknown) => {
-        const recipe = rawRecipe as Record<string, unknown> & {
-          recipe_holidays?: { holidays: { name: string } | null }[];
-          recipe_special_diets?: { special_diets: { name: string } | null }[];
-        };
-        const holidays = recipe.recipe_holidays?.map((h) => h.holidays?.name).filter(Boolean) || [];
-        const specialDiets =
-          recipe.recipe_special_diets?.map((d) => d.special_diets?.name).filter(Boolean) || [];
-
-        const cleanRecipe = { ...recipe };
-        delete cleanRecipe.recipe_holidays;
-        delete cleanRecipe.recipe_special_diets;
-
-        const camelRecipe = camelCaseKeys(cleanRecipe);
-
-        return {
-          ...camelRecipe,
-          holidays,
-          specialDiets,
-        };
-      });
-
-      formatted.sort((a: Record<string, unknown>, b: Record<string, unknown>) => {
-        return pageIds.indexOf(String(a['id'])) - pageIds.indexOf(String(b['id']));
-      });
+      const formatted = formatRecipeList(pageData || [], statusOrder, pageIds);
 
       return res.json(formatted);
     }
@@ -144,42 +176,7 @@ recipesRouter.get('/recipes', async (req: AuthRequest, res: Response) => {
       }
     }
 
-    const formatted = allData.map((rawRecipe: unknown) => {
-      const recipe = rawRecipe as Record<string, unknown> & {
-        recipe_holidays?: { holidays: { name: string } | null }[];
-        recipe_special_diets?: { special_diets: { name: string } | null }[];
-      };
-      const holidays = recipe.recipe_holidays?.map((h) => h.holidays?.name).filter(Boolean) || [];
-      const specialDiets =
-        recipe.recipe_special_diets?.map((d) => d.special_diets?.name).filter(Boolean) || [];
-
-      const cleanRecipe = { ...recipe };
-      delete cleanRecipe.recipe_holidays;
-      delete cleanRecipe.recipe_special_diets;
-
-      const camelRecipe = camelCaseKeys(cleanRecipe);
-
-      return {
-        ...camelRecipe,
-        holidays,
-        specialDiets,
-      };
-    });
-
-    formatted.sort((a: Record<string, unknown>, b: Record<string, unknown>) => {
-      const aStatus = a['status'] ? String(a['status']).toLowerCase() : '';
-      const bStatus = b['status'] ? String(b['status']).toLowerCase() : '';
-      const aOrder = statusOrder[aStatus] || 99;
-      const bOrder = statusOrder[bStatus] || 99;
-
-      if (aOrder !== bOrder) {
-        return aOrder - bOrder;
-      }
-
-      const aTime = a['updatedAt'] ? new Date(String(a['updatedAt'])).getTime() : 0;
-      const bTime = b['updatedAt'] ? new Date(String(b['updatedAt'])).getTime() : 0;
-      return bTime - aTime;
-    });
+    const formatted = formatRecipeList(allData, statusOrder);
 
     return res.json(formatted);
   } catch (err: unknown) {
@@ -263,7 +260,12 @@ recipesRouter.get('/home', async (req: AuthRequest, res: Response) => {
   }
 });
 
-async function fetchLookupTable(req: AuthRequest, res: Response, tableName: string, columns: string = 'id, name') {
+async function fetchLookupTable(
+  req: AuthRequest,
+  res: Response,
+  tableName: string,
+  columns = 'id, name',
+) {
   try {
     const client = backendService.getClient(req.token);
     const { data, error } = await client.from(tableName).select(columns).order('name');
@@ -275,9 +277,15 @@ async function fetchLookupTable(req: AuthRequest, res: Response, tableName: stri
   }
 }
 
-recipesRouter.get('/holidays', (req: AuthRequest, res: Response) => fetchLookupTable(req, res, 'holidays'));
-recipesRouter.get('/special-diets', (req: AuthRequest, res: Response) => fetchLookupTable(req, res, 'special_diets'));
-recipesRouter.get('/methods', (req: AuthRequest, res: Response) => fetchLookupTable(req, res, 'methods', 'id, name, slug'));
+recipesRouter.get('/holidays', (req: AuthRequest, res: Response) =>
+  fetchLookupTable(req, res, 'holidays'),
+);
+recipesRouter.get('/special-diets', (req: AuthRequest, res: Response) =>
+  fetchLookupTable(req, res, 'special_diets'),
+);
+recipesRouter.get('/methods', (req: AuthRequest, res: Response) =>
+  fetchLookupTable(req, res, 'methods', 'id, name, slug'),
+);
 
 recipesRouter.post('/recipes', async (req: AuthRequest, res: Response) => {
   try {
@@ -502,7 +510,6 @@ async function getOrCreateLookupItem(
     .insert({ name, [matchField]: matchValue })
     .select('id')
     .single();
-  console.log('insert completed for', name, 'error:', insertError?.message);
   if (insertError) throw insertError;
   return newItem.id as string;
 }

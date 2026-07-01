@@ -19,17 +19,17 @@ describe('BackendSupabaseService', () => {
   let service: BackendSupabaseService;
 
   beforeEach(() => {
-    vi.clearAllMocks(); 
+    vi.clearAllMocks();
     vi.stubEnv('SUPABASE_URL', 'https://example.supabase.co');
     vi.stubEnv('SUPABASE_KEY', 'test-key');
     vi.stubEnv('SUPABASE_SERVICE_ROLE_KEY', 'test-service-key');
-    
+
     // Explicitly mock the createClient return value for each test
     vi.mocked(createClient).mockReturnValue({
       auth: {
         getUser: vi.fn(),
       },
-    } as any);
+    } as unknown as ReturnType<typeof createClient>);
 
     service = new BackendSupabaseService();
     // Override internal client to prevent pollution

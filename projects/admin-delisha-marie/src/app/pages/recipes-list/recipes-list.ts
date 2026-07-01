@@ -196,8 +196,8 @@ export class RecipesListComponent implements OnInit, AfterViewInit, OnDestroy {
   protected readonly recipes = signal<Recipe[]>(this.recipeService.getCachedRecipesList());
   protected readonly isLoading = signal<boolean>(false);
   private hasMore = true;
-  private limit = 50;
   private offset = this.recipes().length;
+  private readonly limit = 50;
 
   constructor() {
     toObservable(this.searchTerm)

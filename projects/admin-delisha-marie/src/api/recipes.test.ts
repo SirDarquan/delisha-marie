@@ -186,7 +186,7 @@ describe('Recipes Router API', () => {
       const res = await request(app).get('/recipes?offset=0&limit=1&search=taco');
 
       expect(res.status).toBe(200);
-      expect(res.body.length).toBe(2);
+      expect(res.body).toHaveLength(2);
       expect(res.body[1].title).toBe('Tacos');
       expect(res.body[1].holidays).toContain('Cinco de Mayo');
       expect(mockChain.ilike).toHaveBeenCalledWith('title', '%taco%');
@@ -312,7 +312,8 @@ describe('Recipes Router API', () => {
         .mockImplementationOnce(<T>(resolve: (val: T) => void) =>
           resolve({ data: null, error: null } as unknown as T),
         );
-      await request(app).get('/recipes?limit=1');
+      const res3 = await request(app).get('/recipes?limit=1');
+      expect(res3.status).toBe(200);
     });
 
     it('should cover pagination fallback branches with null data', async () => {
@@ -321,7 +322,9 @@ describe('Recipes Router API', () => {
         .mockImplementationOnce(<T>(resolve: (val: T) => void) =>
           resolve({ data: null, error: null } as unknown as T),
         );
-      await request(app).get('/recipes');
+      const res = await request(app).get('/recipes');
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual([]);
     });
 
     it('should cover pagination fallback with messy data', async () => {
@@ -337,7 +340,9 @@ describe('Recipes Router API', () => {
         .mockImplementationOnce(<T>(resolve: (val: T) => void) =>
           resolve({ data: messyData, error: null } as unknown as T),
         );
-      await request(app).get('/recipes');
+      const res = await request(app).get('/recipes');
+      expect(res.status).toBe(200);
+      expect(res.body).toHaveLength(1);
     });
 
     it('should fetch multiple batches if fallback returns 1000 items', async () => {
@@ -363,7 +368,7 @@ describe('Recipes Router API', () => {
       const res = await request(app).get('/recipes');
 
       expect(res.status).toBe(200);
-      expect(res.body.length).toBe(1001);
+      expect(res.body).toHaveLength(1001);
     });
   });
 
