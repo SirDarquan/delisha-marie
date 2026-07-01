@@ -60,6 +60,95 @@ function formatRecipeList(
   return formatted;
 }
 
+async function fetchPaginatedRecipes(
+  client: SupabaseClient,
+  offset: number,
+  limit: number,
+  search: string | undefined,
+  statusOrder: Record<string, number>,
+): Promise<Record<string, unknown>[]> {
+  // 1. Fetch lightweight skeleton
+  let skeletonQuery = client.from('recipes').select('id, status, updated_at');
+
+  if (search) {
+    skeletonQuery = skeletonQuery.ilike('title', `%${search}%`);
+  }
+
+  const { data: skeletonData, error: skeletonError } = await skeletonQuery;
+
+  if (skeletonError) throw skeletonError;
+
+  // 2. Sort skeleton in memory
+  const sortedSkeleton = (skeletonData || []).sort(
+    (a: Record<string, unknown>, b: Record<string, unknown>) => {
+      const aStatusVal = a['status'];
+      const bStatusVal = b['status'];
+      const aStatus = typeof aStatusVal === 'string' ? aStatusVal.toLowerCase() : '';
+      const bStatus = typeof bStatusVal === 'string' ? bStatusVal.toLowerCase() : '';
+      const aOrder = statusOrder[aStatus] || 99;
+      const bOrder = statusOrder[bStatus] || 99;
+
+      if (aOrder !== bOrder) {
+        return aOrder - bOrder;
+      }
+
+      const aTimeVal = a['updated_at'];
+      const bTimeVal = b['updated_at'];
+      const aTime = typeof aTimeVal === 'string' ? new Date(aTimeVal).getTime() : 0;
+      const bTime = typeof bTimeVal === 'string' ? new Date(bTimeVal).getTime() : 0;
+      return bTime - aTime;
+    },
+  );
+
+  // 3. Slice for current page
+  const pageIds = sortedSkeleton.slice(offset, offset + limit).map((r) => r.id);
+
+  if (pageIds.length === 0) {
+    return [];
+  }
+
+  // 4. Fetch full data for just those IDs
+  const { data: pageData, error: pageError } = await client
+    .from('recipes')
+    .select('*, recipe_holidays (holidays (name)), recipe_special_diets (special_diets (name))')
+    .in('id', pageIds);
+
+  if (pageError) throw pageError;
+
+  // 5. Format and re-sort
+  return formatRecipeList(pageData || [], statusOrder, pageIds);
+}
+
+async function fetchAllRecipes(
+  client: SupabaseClient,
+  statusOrder: Record<string, number>,
+): Promise<Record<string, unknown>[]> {
+  const allData: Record<string, unknown>[] = [];
+  let from = 0;
+  const step = 1000;
+  let hasMore = true;
+
+  while (hasMore) {
+    const { data, error } = await client
+      .from('recipes')
+      .select('*, recipe_holidays (holidays (name)), recipe_special_diets (special_diets (name))')
+      .order('updated_at', { ascending: false })
+      .range(from, from + step - 1);
+    if (error) throw error;
+
+    if (data && data.length > 0) {
+      allData.push(...data);
+    }
+    if (!data || data.length < step) {
+      hasMore = false;
+    } else {
+      from += step;
+    }
+  }
+
+  return formatRecipeList(allData, statusOrder);
+}
+
 recipesRouter.get('/recipes', async (req: AuthRequest, res: Response) => {
   try {
     const client = backendService.getClient(req.token);
@@ -77,107 +166,11 @@ recipesRouter.get('/recipes', async (req: AuthRequest, res: Response) => {
       const offset = Number.parseInt(offsetStr || '0', 10);
       const limit = Number.parseInt(limitStr || '100', 10);
       const search = req.query['search'] as string | undefined;
-
-      // 1. Fetch lightweight skeleton
-      let skeletonQuery = client.from('recipes').select('id, status, updated_at');
-
-      if (search) {
-        skeletonQuery = skeletonQuery.ilike('title', `%${search}%`);
-      }
-
-      const { data: skeletonData, error: skeletonError } = await skeletonQuery;
-
-      if (skeletonError) throw skeletonError;
-
-      // 2. Sort skeleton in memory
-      const sortedSkeleton = (skeletonData || []).sort(
-        (a: Record<string, unknown>, b: Record<string, unknown>) => {
-          const aStatusVal = a['status'];
-          const bStatusVal = b['status'];
-          const aStatus = typeof aStatusVal === 'string' ? aStatusVal.toLowerCase() : '';
-          const bStatus = typeof bStatusVal === 'string' ? bStatusVal.toLowerCase() : '';
-          const aOrder = statusOrder[aStatus] || 99;
-          const bOrder = statusOrder[bStatus] || 99;
-
-          if (aOrder !== bOrder) {
-            return aOrder - bOrder;
-          }
-
-          const aTimeVal = a['updated_at'];
-          const bTimeVal = b['updated_at'];
-          const aTime = typeof aTimeVal === 'string' ? new Date(aTimeVal).getTime() : 0;
-          const bTime = typeof bTimeVal === 'string' ? new Date(bTimeVal).getTime() : 0;
-          return bTime - aTime;
-        },
-      );
-
-      // 3. Slice for current page
-      const pageIds = sortedSkeleton.slice(offset, offset + limit).map((r) => r.id);
-
-      if (pageIds.length === 0) {
-        return res.json([]);
-      }
-
-      // 4. Fetch full data for just those IDs
-      const { data: pageData, error: pageError } = await client
-        .from('recipes')
-        .select(
-          `
-          *,
-          recipe_holidays (
-            holidays (name)
-          ),
-          recipe_special_diets (
-            special_diets (name)
-          )
-        `,
-        )
-        .in('id', pageIds);
-
-      if (pageError) throw pageError;
-
-      // 5. Format and re-sort
-      const formatted = formatRecipeList(pageData || [], statusOrder, pageIds);
-
+      const formatted = await fetchPaginatedRecipes(client, offset, limit, search, statusOrder);
       return res.json(formatted);
     }
 
-    // Fallback: Fetch everything for unpaginated requests
-    const allData: Record<string, unknown>[] = [];
-    let from = 0;
-    const step = 1000;
-    let hasMore = true;
-
-    while (hasMore) {
-      const { data, error } = await client
-        .from('recipes')
-        .select(
-          `
-          *,
-          recipe_holidays (
-            holidays (name)
-          ),
-          recipe_special_diets (
-            special_diets (name)
-          )
-        `,
-        )
-        .order('updated_at', { ascending: false })
-        .range(from, from + step - 1);
-      if (error) throw error;
-
-      if (data && data.length > 0) {
-        allData.push(...data);
-      }
-      if (!data || data.length < step) {
-        hasMore = false;
-      } else {
-        from += step;
-      }
-    }
-
-    const formatted = formatRecipeList(allData, statusOrder);
-
+    const formatted = await fetchAllRecipes(client, statusOrder);
     return res.json(formatted);
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);

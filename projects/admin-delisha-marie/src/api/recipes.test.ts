@@ -126,15 +126,7 @@ describe('Recipes Router API', () => {
       expect(res.body).toEqual([expect.objectContaining({ id: 'recipe-1', title: 'Salad' })]);
       expect(backendService.getClient).toHaveBeenCalledWith('test-token-xyz');
       expect(mockFrom).toHaveBeenCalledWith('recipes');
-      expect(mockSelect).toHaveBeenCalledWith(`
-          *,
-          recipe_holidays (
-            holidays (name)
-          ),
-          recipe_special_diets (
-            special_diets (name)
-          )
-        `);
+      expect(mockSelect).toHaveBeenCalledWith('*, recipe_holidays (holidays (name)), recipe_special_diets (special_diets (name))');
       expect(mockOrder).toHaveBeenCalledWith('updated_at', { ascending: false });
       expect(mockRange).toHaveBeenCalledWith(0, 999);
     });
