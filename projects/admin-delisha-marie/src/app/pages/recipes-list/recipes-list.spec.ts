@@ -1,6 +1,8 @@
 import { ScrollingModule } from '@angular/cdk/scrolling';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { MatDialog } from '@angular/material/dialog';
 import { provideRouter } from '@angular/router';
+import { of } from 'rxjs';
 import { Recipe } from '../../models/recipe.model';
 import { RecipeService } from '../../services/recipe.service';
 import { RecipesListComponent } from './recipes-list';
@@ -24,6 +26,14 @@ describe('RecipesListComponent', () => {
     setLastActiveRecipeId: vi.fn(),
     setLastScrollOffset: vi.fn(),
     setCachedRecipesList: vi.fn(),
+  };
+
+  const dialogRefMock = {
+    afterClosed: () => of(false),
+  };
+
+  const mockMatDialog = {
+    open: vi.fn(() => dialogRefMock),
   };
 
   Element.prototype.scrollTo = vi.fn();
@@ -69,7 +79,11 @@ describe('RecipesListComponent', () => {
 
     await TestBed.configureTestingModule({
       imports: [RecipesListComponent, ScrollingModule],
-      providers: [provideRouter([]), { provide: RecipeService, useValue: fakeRecipeService }],
+      providers: [
+        provideRouter([]),
+        { provide: RecipeService, useValue: fakeRecipeService },
+        { provide: MatDialog, useValue: mockMatDialog },
+      ],
     }).compileComponents();
   });
 
@@ -97,23 +111,18 @@ describe('RecipesListComponent', () => {
   });
 
   it('should not delete recipe if confirm is false', () => {
-    const originalConfirm = window.confirm;
-    window.confirm = () => false;
+    dialogRefMock.afterClosed = () => of(false);
 
     component.onDelete(1);
     expect(deletedId).toBeNull();
-
-    window.confirm = originalConfirm;
   });
 
   it('should delete recipe if confirm is true', async () => {
-    const originalConfirm = window.confirm;
-    window.confirm = () => true;
+    dialogRefMock.afterClosed = () => of(true);
 
-    await component.onDelete(1);
+    component.onDelete(1);
+    await new Promise(process.nextTick); // wait for promise to resolve inside subscribe
     expect(deletedId).toBe(1);
-
-    window.confirm = originalConfirm;
   });
 
   it('should render no results message when search returns empty', async () => {

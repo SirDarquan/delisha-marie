@@ -13,10 +13,12 @@ import {
 import { toObservable } from '@angular/core/rxjs-interop';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatButtonModule } from '@angular/material/button';
+import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { RouterLink } from '@angular/router';
 import { Stars } from '@dm/library';
 import { debounceTime, skip } from 'rxjs/operators';
+import { ConfirmDialogComponent } from '../../components/confirm-dialog/confirm-dialog';
 import { Recipe } from '../../models/recipe.model';
 import { RecipeService } from '../../services/recipe.service';
 
@@ -204,6 +206,7 @@ import { RecipeService } from '../../services/recipe.service';
 })
 export class RecipesListComponent implements OnInit, AfterViewInit, OnDestroy {
   private readonly recipeService = inject(RecipeService);
+  private readonly dialog = inject(MatDialog);
 
   readonly viewport = viewChild<CdkVirtualScrollViewport>(CdkVirtualScrollViewport);
 
@@ -307,11 +310,24 @@ export class RecipesListComponent implements OnInit, AfterViewInit, OnDestroy {
     this.searchTerm.set(value);
   }
 
-  async onDelete(id: string | number): Promise<void> {
-    if (confirm('Are you sure you want to delete this recipe? This action cannot be undone.')) {
-      await this.recipeService.deleteRecipe(id);
-      this.recipes.update((list) => list.filter((r) => r.id !== id));
-      this.recipeService.setCachedRecipesList(this.recipes());
-    }
+  onDelete(id: string | number): void {
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      data: {
+        title: 'Delete Recipe',
+        message: 'Are you sure you want to delete this recipe? This action cannot be undone.',
+        stayLabel: 'Cancel',
+        leaveLabel: 'Delete',
+        icon: 'delete_forever',
+      },
+      width: '400px',
+    });
+
+    dialogRef.afterClosed().subscribe(async (result) => {
+      if (result) {
+        await this.recipeService.deleteRecipe(id);
+        this.recipes.update((list) => list.filter((r) => r.id !== id));
+        this.recipeService.setCachedRecipesList(this.recipes());
+      }
+    });
   }
 }

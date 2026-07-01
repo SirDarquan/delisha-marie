@@ -109,10 +109,7 @@ describe('Admin Recipes List Page', () => {
     cy.get('cdk-virtual-scroll-viewport div[role="row"]').should('not.exist');
   });
 
-  it('should trigger native delete confirmation', () => {
-    // Setup listener for native confirm dialog to click "OK"
-    cy.on('window:confirm', () => true);
-
+  it('should trigger delete confirmation dialog', () => {
     // Intercept proxy api DELETE route
     cy.intercept('DELETE', '**/api/recipes/*', {
       statusCode: 200,
@@ -124,6 +121,10 @@ describe('Admin Recipes List Page', () => {
       .first()
       .find('[aria-label="Delete recipe"]')
       .click({ force: true });
+
+    // Confirm deletion inside the dialog
+    cy.get('app-confirm-dialog').should('exist');
+    cy.get('app-confirm-dialog button').contains('Delete').click();
 
     cy.wait('@deleteRequest');
   });
