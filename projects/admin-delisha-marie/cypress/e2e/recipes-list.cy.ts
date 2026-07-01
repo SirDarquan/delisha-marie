@@ -122,7 +122,7 @@ describe('Admin Recipes List Page', () => {
     // Find the first Delete button and trigger click
     cy.get('cdk-virtual-scroll-viewport div[role="row"]')
       .first()
-      .contains('Delete')
+      .find('[aria-label="Delete recipe"]')
       .click({ force: true });
 
     cy.wait('@deleteRequest');

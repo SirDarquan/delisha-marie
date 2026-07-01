@@ -1,5 +1,4 @@
 import { CdkVirtualScrollViewport, ScrollingModule } from '@angular/cdk/scrolling';
-import { LowerCasePipe } from '@angular/common';
 import {
   AfterViewInit,
   ChangeDetectionStrategy,
@@ -12,15 +11,18 @@ import {
   ViewEncapsulation,
 } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
+import { MatBadgeModule } from '@angular/material/badge';
 import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
 import { RouterLink } from '@angular/router';
+import { Stars } from '@dm/library';
 import { debounceTime, skip } from 'rxjs/operators';
 import { Recipe } from '../../models/recipe.model';
 import { RecipeService } from '../../services/recipe.service';
 
 @Component({
   selector: 'app-recipes-list',
-  imports: [RouterLink, LowerCasePipe, MatButtonModule, ScrollingModule],
+  imports: [RouterLink, MatButtonModule, MatIconModule, ScrollingModule, Stars, MatBadgeModule],
   template: `
     <div class="p-4 md:p-8">
       <div class="mb-6 flex justify-between items-center">
@@ -62,17 +64,17 @@ import { RecipeService } from '../../services/recipe.service';
               <div
                 role="columnheader"
                 class="w-32 px-4 py-3 text-xs font-bold uppercase tracking-wider text-slate-400">
-                Prep Time
+                Status
+              </div>
+              <div
+                role="columnheader"
+                class="w-56 px-4 py-3 text-xs font-bold uppercase tracking-wider text-slate-400">
+                Rating
               </div>
               <div
                 role="columnheader"
                 class="w-32 px-4 py-3 text-xs font-bold uppercase tracking-wider text-slate-400">
-                Cook Time
-              </div>
-              <div
-                role="columnheader"
-                class="w-32 px-4 py-3 text-xs font-bold uppercase tracking-wider text-slate-400">
-                Difficulty
+                Review
               </div>
               <div
                 role="columnheader"
@@ -104,44 +106,59 @@ import { RecipeService } from '../../services/recipe.service';
                     }}</strong>
                   </div>
 
-                  <div role="cell" class="w-32 px-4 text-sm text-slate-300 truncate">
-                    {{ recipe.prepTime || 'N/A' }}
+                  <div role="cell" class="w-32 px-4 text-sm">
+                    @let stat = recipe.status || 'draft';
+                    <span
+                      class="px-2.5 py-1 rounded-full text-xs font-bold tracking-wide capitalize"
+                      [class.bg-slate-950]="stat === 'draft'"
+                      [class.text-slate-300]="stat === 'draft'"
+                      [class.bg-orange-500/10]="stat === 'scheduled'"
+                      [class.text-orange-400]="stat === 'scheduled'"
+                      [class.bg-green-500/10]="stat === 'published'"
+                      [class.text-green-400]="stat === 'published'"
+                      [class.bg-blue-500/10]="stat === 'updated'"
+                      [class.text-blue-400]="stat === 'updated'">
+                      {{ stat }}
+                    </span>
                   </div>
 
-                  <div role="cell" class="w-32 px-4 text-sm text-slate-300 truncate">
-                    {{ recipe.cookTime || 'N/A' }}
+                  <div role="cell" class="w-56 px-4 text-sm text-slate-300 flex items-center gap-2">
+                    <dml-stars [rating]="recipe.ratingCount || 0" [interactive]="false"></dml-stars>
+                    <span class="text-xs font-medium">({{ recipe.reviewCount || 0 }})</span>
                   </div>
 
                   <div role="cell" class="w-32 px-4 text-sm">
-                    @let diff = recipe.difficulty || 'Easy' | lowercase;
-                    <span
-                      class="px-2.5 py-1 rounded-full text-xs font-bold tracking-wide capitalize"
-                      [class.bg-green-500/10]="diff === 'easy'"
-                      [class.text-green-400]="diff === 'easy'"
-                      [class.bg-yellow-500/10]="diff === 'intermediate'"
-                      [class.text-yellow-400]="diff === 'intermediate'"
-                      [class.bg-rose-500/10]="diff === 'advanced'"
-                      [class.text-rose-400]="diff === 'advanced'">
-                      {{ recipe.difficulty || 'Easy' }}
-                    </span>
+                    <button
+                      mat-button
+                      [disabled]="!recipe.reviewCount"
+                      [matBadge]="recipe.reviewCount"
+                      matBadgeColor="accent"
+                      [matBadgeHidden]="!recipe.reviewCount"
+                      class="px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
+                      Edit Review
+                    </button>
                   </div>
 
                   <div role="cell" class="w-40 px-4 text-center">
                     <div class="flex items-center justify-center gap-2">
                       <a
+                        mat-icon-button
                         [routerLink]="['/recipes/edit', recipe.id]"
                         (click)="setLastActiveRecipe(recipe.id)"
-                        class="px-3 py-1.5 rounded-lg text-xs font-bold bg-purple-500/15 text-purple-400 hover:bg-purple-500/30 transition cursor-pointer"
+                        class="!text-white hover:!text-purple-400 hover:drop-shadow-[0_0_8px_rgba(168,85,247,0.8)] transition-all cursor-pointer"
                         aria-label="Edit recipe">
-                        Edit
+                        <mat-icon class="text-[20px] h-5 w-5 flex items-center justify-center"
+                          >edit</mat-icon
+                        >
                       </a>
                       <button
-                        mat-button
-                        color="warn"
+                        mat-icon-button
                         (click)="onDelete(recipe.id)"
-                        class="px-3 py-1.5 rounded-lg text-xs font-bold bg-rose-500/15 text-rose-400 hover:bg-rose-500/30 transition cursor-pointer"
+                        class="!text-white hover:!text-rose-400 hover:drop-shadow-[0_0_8px_rgba(244,63,94,0.8)] transition-all cursor-pointer"
                         aria-label="Delete recipe">
-                        Delete
+                        <mat-icon class="text-[20px] h-5 w-5 flex items-center justify-center"
+                          >delete</mat-icon
+                        >
                       </button>
                     </div>
                   </div>
