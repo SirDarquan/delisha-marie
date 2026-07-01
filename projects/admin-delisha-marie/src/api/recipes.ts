@@ -8,47 +8,169 @@ const recipesRouter = Router();
 
 recipesRouter.use(authMiddleware);
 
+function formatRecipeList(
+  data: unknown[],
+  statusOrder: Record<string, number>,
+  pageIds?: string[],
+): Record<string, unknown>[] {
+  const formatted = (data || []).map((rawRecipe: unknown) => {
+    const recipe = rawRecipe as Record<string, unknown> & {
+      recipe_holidays?: { holidays: { name: string } | null }[];
+      recipe_special_diets?: { special_diets: { name: string } | null }[];
+    };
+    const holidays = recipe.recipe_holidays?.map((h) => h?.holidays?.name).filter(Boolean) || [];
+    const specialDiets =
+      recipe.recipe_special_diets?.map((d) => d?.special_diets?.name).filter(Boolean) || [];
+
+    const cleanRecipe = { ...recipe };
+    delete cleanRecipe.recipe_holidays;
+    delete cleanRecipe.recipe_special_diets;
+
+    const camelRecipe = camelCaseKeys(cleanRecipe);
+
+    return {
+      ...camelRecipe,
+      holidays,
+      specialDiets,
+    };
+  });
+
+  formatted.sort((a: Record<string, unknown>, b: Record<string, unknown>) => {
+    if (pageIds) {
+      return pageIds.indexOf(String(a['id'])) - pageIds.indexOf(String(b['id']));
+    }
+    const aStatusVal = a['status'];
+    const bStatusVal = b['status'];
+    const aStatus = typeof aStatusVal === 'string' ? aStatusVal.toLowerCase() : '';
+    const bStatus = typeof bStatusVal === 'string' ? bStatusVal.toLowerCase() : '';
+    const aOrder = statusOrder[aStatus] || 99;
+    const bOrder = statusOrder[bStatus] || 99;
+
+    if (aOrder !== bOrder) {
+      return aOrder - bOrder;
+    }
+
+    const aTimeVal = a['updatedAt'];
+    const bTimeVal = b['updatedAt'];
+    const aTime = typeof aTimeVal === 'string' ? new Date(aTimeVal).getTime() : 0;
+    const bTime = typeof bTimeVal === 'string' ? new Date(bTimeVal).getTime() : 0;
+    return bTime - aTime;
+  });
+
+  return formatted;
+}
+
+async function fetchPaginatedRecipes(
+  client: SupabaseClient,
+  offset: number,
+  limit: number,
+  search: string | undefined,
+  statusOrder: Record<string, number>,
+): Promise<Record<string, unknown>[]> {
+  // 1. Fetch lightweight skeleton
+  let skeletonQuery = client.from('recipes').select('id, status, updated_at');
+
+  if (search) {
+    skeletonQuery = skeletonQuery.ilike('title', `%${search}%`);
+  }
+
+  const { data: skeletonData, error: skeletonError } = await skeletonQuery;
+
+  if (skeletonError) throw skeletonError;
+
+  // 2. Sort skeleton in memory
+  const sortedSkeleton = (skeletonData || []).sort(
+    (a: Record<string, unknown>, b: Record<string, unknown>) => {
+      const aStatusVal = a['status'];
+      const bStatusVal = b['status'];
+      const aStatus = typeof aStatusVal === 'string' ? aStatusVal.toLowerCase() : '';
+      const bStatus = typeof bStatusVal === 'string' ? bStatusVal.toLowerCase() : '';
+      const aOrder = statusOrder[aStatus] || 99;
+      const bOrder = statusOrder[bStatus] || 99;
+
+      if (aOrder !== bOrder) {
+        return aOrder - bOrder;
+      }
+
+      const aTimeVal = a['updated_at'];
+      const bTimeVal = b['updated_at'];
+      const aTime = typeof aTimeVal === 'string' ? new Date(aTimeVal).getTime() : 0;
+      const bTime = typeof bTimeVal === 'string' ? new Date(bTimeVal).getTime() : 0;
+      return bTime - aTime;
+    },
+  );
+
+  // 3. Slice for current page
+  const pageIds = sortedSkeleton.slice(offset, offset + limit).map((r) => r.id);
+
+  if (pageIds.length === 0) {
+    return [];
+  }
+
+  // 4. Fetch full data for just those IDs
+  const { data: pageData, error: pageError } = await client
+    .from('recipes')
+    .select('*, recipe_holidays (holidays (name)), recipe_special_diets (special_diets (name))')
+    .in('id', pageIds);
+
+  if (pageError) throw pageError;
+
+  // 5. Format and re-sort
+  return formatRecipeList(pageData || [], statusOrder, pageIds);
+}
+
+async function fetchAllRecipes(
+  client: SupabaseClient,
+  statusOrder: Record<string, number>,
+): Promise<Record<string, unknown>[]> {
+  const allData: Record<string, unknown>[] = [];
+  let from = 0;
+  const step = 1000;
+  let hasMore = true;
+
+  while (hasMore) {
+    const { data, error } = await client
+      .from('recipes')
+      .select('*, recipe_holidays (holidays (name)), recipe_special_diets (special_diets (name))')
+      .order('updated_at', { ascending: false })
+      .range(from, from + step - 1);
+    if (error) throw error;
+
+    if (data && data.length > 0) {
+      allData.push(...data);
+    }
+    if (!data || data.length < step) {
+      hasMore = false;
+    } else {
+      from += step;
+    }
+  }
+
+  return formatRecipeList(allData, statusOrder);
+}
+
 recipesRouter.get('/recipes', async (req: AuthRequest, res: Response) => {
   try {
     const client = backendService.getClient(req.token);
-    const { data, error } = await client
-      .from('recipes')
-      .select(
-        `
-        *,
-        recipe_holidays (
-          holidays (name)
-        ),
-        recipe_special_diets (
-          special_diets (name)
-        )
-      `,
-      )
-      .order('created_at', { ascending: false });
-    if (error) throw error;
 
-    const formatted = (data || []).map((rawRecipe: unknown) => {
-      const recipe = rawRecipe as Record<string, unknown> & {
-        recipe_holidays?: { holidays: { name: string } | null }[];
-        recipe_special_diets?: { special_diets: { name: string } | null }[];
-      };
-      const holidays = recipe.recipe_holidays?.map((h) => h.holidays?.name).filter(Boolean) || [];
-      const specialDiets =
-        recipe.recipe_special_diets?.map((d) => d.special_diets?.name).filter(Boolean) || [];
+    const offsetStr = req.query['offset'] as string | undefined;
+    const limitStr = req.query['limit'] as string | undefined;
 
-      const cleanRecipe = { ...recipe };
-      delete cleanRecipe.recipe_holidays;
-      delete cleanRecipe.recipe_special_diets;
+    const statusOrder: Record<string, number> = {
+      draft: 1,
+      scheduled: 2,
+      published: 3,
+    };
 
-      const camelRecipe = camelCaseKeys(cleanRecipe);
+    if (offsetStr !== undefined || limitStr !== undefined) {
+      const offset = Number.parseInt(offsetStr || '0', 10);
+      const limit = Number.parseInt(limitStr || '100', 10);
+      const search = req.query['search'] as string | undefined;
+      const formatted = await fetchPaginatedRecipes(client, offset, limit, search, statusOrder);
+      return res.json(formatted);
+    }
 
-      return {
-        ...camelRecipe,
-        holidays,
-        specialDiets,
-      };
-    });
-
+    const formatted = await fetchAllRecipes(client, statusOrder);
     return res.json(formatted);
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
@@ -131,41 +253,32 @@ recipesRouter.get('/home', async (req: AuthRequest, res: Response) => {
   }
 });
 
-recipesRouter.get('/holidays', async (req: AuthRequest, res: Response) => {
+async function fetchLookupTable(
+  req: AuthRequest,
+  res: Response,
+  tableName: string,
+  columns = 'id, name',
+) {
   try {
     const client = backendService.getClient(req.token);
-    const { data, error } = await client.from('holidays').select('id, name').order('name');
+    const { data, error } = await client.from(tableName).select(columns).order('name');
     if (error) throw error;
     return res.json(data);
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     return res.status(500).json({ error: msg });
   }
-});
+}
 
-recipesRouter.get('/special-diets', async (req: AuthRequest, res: Response) => {
-  try {
-    const client = backendService.getClient(req.token);
-    const { data, error } = await client.from('special_diets').select('id, name').order('name');
-    if (error) throw error;
-    return res.json(data);
-  } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : String(err);
-    return res.status(500).json({ error: msg });
-  }
-});
-
-recipesRouter.get('/methods', async (req: AuthRequest, res: Response) => {
-  try {
-    const client = backendService.getClient(req.token);
-    const { data, error } = await client.from('methods').select('id, name, slug').order('name');
-    if (error) throw error;
-    return res.json(data);
-  } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : String(err);
-    return res.status(500).json({ error: msg });
-  }
-});
+recipesRouter.get('/holidays', (req: AuthRequest, res: Response) =>
+  fetchLookupTable(req, res, 'holidays'),
+);
+recipesRouter.get('/special-diets', (req: AuthRequest, res: Response) =>
+  fetchLookupTable(req, res, 'special_diets'),
+);
+recipesRouter.get('/methods', (req: AuthRequest, res: Response) =>
+  fetchLookupTable(req, res, 'methods', 'id, name, slug'),
+);
 
 recipesRouter.post('/recipes', async (req: AuthRequest, res: Response) => {
   try {
@@ -260,6 +373,7 @@ recipesRouter.put('/recipes/:id', async (req: AuthRequest, res: Response) => {
       specialDiets: specialDietsData || [],
     });
   } catch (err: unknown) {
+    console.log('caught error in POST /recipes:', err);
     const msg = err instanceof Error ? err.message : String(err);
     return res.status(400).json({ error: msg });
   }

@@ -8,6 +8,7 @@ import {
   input,
   model,
   output,
+  resource,
   signal,
   ViewEncapsulation,
 } from '@angular/core';
@@ -281,9 +282,13 @@ interface CategoryConfig {
 export class CategoryBoardComponent implements FormValueControl<CategoryTrails | null> {
   private readonly recipeService = inject(RecipeService);
 
+  readonly recipesResource = resource({
+    loader: () => this.recipeService.fetchRecipes(),
+  });
+
   // Dynamically compile categories and subcategories from the existing recipes' categories and breadcrumbs
   readonly categories = computed<CategoryConfig[]>(() => {
-    const recipes = this.recipeService.recipes();
+    const recipes = this.recipesResource.value() || [];
     const map = new Map<string, { url: string; subs: Map<string, string> }>();
 
     this.extractBreadcrumbsToMap(recipes, map);

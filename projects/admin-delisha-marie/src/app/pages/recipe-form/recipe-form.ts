@@ -656,9 +656,11 @@ interface RecipeFormModel {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RecipeFormComponent implements OnInit {
-  private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   private readonly recipeService = inject(RecipeService);
+
+  protected readonly originalRecipe = signal<Recipe | null>(null);
   private readonly dialog = inject(MatDialog);
 
   protected readonly isEdit = signal<boolean>(false);
@@ -731,8 +733,7 @@ export class RecipeFormComponent implements OnInit {
       required(fields.description, { message: 'Description is required' });
       required(fields.content, { message: 'Content is required' });
       required(fields.ingredients, { message: 'Ingredients is required' });
-      required(fields.instructions, { message: 'Instructions is required' });
-      required(fields.method, { message: 'Method is required' });
+      required(fields.instructions, { message: 'Instructions are required' });
       required(fields.cuisine, { message: 'Cuisine is required' });
       required(fields.course, { message: 'Course is required' });
       required(fields.servingSize, { message: 'Serving size is required' });
@@ -857,7 +858,6 @@ export class RecipeFormComponent implements OnInit {
       isMissing(this.getFieldValue('content')) ||
       isMissing(this.getFieldValue('ingredients')) ||
       isMissing(this.getFieldValue('instructions')) ||
-      isMissing(this.getFieldValue('method')) ||
       isMissing(this.getFieldValue('cuisine')) ||
       isMissing(this.getFieldValue('course')) ||
       isMissing(this.getFieldValue('servingSize')) ||
@@ -878,20 +878,25 @@ export class RecipeFormComponent implements OnInit {
     if (id) {
       this.isEdit.set(true);
       this.idToEdit.set(id);
-      const recipe = this.recipeService.getRecipeByIdOrSlug(id);
-      console.log(recipe);
-      if (recipe) {
-        const mapped = this.mapRecipeToForm(recipe);
-        this.recipeModel.set(mapped);
-        this.initialModel.set(mapped);
+      this.recipeService
+        .fetchRecipeById(id)
+        .then((recipe) => {
+          console.log(recipe);
+          if (recipe) {
+            this.originalRecipe.set(recipe);
+            const mapped = this.mapRecipeToForm(recipe);
+            this.recipeModel.set(mapped);
+            this.initialModel.set(mapped);
 
-        // Propagate loaded image metadata values directly to the form controls (targets)
-        this.recipeForm.imageWidth().value.set(mapped.imageWidth);
-        this.recipeForm.imageHeight().value.set(mapped.imageHeight);
-        this.recipeForm.imageType().value.set(mapped.imageType);
-      } else {
-        this.initialModel.set({ ...this.recipeModel() });
-      }
+            // Propagate loaded image metadata values directly to the form controls (targets)
+            this.recipeForm.imageWidth().value.set(mapped.imageWidth);
+            this.recipeForm.imageHeight().value.set(mapped.imageHeight);
+            this.recipeForm.imageType().value.set(mapped.imageType);
+          } else {
+            this.initialModel.set({ ...this.recipeModel() });
+          }
+        })
+        .catch((err) => console.error('Failed to load recipe:', err));
     } else {
       this.initialModel.set({ ...this.recipeModel() });
     }
@@ -1139,7 +1144,7 @@ export class RecipeFormComponent implements OnInit {
     } as unknown as Omit<Recipe, 'id'>;
   }
 
-  saveDraft(): void {
+  async saveDraft(): Promise<void> {
     const formValue = this.recipeModel();
     const payload: Omit<Recipe, 'id'> = {
       ...this.serializeRecipe(formValue, 'draft'),
@@ -1150,10 +1155,10 @@ export class RecipeFormComponent implements OnInit {
     const id = this.idToEdit();
     if (this.isEdit()) {
       if (id) {
-        this.recipeService.updateRecipe(id, payload);
+        await this.recipeService.updateRecipe(id, payload);
       }
     } else {
-      const created = this.recipeService.createRecipe(payload);
+      const created = await this.recipeService.createRecipe(payload);
       if (created?.id) {
         this.router.navigate(['/recipes/edit', created.id]);
       }
@@ -1162,14 +1167,14 @@ export class RecipeFormComponent implements OnInit {
     this.recipeModel().status = 'draft';
   }
 
-  saveRequired(status: 'scheduled' | 'published'): void {
+  async saveRequired(status: 'scheduled' | 'published'): Promise<void> {
     if (this.recipeForm().invalid()) {
       return;
     }
 
     const formValue = this.recipeModel();
     const id = this.idToEdit();
-    const originalRecipe = id ? this.recipeService.getRecipeByIdOrSlug(String(id)) : null;
+    const originalRecipe = this.originalRecipe();
 
     // Timestamp calculations based on status requirements
     let createdAt = originalRecipe?.createdAt || null;
@@ -1198,10 +1203,10 @@ export class RecipeFormComponent implements OnInit {
 
     if (this.isEdit()) {
       if (id) {
-        this.recipeService.updateRecipe(id, payload);
+        await this.recipeService.updateRecipe(id, payload);
       }
     } else {
-      this.recipeService.createRecipe(payload);
+      await this.recipeService.createRecipe(payload);
     }
 
     this.initialModel.set(this.getCurrentFormValue());

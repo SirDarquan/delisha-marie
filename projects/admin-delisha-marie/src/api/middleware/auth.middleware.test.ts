@@ -103,6 +103,73 @@ describe('Auth Middleware', () => {
     );
   });
 
+  it('should fall back to refresh token if access token is invalid but refresh token is valid', async () => {
+    vi.mocked(backendService.verifyToken).mockRejectedValue(new Error('JWT expired'));
+    const mockSession = {
+      user: { id: 'u2' },
+      session: { access_token: 'new-acc', expires_in: 3600 },
+    };
+    mockRefreshSession.mockResolvedValue({ data: mockSession, error: null });
+
+    const res = await request(app)
+      .get('/test-secure')
+      .set('Cookie', ['admin_access_token=invalid', 'admin_refresh_token=valid-ref']);
+
+    expect(res.status).toBe(200);
+    expect(res.body.token).toBe('new-acc');
+  });
+
+  it('should use refresh token if access token is missing', async () => {
+    const mockSession = {
+      user: { id: 'u3' },
+      session: { access_token: 'new-acc2', refresh_token: 'new-ref2', expires_in: 3600 },
+    };
+    mockRefreshSession.mockResolvedValue({ data: mockSession, error: null });
+
+    const res = await request(app)
+      .get('/test-secure')
+      .set('Cookie', ['admin_refresh_token=valid-ref2']);
+
+    expect(res.status).toBe(200);
+    expect(res.body.token).toBe('new-acc2');
+  });
+
+  it('should return 401 if refresh session returns error', async () => {
+    mockRefreshSession.mockResolvedValue({
+      data: { user: null, session: null },
+      error: new Error('Refresh failed'),
+    });
+
+    const res = await request(app)
+      .get('/test-secure')
+      .set('Cookie', ['admin_refresh_token=bad-ref']);
+
+    expect(res.status).toBe(401);
+    expect(res.body.error).toContain('Refresh failed');
+  });
+
+  it('should return 401 if refresh session returns no user', async () => {
+    mockRefreshSession.mockResolvedValue({ data: { user: null, session: null }, error: null });
+
+    const res = await request(app)
+      .get('/test-secure')
+      .set('Cookie', ['admin_refresh_token=bad-ref2']);
+
+    expect(res.status).toBe(401);
+    expect(res.body.error).toContain('Token missing or invalid');
+  });
+
+  it('should propagate token error if not expired', async () => {
+    vi.mocked(backendService.verifyToken).mockRejectedValue(new Error('Invalid signature'));
+
+    const res = await request(app)
+      .get('/test-secure')
+      .set('Cookie', ['admin_access_token=invalid', 'admin_refresh_token=valid']);
+
+    expect(res.status).toBe(401);
+    expect(res.body.error).toContain('Invalid signature');
+  });
+
   it('should return 401 when no tokens are provided', async () => {
     const res = await request(app).get('/test-secure');
 
