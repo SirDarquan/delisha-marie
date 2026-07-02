@@ -77,6 +77,13 @@ export class RecipeService {
     return this.api.get<Recipe>(`/recipes/${id}`);
   }
 
+  checkSlugAvailability(slug: string): Promise<boolean> {
+    return this.api
+      .get<{ taken: boolean }>(`/check-slug?slug=${encodeURIComponent(slug)}`)
+      .then((res) => res.taken)
+      .catch(() => false); // Assume available if network fails, or could reject
+  }
+
   createRecipe(newRecipe: Omit<Recipe, 'id'>): Promise<Recipe> {
     const id = crypto.randomUUID();
     const recipe: Recipe = {

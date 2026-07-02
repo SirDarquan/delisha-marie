@@ -139,6 +139,47 @@ describe('RecipeService', () => {
     });
   });
 
+  describe('checkSlugAvailability', () => {
+    it('should return true if slug is taken', async () => {
+      service = TestBed.inject(RecipeService);
+      httpMock = TestBed.inject(HttpTestingController);
+
+      const promise = service.checkSlugAvailability('taken-slug');
+      const req = httpMock.expectOne('/api/check-slug?slug=taken-slug');
+      expect(req.request.method).toBe('GET');
+      req.flush({ taken: true });
+
+      const result = await promise;
+      expect(result).toBe(true);
+    });
+
+    it('should return false if API returns false', async () => {
+      service = TestBed.inject(RecipeService);
+      httpMock = TestBed.inject(HttpTestingController);
+
+      const promise = service.checkSlugAvailability('free-slug');
+      const req = httpMock.expectOne('/api/check-slug?slug=free-slug');
+      expect(req.request.method).toBe('GET');
+      req.flush({ taken: false });
+
+      const result = await promise;
+      expect(result).toBe(false);
+    });
+
+    it('should return false on network error', async () => {
+      service = TestBed.inject(RecipeService);
+      httpMock = TestBed.inject(HttpTestingController);
+
+      const promise = service.checkSlugAvailability('error-slug');
+      const req = httpMock.expectOne('/api/check-slug?slug=error-slug');
+      expect(req.request.method).toBe('GET');
+      req.error(new ProgressEvent('Network error'));
+
+      const result = await promise;
+      expect(result).toBe(false);
+    });
+  });
+
   describe('createRecipe', () => {
     it('should make POST request with generated UUID', async () => {
       service = TestBed.inject(RecipeService);
