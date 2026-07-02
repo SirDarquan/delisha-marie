@@ -520,6 +520,44 @@ describe('Recipes Router API', () => {
     });
   });
 
+  describe('GET /check-slug', () => {
+    it('should return true if slug is taken', async () => {
+      mockLimit.mockResolvedValue({ data: [{ id: 1 }], error: null });
+
+      const res = await request(app).get('/check-slug?slug=taken-slug');
+
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual({ taken: true });
+      expect(mockFrom).toHaveBeenCalledWith('recipes');
+      expect(mockSelect).toHaveBeenCalledWith('id');
+      expect(mockEq).toHaveBeenCalledWith('slug', 'taken-slug');
+    });
+
+    it('should return false if slug is available', async () => {
+      mockLimit.mockResolvedValue({ data: [], error: null });
+
+      const res = await request(app).get('/check-slug?slug=free-slug');
+
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual({ taken: false });
+    });
+
+    it('should handle missing slug parameter', async () => {
+      const res = await request(app).get('/check-slug');
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe('Missing or invalid slug parameter');
+    });
+
+    it('should handle database errors', async () => {
+      mockLimit.mockResolvedValue({ data: null, error: new Error('DB error') });
+
+      const res = await request(app).get('/check-slug?slug=error-slug');
+
+      expect(res.status).toBe(500);
+      expect(res.body.error).toBe('DB error');
+    });
+  });
+
   describe('POST /recipes', () => {
     it('should successfully create a recipe and associate categories, method, holidays, and special diets', async () => {
       const inputRecipe = {
