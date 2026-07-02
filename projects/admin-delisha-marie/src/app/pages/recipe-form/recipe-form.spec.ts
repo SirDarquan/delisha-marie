@@ -121,8 +121,10 @@ describe('RecipeFormComponent', () => {
     updateId = null;
     updatePayload = {};
     navigated = [];
-    routeParams = {};
+    routeParams = { id: '1' };
     dialogResult = true;
+
+    fakeActivatedRoute.snapshot.paramMap.get = (key: string) => routeParams[key] || null;
 
     await TestBed.configureTestingModule({
       imports: [RecipeFormComponent, FormRoot, FormField],
@@ -133,16 +135,35 @@ describe('RecipeFormComponent', () => {
         { provide: MatDialog, useValue: fakeDialog },
       ],
     }).compileComponents();
+  });
+
+  it('should create the component for edit mode', async () => {
+    routeParams['id'] = '1';
+    vi.spyOn(fakeRecipeService, 'fetchRecipeById');
+    fixture = TestBed.createComponent(RecipeFormComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(component).toBeTruthy();
+    expect(fakeRecipeService.fetchRecipeById).toHaveBeenCalledWith('1');
+  });
+
+  it('should catch error when fetchRecipeById fails', async () => {
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    routeParams['id'] = '1';
+    fakeRecipeService.fetchRecipeById = vi.fn().mockRejectedValueOnce(new Error('Network error'));
 
     fixture = TestBed.createComponent(RecipeFormComponent);
     component = fixture.componentInstance;
-  });
-
-  it('should create the component for creation mode', async () => {
-    await fixture.whenStable();
     fixture.detectChanges();
-    expect(component).toBeTruthy();
-    expect(component['isEdit']()).toBe(false);
+    await fixture.whenStable();
+    await new Promise((resolve) => setTimeout(resolve, 10));
+
+    expect(consoleSpy).toHaveBeenCalled();
+    consoleSpy.mockRestore();
+    fakeRecipeService.fetchRecipeById = (id: string | number) =>
+      Promise.resolve(id ? mockRecipeById : null);
   });
 
   it('should verify behavior 1', async () => {
@@ -181,11 +202,11 @@ describe('RecipeFormComponent', () => {
       category: testCategory,
     };
 
+    fixture = TestBed.createComponent(RecipeFormComponent);
+    component = fixture.componentInstance;
     fixture.detectChanges();
     await fixture.whenStable();
-    fixture.detectChanges();
-
-    expect(component['isEdit']()).toBe(true);
+    expect(component).toBeTruthy();
     expect(component['recipeModel']().title).toBe('Mock Pasta');
     expect(component['recipeModel']().method).toBe('Baking');
     expect(component['recipeModel']().theBest).toBe(true);
@@ -203,6 +224,8 @@ describe('RecipeFormComponent', () => {
       holidays: ['Christmas', 'Thanksgiving'],
       specialDiets: ['Gluten-Free', 'Vegan'],
     } as unknown as Recipe;
+    fixture = TestBed.createComponent(RecipeFormComponent);
+    component = fixture.componentInstance;
     component.ngOnInit();
     await fixture.whenStable();
     await fixture.whenStable();
@@ -215,6 +238,8 @@ describe('RecipeFormComponent', () => {
   });
 
   it('should verify behavior 2', async () => {
+    fixture = TestBed.createComponent(RecipeFormComponent);
+    component = fixture.componentInstance;
     fixture.detectChanges();
     component['recipeModel'].set({
       ...getValidPublishedModel(),
@@ -224,8 +249,8 @@ describe('RecipeFormComponent', () => {
 
     await component.saveRequired('published');
 
-    expect(createPayload).toBeTruthy();
-    expect(createPayload.title).toBe('Brand New');
+    expect(updatePayload).toBeTruthy();
+    expect(updatePayload.title).toBe('Brand New');
     expect(navigated).toEqual(['/recipes']);
   });
 
@@ -249,6 +274,8 @@ describe('RecipeFormComponent', () => {
       status: 'draft',
       preview_token: '',
     };
+    fixture = TestBed.createComponent(RecipeFormComponent);
+    component = fixture.componentInstance;
 
     fixture.detectChanges();
 
@@ -266,13 +293,18 @@ describe('RecipeFormComponent', () => {
   });
 
   it('should verify behavior 4', async () => {
+    fixture = TestBed.createComponent(RecipeFormComponent);
+    component = fixture.componentInstance;
     fixture.detectChanges();
     component.onCancel();
     expect(navigated).toEqual(['/recipes']);
   });
 
   it('should verify behavior 5', async () => {
+    fixture = TestBed.createComponent(RecipeFormComponent);
+    component = fixture.componentInstance;
     fixture.detectChanges();
+    await fixture.whenStable();
     // Make form dirty
     component['recipeModel'].set({
       ...component['recipeModel'](),
@@ -285,6 +317,8 @@ describe('RecipeFormComponent', () => {
   });
 
   it('should verify behavior 6', async () => {
+    fixture = TestBed.createComponent(RecipeFormComponent);
+    component = fixture.componentInstance;
     fixture.detectChanges();
     // Make form dirty
     component['recipeModel'].set({
@@ -335,6 +369,8 @@ describe('RecipeFormComponent', () => {
       },
     } as unknown as Recipe;
 
+    fixture = TestBed.createComponent(RecipeFormComponent);
+    component = fixture.componentInstance;
     fixture.detectChanges();
     await fixture.whenStable();
     fixture.detectChanges();
@@ -367,8 +403,9 @@ describe('RecipeFormComponent', () => {
   it('should verify behavior 8', async () => {
     routeParams['id'] = 'notfound';
     mockRecipeById = null;
+    fixture = TestBed.createComponent(RecipeFormComponent);
+    component = fixture.componentInstance;
     fixture.detectChanges();
-    expect(component['isEdit']()).toBe(true);
     expect(component['recipeModel']().title).toBe('');
   });
 
@@ -391,6 +428,8 @@ describe('RecipeFormComponent', () => {
       // Omitted lists purposefully
     } as unknown as Recipe;
 
+    fixture = TestBed.createComponent(RecipeFormComponent);
+    component = fixture.componentInstance;
     fixture.detectChanges();
     expect(component['recipeModel']().ingredients).toBe('');
     expect(component['recipeModel']().instructions).toBe('');
@@ -399,6 +438,8 @@ describe('RecipeFormComponent', () => {
   });
 
   it('should verify behavior 10', async () => {
+    fixture = TestBed.createComponent(RecipeFormComponent);
+    component = fixture.componentInstance;
     fixture.detectChanges();
     component['recipeModel'].set({
       ...component['recipeModel'](),
@@ -413,13 +454,15 @@ describe('RecipeFormComponent', () => {
 
     await component.saveDraft();
 
-    expect(createPayload.ingredients).toEqual(['Item 1', 'Item 2']);
-    expect(createPayload.instructions).toEqual([]);
-    expect(createPayload.holidays).toEqual(['Holiday 1']);
-    expect(createPayload.specialDiets).toEqual(['Diet 1', 'Diet B']);
+    expect(updatePayload.ingredients).toEqual(['Item 1', 'Item 2']);
+    expect(updatePayload.instructions).toEqual([]);
+    expect(updatePayload.holidays).toEqual(['Holiday 1']);
+    expect(updatePayload.specialDiets).toEqual(['Diet 1', 'Diet B']);
   });
 
   it('should verify behavior 11', async () => {
+    fixture = TestBed.createComponent(RecipeFormComponent);
+    component = fixture.componentInstance;
     fixture.detectChanges();
     component['recipeModel'].set({
       ...component['recipeModel'](),
@@ -441,12 +484,16 @@ describe('RecipeFormComponent', () => {
   });
 
   it('should verify behavior 12', async () => {
+    fixture = TestBed.createComponent(RecipeFormComponent);
+    component = fixture.componentInstance;
     fixture.detectChanges();
     // title and slug are empty, form is invalid
     expect(component['recipeForm']().invalid()).toBe(true);
   });
 
   it('should verify behavior 13', async () => {
+    fixture = TestBed.createComponent(RecipeFormComponent);
+    component = fixture.componentInstance;
     fixture.detectChanges();
     expect(component['activeTab']()).toBe('what');
 
@@ -458,6 +505,8 @@ describe('RecipeFormComponent', () => {
   });
 
   it('should verify behavior 14', async () => {
+    fixture = TestBed.createComponent(RecipeFormComponent);
+    component = fixture.componentInstance;
     fixture.detectChanges();
 
     const testCategory: CategoryTrails = {
@@ -477,6 +526,8 @@ describe('RecipeFormComponent', () => {
   });
 
   it('should verify behavior 15', async () => {
+    fixture = TestBed.createComponent(RecipeFormComponent);
+    component = fixture.componentInstance;
     fixture.detectChanges();
     component['recipeModel'].set({
       ...component['recipeModel'](),
@@ -488,13 +539,15 @@ describe('RecipeFormComponent', () => {
 
     await component.saveDraft();
 
-    expect(createPayload).toBeTruthy();
-    expect(createPayload.status).toBe('draft');
-    expect(createPayload.createdAt).toBeUndefined();
-    expect(createPayload.updatedAt).toBeUndefined();
+    expect(updatePayload).toBeTruthy();
+    expect(updatePayload.status).toBe('draft');
+    expect(updatePayload.createdAt).toBeUndefined();
+    expect(updatePayload.updatedAt).toBeUndefined();
   });
 
   it('should verify behavior 16', async () => {
+    fixture = TestBed.createComponent(RecipeFormComponent);
+    component = fixture.componentInstance;
     fixture.detectChanges();
     component['recipeModel'].set({
       ...getValidPublishedModel(),
@@ -505,11 +558,11 @@ describe('RecipeFormComponent', () => {
 
     await component.saveRequired('scheduled');
 
-    expect(createPayload).toBeTruthy();
-    expect(createPayload.status).toBe('scheduled');
-    expect(createPayload.createdAt).toBeDefined();
-    expect(createPayload.updatedAt).toBeDefined();
-    expect(createPayload.createdAt).toBe(createPayload.updatedAt);
+    expect(updatePayload).toBeTruthy();
+    expect(updatePayload.status).toBe('scheduled');
+    expect(updatePayload.createdAt).toBeDefined();
+    expect(updatePayload.updatedAt).toBeDefined();
+    expect(updatePayload.createdAt).toBe(updatePayload.updatedAt);
   });
 
   it('should verify behavior 17', async () => {
@@ -525,6 +578,8 @@ describe('RecipeFormComponent', () => {
       updatedAt: originalUpdated,
     } as unknown as Recipe;
 
+    fixture = TestBed.createComponent(RecipeFormComponent);
+    component = fixture.componentInstance;
     fixture.detectChanges();
     await fixture.whenStable();
     fixture.detectChanges();
@@ -546,7 +601,9 @@ describe('RecipeFormComponent', () => {
   });
 
   it('should verify behavior 18', async () => {
-    // 1. Draft Track (isEdit=false, status=draft)
+    fixture = TestBed.createComponent(RecipeFormComponent);
+    component = fixture.componentInstance;
+    // 1. Draft Track (status=draft)
     fixture.detectChanges();
     let buttons = fixture.nativeElement.querySelectorAll('button');
     const btnArray1 = Array.from(buttons) as HTMLButtonElement[];
@@ -556,8 +613,7 @@ describe('RecipeFormComponent', () => {
     expect(saveAsDraftBtn).toBeTruthy();
     expect(scheduleBtn).toBeTruthy();
 
-    // 2. PrePublished Track (isEdit=true, status=scheduled)
-    component['isEdit'].set(true);
+    // 2. PrePublished Track (status=scheduled)
     component['recipeModel'].set({
       ...component['recipeModel'](),
       status: 'scheduled',
@@ -571,11 +627,8 @@ describe('RecipeFormComponent', () => {
     expect(revertBtn).toBeTruthy();
     expect(updateScheduleBtn).toBeTruthy();
 
-    // 3. Published Track (isEdit=true, status=published)
-    component['recipeModel'].set({
-      ...component['recipeModel'](),
-      status: 'published',
-    });
+    // 3. Published Track (status=published)
+    component['recipeModel'].set({ ...component['recipeModel'](), status: 'published' });
     fixture.detectChanges();
     buttons = fixture.nativeElement.querySelectorAll('button');
     const btnArray3 = Array.from(buttons) as HTMLButtonElement[];
@@ -591,6 +644,8 @@ describe('RecipeFormComponent', () => {
   });
 
   it('should verify behavior 19', async () => {
+    fixture = TestBed.createComponent(RecipeFormComponent);
+    component = fixture.componentInstance;
     fixture.detectChanges();
 
     const testCategory: CategoryTrails = {
@@ -614,11 +669,13 @@ describe('RecipeFormComponent', () => {
 
     await component.saveRequired('published');
 
-    expect(createPayload.category).toEqual(testCategory);
-    expect(createPayload.breadcrumbs).toBeNull();
+    expect(updatePayload.category).toEqual(testCategory);
+    expect(updatePayload.breadcrumbs).toBeNull();
   }, 15000);
 
   it('should verify behavior 20', async () => {
+    fixture = TestBed.createComponent(RecipeFormComponent);
+    component = fixture.componentInstance;
     fixture.detectChanges();
 
     const testCategory: CategoryTrails = {
@@ -643,8 +700,8 @@ describe('RecipeFormComponent', () => {
 
     await component.saveRequired('published');
 
-    expect(createPayload.category).toBeDefined();
-    const resultCategory = createPayload.category as CategoryTrails;
+    expect(updatePayload.category).toBeDefined();
+    const resultCategory = updatePayload.category as CategoryTrails;
     expect(resultCategory.trails.length).toBe(2);
     // Standard trail remains unchanged
     expect(resultCategory.trails[0]).toEqual(testCategory.trails[0]);
@@ -658,6 +715,8 @@ describe('RecipeFormComponent', () => {
   });
 
   it('should verify behavior 21', async () => {
+    fixture = TestBed.createComponent(RecipeFormComponent);
+    component = fixture.componentInstance;
     fixture.detectChanges();
 
     const initialCategory: CategoryTrails = {
@@ -687,8 +746,8 @@ describe('RecipeFormComponent', () => {
 
     await component.saveRequired('published');
 
-    expect(createPayload.category).toBeDefined();
-    const resultCategory = createPayload.category as CategoryTrails;
+    expect(updatePayload.category).toBeDefined();
+    const resultCategory = updatePayload.category as CategoryTrails;
     // The Best trail should be filtered out, leaving only the standard trail
     expect(resultCategory.trails.length).toBe(1);
     expect(resultCategory.trails[0]).toEqual(initialCategory.trails[0]);
@@ -714,6 +773,8 @@ describe('RecipeFormComponent', () => {
       status: 'draft',
       preview_token: '',
     };
+    fixture = TestBed.createComponent(RecipeFormComponent);
+    component = fixture.componentInstance;
     fixture.detectChanges();
     navigated = [];
 
@@ -723,22 +784,20 @@ describe('RecipeFormComponent', () => {
     expect(navigated).toEqual([]);
   });
 
-  it('should save draft and navigate to edit mode for new recipe', async () => {
-    component.ngOnInit();
-    await fixture.whenStable();
-    await fixture.whenStable();
+  it('should update draft and stay on edit mode', async () => {
+    fixture = TestBed.createComponent(RecipeFormComponent);
+    component = fixture.componentInstance;
     fixture.detectChanges();
-
-    vi.spyOn(
-      component as unknown as { getFieldValue: (field: string) => unknown },
-      'getFieldValue',
-    ).mockReturnValue('test');
-    await await component.saveDraft();
-
-    expect(navigated).toEqual(['/recipes/edit', 1]);
+    await fixture.whenStable();
+    const spy = vi.spyOn(fakeRecipeService, 'updateRecipe');
+    // Attempt save
+    await component.saveDraft();
+    expect(spy).toHaveBeenCalled();
   });
 
   it('should manage isDraftDisabled state correctly: initially true, false on change, true after saveDraft', async () => {
+    fixture = TestBed.createComponent(RecipeFormComponent);
+    component = fixture.componentInstance;
     fixture.detectChanges();
     // Wait for initialization macro-task (setTimeout)
     await new Promise((resolve) => setTimeout(resolve, 0));
@@ -758,6 +817,8 @@ describe('RecipeFormComponent', () => {
   });
 
   it('should manage Schedule Publication disabled state: disabled by default, disabled if modified but invalid, enabled if modified and valid, disabled after save', async () => {
+    fixture = TestBed.createComponent(RecipeFormComponent);
+    component = fixture.componentInstance;
     component['recipeModel'].set({
       ...getValidPublishedModel(),
       title: '',
@@ -790,7 +851,10 @@ describe('RecipeFormComponent', () => {
   });
 
   it('should verify behavior 23', async () => {
+    fixture = TestBed.createComponent(RecipeFormComponent);
+    component = fixture.componentInstance;
     fixture.detectChanges();
+    await fixture.whenStable();
     component['isInitialized'] = true;
     expect(component['isDirty']()).toBe(false);
 
@@ -806,6 +870,8 @@ describe('RecipeFormComponent', () => {
   });
 
   it('should verify behavior 24', async () => {
+    fixture = TestBed.createComponent(RecipeFormComponent);
+    component = fixture.componentInstance;
     fixture.detectChanges();
     component['activeTab'].set('where');
     fixture.detectChanges();
@@ -815,6 +881,8 @@ describe('RecipeFormComponent', () => {
   });
 
   it('should invoke saveRequired through the signal form submit action callback', async () => {
+    fixture = TestBed.createComponent(RecipeFormComponent);
+    component = fixture.componentInstance;
     fixture.detectChanges();
     component['recipeModel'].set({
       ...getValidPublishedModel(),
@@ -838,11 +906,13 @@ describe('RecipeFormComponent', () => {
     const { submit } = await import('@angular/forms/signals');
     await submit(component['recipeForm']);
 
-    expect(createPayload.title).toBe('Action Submit');
-    expect(createPayload.status).toBe('published');
+    expect(updatePayload.title).toBe('Action Submit');
+    expect(updatePayload.status).toBe('published');
   });
 
   it('should verify behavior 25', async () => {
+    fixture = TestBed.createComponent(RecipeFormComponent);
+    component = fixture.componentInstance;
     fixture.detectChanges();
     component['recipeModel'].set({
       ...component['recipeModel'](),
@@ -854,48 +924,40 @@ describe('RecipeFormComponent', () => {
 
     await component.saveDraft();
 
-    expect(createPayload.nutrition).toBeDefined();
-    expect(createPayload.nutrition?.calories).toBe('200 kcal');
-    expect(createPayload.nutrition?.servingSize).toBe('');
-    expect(createPayload.nutrition?.fat).toBe('');
-    expect(createPayload.nutrition?.carbohydrates).toBe('');
-    expect(createPayload.nutrition?.protein).toBe('');
-    expect(createPayload.nutrition?.fiber).toBe('');
-    expect(createPayload.nutrition?.sugar).toBe('');
-    expect(createPayload.nutrition?.sodium).toBe('');
-    expect(createPayload.nutrition?.cholesterol).toBe('');
-    expect(createPayload.nutrition?.saturatedFat).toBe('');
+    expect(updatePayload.nutrition).toBeDefined();
+    expect(updatePayload.nutrition?.calories).toBe('200 kcal');
+    expect(updatePayload.nutrition?.servingSize).toBe('');
+    expect(updatePayload.nutrition?.fat).toBe('');
+    expect(updatePayload.nutrition?.carbohydrates).toBe('');
+    expect(updatePayload.nutrition?.protein).toBe('');
+    expect(updatePayload.nutrition?.fiber).toBe('');
+    expect(updatePayload.nutrition?.sugar).toBe('');
+    expect(updatePayload.nutrition?.sodium).toBe('');
+    expect(updatePayload.nutrition?.cholesterol).toBe('');
+    expect(updatePayload.nutrition?.saturatedFat).toBe('');
   });
 
   it('should verify behavior 26', async () => {
+    fixture = TestBed.createComponent(RecipeFormComponent);
+    component = fixture.componentInstance;
     fixture.detectChanges();
     expect(component['recipeForm']().invalid()).toBe(true);
 
-    createPayload = {};
+    updatePayload = {};
     await component.saveRequired('published');
 
-    expect(createPayload).toBeTruthy();
+    expect(updatePayload).toBeTruthy();
   });
 
   it('should create published recipe successfully', async () => {
+    fixture = TestBed.createComponent(RecipeFormComponent);
+    component = fixture.componentInstance;
     component.ngOnInit();
     await fixture.whenStable();
     await fixture.whenStable();
     fixture.detectChanges();
 
     // Mock form valid
-    Object.defineProperty(
-      (component as unknown as { recipeForm: () => { invalid: boolean } })['recipeForm'](),
-      'invalid',
-      {
-        get: () => false,
-        configurable: true,
-      },
-    );
-    vi.spyOn(
-      component as unknown as { getFieldValue: (field: string) => unknown },
-      'getFieldValue',
-    ).mockReturnValue('test');
     Object.defineProperty(
       (component as unknown as { recipeForm: () => { invalid: boolean } })['recipeForm'](),
       'invalid',
@@ -907,12 +969,14 @@ describe('RecipeFormComponent', () => {
 
     await component.saveRequired('published');
 
-    expect(createPayload).toBeTruthy();
+    expect(updatePayload).toBeTruthy();
   });
 
   it('should load recipe data into form when in edit mode', async () => {
     routeParams['id'] = '1';
     mockRecipeById = { id: 1 } as unknown as Recipe;
+    fixture = TestBed.createComponent(RecipeFormComponent);
+    component = fixture.componentInstance;
     component.ngOnInit();
     await fixture.whenStable();
     await fixture.whenStable();
@@ -930,6 +994,8 @@ describe('RecipeFormComponent', () => {
   });
 
   it('should verify behavior 27', async () => {
+    fixture = TestBed.createComponent(RecipeFormComponent);
+    component = fixture.componentInstance;
     // 1. Where tab template events
     fixture.detectChanges();
     component['activeTab'].set('where');
@@ -994,7 +1060,7 @@ describe('RecipeFormComponent', () => {
     }
 
     // 3. Click revert / update schedule buttons in scheduled state
-    component['isEdit'].set(true);
+
     component['recipeModel'].set({
       ...component['recipeModel'](),
       title: 'Scheduled',
@@ -1040,7 +1106,10 @@ describe('RecipeFormComponent', () => {
   });
 
   it('should verify behavior 28', async () => {
+    fixture = TestBed.createComponent(RecipeFormComponent);
+    component = fixture.componentInstance;
     fixture.detectChanges();
+    await fixture.whenStable();
     component['isInitialized'] = true;
     expect(component['isDirty']()).toBe(false);
 
@@ -1059,6 +1128,8 @@ describe('RecipeFormComponent', () => {
   });
 
   it('should verify behavior 29', async () => {
+    fixture = TestBed.createComponent(RecipeFormComponent);
+    component = fixture.componentInstance;
     component['recipeModel'].set({
       ...component['recipeModel'](),
       status: 'published',
@@ -1069,6 +1140,8 @@ describe('RecipeFormComponent', () => {
   });
 
   it('should verify behavior 30', async () => {
+    fixture = TestBed.createComponent(RecipeFormComponent);
+    component = fixture.componentInstance;
     fixture.detectChanges();
     const fallbackModel = {
       ...component['recipeModel'](),
@@ -1099,6 +1172,8 @@ describe('RecipeFormComponent', () => {
       updatedAt: undefined as unknown as string,
     } as unknown as Recipe;
 
+    fixture = TestBed.createComponent(RecipeFormComponent);
+    component = fixture.componentInstance;
     fixture.detectChanges();
 
     component['recipeModel'].set({
@@ -1113,6 +1188,8 @@ describe('RecipeFormComponent', () => {
   });
 
   it('should verify behavior 32', async () => {
+    fixture = TestBed.createComponent(RecipeFormComponent);
+    component = fixture.componentInstance;
     fixture.detectChanges();
 
     const testCategory: CategoryTrails = {
@@ -1135,10 +1212,12 @@ describe('RecipeFormComponent', () => {
     });
 
     await component.saveRequired('published');
-    expect((createPayload.category as CategoryTrails)?.trails[1]).toBeDefined();
+    expect((updatePayload.category as CategoryTrails)?.trails[1]).toBeDefined();
   });
 
   it('should verify behavior 33', async () => {
+    fixture = TestBed.createComponent(RecipeFormComponent);
+    component = fixture.componentInstance;
     // Intercept Object.defineProperty to modify recipeModel status during constructor property initialization
     const originalDefineProperty = Object.defineProperty;
 
@@ -1186,6 +1265,8 @@ describe('RecipeFormComponent', () => {
   });
 
   it('should trigger onImageUploaded via template imageChange binding (line 291)', async () => {
+    fixture = TestBed.createComponent(RecipeFormComponent);
+    component = fixture.componentInstance;
     fixture.detectChanges();
     await new Promise((resolve) => setTimeout(resolve, 0)); // wait for isInitialized to be true
     const uploaderEl = fixture.debugElement.query(By.css('app-image-uploader'));
@@ -1200,6 +1281,8 @@ describe('RecipeFormComponent', () => {
   });
 
   it('should verify behavior 34', async () => {
+    fixture = TestBed.createComponent(RecipeFormComponent);
+    component = fixture.componentInstance;
     fixture.detectChanges();
     component['recipeModel'].set({
       ...component['recipeModel'](),
@@ -1209,17 +1292,13 @@ describe('RecipeFormComponent', () => {
       status: 'draft',
     });
 
-    // Mock createRecipe to return an object without ID
-    const spy = vi
-      .spyOn(fakeRecipeService, 'createRecipe')
-      .mockReturnValue(Promise.resolve({} as unknown as Recipe));
-
     await component.saveDraft();
     expect(navigated).toEqual([]);
-    spy.mockRestore(); // Restore the original implementation!
   });
 
   it('should verify behavior 35', async () => {
+    fixture = TestBed.createComponent(RecipeFormComponent);
+    component = fixture.componentInstance;
     fixture.detectChanges();
     component['recipeModel'].set({
       ...component['recipeModel'](),
@@ -1229,11 +1308,13 @@ describe('RecipeFormComponent', () => {
 
     // Call saveRequired with 'draft' as any to bypass scheduled/published blocks
     await component.saveRequired('draft' as unknown as 'published');
-    expect(createPayload.createdAt).toBeUndefined();
-    expect(createPayload.updatedAt).toBeUndefined();
+    expect(updatePayload.createdAt).toBeUndefined();
+    expect(updatePayload.updatedAt).toBeUndefined();
   });
 
   it('should verify behavior 36', async () => {
+    fixture = TestBed.createComponent(RecipeFormComponent);
+    component = fixture.componentInstance;
     fixture.detectChanges();
     const originalPush = Array.prototype.push;
 
@@ -1258,6 +1339,8 @@ describe('RecipeFormComponent', () => {
   });
 
   it('should verify behavior 37', async () => {
+    fixture = TestBed.createComponent(RecipeFormComponent);
+    component = fixture.componentInstance;
     fixture.detectChanges();
     const originalPush = Array.prototype.push;
 
@@ -1282,6 +1365,8 @@ describe('RecipeFormComponent', () => {
   });
 
   it('should enable Save as Draft when typing in any field, and disable it when cleared/reverted to initial value', async () => {
+    fixture = TestBed.createComponent(RecipeFormComponent);
+    component = fixture.componentInstance;
     fixture.detectChanges();
     await new Promise((resolve) => setTimeout(resolve, 0));
 
@@ -1315,6 +1400,8 @@ describe('RecipeFormComponent', () => {
   });
 
   it('should enable Save as Draft when modifying the title field, and disable it when reverted to initial value', async () => {
+    fixture = TestBed.createComponent(RecipeFormComponent);
+    component = fixture.componentInstance;
     fixture.detectChanges();
     await new Promise((resolve) => setTimeout(resolve, 0));
 
@@ -1345,5 +1432,33 @@ describe('RecipeFormComponent', () => {
 
     // Now it is back to clean initial state, so Save as Draft is disabled again
     expect(component['isDraftDisabled']()).toBe(true);
+  });
+
+  it('should publish a draft recipe and set both dates to currentTime', async () => {
+    routeParams['id'] = '1';
+    mockRecipeById = {
+      id: 1,
+      title: 'Draft Recipe',
+      slug: 'draft-recipe',
+      status: 'draft',
+    } as unknown as Recipe;
+
+    fixture = TestBed.createComponent(RecipeFormComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    component['recipeModel'].update((m) => ({
+      ...m,
+      ...getValidPublishedModel(),
+    }));
+
+    await component.saveRequired('published');
+
+    expect(updatePayload).toBeTruthy();
+    expect(updatePayload.status).toBe('published');
+    expect(updatePayload.createdAt).toBeDefined();
+    expect(updatePayload.updatedAt).toBeDefined();
+    expect(updatePayload.createdAt).toBe(updatePayload.updatedAt);
   });
 });

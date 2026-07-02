@@ -89,9 +89,7 @@ interface RecipeFormModel {
     <div class="p-4 md:p-8">
       <div class="mb-6 max-w-4xl mx-auto flex justify-between items-center">
         <div>
-          <h1 class="text-2xl font-bold text-white tracking-tight">
-            {{ isEdit() ? 'Edit Recipe' : 'New Recipe' }}
-          </h1>
+          <h1 class="text-2xl font-bold text-white tracking-tight">Edit Recipe</h1>
           <p class="text-slate-400 text-xs font-medium mt-1">
             Fill in the fields below to publish a recipe
           </p>
@@ -565,8 +563,8 @@ interface RecipeFormModel {
               Cancel
             </button>
 
-            <!-- State 1: Creating a new recipe or current status is 'draft' -->
-            @if (!isEdit() || currentStatus() === 'draft') {
+            <!-- State 1: Current status is 'draft' -->
+            @if (currentStatus() === 'draft') {
               <button
                 mat-stroked-button
                 type="button"
@@ -586,7 +584,7 @@ interface RecipeFormModel {
             }
 
             <!-- State 2: Recipe is 'scheduled' (PrePublished) -->
-            @if (isEdit() && currentStatus() === 'scheduled') {
+            @if (currentStatus() === 'scheduled') {
               <button
                 mat-stroked-button
                 type="button"
@@ -606,7 +604,7 @@ interface RecipeFormModel {
             }
 
             <!-- State 3: Recipe is 'published' or 'updated' -->
-            @if (isEdit() && (currentStatus() === 'published' || currentStatus() === 'updated')) {
+            @if (currentStatus() === 'published' || currentStatus() === 'updated') {
               <button
                 mat-stroked-button
                 type="button"
@@ -663,7 +661,6 @@ export class RecipeFormComponent implements OnInit {
   protected readonly originalRecipe = signal<Recipe | null>(null);
   private readonly dialog = inject(MatDialog);
 
-  protected readonly isEdit = signal<boolean>(false);
   private readonly idToEdit = signal<string | number | null>(null);
 
   // active view state toggling
@@ -876,7 +873,6 @@ export class RecipeFormComponent implements OnInit {
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
-      this.isEdit.set(true);
       this.idToEdit.set(id);
       this.recipeService
         .fetchRecipeById(id)
@@ -1153,18 +1149,19 @@ export class RecipeFormComponent implements OnInit {
     };
 
     const id = this.idToEdit();
-    if (this.isEdit()) {
+    try {
+      this.recipeModel.update((model) => ({
+        ...model,
+        status: 'draft',
+      }));
+
       if (id) {
         await this.recipeService.updateRecipe(id, payload);
       }
-    } else {
-      const created = await this.recipeService.createRecipe(payload);
-      if (created?.id) {
-        this.router.navigate(['/recipes/edit', created.id]);
-      }
+    } catch (e) {
+      console.error(e);
     }
     this.initialModel.set(this.getCurrentFormValue());
-    this.recipeModel().status = 'draft';
   }
 
   async saveRequired(status: 'scheduled' | 'published'): Promise<void> {
@@ -1201,17 +1198,12 @@ export class RecipeFormComponent implements OnInit {
       updatedAt: updatedAt || undefined,
     };
 
-    if (this.isEdit()) {
-      if (id) {
-        await this.recipeService.updateRecipe(id, payload);
-      }
-    } else {
-      await this.recipeService.createRecipe(payload);
+    if (id) {
+      await this.recipeService.updateRecipe(id, payload);
     }
 
     this.initialModel.set(this.getCurrentFormValue());
     this.router.navigate(['/recipes']);
-    this.isEdit.set(false);
   }
 
   private getBestTrail(standardTrail: BaseTrail[]): BaseTrail[] {

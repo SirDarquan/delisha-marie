@@ -19,6 +19,7 @@ import { RouterLink } from '@angular/router';
 import { Stars } from '@dm/library';
 import { debounceTime, skip } from 'rxjs/operators';
 import { ConfirmDialogComponent } from '../../components/confirm-dialog/confirm-dialog';
+import { CreateRecipeDialogComponent } from '../../components/create-recipe-dialog/create-recipe-dialog';
 import { Recipe } from '../../models/recipe.model';
 import { RecipeService } from '../../services/recipe.service';
 
@@ -47,11 +48,12 @@ import { RecipeService } from '../../services/recipe.service';
               (input)="onSearchChange($event)"
               class="w-full bg-slate-800/40 border border-slate-700/60 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-400/20 text-white placeholder-slate-500 transition" />
           </div>
-          <a
-            routerLink="/recipes/create"
+          <button
+            type="button"
+            (click)="onCreateRecipe()"
             class="px-5 py-2.5 rounded-xl font-bold text-white bg-gradient-to-r from-purple-500 to-pink-500 hover:brightness-110 transition shadow-lg cursor-pointer">
             + New Recipe
-          </a>
+          </button>
         </div>
 
         <div class="border border-slate-800/60 rounded-xl overflow-hidden">
@@ -308,6 +310,13 @@ export class RecipesListComponent implements OnInit, AfterViewInit, OnDestroy {
   onSearchChange(event: Event): void {
     const value = (event.target as HTMLInputElement).value;
     this.searchTerm.set(value);
+  }
+
+  onCreateRecipe(): void {
+    this.dialog.open(CreateRecipeDialogComponent, {
+      width: '600px',
+      minHeight: '350px',
+    });
   }
 
   onDelete(id: string | number): void {
