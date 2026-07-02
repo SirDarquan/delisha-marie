@@ -401,5 +401,28 @@ describe('CategoryBoardComponent', () => {
       component.updateCustomUrl(event);
       expect(component.customUrl()).toBe('');
     });
+    it('should add a new trail when addNewTrail is called', () => {
+      const initialTrailsLength = component.boardPiecesList().length;
+      component.addNewTrail();
+      expect(component.boardPiecesList().length).toBe(initialTrailsLength + 1);
+      expect(component.activeTrailIndex()).toBe(initialTrailsLength); // Should switch to new trail
+    });
+
+    it('should delete a trail and adjust active trail index', () => {
+      // Add a couple trails
+      component.addNewTrail();
+      component.addNewTrail();
+      const len = component.boardPiecesList().length;
+
+      // Switch to the last one
+      component.switchTrail(len - 1);
+
+      // Delete a previous one
+      component.deleteTrail(1, new Event('click'));
+
+      expect(component.boardPiecesList().length).toBe(len - 1);
+      // Active index should shift down
+      expect(component.activeTrailIndex()).toBe(len - 2);
+    });
   });
 });

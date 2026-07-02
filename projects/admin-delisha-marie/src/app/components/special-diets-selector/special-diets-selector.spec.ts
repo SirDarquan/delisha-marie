@@ -190,4 +190,29 @@ describe('SpecialDietsSelectorComponent', () => {
     expect(compiled).toContain('Keto');
     expect(compiled).toContain('Vegan');
   });
+
+  it('should ignore empty string diets when compiling', () => {
+    mockSpecialDietsSignal.set([{ id: '99', name: '   ' }]);
+    fixture.componentRef.setInput('value', ['   ', 'Valid Diet']);
+    fixture.detectChanges();
+
+    component.localCustomDiets.set(['   ']);
+    const compiled = component.compiledDiets();
+    expect(compiled).toContain('Valid Diet');
+    expect(compiled).not.toContain('');
+    expect(compiled).not.toContain('   ');
+  });
+
+  it('should not add custom diet if it already exists in local list or selected', async () => {
+    component.localCustomDiets.set(['Keto']);
+    fixture.componentRef.setInput('value', ['Keto']);
+    fixture.detectChanges();
+
+    component.customDietText.set('Keto');
+    component.addCustomDiet();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(component.localCustomDiets()).toEqual(['Keto']); // Should not duplicate
+    expect(component.selectedDiets()).toEqual(['Keto']); // Should not duplicate
+  });
 });
