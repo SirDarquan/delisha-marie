@@ -74,7 +74,7 @@ describe('RecipesListComponent', () => {
         totalTime: '',
         yield: '',
         author: 'Delisha Marie',
-        status: 'published',
+        status: undefined as unknown as 'published' | 'draft' | 'scheduled',
       },
     ];
 
@@ -328,5 +328,34 @@ describe('RecipesListComponent', () => {
     component.onDelete(2);
     await fixture.whenStable();
     expect(deletedId).toBeNull();
+  });
+  it('should restore scroll state in ngAfterViewInit', async () => {
+    vi.spyOn(fakeRecipeService, 'getLastActiveRecipeId').mockReturnValueOnce(1);
+    const mockVp = {
+      scrollToIndex: vi.fn(),
+      scrollToOffset: vi.fn(),
+      measureScrollOffset: vi.fn().mockReturnValue(100),
+      getRenderedRange: vi.fn().mockReturnValue({ start: 0, end: 10 }),
+    };
+    Object.defineProperty(component, 'viewport', { get: () => () => mockVp });
+    
+    // Ensure the signal has the data so findIndex() works synchronously
+    component['recipes'].set([{ id: 1 } as any]);
+    
+    component.ngAfterViewInit();
+    await new Promise(r => setTimeout(r, 60)); // flush setTimeout
+    
+    expect(mockVp.scrollToIndex).toHaveBeenCalledWith(0, 'smooth');
+  });
+
+  it('should save scroll state in ngOnDestroy', () => {
+    const mockVp = {
+      measureScrollOffset: vi.fn().mockReturnValue(250),
+    };
+    Object.defineProperty(component, 'viewport', { get: () => () => mockVp });
+    
+    component.ngOnDestroy();
+    
+    expect(fakeRecipeService.setLastScrollOffset).toHaveBeenCalledWith(250);
   });
 });

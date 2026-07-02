@@ -87,6 +87,33 @@ describe('CategoryBoardComponent', () => {
     fixture.detectChanges();
   });
 
+  describe('Trail extraction logic', () => {
+    it('should handle edge cases in trails array', () => {
+      // Trigger the extractBreadcrumbsToMap directly or implicitly via recipes signal
+      const badTrailRecipe = {
+        id: 3,
+        title: 'Recipe 3',
+        slug: 'recipe-3',
+        category: {
+          trails: [
+            [{ name: 'Home', url: '/' }], // length < 2
+            [{ name: 'Home', url: '/' }, { name: 'Recipes', url: '/recipes' }, {}], // no name/url
+            [{ name: 'Home', url: '/' }, { name: 'Recipes', url: '/recipes' }, { name: 'Bad', url: '/other/bad' }], // wrong url prefix
+            [{ name: 'Home', url: '/' }, { name: 'Recipes', url: '/recipes' }, { name: 'Dinner', url: '/recipes/dinner' }, {}], // no subname/suburl
+            [{ name: 'Home', url: '/' }, { name: 'Recipes', url: '/recipes' }, { name: 'Dinner', url: '/recipes/dinner' }, { name: 'Chicken', url: '/recipe/chicken' }], // wrong sub prefix
+          ],
+        },
+      } as unknown as Recipe;
+
+      // Mocking recipesResource value directly since it's used in the computed signal
+      Object.defineProperty(component, 'recipesResource', { get: () => ({ value: () => [badTrailRecipe] }) });
+      fixture.detectChanges();
+      
+      const res = component.categories();
+      expect(res.length).toBe(2); // The 2 valid trails (Dinner) should be added
+    });
+  });
+
   describe('Fallback behaviors without category map', () => {
     beforeEach(async () => {
       mockRecipesData = [];

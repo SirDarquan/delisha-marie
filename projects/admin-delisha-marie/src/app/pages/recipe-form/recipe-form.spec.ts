@@ -64,7 +64,6 @@ describe('RecipeFormComponent', () => {
 
   let mockRecipeById: Recipe | null = null;
 
-  let createPayload: Partial<Recipe> = {};
   let updateId: string | number | null = null;
 
   let updatePayload: Partial<Recipe> = {};
@@ -82,7 +81,6 @@ describe('RecipeFormComponent', () => {
     },
 
     createRecipe: (payload: Partial<Recipe>) => {
-      createPayload = payload;
       return Promise.resolve({ id: 1, ...payload } as unknown as Recipe);
     },
 
@@ -117,7 +115,6 @@ describe('RecipeFormComponent', () => {
 
   beforeEach(async () => {
     mockRecipeById = null;
-    createPayload = {};
     updateId = null;
     updatePayload = {};
     navigated = [];
@@ -150,7 +147,7 @@ describe('RecipeFormComponent', () => {
   });
 
   it('should catch error when fetchRecipeById fails', async () => {
-    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     routeParams['id'] = '1';
     fakeRecipeService.fetchRecipeById = vi.fn().mockRejectedValueOnce(new Error('Network error'));
 
