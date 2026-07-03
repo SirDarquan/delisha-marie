@@ -129,10 +129,7 @@ describe('RecipesListComponent', () => {
 
   it('should open create recipe dialog on create', () => {
     component.onCreateRecipe();
-    expect(mockMatDialog.open).toHaveBeenCalledWith(CreateRecipeDialogComponent, {
-      width: '600px',
-      minHeight: '350px',
-    });
+    expect(mockMatDialog.open).toHaveBeenCalledWith(CreateRecipeDialogComponent);
   });
 
   it('should render no results message when search returns empty', async () => {
@@ -309,10 +306,7 @@ describe('RecipesListComponent', () => {
 
   it('should open CreateRecipeDialogComponent when onCreateRecipe is called', () => {
     component.onCreateRecipe();
-    expect(mockMatDialog.open).toHaveBeenCalledWith(CreateRecipeDialogComponent, {
-      width: '600px',
-      minHeight: '350px',
-    });
+    expect(mockMatDialog.open).toHaveBeenCalledWith(CreateRecipeDialogComponent);
   });
 
   it('should call deleteRecipe when ConfirmDialog is accepted', async () => {
@@ -338,13 +332,13 @@ describe('RecipesListComponent', () => {
       getRenderedRange: vi.fn().mockReturnValue({ start: 0, end: 10 }),
     };
     Object.defineProperty(component, 'viewport', { get: () => () => mockVp });
-    
+
     // Ensure the signal has the data so findIndex() works synchronously
-    component['recipes'].set([{ id: 1 } as any]);
-    
+    component['recipes'].set([{ id: 1 } as unknown as Recipe]);
+
     component.ngAfterViewInit();
-    await new Promise(r => setTimeout(r, 60)); // flush setTimeout
-    
+    await new Promise((r) => setTimeout(r, 60)); // flush setTimeout
+
     expect(mockVp.scrollToIndex).toHaveBeenCalledWith(0, 'smooth');
   });
 
@@ -353,9 +347,9 @@ describe('RecipesListComponent', () => {
       measureScrollOffset: vi.fn().mockReturnValue(250),
     };
     Object.defineProperty(component, 'viewport', { get: () => () => mockVp });
-    
+
     component.ngOnDestroy();
-    
+
     expect(fakeRecipeService.setLastScrollOffset).toHaveBeenCalledWith(250);
   });
 });

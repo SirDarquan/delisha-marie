@@ -298,6 +298,32 @@ recipesRouter.get('/check-slug', async (req: AuthRequest, res: Response) => {
   }
 });
 
+recipesRouter.get('/recipes/:id', async (req: AuthRequest, res: Response) => {
+  try {
+    const client = backendService.getClient(req.token);
+    const { id } = req.params;
+
+    const { data, error } = await client
+      .from('recipes')
+      .select('*, recipe_holidays (holidays (name)), recipe_special_diets (special_diets (name))')
+      .eq('id', id)
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST116') {
+        return res.status(404).json({ error: 'Recipe not found' });
+      }
+      throw error;
+    }
+
+    const formatted = formatRecipeList([data], {});
+    return res.json(formatted[0]);
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    return res.status(500).json({ error: msg });
+  }
+});
+
 recipesRouter.post('/recipes', async (req: AuthRequest, res: Response) => {
   try {
     const client = backendService.getClient(req.token);

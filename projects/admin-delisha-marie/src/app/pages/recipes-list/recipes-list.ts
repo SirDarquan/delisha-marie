@@ -313,10 +313,15 @@ export class RecipesListComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   onCreateRecipe(): void {
-    this.dialog.open(CreateRecipeDialogComponent, {
-      width: '600px',
-      minHeight: '350px',
-    });
+    this.dialog
+      .open(CreateRecipeDialogComponent)
+      .afterClosed()
+      .subscribe((newRecipe) => {
+        if (newRecipe) {
+          this.recipes.update((list) => [newRecipe, ...list]);
+          this.recipeService.setCachedRecipesList(this.recipes());
+        }
+      });
   }
 
   onDelete(id: string | number): void {

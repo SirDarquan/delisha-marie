@@ -558,6 +558,52 @@ describe('Recipes Router API', () => {
     });
   });
 
+  describe('GET /recipes/:id', () => {
+    it('should return a specific recipe', async () => {
+      const mockRecipe = {
+        id: '123',
+        title: 'Test Recipe',
+        status: 'published',
+        recipe_holidays: [{ holidays: { name: 'Christmas' } }],
+        recipe_special_diets: [{ special_diets: { name: 'Vegan' } }],
+      };
+
+      mockSingle.mockResolvedValue({ data: mockRecipe, error: null });
+
+      const res = await request(app).get('/recipes/123').set('Authorization', 'Bearer valid-token');
+
+      expect(res.status).toBe(200);
+      expect(res.body).toMatchObject({
+        id: '123',
+        title: 'Test Recipe',
+        status: 'published',
+        holidays: ['Christmas'],
+        specialDiets: ['Vegan'],
+      });
+    });
+
+    it('should return 404 if recipe not found', async () => {
+      mockSingle.mockResolvedValue({
+        data: null,
+        error: { code: 'PGRST116', message: 'Not found' },
+      });
+
+      const res = await request(app).get('/recipes/999').set('Authorization', 'Bearer valid-token');
+
+      expect(res.status).toBe(404);
+      expect(res.body.error).toBe('Recipe not found');
+    });
+
+    it('should handle general errors gracefully', async () => {
+      mockSingle.mockRejectedValue(new Error('Unexpected DB error'));
+
+      const res = await request(app).get('/recipes/999').set('Authorization', 'Bearer valid-token');
+
+      expect(res.status).toBe(500);
+      expect(res.body.error).toBe('Unexpected DB error');
+    });
+  });
+
   describe('POST /recipes', () => {
     it('should successfully create a recipe and associate categories, method, holidays, and special diets', async () => {
       const inputRecipe = {

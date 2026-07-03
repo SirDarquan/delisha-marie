@@ -10,13 +10,7 @@ export interface SchemaObject {
   '@type'?: string;
   '@id'?: string;
   [key: string]:
-    | string
-    | number
-    | boolean
-    | undefined
-    | null
-    | SchemaObject
-    | (string | SchemaObject)[];
+    string | number | boolean | undefined | null | SchemaObject | (string | SchemaObject)[];
 }
 
 export interface Breadcrumb {
