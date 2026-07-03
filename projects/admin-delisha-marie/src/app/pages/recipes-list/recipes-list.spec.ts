@@ -6,6 +6,7 @@ import { of } from 'rxjs';
 import { Recipe } from '../../models/recipe.model';
 import { RecipeService } from '../../services/recipe.service';
 import { RecipesListComponent } from './recipes-list';
+import { CreateRecipeDialogComponent } from '../../components/create-recipe-dialog/create-recipe-dialog';
 
 describe('RecipesListComponent', () => {
   let component: RecipesListComponent;
@@ -73,7 +74,7 @@ describe('RecipesListComponent', () => {
         totalTime: '',
         yield: '',
         author: 'Delisha Marie',
-        status: 'published',
+        status: undefined as unknown as 'published' | 'draft' | 'scheduled',
       },
     ];
 
@@ -88,6 +89,7 @@ describe('RecipesListComponent', () => {
   });
 
   beforeEach(async () => {
+    mockMatDialog.open.mockClear();
     fixture = TestBed.createComponent(RecipesListComponent);
     component = fixture.componentInstance;
     await fixture.whenStable();
@@ -123,6 +125,14 @@ describe('RecipesListComponent', () => {
     component.onDelete(1);
     await new Promise(process.nextTick); // wait for promise to resolve inside subscribe
     expect(deletedId).toBe(1);
+  });
+
+  it('should open create recipe dialog on create', () => {
+    component.onCreateRecipe();
+    expect(mockMatDialog.open).toHaveBeenCalledWith(CreateRecipeDialogComponent, {
+      width: '600px',
+      minHeight: '350px',
+    });
   });
 
   it('should render no results message when search returns empty', async () => {
@@ -295,5 +305,57 @@ describe('RecipesListComponent', () => {
     const spy = vi.spyOn(fakeRecipeService, 'setLastActiveRecipeId');
     component.setLastActiveRecipe(123);
     expect(spy).toHaveBeenCalledWith(123);
+  });
+
+  it('should open CreateRecipeDialogComponent when onCreateRecipe is called', () => {
+    component.onCreateRecipe();
+    expect(mockMatDialog.open).toHaveBeenCalledWith(CreateRecipeDialogComponent, {
+      width: '600px',
+      minHeight: '350px',
+    });
+  });
+
+  it('should call deleteRecipe when ConfirmDialog is accepted', async () => {
+    mockMatDialog.open.mockReturnValueOnce({ afterClosed: () => of(true) });
+    component.onDelete(1);
+    await fixture.whenStable();
+    expect(deletedId).toBe(1);
+  });
+
+  it('should not call deleteRecipe when ConfirmDialog is rejected', async () => {
+    mockMatDialog.open.mockReturnValueOnce({ afterClosed: () => of(false) });
+    deletedId = null;
+    component.onDelete(2);
+    await fixture.whenStable();
+    expect(deletedId).toBeNull();
+  });
+  it('should restore scroll state in ngAfterViewInit', async () => {
+    vi.spyOn(fakeRecipeService, 'getLastActiveRecipeId').mockReturnValueOnce(1);
+    const mockVp = {
+      scrollToIndex: vi.fn(),
+      scrollToOffset: vi.fn(),
+      measureScrollOffset: vi.fn().mockReturnValue(100),
+      getRenderedRange: vi.fn().mockReturnValue({ start: 0, end: 10 }),
+    };
+    Object.defineProperty(component, 'viewport', { get: () => () => mockVp });
+    
+    // Ensure the signal has the data so findIndex() works synchronously
+    component['recipes'].set([{ id: 1 } as any]);
+    
+    component.ngAfterViewInit();
+    await new Promise(r => setTimeout(r, 60)); // flush setTimeout
+    
+    expect(mockVp.scrollToIndex).toHaveBeenCalledWith(0, 'smooth');
+  });
+
+  it('should save scroll state in ngOnDestroy', () => {
+    const mockVp = {
+      measureScrollOffset: vi.fn().mockReturnValue(250),
+    };
+    Object.defineProperty(component, 'viewport', { get: () => () => mockVp });
+    
+    component.ngOnDestroy();
+    
+    expect(fakeRecipeService.setLastScrollOffset).toHaveBeenCalledWith(250);
   });
 });

@@ -280,6 +280,24 @@ recipesRouter.get('/methods', (req: AuthRequest, res: Response) =>
   fetchLookupTable(req, res, 'methods', 'id, name, slug'),
 );
 
+recipesRouter.get('/check-slug', async (req: AuthRequest, res: Response) => {
+  try {
+    const slug = req.query['slug'];
+    if (!slug || typeof slug !== 'string') {
+      return res.status(400).json({ error: 'Missing or invalid slug parameter' });
+    }
+    const client = backendService.getClient(req.token);
+    const { data, error } = await client.from('recipes').select('id').eq('slug', slug).limit(1);
+
+    if (error) throw error;
+
+    return res.json({ taken: data.length > 0 });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    return res.status(500).json({ error: msg });
+  }
+});
+
 recipesRouter.post('/recipes', async (req: AuthRequest, res: Response) => {
   try {
     const client = backendService.getClient(req.token);

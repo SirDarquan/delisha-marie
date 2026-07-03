@@ -12,12 +12,7 @@ export const routes: Routes = [
       import('./pages/recipes-list/recipes-list').then((m) => m.RecipesListComponent),
     canActivate: [authGuard],
   },
-  {
-    path: 'recipes/create',
-    loadComponent: () =>
-      import('./pages/recipe-form/recipe-form').then((m) => m.RecipeFormComponent),
-    canActivate: [authGuard],
-  },
+
   {
     path: 'recipes/edit/:id',
     loadComponent: () =>

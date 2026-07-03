@@ -87,6 +87,33 @@ describe('CategoryBoardComponent', () => {
     fixture.detectChanges();
   });
 
+  describe('Trail extraction logic', () => {
+    it('should handle edge cases in trails array', () => {
+      // Trigger the extractBreadcrumbsToMap directly or implicitly via recipes signal
+      const badTrailRecipe = {
+        id: 3,
+        title: 'Recipe 3',
+        slug: 'recipe-3',
+        category: {
+          trails: [
+            [{ name: 'Home', url: '/' }], // length < 2
+            [{ name: 'Home', url: '/' }, { name: 'Recipes', url: '/recipes' }, {}], // no name/url
+            [{ name: 'Home', url: '/' }, { name: 'Recipes', url: '/recipes' }, { name: 'Bad', url: '/other/bad' }], // wrong url prefix
+            [{ name: 'Home', url: '/' }, { name: 'Recipes', url: '/recipes' }, { name: 'Dinner', url: '/recipes/dinner' }, {}], // no subname/suburl
+            [{ name: 'Home', url: '/' }, { name: 'Recipes', url: '/recipes' }, { name: 'Dinner', url: '/recipes/dinner' }, { name: 'Chicken', url: '/recipe/chicken' }], // wrong sub prefix
+          ],
+        },
+      } as unknown as Recipe;
+
+      // Mocking recipesResource value directly since it's used in the computed signal
+      Object.defineProperty(component, 'recipesResource', { get: () => ({ value: () => [badTrailRecipe] }) });
+      fixture.detectChanges();
+      
+      const res = component.categories();
+      expect(res.length).toBe(2); // The 2 valid trails (Dinner) should be added
+    });
+  });
+
   describe('Fallback behaviors without category map', () => {
     beforeEach(async () => {
       mockRecipesData = [];
@@ -400,6 +427,29 @@ describe('CategoryBoardComponent', () => {
       const event = { target: { value: '/recipes/dinner' } } as unknown as Event;
       component.updateCustomUrl(event);
       expect(component.customUrl()).toBe('');
+    });
+    it('should add a new trail when addNewTrail is called', () => {
+      const initialTrailsLength = component.boardPiecesList().length;
+      component.addNewTrail();
+      expect(component.boardPiecesList().length).toBe(initialTrailsLength + 1);
+      expect(component.activeTrailIndex()).toBe(initialTrailsLength); // Should switch to new trail
+    });
+
+    it('should delete a trail and adjust active trail index', () => {
+      // Add a couple trails
+      component.addNewTrail();
+      component.addNewTrail();
+      const len = component.boardPiecesList().length;
+
+      // Switch to the last one
+      component.switchTrail(len - 1);
+
+      // Delete a previous one
+      component.deleteTrail(1, new Event('click'));
+
+      expect(component.boardPiecesList().length).toBe(len - 1);
+      // Active index should shift down
+      expect(component.activeTrailIndex()).toBe(len - 2);
     });
   });
 });

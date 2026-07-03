@@ -81,28 +81,59 @@ describe('Admin Recipe Form Flow', () => {
     }).as('getDiets');
   });
 
-  it('should handle NEW Recipe creation form flow', () => {
+  it('should handle NEW Recipe creation form flow via dialog', () => {
     // Seed empty array into localStorage BEFORE navigation so RecipeService reads it synchronously
     // This completely bypasses the async GET recipes.json API call
-    cy.visit('/recipes/create', {
+    cy.visit('/recipes', {
       onBeforeLoad: (win) => {
         win.localStorage.setItem('admin_recipes', JSON.stringify([]));
       },
     });
 
-    cy.intercept('POST', '**/api/recipes*', {
+    cy.intercept('GET', '**/api/check-slug*', {
+      statusCode: 200,
+      body: { taken: false }, // slug available
+    }).as('checkSlug');
+
+    cy.intercept('POST', '**/api/recipes', {
       statusCode: 201,
-      body: mockRecipe,
+      body: { ...mockRecipe, id: 100 },
     }).as('createRecipe');
 
-    cy.get('h1').should('contain.text', 'New Recipe');
+    cy.intercept('GET', '**/api/recipes/100', {
+      statusCode: 200,
+      body: { ...mockRecipe, id: 100 },
+    }).as('getNewRecipe');
 
-    // Ensure the form control signals are fully initialized and bound before typing
-    cy.get('#title').should('not.be.disabled').type(mockRecipe.title, { force: true });
-    cy.get('#title').blur();
+    // Open the creation dialog
+    cy.contains('button', 'New Recipe').click();
+    
+    // Dialog should be visible
+    cy.get('mat-dialog-container').should('be.visible');
 
-    cy.get('#slug').should('not.be.disabled').type(mockRecipe.slug, { force: true });
-    cy.get('#slug').blur();
+    // Fill in the dialog
+    cy.get('mat-dialog-container #title').should('not.be.disabled').type(mockRecipe.title, { force: true });
+    cy.get('mat-dialog-container #title').blur();
+
+    cy.get('mat-dialog-container #slug').should('not.be.disabled').type(mockRecipe.slug, { force: true });
+    cy.get('mat-dialog-container #slug').blur();
+    
+    // Wait for slug async validation to complete
+    cy.wait('@checkSlug');
+    
+    // Submit the dialog once it is enabled
+    cy.get('mat-dialog-container button[type="submit"]').should('not.be.disabled').click();
+    cy.wait('@createRecipe');
+
+    // Should redirect to edit page
+    cy.location('pathname', { timeout: 10000 }).should('eq', '/recipes/edit/100');
+    cy.wait('@getNewRecipe');
+
+    cy.get('h1').should('contain.text', 'Edit Recipe');
+
+    // The title and slug should already be populated from the draft creation
+    cy.get('#title').should('have.value', mockRecipe.title);
+    cy.get('#slug').should('have.value', mockRecipe.slug);
 
     cy.get('#prepTime').should('not.be.disabled').type(mockRecipe.prepTime, { force: true });
     cy.get('#prepTime').blur();
@@ -234,8 +265,13 @@ describe('Admin Recipe Form Flow', () => {
     // Switch to Where is it tab to interact with categories and cooking methods
     cy.contains('button', 'Where is it').click();
 
+    cy.intercept('PUT', '**/api/recipes/100', {
+      statusCode: 200,
+      body: mockRecipe,
+    }).as('updateRecipeSubmit');
+
     cy.get('button[type="submit"]').click({ force: true });
-    cy.wait('@createRecipe');
+    cy.wait('@updateRecipeSubmit');
 
     cy.location('pathname', { timeout: 10000 }).should('eq', '/recipes');
   });
