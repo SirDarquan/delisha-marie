@@ -2,7 +2,6 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MatDialogRef } from '@angular/material/dialog';
 import { Router } from '@angular/router';
 import { By } from '@angular/platform-browser';
-import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { RecipeService } from '../../services/recipe.service';
 import { CreateRecipeDialogComponent } from './create-recipe-dialog';
 import { FormRoot, FormField } from '@angular/forms/signals';
@@ -26,7 +25,7 @@ describe('CreateRecipeDialogComponent', () => {
     mockRouter = { navigate: vi.fn() };
 
     await TestBed.configureTestingModule({
-      imports: [CreateRecipeDialogComponent, NoopAnimationsModule, FormRoot, FormField],
+      imports: [CreateRecipeDialogComponent, FormRoot, FormField],
       providers: [
         { provide: MatDialogRef, useValue: mockDialogRef },
         { provide: RecipeService, useValue: mockRecipeService },
@@ -68,20 +67,17 @@ describe('CreateRecipeDialogComponent', () => {
     component['createForm'].title().markAsTouched();
     component['createForm'].slug().value.set('');
     component['createForm'].slug().markAsTouched();
-    
+
     // Force submitting state
     component['isSubmitting'].set(true);
-    
+
     fixture.detectChanges();
     await fixture.whenStable();
-    
+
     // Very basic assertions just to ensure the template executed those branches
     expect(component['isSubmitting']()).toBe(true);
     expect(component['createForm']().invalid()).toBe(true);
   });
-
-
-
 
   it('should call createRecipe and navigate on submit', async () => {
     component['createForm'].title().value.set('Test');
@@ -138,10 +134,10 @@ describe('CreateRecipeDialogComponent', () => {
   it('should ignore submit if already submitting', async () => {
     component['isSubmitting'].set(true);
     mockRecipeService.createRecipe.mockClear();
-    
+
     fixture.debugElement.query(By.css('form')).triggerEventHandler('submit', new Event('submit'));
     await Promise.resolve();
-    
+
     expect(mockRecipeService.createRecipe).not.toHaveBeenCalled();
   });
 
@@ -157,43 +153,48 @@ describe('CreateRecipeDialogComponent', () => {
     it('should set error kind slug_taken when slug is unavailable', async () => {
       mockRecipeService.checkSlugAvailability.mockResolvedValue(true); // true means taken
       const slugField = component['createForm'].slug;
-      
+
       slugField().value.set('taken-slug');
-      
-      // Wait for debounce (400ms) and resource resolution
-      await new Promise(r => setTimeout(r, 600));
+
+      // Wait for debounce (1000ms) and resource resolution
+      await new Promise((r) => setTimeout(r, 1200));
       fixture.detectChanges();
-      
-      const errs: any[] = slugField().errors() || [];
-      expect(errs).toEqual(expect.arrayContaining([
-        expect.objectContaining({ kind: 'slug_taken' })
-      ]));
+
+      const errs = slugField().errors() || [];
+      expect(errs).toEqual(
+        expect.arrayContaining([expect.objectContaining({ kind: 'slug_taken' })]),
+      );
     });
 
     it('should not have slug_taken error when slug is available', async () => {
       mockRecipeService.checkSlugAvailability.mockResolvedValue(false); // false means available
       const slugField = component['createForm'].slug;
-      
+
       slugField().value.set('available-slug');
-      
-      await new Promise(r => setTimeout(r, 600));
+
+      await new Promise((r) => setTimeout(r, 1200));
       fixture.detectChanges();
-      
-      const errs: any[] = slugField().errors() || [];
-      expect(errs.find(e => e.kind === 'slug_taken')).toBeUndefined();
+
+      const errs = slugField().errors() || [];
+      expect(
+        errs.find((e: unknown) => (e as { kind?: string }).kind === 'slug_taken'),
+      ).toBeUndefined();
     });
 
     it('should handle validation api errors gracefully', async () => {
       const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
       mockRecipeService.checkSlugAvailability.mockRejectedValue(new Error('API failure'));
       const slugField = component['createForm'].slug;
-      
+
       slugField().value.set('error-slug');
-      
-      await new Promise(r => setTimeout(r, 600));
+
+      await new Promise((r) => setTimeout(r, 1200));
       fixture.detectChanges();
-      
-      expect(consoleSpy).toHaveBeenCalledWith('Failed to check slug availability', expect.any(Error));
+
+      expect(consoleSpy).toHaveBeenCalledWith(
+        'Failed to check slug availability',
+        expect.any(Error),
+      );
       consoleSpy.mockRestore();
     });
   });

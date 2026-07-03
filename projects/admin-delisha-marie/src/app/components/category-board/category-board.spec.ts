@@ -98,17 +98,33 @@ describe('CategoryBoardComponent', () => {
           trails: [
             [{ name: 'Home', url: '/' }], // length < 2
             [{ name: 'Home', url: '/' }, { name: 'Recipes', url: '/recipes' }, {}], // no name/url
-            [{ name: 'Home', url: '/' }, { name: 'Recipes', url: '/recipes' }, { name: 'Bad', url: '/other/bad' }], // wrong url prefix
-            [{ name: 'Home', url: '/' }, { name: 'Recipes', url: '/recipes' }, { name: 'Dinner', url: '/recipes/dinner' }, {}], // no subname/suburl
-            [{ name: 'Home', url: '/' }, { name: 'Recipes', url: '/recipes' }, { name: 'Dinner', url: '/recipes/dinner' }, { name: 'Chicken', url: '/recipe/chicken' }], // wrong sub prefix
+            [
+              { name: 'Home', url: '/' },
+              { name: 'Recipes', url: '/recipes' },
+              { name: 'Bad', url: '/other/bad' },
+            ], // wrong url prefix
+            [
+              { name: 'Home', url: '/' },
+              { name: 'Recipes', url: '/recipes' },
+              { name: 'Dinner', url: '/recipes/dinner' },
+              {},
+            ], // no subname/suburl
+            [
+              { name: 'Home', url: '/' },
+              { name: 'Recipes', url: '/recipes' },
+              { name: 'Dinner', url: '/recipes/dinner' },
+              { name: 'Chicken', url: '/recipe/chicken' },
+            ], // wrong sub prefix
           ],
         },
       } as unknown as Recipe;
 
       // Mocking recipesResource value directly since it's used in the computed signal
-      Object.defineProperty(component, 'recipesResource', { get: () => ({ value: () => [badTrailRecipe] }) });
+      Object.defineProperty(component, 'recipesResource', {
+        get: () => ({ value: () => [badTrailRecipe] }),
+      });
       fixture.detectChanges();
-      
+
       const res = component.categories();
       expect(res.length).toBe(2); // The 2 valid trails (Dinner) should be added
     });

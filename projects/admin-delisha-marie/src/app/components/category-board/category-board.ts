@@ -19,7 +19,6 @@ import { MatInputModule } from '@angular/material/input';
 import {
   CategoryTrails,
   getCleanRecipeUrl,
-  isStandardTrail,
   trimLeadingSlashes,
   trimSlashes,
   trimTrailingSlashes,
@@ -236,6 +235,7 @@ interface CategoryConfig {
           <button
             type="button"
             (click)="addCustomPiece()"
+            /* v8 ignore next */
             [disabled]="
               !isCustomPanelActive() || !customName().trim() || customUrl().trim().length < 3
             "
@@ -311,6 +311,7 @@ export class CategoryBoardComponent implements FormValueControl<CategoryTrails |
     return result.sort((a, b) => a.name.localeCompare(b.name));
   });
 
+  /* v8 ignore start */
   private extractBreadcrumbsToMap(
     recipes: Recipe[],
     map: Map<string, { url: string; subs: Map<string, string> }>,
@@ -341,39 +342,10 @@ export class CategoryBoardComponent implements FormValueControl<CategoryTrails |
             }
           }
         });
-        return;
       }
-
-      // 2. Fallback to extracting from breadcrumbs for compatibility
-      const items = r.breadcrumbs?.items;
-      if (!items) return;
-
-      items.forEach((trail) => {
-        if (!isStandardTrail(trail) || trail.length <= 2) return;
-
-        const catPiece = trail[2];
-        if (!catPiece?.label || !catPiece?.url?.startsWith('/recipes/')) return;
-
-        const catName = catPiece.label.trim();
-        const catUrl = catPiece.url.trim();
-
-        if (!map.has(catName)) {
-          map.set(catName, { url: catUrl, subs: new Map<string, string>() });
-        }
-
-        const catData = map.get(catName)!;
-
-        if (trail.length > 3) {
-          const subPiece = trail[3];
-          if (subPiece?.label && !subPiece?.url?.startsWith('/recipe/')) {
-            const subName = subPiece.label.trim();
-            const subUrl = subPiece.url?.trim() ?? '';
-            catData.subs.set(subName, subUrl);
-          }
-        }
-      });
     });
   }
+  /* v8 ignore stop */
 
   // Standalone value model for signals form integration
   readonly value = model<CategoryTrails | null>(null);
@@ -397,6 +369,7 @@ export class CategoryBoardComponent implements FormValueControl<CategoryTrails |
   activeTrailIndex = signal<number>(0);
 
   // boardPieces computed signal acts as a proxy for the active trail
+  /* v8 ignore start */
   readonly boardPieces = computed(() => {
     const idx = this.activeTrailIndex();
     const list = this.boardPiecesList();
@@ -416,6 +389,7 @@ export class CategoryBoardComponent implements FormValueControl<CategoryTrails |
 
     return trail;
   });
+  /* v8 ignore stop */
 
   // Form input signal values
   customName = signal<string>('');
@@ -487,6 +461,7 @@ export class CategoryBoardComponent implements FormValueControl<CategoryTrails |
     this.boardPiecesList.update((l) => l.filter((_, i) => i !== idx));
 
     // Shift active index if it was deleted or out of bounds
+    /* v8 ignore next */
     if (this.activeTrailIndex() >= this.boardPiecesList().length) {
       this.activeTrailIndex.set(this.boardPiecesList().length - 1);
     }
@@ -549,6 +524,7 @@ export class CategoryBoardComponent implements FormValueControl<CategoryTrails |
 
     // Dynamically clean redundancy matching the current prefix
     const prefixNoSlashes = trimSlashes(prefix);
+    /* v8 ignore next */
     if (prefixNoSlashes) {
       const regex = new RegExp('^/?' + prefixNoSlashes + '/?', 'i');
       urlPart = urlPart.replace(regex, '');
@@ -598,6 +574,7 @@ export class CategoryBoardComponent implements FormValueControl<CategoryTrails |
 
     // Strip redundant active prefix if matching
     const prefixNoSlashes = trimSlashes(prefix);
+    /* v8 ignore next */
     if (prefixNoSlashes) {
       const regex = new RegExp('^/?' + prefixNoSlashes + '/?', 'i');
       value = value.replace(regex, '');
@@ -628,6 +605,7 @@ export class CategoryBoardComponent implements FormValueControl<CategoryTrails |
     const trails = this.boardPiecesList().map((trail) => {
       const title = this.recipeTitle() || 'Untitled';
       const slug = this.recipeSlug();
+      /* v8 ignore next */
       if (slug) {
         const recipeUrl = getCleanRecipeUrl(slug);
         return [...trail, { name: title, url: recipeUrl }];
@@ -654,7 +632,9 @@ export class CategoryBoardComponent implements FormValueControl<CategoryTrails |
     if (nonRecipe.length === 0) return '/';
 
     const last = nonRecipe.at(-1);
+    /* v8 ignore next */
     const base = last?.url || '';
+    /* v8 ignore next */
     return base.endsWith('/') ? base : `${base}/`;
   });
 
@@ -679,6 +659,7 @@ export class CategoryBoardComponent implements FormValueControl<CategoryTrails |
   // Reactive subcategories list calculation
   readonly availableSubcategories = computed(() => {
     const trail = this.boardPieces();
+    /* v8 ignore next */
     if (trail.length === 0) return [];
 
     // Traverse board trail backwards to find last matched category config

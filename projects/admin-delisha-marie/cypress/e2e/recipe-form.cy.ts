@@ -107,20 +107,24 @@ describe('Admin Recipe Form Flow', () => {
 
     // Open the creation dialog
     cy.contains('button', 'New Recipe').click();
-    
+
     // Dialog should be visible
     cy.get('mat-dialog-container').should('be.visible');
 
     // Fill in the dialog
-    cy.get('mat-dialog-container #title').should('not.be.disabled').type(mockRecipe.title, { force: true });
+    cy.get('mat-dialog-container #title')
+      .should('not.be.disabled')
+      .type(mockRecipe.title, { force: true });
     cy.get('mat-dialog-container #title').blur();
 
-    cy.get('mat-dialog-container #slug').should('not.be.disabled').type(mockRecipe.slug, { force: true });
+    cy.get('mat-dialog-container #slug')
+      .should('not.be.disabled')
+      .type(mockRecipe.slug, { force: true });
     cy.get('mat-dialog-container #slug').blur();
-    
+
     // Wait for slug async validation to complete
     cy.wait('@checkSlug');
-    
+
     // Submit the dialog once it is enabled
     cy.get('mat-dialog-container button[type="submit"]').should('not.be.disabled').click();
     cy.wait('@createRecipe');

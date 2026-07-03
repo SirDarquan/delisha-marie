@@ -36,7 +36,6 @@ export interface CreateRecipeModel {
         [formRoot]="createForm"
         aria-label="Create Recipe Form"
         class="flex flex-col gap-4 pt-2">
-        <!-- <mat-dialog-content class="p-0 border-0 bg-transparent flex flex-col gap-4 overflow-visible"> -->
         <div class="flex flex-col gap-1">
           <mat-form-field appearance="outline" class="w-full mb-0">
             <mat-label>Recipe Title</mat-label>
@@ -72,9 +71,11 @@ export interface CreateRecipeModel {
             @if (createForm.slug().touched()) {
               <span class="text-red-400 text-sm font-medium px-1">{{ error.message }}</span>
             }
+            @if (error.kind === 'slug_taken') {
+              <span class="text-red-400 text-sm font-medium px-1">This slug is already taken</span>
+            }
           }
         </div>
-        <!-- </mat-dialog-content> -->
 
         <mat-dialog-actions class="flex justify-end gap-3 mt-6 p-0 border-0 bg-transparent">
           <button
@@ -112,7 +113,6 @@ export class CreateRecipeDialogComponent {
   private readonly recipeService = inject(RecipeService);
   private readonly router = inject(Router);
 
-  // protected readonly isCheckingSlug = signal(false);
   protected readonly isSubmitting = signal(false);
 
   private readonly model = signal<CreateRecipeModel>({
@@ -125,9 +125,8 @@ export class CreateRecipeDialogComponent {
     (fields) => {
       required(fields.title, { message: 'Title is required' });
       required(fields.slug, { message: 'Slug is required' });
-      /* v8 ignore next 25 */
       validateAsync(fields.slug, {
-        debounce: 400,
+        debounce: 1000,
         params: ({ value }) => value(),
         factory: (params) =>
           resource({
@@ -152,7 +151,6 @@ export class CreateRecipeDialogComponent {
     {
       submission: {
         action: async (f) => {
-          /* v8 ignore next */
           if (this.isSubmitting()) return;
           const value = f().value();
           this.isSubmitting.set(true);
@@ -177,7 +175,7 @@ export class CreateRecipeDialogComponent {
               yield: '',
             });
 
-            this.dialogRef.close();
+            this.dialogRef.close(newRecipe);
             this.router.navigate(['/recipes/edit', newRecipe.id]);
             console.log(newRecipe);
           } catch (err) {
