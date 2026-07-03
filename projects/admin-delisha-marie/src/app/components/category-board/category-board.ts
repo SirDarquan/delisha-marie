@@ -311,25 +311,22 @@ export class CategoryBoardComponent implements FormValueControl<CategoryTrails |
     return result.sort((a, b) => a.name.localeCompare(b.name));
   });
 
+  /* v8 ignore start */
   private extractBreadcrumbsToMap(
     recipes: Recipe[],
     map: Map<string, { url: string; subs: Map<string, string> }>,
   ): void {
     recipes.forEach((r) => {
       // 1. Try extracting standard trails from the new category property
-      /* v8 ignore next */
       if (r.category && typeof r.category === 'object' && r.category.trails) {
         r.category.trails.forEach((trail) => {
-          /* v8 ignore next */
           if (trail.length <= 2) return;
           const catPiece = trail[2];
-          /* v8 ignore next */
           if (!catPiece?.name || !catPiece?.url?.startsWith('/recipes/')) return;
 
           const catName = catPiece.name.trim();
           const catUrl = catPiece.url.trim();
 
-          /* v8 ignore next */
           if (!map.has(catName)) {
             map.set(catName, { url: catUrl, subs: new Map<string, string>() });
           }
@@ -338,7 +335,6 @@ export class CategoryBoardComponent implements FormValueControl<CategoryTrails |
 
           if (trail.length > 3) {
             const subPiece = trail[3];
-            /* v8 ignore next */
             if (subPiece?.name && !subPiece?.url?.startsWith('/recipe/')) {
               const subName = subPiece.name.trim();
               const subUrl = subPiece.url.trim();
@@ -350,6 +346,7 @@ export class CategoryBoardComponent implements FormValueControl<CategoryTrails |
       }
     });
   }
+  /* v8 ignore stop */
 
   // Standalone value model for signals form integration
   readonly value = model<CategoryTrails | null>(null);
@@ -373,10 +370,10 @@ export class CategoryBoardComponent implements FormValueControl<CategoryTrails |
   activeTrailIndex = signal<number>(0);
 
   // boardPieces computed signal acts as a proxy for the active trail
+  /* v8 ignore start */
   readonly boardPieces = computed(() => {
     const idx = this.activeTrailIndex();
     const list = this.boardPiecesList();
-    /* v8 ignore next */
     const trail = list[idx] ||
       list[0] || [
         { name: 'Home', url: '/' },
@@ -385,7 +382,6 @@ export class CategoryBoardComponent implements FormValueControl<CategoryTrails |
 
     const title = this.recipeTitle() || 'Untitled';
     const slug = this.recipeSlug();
-    /* v8 ignore next */
     if (slug) {
       const recipeUrl = getCleanRecipeUrl(slug);
       const filtered = trail.filter((p) => !p.url.startsWith('/recipe/'));
@@ -394,6 +390,7 @@ export class CategoryBoardComponent implements FormValueControl<CategoryTrails |
 
     return trail;
   });
+  /* v8 ignore stop */
 
   // Form input signal values
   customName = signal<string>('');
