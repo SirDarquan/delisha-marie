@@ -342,7 +342,6 @@ export class CategoryBoardComponent implements FormValueControl<CategoryTrails |
             }
           }
         });
-        return;
       }
     });
   }
