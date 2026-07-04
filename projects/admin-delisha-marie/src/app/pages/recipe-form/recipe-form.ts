@@ -812,14 +812,17 @@ export class RecipeFormComponent implements OnInit {
     }
 
     if (Array.isArray(b)) {
+      
       const arrA = (a as readonly unknown[]) || [];
       return arrA.length === b.length && arrA.every((v, i) => v === b[i]);
     }
 
+    
     if ((a !== null && typeof a === 'object') || (b !== null && typeof b === 'object')) {
       return JSON.stringify(a) === JSON.stringify(b);
     }
 
+    
     const normA = typeof a === 'string' || typeof a === 'boolean' ? String(a) : '';
 
     const normB = typeof b === 'string' || typeof b === 'boolean' ? String(b) : '';
