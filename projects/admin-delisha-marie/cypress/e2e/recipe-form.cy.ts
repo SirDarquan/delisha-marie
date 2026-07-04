@@ -307,8 +307,9 @@ describe('Admin Recipe Form Flow', () => {
     cy.get('#title').blur();
 
     cy.get('button[type="submit"]').click({ force: true });
-    cy.wait('@updateRecipe');
+    cy.wait('@updateRecipe').its('request.body.title').should('eq', 'Updated Chicken Title');
 
-    cy.location('pathname', { timeout: 10000 }).should('eq', '/recipes');
+    // Note: We don't check cy.location('pathname') here because the app uses location.back(), 
+    // which does nothing when the page is loaded directly via cy.visit() as the first history entry.
   });
 });
