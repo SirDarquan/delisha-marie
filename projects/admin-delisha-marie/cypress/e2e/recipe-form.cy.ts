@@ -295,7 +295,9 @@ describe('Admin Recipe Form Flow', () => {
       onBeforeLoad: (win) => {
         win.localStorage.setItem('admin_recipes', JSON.stringify([mockRecipe]));
         // Prevent location.back() from hanging the test runner on Linux when history is empty
-        win.history.pushState({}, '', '/recipes');
+        // Replace current state with /recipes, then push the edit URL so Angular router boots correctly
+        win.history.replaceState({}, '', '/recipes');
+        win.history.pushState({}, '', '/recipes/edit/99');
       },
     });
 
