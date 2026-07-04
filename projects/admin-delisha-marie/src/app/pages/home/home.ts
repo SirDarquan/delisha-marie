@@ -1,6 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, inject, resource } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { RouterLink } from '@angular/router';
+import { MatDialog } from '@angular/material/dialog';
+import { CreateRecipeDialogComponent } from '../../components/create-recipe-dialog/create-recipe-dialog';
 import { ApiService } from '../../services/api.service';
 
 interface HomeData {
@@ -72,11 +74,11 @@ interface HomeData {
             </p>
           </div>
           <div class="mt-6">
-            <a
-              routerLink="/recipes/create"
+            <button
+              (click)="openCreateRecipeDialog()"
               class="inline-block w-full text-center py-2.5 rounded-xl font-bold text-white bg-gradient-to-r from-purple-500 to-pink-500 hover:brightness-110 transition shadow-lg cursor-pointer">
               + Create Recipe
-            </a>
+            </button>
           </div>
         </div>
       </main>
@@ -129,6 +131,7 @@ interface HomeData {
 })
 export class HomeComponent {
   private readonly api = inject(ApiService);
+  private readonly dialog = inject(MatDialog);
 
   private readonly _homeResource = resource({
     loader: () => this.api.get<HomeData>('/home'),
@@ -136,4 +139,8 @@ export class HomeComponent {
 
   readonly totalRecipes = computed(() => this._homeResource.value()?.totalRecipes ?? 0);
   readonly recentRecipes = computed(() => this._homeResource.value()?.recentRecipes ?? []);
+
+  openCreateRecipeDialog(): void {
+    this.dialog.open(CreateRecipeDialogComponent);
+  }
 }

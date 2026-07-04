@@ -7,6 +7,7 @@ import {
   signal,
   ViewEncapsulation,
 } from '@angular/core';
+import { Location } from '@angular/common';
 import { form, FormField, FormRoot, required } from '@angular/forms/signals';
 import { MatButtonModule } from '@angular/material/button';
 import { MatChipsModule } from '@angular/material/chips';
@@ -577,7 +578,7 @@ interface RecipeFormModel {
               <button
                 mat-stroked-button
                 type="submit"
-                [disabled]="isPublicationDisabled()"
+                [disabled]="isDraftDisabled()"
                 (click)="saveRequired('scheduled')"
                 class="px-5 py-2.5 rounded-xl font-bold text-slate-900 bg-amber-400 hover:bg-amber-300 transition shadow-md cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed border-0">
                 Schedule Publication
@@ -598,7 +599,7 @@ interface RecipeFormModel {
                 mat-stroked-button
                 type="submit"
                 /* v8 ignore next */
-                [disabled]="isPublicationDisabled() || !isDirty()"
+                [disabled]="isDraftDisabled()"
                 (click)="saveRequired('scheduled')"
                 class="px-5 py-2.5 rounded-xl font-bold text-slate-900 bg-amber-400 hover:bg-amber-300 transition shadow-md cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed border-0">
                 Update Schedule
@@ -624,7 +625,7 @@ interface RecipeFormModel {
               <button
                 mat-stroked-button
                 type="submit"
-                [disabled]="isPublicationDisabled() || !isDirty()"
+                [disabled]="isDraftDisabled()"
                 (click)="saveRequired('published')"
                 class="px-5 py-2.5 rounded-xl font-bold text-white bg-gradient-to-r from-purple-500 to-pink-500 hover:brightness-110 transition shadow-lg cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed border-0">
                 Update Published
@@ -763,16 +764,17 @@ export class RecipeFormComponent implements OnInit {
   // Track draft changes state
   private readonly initialModel = signal<RecipeFormModel | null>(null);
   private isInitialized = false;
+  private readonly location = inject(Location);
 
   /* v8 ignore start */
   private getFieldValue(key: keyof RecipeFormModel) {
     const formFields = this.recipeForm;
     const fieldFn = formFields[key];
-    
+
     if (fieldFn && typeof fieldFn === 'function') {
       try {
         const fieldObj = fieldFn();
-        
+
         if (fieldObj && typeof fieldObj.controlValue === 'function') {
           return fieldObj.controlValue();
         }
@@ -802,9 +804,9 @@ export class RecipeFormComponent implements OnInit {
     if (key === 'category') {
       const categoryA = a as CategoryTrails | null;
       const categoryB = b as CategoryTrails | null;
-      
+
       if (categoryA === categoryB) return true;
-      
+
       if (!categoryA || !categoryB) return false;
       return JSON.stringify(categoryA) === JSON.stringify(categoryB);
     }
@@ -822,7 +824,7 @@ export class RecipeFormComponent implements OnInit {
 
     
     const normA = typeof a === 'string' || typeof a === 'boolean' ? String(a) : '';
-    
+
     const normB = typeof b === 'string' || typeof b === 'boolean' ? String(b) : '';
     return normA.trim() === normB.trim();
   }
@@ -848,55 +850,14 @@ export class RecipeFormComponent implements OnInit {
 
   protected readonly isDraftDisabled = computed(() => !this.isDirty());
 
-  protected readonly isPublicationDisabled = computed(() => {
-    const isMissing = (val: unknown) => {
-      return val === null || val === undefined || (typeof val === 'string' && val.trim() === '');
-    };
-    const categoryVal = this.getFieldValue('category') as CategoryTrails | null;
-    const isCategoryMissing =
-      !categoryVal?.trails || categoryVal.trails.every((t) => t.length <= 2);
-    return (
-      isMissing(this.getFieldValue('title')) ||
-      isMissing(this.getFieldValue('slug')) ||
-      isCategoryMissing ||
-      isMissing(this.getFieldValue('difficulty')) ||
-      isMissing(this.getFieldValue('prepTime')) ||
-      isMissing(this.getFieldValue('cookTime')) ||
-      isMissing(this.getFieldValue('totalTime')) ||
-      isMissing(this.getFieldValue('yield')) ||
-      isMissing(this.getFieldValue('image')) ||
-      isMissing(this.getFieldValue('imageWidth')) ||
-      isMissing(this.getFieldValue('imageHeight')) ||
-      isMissing(this.getFieldValue('imageType')) ||
-      isMissing(this.getFieldValue('description')) ||
-      isMissing(this.getFieldValue('content')) ||
-      isMissing(this.getFieldValue('ingredients')) ||
-      isMissing(this.getFieldValue('instructions')) ||
-      isMissing(this.getFieldValue('cuisine')) ||
-      isMissing(this.getFieldValue('course')) ||
-      isMissing(this.getFieldValue('servingSize')) ||
-      isMissing(this.getFieldValue('calories')) ||
-      isMissing(this.getFieldValue('fat')) ||
-      isMissing(this.getFieldValue('carbohydrates')) ||
-      isMissing(this.getFieldValue('protein')) ||
-      isMissing(this.getFieldValue('fiber')) ||
-      isMissing(this.getFieldValue('sugar')) ||
-      isMissing(this.getFieldValue('sodium')) ||
-      isMissing(this.getFieldValue('cholesterol')) ||
-      isMissing(this.getFieldValue('saturatedFat'))
-    );
-  });
-
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
     /* v8 ignore next */
     if (id) {
-      console.log(id);
       this.idToEdit.set(id);
       this.recipeService
         .fetchRecipeById(id)
         .then((recipe) => {
-          console.log(recipe);
           if (recipe) {
             this.originalRecipe.set(recipe);
             const mapped = this.mapRecipeToForm(recipe);
@@ -1220,7 +1181,7 @@ export class RecipeFormComponent implements OnInit {
     if (status === 'scheduled') {
       createdAt = originalRecipe?.createdAt || currentTime;
       updatedAt = currentTime;
-    /* v8 ignore next */
+      /* v8 ignore next */
     } else if (status === 'published') {
       if (originalRecipe?.status === 'published' || originalRecipe?.status === 'updated') {
         /* v8 ignore next */
@@ -1245,7 +1206,7 @@ export class RecipeFormComponent implements OnInit {
     }
 
     this.initialModel.set(this.getCurrentFormValue());
-    this.router.navigate(['/recipes']);
+    this.location.back();
   }
 
   private getBestTrail(standardTrail: BaseTrail[]): BaseTrail[] {
@@ -1302,11 +1263,11 @@ export class RecipeFormComponent implements OnInit {
       dialogRef.afterClosed().subscribe((leave) => {
         /* v8 ignore next */
         if (leave) {
-          this.router.navigate(['/recipes']);
+          this.location.back();
         }
       });
     } else {
-      this.router.navigate(['/recipes']);
+      this.location.back();
     }
   }
 }

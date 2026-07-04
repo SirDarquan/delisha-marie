@@ -177,7 +177,6 @@ export class CreateRecipeDialogComponent {
 
             this.dialogRef.close(newRecipe);
             this.router.navigate(['/recipes/edit', newRecipe.id]);
-            console.log(newRecipe);
           } catch (err) {
             console.error('Failed to create recipe', err);
             this.isSubmitting.set(false);
