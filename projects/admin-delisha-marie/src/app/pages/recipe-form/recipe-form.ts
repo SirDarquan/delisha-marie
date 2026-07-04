@@ -854,12 +854,10 @@ export class RecipeFormComponent implements OnInit {
     const id = this.route.snapshot.paramMap.get('id');
     /* v8 ignore next */
     if (id) {
-      console.log(id);
       this.idToEdit.set(id);
       this.recipeService
         .fetchRecipeById(id)
         .then((recipe) => {
-          console.log(recipe);
           if (recipe) {
             this.originalRecipe.set(recipe);
             const mapped = this.mapRecipeToForm(recipe);

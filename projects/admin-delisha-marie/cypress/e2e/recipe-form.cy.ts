@@ -294,6 +294,8 @@ describe('Admin Recipe Form Flow', () => {
     cy.visit('/recipes/edit/99', {
       onBeforeLoad: (win) => {
         win.localStorage.setItem('admin_recipes', JSON.stringify([mockRecipe]));
+        // Prevent location.back() from hanging the test runner on Linux when history is empty
+        win.history.pushState({}, '', '/recipes');
       },
     });
 
