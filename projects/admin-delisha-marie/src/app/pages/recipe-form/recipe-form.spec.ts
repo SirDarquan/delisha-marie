@@ -1,3 +1,4 @@
+import { Location } from '@angular/common';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormField, FormRoot } from '@angular/forms/signals';
 import { MatDialog } from '@angular/material/dialog';
@@ -105,6 +106,10 @@ describe('RecipeFormComponent', () => {
     },
   };
 
+  const fakeLocation = {
+    back: vi.fn(),
+  };
+
   const fakeDialog = {
     open: () => ({
       afterClosed: () => ({
@@ -130,6 +135,7 @@ describe('RecipeFormComponent', () => {
         { provide: Router, useValue: fakeRouter },
         { provide: ActivatedRoute, useValue: fakeActivatedRoute },
         { provide: MatDialog, useValue: fakeDialog },
+        { provide: Location, useValue: fakeLocation },
       ],
     }).compileComponents();
   });
@@ -248,7 +254,7 @@ describe('RecipeFormComponent', () => {
 
     expect(updatePayload).toBeTruthy();
     expect(updatePayload.title).toBe('Brand New');
-    expect(navigated).toEqual(['/recipes']);
+    expect(fakeLocation.back).toHaveBeenCalled();
   });
 
   it('should verify behavior 3', async () => {
@@ -286,7 +292,7 @@ describe('RecipeFormComponent', () => {
 
     expect(updateId).toBe('1');
     expect(updatePayload.title).toBe('Pasta v2');
-    expect(navigated).toEqual(['/recipes']);
+    expect(fakeLocation.back).toHaveBeenCalled();
   });
 
   it('should verify behavior 4', async () => {
@@ -294,7 +300,7 @@ describe('RecipeFormComponent', () => {
     component = fixture.componentInstance;
     fixture.detectChanges();
     component.onCancel();
-    expect(navigated).toEqual(['/recipes']);
+    expect(fakeLocation.back).toHaveBeenCalled();
   });
 
   it('should verify behavior 5', async () => {
@@ -325,7 +331,7 @@ describe('RecipeFormComponent', () => {
     dialogResult = true; // user confirms leaving
 
     component.onCancel();
-    expect(navigated).toEqual(['/recipes']);
+    expect(fakeLocation.back).toHaveBeenCalled();
   });
 
   it('should verify behavior 7', async () => {
