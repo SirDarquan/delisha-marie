@@ -76,6 +76,7 @@ describe('RecipeFormComponent', () => {
     methods: () => [],
     holidays: () => [],
     specialDiets: () => [],
+    categories: () => [],
 
     fetchRecipeById: (id: string | number) => {
       return Promise.resolve(id ? mockRecipeById : null);
@@ -673,7 +674,6 @@ describe('RecipeFormComponent', () => {
     await component.saveRequired('published');
 
     expect(updatePayload.category).toEqual(testCategory);
-    expect(updatePayload.breadcrumbs).toBeNull();
   }, 15000);
 
   it('should verify behavior 20', async () => {

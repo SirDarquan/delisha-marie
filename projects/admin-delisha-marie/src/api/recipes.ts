@@ -8,6 +8,65 @@ const recipesRouter = Router();
 
 recipesRouter.use(authMiddleware);
 
+interface CategoryNode {
+  name: string;
+  url: string;
+}
+
+function formatCategoryTrails(recipeCategories: unknown): { trails: CategoryNode[][] } | null {
+  if (!recipeCategories || !Array.isArray(recipeCategories) || recipeCategories.length === 0) {
+    return null;
+  }
+
+  const cats = recipeCategories
+    .map((rc: Record<string, unknown>) => rc?.['categories'])
+    .filter((c: unknown): c is CategoryNode => {
+      const cat = c as CategoryNode;
+      return !!cat && typeof cat.name === 'string' && typeof cat.url === 'string';
+    });
+
+  if (cats.length === 0) {
+    return null;
+  }
+
+  cats.sort((a: CategoryNode, b: CategoryNode) => b.url.length - a.url.length);
+
+  const trails: CategoryNode[][] = [];
+  for (const cat of cats) {
+    let matched = false;
+    for (const trail of trails) {
+      if (trail[0].url.startsWith(cat.url)) {
+        trail.push(cat);
+        matched = true;
+        break;
+      }
+    }
+    if (!matched) {
+      trails.push([cat]);
+    }
+  }
+
+  const finalTrails = trails.map((trail) => {
+    trail.reverse();
+    const first = trail[0];
+    if (first?.url.startsWith('/the-best-recipes')) {
+      return [
+        { name: 'Home', url: '/' },
+        { name: 'The Best Recipes', url: '/the-best-recipes' },
+        ...trail.map((c: CategoryNode) => ({ name: c.name, url: c.url })),
+      ];
+    }
+
+    return [
+      { name: 'Home', url: '/' },
+      { name: 'Recipes', url: '/recipes' },
+      ...trail.map((c: CategoryNode) => ({ name: c.name, url: c.url })),
+    ];
+  });
+
+  return { trails: finalTrails };
+}
+
 function formatRecipeList(
   data: unknown[],
   statusOrder: Record<string, number>,
@@ -22,9 +81,12 @@ function formatRecipeList(
     const specialDiets =
       recipe.recipe_special_diets?.map((d) => d?.special_diets?.name).filter(Boolean) || [];
 
+    const category = formatCategoryTrails(recipe['recipe_categories']);
+
     const cleanRecipe = { ...recipe };
     delete cleanRecipe.recipe_holidays;
     delete cleanRecipe.recipe_special_diets;
+    delete cleanRecipe['recipe_categories'];
 
     const camelRecipe = camelCaseKeys(cleanRecipe);
 
@@ -32,6 +94,7 @@ function formatRecipeList(
       ...camelRecipe,
       holidays,
       specialDiets,
+      category,
     };
   });
 
@@ -280,6 +343,22 @@ recipesRouter.get('/methods', (req: AuthRequest, res: Response) =>
   fetchLookupTable(req, res, 'methods', 'id, name, slug'),
 );
 
+recipesRouter.get('/categories', async (req: AuthRequest, res: Response) => {
+  try {
+    const client = backendService.getClient(req.token);
+    const { data, error } = await client
+      .from('categories')
+      .select('id, name, url')
+      .ilike('url', '/recipes/%')
+      .order('name');
+    if (error) throw error;
+    return res.json(data);
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    return res.status(500).json({ error: msg });
+  }
+});
+
 recipesRouter.get('/check-slug', async (req: AuthRequest, res: Response) => {
   try {
     const slug = req.query['slug'];
@@ -305,7 +384,9 @@ recipesRouter.get('/recipes/:id', async (req: AuthRequest, res: Response) => {
 
     const { data, error } = await client
       .from('recipes')
-      .select('*, recipe_holidays (holidays (name)), recipe_special_diets (special_diets (name))')
+      .select(
+        '*, recipe_holidays (holidays (name)), recipe_special_diets (special_diets (name)), recipe_categories (categories (name, url))',
+      )
       .eq('id', id)
       .single();
 
@@ -475,7 +556,6 @@ function filterRecipeColumns(obj: Record<string, unknown>): Record<string, unkno
     'status',
     'preview_token',
     'the_best',
-    'breadcrumbs',
     'cuisine',
     'course',
     'nutrition',

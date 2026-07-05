@@ -92,6 +92,9 @@ describe('RecipeService', () => {
       const dietsReqs = httpMock.match('/api/special-diets');
       dietsReqs.forEach((r) => !r.cancelled && r.flush([]));
 
+      const catsReqs = httpMock.match('/api/categories');
+      catsReqs.forEach((r) => !r.cancelled && r.flush([]));
+
       httpMock.verify();
     }
   });

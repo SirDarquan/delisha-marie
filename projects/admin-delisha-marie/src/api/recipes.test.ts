@@ -86,6 +86,7 @@ describe('Recipes Router API', () => {
     mockEq.mockReturnValue(mockChain);
     mockLimit.mockReturnValue(mockChain);
     mockRange.mockReturnValue(mockChain);
+    mockIlike.mockReturnValue(mockChain);
     mockSingle.mockResolvedValue({ data: null, error: null });
     mockMaybeSingle.mockResolvedValue({ data: null, error: null });
     mockUpsert.mockResolvedValue({ data: null, error: null });
@@ -150,14 +151,14 @@ describe('Recipes Router API', () => {
       ];
       // Skeleton query
       mockSelect.mockReturnValueOnce(mockChain);
-      mockChain.ilike = vi.fn().mockReturnValue(mockChain);
+      mockIlike.mockReturnValue(mockChain);
       mockChain.then = vi
         .fn()
         .mockImplementationOnce((resolve) => resolve({ data: mockSkeleton, error: null }));
 
       // Page query
       mockSelect.mockReturnValueOnce(mockChain);
-      mockChain.in = vi.fn().mockResolvedValueOnce({
+      mockIn.mockResolvedValueOnce({
         data: [
           {
             id: 'recipe-1',
@@ -183,7 +184,7 @@ describe('Recipes Router API', () => {
       expect(res.body).toHaveLength(2);
       expect(res.body[1].title).toBe('Tacos');
       expect(res.body[1].holidays).toContain('Cinco de Mayo');
-      expect(mockChain.ilike).toHaveBeenCalledWith('title', '%taco%');
+      expect(mockIlike).toHaveBeenCalledWith('title', '%taco%');
     });
 
     it('should handle skeleton error in paginated query', async () => {
@@ -520,6 +521,30 @@ describe('Recipes Router API', () => {
     });
   });
 
+  describe('GET /categories', () => {
+    it('should return categories starting with /recipes/', async () => {
+      const mockData = [{ id: 1, name: 'Dinner', url: '/recipes/dinner' }];
+      mockOrder.mockResolvedValue({ data: mockData, error: null });
+
+      const res = await request(app).get('/categories');
+
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual(mockData);
+      expect(mockFrom).toHaveBeenCalledWith('categories');
+      expect(mockSelect).toHaveBeenCalledWith('id, name, url');
+      expect(mockIlike).toHaveBeenCalledWith('url', '/recipes/%');
+    });
+
+    it('should handle errors', async () => {
+      mockOrder.mockResolvedValue({ data: null, error: new Error('DB error') });
+
+      const res = await request(app).get('/categories');
+
+      expect(res.status).toBe(500);
+      expect(res.body.error).toBe('DB error');
+    });
+  });
+
   describe('GET /check-slug', () => {
     it('should return true if slug is taken', async () => {
       mockLimit.mockResolvedValue({ data: [{ id: 1 }], error: null });
@@ -566,6 +591,12 @@ describe('Recipes Router API', () => {
         status: 'published',
         recipe_holidays: [{ holidays: { name: 'Christmas' } }],
         recipe_special_diets: [{ special_diets: { name: 'Vegan' } }],
+        recipe_categories: [
+          { categories: { name: 'Baking', url: '/recipes/baking' } },
+          { categories: { name: 'Cakes', url: '/recipes/baking/cakes' } },
+          { categories: { name: 'Holiday', url: '/recipes/holiday' } },
+          { categories: { name: 'The Best Baking', url: '/the-best-recipes/the-best-baking' } },
+        ],
       };
 
       mockSingle.mockResolvedValue({ data: mockRecipe, error: null });
@@ -579,7 +610,47 @@ describe('Recipes Router API', () => {
         status: 'published',
         holidays: ['Christmas'],
         specialDiets: ['Vegan'],
+        category: {
+          trails: [
+            [
+              { name: 'Home', url: '/' },
+              { name: 'The Best Recipes', url: '/the-best-recipes' },
+              { name: 'The Best Baking', url: '/the-best-recipes/the-best-baking' },
+            ],
+            [
+              { name: 'Home', url: '/' },
+              { name: 'Recipes', url: '/recipes' },
+              { name: 'Baking', url: '/recipes/baking' },
+              { name: 'Cakes', url: '/recipes/baking/cakes' },
+            ],
+            [
+              { name: 'Home', url: '/' },
+              { name: 'Recipes', url: '/recipes' },
+              { name: 'Holiday', url: '/recipes/holiday' },
+            ],
+          ],
+        },
       });
+    });
+
+    it('should return null category if recipe_categories is malformed or empty', async () => {
+      const mockRecipe = {
+        id: '123',
+        title: 'Test Recipe',
+        recipe_categories: [
+          null,
+          { categories: null },
+          { categories: { name: 'Baking' } }, // missing url
+          { categories: { url: '/recipes/baking' } }, // missing name
+        ],
+      };
+
+      mockSingle.mockResolvedValue({ data: mockRecipe, error: null });
+
+      const res = await request(app).get('/recipes/123').set('Authorization', 'Bearer valid-token');
+
+      expect(res.status).toBe(200);
+      expect(res.body.category).toBeNull();
     });
 
     it('should return 404 if recipe not found', async () => {

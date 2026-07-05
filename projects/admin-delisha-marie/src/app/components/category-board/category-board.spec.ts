@@ -1,3 +1,4 @@
+import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { CategoryTrails } from '@dm/library';
 import { Recipe } from '../../models/recipe.model';
@@ -42,6 +43,11 @@ describe('CategoryBoardComponent', () => {
 
   const fakeRecipeService = {
     fetchRecipes: () => Promise.resolve(mockRecipesData),
+    categories: signal([
+      { id: '1', name: 'Dinner', url: '/recipes/dinner' },
+      { id: '2', name: 'Chicken', url: '/recipes/dinner/chicken' },
+      { id: '3', name: 'Dessert', url: '/recipes/dessert' },
+    ]),
   };
 
   beforeEach(async () => {
@@ -131,7 +137,7 @@ describe('CategoryBoardComponent', () => {
   });
 
   describe('Fallback behaviors without category map', () => {
-    beforeEach(async () => {
+    it('should fallback to default trail without category map', async () => {
       mockRecipesData = [];
       await TestBed.resetTestingModule();
       await TestBed.configureTestingModule({
@@ -143,9 +149,7 @@ describe('CategoryBoardComponent', () => {
       component = fixture.componentInstance;
       await fixture.whenStable();
       fixture.detectChanges();
-    });
 
-    it('should fallback to baseline configuration if recipe service provides no categories', () => {
       expect(component).toBeTruthy();
 
       const previewVal = component.compiledPreview();
@@ -167,13 +171,25 @@ describe('CategoryBoardComponent', () => {
   });
 
   it('should compile predefined categories from recipes', () => {
-    fixture.detectChanges();
-    const categories = component.categories();
-    expect(categories.length).toBe(2);
-    expect(categories[0].name).toBe('Dessert');
-    expect(categories[1].name).toBe('Dinner');
-    expect(categories[1].children?.length).toBe(1);
-    expect(categories[1].children?.[0].name).toBe('Chicken');
+    // Force categories evaluation
+    const compiled = component.categories();
+
+    // Check top-level category: Dinner
+    const dinner = compiled.find((c) => c.name === 'Dinner');
+    expect(dinner).toBeDefined();
+    expect(dinner?.url).toBe('/recipes/dinner');
+
+    // Check subcategory: Chicken under Dinner
+    expect(dinner?.children).toBeDefined();
+    expect(dinner?.children?.length).toBe(1);
+    expect(dinner?.children?.[0].name).toBe('Chicken');
+    expect(dinner?.children?.[0].url).toBe('/recipes/dinner/chicken');
+
+    // Check top-level category: Dessert
+    const dessert = compiled.find((c) => c.name === 'Dessert');
+    expect(dessert).toBeDefined();
+    expect(dessert?.url).toBe('/recipes/dessert');
+    expect(dessert?.children).toBeUndefined(); // Dessert has no subcategories
   });
 
   it('should toggle a predefined category on and off', () => {

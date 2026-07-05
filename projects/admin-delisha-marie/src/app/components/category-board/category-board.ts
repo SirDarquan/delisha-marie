@@ -8,7 +8,6 @@ import {
   input,
   model,
   output,
-  resource,
   signal,
   ViewEncapsulation,
 } from '@angular/core';
@@ -23,7 +22,6 @@ import {
   trimSlashes,
   trimTrailingSlashes,
 } from '@dm/library';
-import { Recipe } from '../../models/recipe.model';
 import { RecipeService } from '../../services/recipe.service';
 
 interface CategoryConfig {
@@ -282,16 +280,34 @@ interface CategoryConfig {
 export class CategoryBoardComponent implements FormValueControl<CategoryTrails | null> {
   private readonly recipeService = inject(RecipeService);
 
-  readonly recipesResource = resource({
-    loader: () => this.recipeService.fetchRecipes(),
-  });
-
-  // Dynamically compile categories and subcategories from the existing recipes' categories and breadcrumbs
+  // Dynamically compile categories and subcategories from the predefined database categories
   readonly categories = computed<CategoryConfig[]>(() => {
-    const recipes = this.recipesResource.value() || [];
+    const dbCategories = this.recipeService.categories() || [];
     const map = new Map<string, { url: string; subs: Map<string, string> }>();
 
-    this.extractBreadcrumbsToMap(recipes, map);
+    dbCategories.forEach((cat) => {
+      if (!cat.url.startsWith('/recipes/')) return;
+
+      const parts = cat.url.split('/').filter(Boolean);
+      if (parts.length === 2) {
+        // Base category
+        if (map.has(cat.name)) {
+          map.get(cat.name)!.url = cat.url;
+        } else {
+          map.set(cat.name, { url: cat.url, subs: new Map<string, string>() });
+        }
+      } else if (parts.length === 3) {
+        // Subcategory
+        const parentUrl = `/${parts[0]}/${parts[1]}`;
+        const parent = dbCategories.find((c) => c.url === parentUrl);
+        if (parent) {
+          if (!map.has(parent.name)) {
+            map.set(parent.name, { url: parent.url, subs: new Map<string, string>() });
+          }
+          map.get(parent.name)!.subs.set(cat.name, cat.url);
+        }
+      }
+    });
 
     const result: CategoryConfig[] = [];
     map.forEach((data, catName) => {
@@ -310,42 +326,6 @@ export class CategoryBoardComponent implements FormValueControl<CategoryTrails |
     // Sort categories alphabetically for a premium UI presentation
     return result.sort((a, b) => a.name.localeCompare(b.name));
   });
-
-  /* v8 ignore start */
-  private extractBreadcrumbsToMap(
-    recipes: Recipe[],
-    map: Map<string, { url: string; subs: Map<string, string> }>,
-  ): void {
-    recipes.forEach((r) => {
-      // 1. Try extracting standard trails from the new category property
-      if (r.category && typeof r.category === 'object' && r.category.trails) {
-        r.category.trails.forEach((trail) => {
-          if (trail.length <= 2) return;
-          const catPiece = trail[2];
-          if (!catPiece?.name || !catPiece?.url?.startsWith('/recipes/')) return;
-
-          const catName = catPiece.name.trim();
-          const catUrl = catPiece.url.trim();
-
-          if (!map.has(catName)) {
-            map.set(catName, { url: catUrl, subs: new Map<string, string>() });
-          }
-
-          const catData = map.get(catName)!;
-
-          if (trail.length > 3) {
-            const subPiece = trail[3];
-            if (subPiece?.name && !subPiece?.url?.startsWith('/recipe/')) {
-              const subName = subPiece.name.trim();
-              const subUrl = subPiece.url.trim();
-              catData.subs.set(subName, subUrl);
-            }
-          }
-        });
-      }
-    });
-  }
-  /* v8 ignore stop */
 
   // Standalone value model for signals form integration
   readonly value = model<CategoryTrails | null>(null);
@@ -407,8 +387,36 @@ export class CategoryBoardComponent implements FormValueControl<CategoryTrails |
         });
 
         if (standardTrails.length > 0) {
+          // Fill in missing intermediate category nodes (e.g. if the trail jumps from Recipes directly to a subcategory)
+          const dbCategories = this.recipeService.categories() || [];
+          const expandedStandardTrails = standardTrails.map((trail) => {
+            const expandedTrail: { name: string; url: string }[] = [];
+            for (const node of trail) {
+              const urlPart = typeof node.url === 'string' ? node.url : '';
+              const parts = urlPart.split('/').filter(Boolean);
+
+              if (parts.length === 3 && parts[0] === 'recipes') {
+                const parentUrl = `/${parts[0]}/${parts[1]}`;
+                const hasParent =
+                  expandedTrail.some((t) => t.url === parentUrl) ||
+                  trail.some((t: { url: string }) => t.url === parentUrl);
+                if (!hasParent) {
+                  const parentCat = dbCategories.find(
+                    (c: { url: string; name: string }) => c.url === parentUrl,
+                  );
+                  if (parentCat) {
+                    expandedTrail.push({ name: parentCat.name, url: parentCat.url });
+                  }
+                }
+              }
+
+              expandedTrail.push({ name: node.name || '', url: urlPart });
+            }
+            return expandedTrail;
+          });
+
           // Clean recipe leaf nodes before serialization comparison
-          const cleanedInputTrails = standardTrails.map((trail) =>
+          const cleanedInputTrails = expandedStandardTrails.map((trail) =>
             trail.filter((t) => t.url && !t.url.startsWith('/recipe/')),
           );
 
@@ -417,7 +425,7 @@ export class CategoryBoardComponent implements FormValueControl<CategoryTrails |
 
           // Only reload and reset active index if there is an external data change
           if (inputStr !== currentStr) {
-            const mappedList = standardTrails.map((trail) =>
+            const mappedList = expandedStandardTrails.map((trail) =>
               trail
                 .filter((b) => b.url && !b.url.startsWith('/recipe/'))
                 .map((b) => ({
