@@ -233,7 +233,6 @@ interface CategoryConfig {
           <button
             type="button"
             (click)="addCustomPiece()"
-            /* v8 ignore next */
             [disabled]="
               !isCustomPanelActive() || !customName().trim() || customUrl().trim().length < 3
             "
@@ -349,7 +348,6 @@ export class CategoryBoardComponent implements FormValueControl<CategoryTrails |
   activeTrailIndex = signal<number>(0);
 
   // boardPieces computed signal acts as a proxy for the active trail
-  /* v8 ignore start */
   readonly boardPieces = computed(() => {
     const idx = this.activeTrailIndex();
     const list = this.boardPiecesList();
@@ -369,7 +367,6 @@ export class CategoryBoardComponent implements FormValueControl<CategoryTrails |
 
     return trail;
   });
-  /* v8 ignore stop */
 
   // Form input signal values
   customName = signal<string>('');
@@ -469,7 +466,6 @@ export class CategoryBoardComponent implements FormValueControl<CategoryTrails |
     this.boardPiecesList.update((l) => l.filter((_, i) => i !== idx));
 
     // Shift active index if it was deleted or out of bounds
-    /* v8 ignore next */
     if (this.activeTrailIndex() >= this.boardPiecesList().length) {
       this.activeTrailIndex.set(this.boardPiecesList().length - 1);
     }
@@ -532,7 +528,6 @@ export class CategoryBoardComponent implements FormValueControl<CategoryTrails |
 
     // Dynamically clean redundancy matching the current prefix
     const prefixNoSlashes = trimSlashes(prefix);
-    /* v8 ignore next */
     if (prefixNoSlashes) {
       const regex = new RegExp('^/?' + prefixNoSlashes + '/?', 'i');
       urlPart = urlPart.replace(regex, '');
@@ -582,7 +577,6 @@ export class CategoryBoardComponent implements FormValueControl<CategoryTrails |
 
     // Strip redundant active prefix if matching
     const prefixNoSlashes = trimSlashes(prefix);
-    /* v8 ignore next */
     if (prefixNoSlashes) {
       const regex = new RegExp('^/?' + prefixNoSlashes + '/?', 'i');
       value = value.replace(regex, '');
@@ -613,7 +607,6 @@ export class CategoryBoardComponent implements FormValueControl<CategoryTrails |
     const trails = this.boardPiecesList().map((trail) => {
       const title = this.recipeTitle() || 'Untitled';
       const slug = this.recipeSlug();
-      /* v8 ignore next */
       if (slug) {
         const recipeUrl = getCleanRecipeUrl(slug);
         return [...trail, { name: title, url: recipeUrl }];
@@ -640,9 +633,7 @@ export class CategoryBoardComponent implements FormValueControl<CategoryTrails |
     if (nonRecipe.length === 0) return '/';
 
     const last = nonRecipe.at(-1);
-    /* v8 ignore next */
     const base = last?.url || '';
-    /* v8 ignore next */
     return base.endsWith('/') ? base : `${base}/`;
   });
 
@@ -667,7 +658,6 @@ export class CategoryBoardComponent implements FormValueControl<CategoryTrails |
   // Reactive subcategories list calculation
   readonly availableSubcategories = computed(() => {
     const trail = this.boardPieces();
-    /* v8 ignore next */
     if (trail.length === 0) return [];
 
     // Traverse board trail backwards to find last matched category config
