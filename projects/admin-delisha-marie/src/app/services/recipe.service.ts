@@ -10,6 +10,10 @@ export type ActiveRecipeId = string | number | null;
 export class RecipeService {
   private readonly api = inject(ApiService);
 
+  // Core state: signal of all categories from database
+  private readonly _categories = signal<{ id: string; name: string; url: string }[]>([]);
+  readonly categories = computed(() => this._categories());
+
   // Core state: signal of all methods from database
   private readonly _methods = signal<{ id: string; name: string; slug: string }[]>([]);
   readonly methods = computed(() => this._methods());
@@ -23,6 +27,7 @@ export class RecipeService {
   readonly specialDiets = computed(() => this._specialDiets());
 
   constructor() {
+    this.loadInitialCategories();
     this.loadInitialMethods();
     this.loadInitialHolidays();
     this.loadInitialSpecialDiets();
@@ -102,6 +107,19 @@ export class RecipeService {
 
   deleteRecipe(id: string | number): Promise<{ success: boolean }> {
     return this.api.delete<{ success: boolean }>(`/recipes/${id}`);
+  }
+
+  private loadInitialCategories(): void {
+    this.api
+      .get<{ id: string; name: string; url: string }[]>('/categories')
+      .then((data) => {
+        if (data && Array.isArray(data)) {
+          this._categories.set(data);
+        }
+      })
+      .catch((err) => {
+        console.error('Failed to load categories:', err);
+      });
   }
 
   private loadInitialMethods(): void {
