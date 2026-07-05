@@ -519,7 +519,16 @@ recipesRouter.delete('/recipes/:id', async (req: AuthRequest, res: Response) => 
 // --- Helper Functions ---
 
 function camelCaseKeys(obj: Record<string, unknown>): Record<string, unknown> {
-  return Object.fromEntries(Object.entries(obj).map(([k, v]) => [camelCase(k), v]));
+  const result = Object.fromEntries(Object.entries(obj).map(([k, v]) => [camelCase(k), v]));
+  if (result['nutrition'] && typeof result['nutrition'] === 'object') {
+    result['nutrition'] = Object.fromEntries(
+      Object.entries(result['nutrition'] as Record<string, unknown>).map(([k, v]) => [
+        camelCase(k),
+        v,
+      ]),
+    );
+  }
+  return result;
 }
 
 function snakeCaseKeys(obj: Record<string, unknown>): Record<string, unknown> {
@@ -563,6 +572,8 @@ function filterRecipeColumns(obj: Record<string, unknown>): Record<string, unkno
     'equipment',
     'notes',
     'video',
+    'created_at',
+    'updated_at',
   ];
   const result: Record<string, unknown> = {};
   for (const key of allowed) {
