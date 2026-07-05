@@ -38,7 +38,7 @@ interface RecipeFormModel {
   totalTime: string;
   yield: string;
   status: 'draft' | 'scheduled' | 'published' | 'updated';
-  preview_token: string;
+  previewToken: string;
   image: string;
   imageWidth: string;
   imageHeight: string;
@@ -284,7 +284,6 @@ interface RecipeFormModel {
                           <input
                             [id]="'keyword-' + i"
                             type="text"
-                            /* v8 ignore next */
                             [value]="kw"
                             (input)="onKeywordInput(i, $event)"
                             [size]="kw.length > 8 ? kw.length + 2 : 10"
@@ -579,7 +578,6 @@ interface RecipeFormModel {
                 mat-stroked-button
                 type="submit"
                 [disabled]="isDraftDisabled()"
-                (click)="saveRequired('scheduled')"
                 class="px-5 py-2.5 rounded-xl font-bold text-slate-900 bg-amber-400 hover:bg-amber-300 transition shadow-md cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed border-0">
                 Schedule Publication
               </button>
@@ -598,9 +596,7 @@ interface RecipeFormModel {
               <button
                 mat-stroked-button
                 type="submit"
-                /* v8 ignore next */
                 [disabled]="isDraftDisabled()"
-                (click)="saveRequired('scheduled')"
                 class="px-5 py-2.5 rounded-xl font-bold text-slate-900 bg-amber-400 hover:bg-amber-300 transition shadow-md cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed border-0">
                 Update Schedule
               </button>
@@ -626,7 +622,6 @@ interface RecipeFormModel {
                 mat-stroked-button
                 type="submit"
                 [disabled]="isDraftDisabled()"
-                (click)="saveRequired('published')"
                 class="px-5 py-2.5 rounded-xl font-bold text-white bg-gradient-to-r from-purple-500 to-pink-500 hover:brightness-110 transition shadow-lg cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed border-0">
                 Update Published
               </button>
@@ -682,7 +677,7 @@ export class RecipeFormComponent implements OnInit {
     totalTime: '',
     yield: '',
     status: 'draft',
-    preview_token: '',
+    previewToken: '',
     image: '',
     imageWidth: '',
     imageHeight: '',
@@ -751,7 +746,6 @@ export class RecipeFormComponent implements OnInit {
       submission: {
         action: async () => {
           const targetStatus =
-            /* v8 ignore next */
             this.currentStatus() === 'published' || this.currentStatus() === 'updated'
               ? 'published'
               : 'scheduled';
@@ -766,7 +760,6 @@ export class RecipeFormComponent implements OnInit {
   private isInitialized = false;
   private readonly location = inject(Location);
 
-  /* v8 ignore start */
   private getFieldValue(key: keyof RecipeFormModel) {
     const formFields = this.recipeForm;
     const fieldFn = formFields[key];
@@ -784,9 +777,7 @@ export class RecipeFormComponent implements OnInit {
     }
     return this.recipeModel()[key];
   }
-  /* v8 ignore stop */
 
-  /* v8 ignore start */
   private getCurrentFormValue(): RecipeFormModel {
     const initial = this.initialModel() || this.recipeModel();
     const current = { ...this.recipeModel() };
@@ -797,9 +788,7 @@ export class RecipeFormComponent implements OnInit {
     }
     return current;
   }
-  /* v8 ignore stop */
 
-  /* v8 ignore start */
   private valuesAreEqual(key: keyof RecipeFormModel, a: unknown, b: unknown): boolean {
     if (key === 'category') {
       const categoryA = a as CategoryTrails | null;
@@ -825,7 +814,6 @@ export class RecipeFormComponent implements OnInit {
     const normB = typeof b === 'string' || typeof b === 'boolean' ? String(b) : '';
     return normA.trim() === normB.trim();
   }
-  /* v8 ignore stop */
 
   protected readonly isDirty = computed(() => {
     const initial = this.initialModel();
@@ -849,7 +837,6 @@ export class RecipeFormComponent implements OnInit {
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
-    /* v8 ignore next */
     if (id) {
       this.idToEdit.set(id);
       this.recipeService
@@ -868,7 +855,6 @@ export class RecipeFormComponent implements OnInit {
                 () => { value: { set: (v: unknown) => void } }
               >;
               const mappedObj = mapped as unknown as Record<string, unknown>;
-              /* v8 ignore next 3 */
               if (typeof formObj[key] === 'function') {
                 formObj[key]().value.set(mappedObj[key]);
               }
@@ -890,23 +876,17 @@ export class RecipeFormComponent implements OnInit {
     let holidayStr = '';
     if (recipe.holidays && recipe.holidays.length > 0) {
       const firstHoliday = recipe.holidays[0];
-      /* v8 ignore next */
       if (typeof firstHoliday === 'object' && firstHoliday !== null) {
-        /* v8 ignore next */
         holidayStr = (firstHoliday as { name?: string }).name || '';
       } else {
-        /* v8 ignore next */
         holidayStr = String(firstHoliday);
       }
     }
 
     const specialDietsList = (recipe.specialDiets || []).map((d: unknown) => {
-      /* v8 ignore next */
       if (typeof d === 'object' && d !== null) {
-        /* v8 ignore next */
         return (d as { name?: string }).name || '';
       }
-      /* v8 ignore next */
       return String(d);
     });
 
@@ -921,7 +901,7 @@ export class RecipeFormComponent implements OnInit {
       totalTime: recipe.totalTime || '',
       yield: recipe.yield || '',
       status: recipe.status || 'draft',
-      preview_token: recipe.preview_token || '',
+      previewToken: recipe.previewToken || '',
       image: recipe.image || '',
       imageWidth: recipe.imageWidth || '',
       imageHeight: recipe.imageHeight || '',
@@ -1004,7 +984,6 @@ export class RecipeFormComponent implements OnInit {
   addKeyword(): void {
     this.recipeModel.update((model) => ({
       ...model,
-      /* v8 ignore next */
       keyword: [...(model.keyword || []), ''],
     }));
   }
@@ -1012,7 +991,6 @@ export class RecipeFormComponent implements OnInit {
   removeKeyword(idx: number): void {
     this.recipeModel.update((model) => ({
       ...model,
-      /* v8 ignore next */
       keyword: (model.keyword || []).filter((_, i) => i !== idx),
     }));
   }
@@ -1020,7 +998,6 @@ export class RecipeFormComponent implements OnInit {
   onKeywordInput(idx: number, event: Event): void {
     const value = (event.target as HTMLInputElement).value;
     this.recipeModel.update((model) => {
-      /* v8 ignore next */
       const updated = [...(model.keyword || [])];
       updated[idx] = value;
       return {
@@ -1058,7 +1035,6 @@ export class RecipeFormComponent implements OnInit {
           .map((n) => n.trim())
           .filter(Boolean)
       : [];
-    /* v8 ignore next */
     const keywords = formValue.keyword
       ? formValue.keyword.map((k) => k.trim()).filter(Boolean)
       : [];
@@ -1119,7 +1095,7 @@ export class RecipeFormComponent implements OnInit {
       instructions,
       author: formValue.author || 'Delisha Marie',
       status,
-      preview_token: formValue.preview_token?.trim() || null,
+      previewToken: formValue.previewToken?.trim() || null,
       method: formValue.method?.trim() || null,
       theBest: formValue.theBest || false,
       holidays,
@@ -1149,7 +1125,6 @@ export class RecipeFormComponent implements OnInit {
         status: 'draft',
       }));
 
-      /* v8 ignore next */
       if (id) {
         await this.recipeService.updateRecipe(id, payload);
       }
@@ -1163,7 +1138,6 @@ export class RecipeFormComponent implements OnInit {
     if (this.recipeForm().invalid()) {
       return;
     }
-
     const formValue = this.recipeModel();
     const id = this.idToEdit();
     const originalRecipe = this.originalRecipe();
@@ -1173,27 +1147,19 @@ export class RecipeFormComponent implements OnInit {
     let updatedAt = originalRecipe?.updatedAt || null;
 
     const currentTime = new Date().toISOString();
-
-    if (status === 'scheduled') {
-      createdAt = originalRecipe?.createdAt || currentTime;
+    if (status === 'scheduled' && !createdAt && !updatedAt) {
+      createdAt = currentTime;
       updatedAt = currentTime;
-      /* v8 ignore next */
-    } else if (status === 'published') {
-      if (originalRecipe?.status === 'published' || originalRecipe?.status === 'updated') {
-        /* v8 ignore next */
-        createdAt = originalRecipe.createdAt || currentTime;
-        updatedAt = currentTime;
-      } else {
+    } else {
+      updatedAt = currentTime;
+      if (!createdAt) {
         createdAt = currentTime;
-        updatedAt = currentTime;
       }
     }
 
     const payload: Omit<Recipe, 'id'> = {
       ...this.serializeRecipe(formValue, status),
-      /* v8 ignore next */
       createdAt: createdAt || undefined,
-      /* v8 ignore next */
       updatedAt: updatedAt || undefined,
     };
 
@@ -1257,7 +1223,6 @@ export class RecipeFormComponent implements OnInit {
       });
 
       dialogRef.afterClosed().subscribe((leave) => {
-        /* v8 ignore next */
         if (leave) {
           this.location.back();
         }

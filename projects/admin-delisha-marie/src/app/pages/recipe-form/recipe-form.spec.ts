@@ -32,7 +32,7 @@ describe('RecipeFormComponent', () => {
     totalTime: '20 mins',
     yield: '4 servings',
     status: 'published' as const,
-    preview_token: 'token',
+    previewToken: 'token',
     image: 'pic.png',
     imageWidth: '100',
     imageHeight: '100',
@@ -198,7 +198,7 @@ describe('RecipeFormComponent', () => {
       yield: '',
       author: 'Delisha Marie',
       status: 'published',
-      preview_token: 'secret-123',
+      previewToken: 'secret-123',
       method: 'Baking',
       theBest: true,
       holidays: ['Holiday 1'],
@@ -276,7 +276,7 @@ describe('RecipeFormComponent', () => {
       yield: '',
       author: 'Delisha Marie',
       status: 'draft',
-      preview_token: '',
+      previewToken: '',
     };
     fixture = TestBed.createComponent(RecipeFormComponent);
     component = fixture.componentInstance;
@@ -774,7 +774,7 @@ describe('RecipeFormComponent', () => {
       yield: '',
       author: 'Delisha Marie',
       status: 'draft',
-      preview_token: '',
+      previewToken: '',
     };
     fixture = TestBed.createComponent(RecipeFormComponent);
     component = fixture.componentInstance;
@@ -990,7 +990,7 @@ describe('RecipeFormComponent', () => {
     expect(component['recipeModel']().author).toBe('Delisha Marie');
     expect(component['recipeModel']().difficulty).toBe('Easy');
     expect(component['recipeModel']().status).toBe('draft');
-    expect(component['recipeModel']().preview_token).toBe('');
+    expect(component['recipeModel']().previewToken).toBe('');
     expect(component['recipeModel']().holidays).toBe('');
     expect(component['recipeModel']().specialDiets).toEqual([]);
     expect(component['recipeModel']().category).toBeNull();
