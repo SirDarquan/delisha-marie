@@ -7,5 +7,5 @@ export interface NavigationLink {
 
 export interface Recipe extends BaseRecipe {
   status: 'draft' | 'scheduled' | 'published' | 'updated';
-  preview_token?: string;
+  previewToken?: string;
 }
