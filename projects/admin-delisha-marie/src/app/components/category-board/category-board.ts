@@ -291,10 +291,10 @@ export class CategoryBoardComponent implements FormValueControl<CategoryTrails |
       const parts = cat.url.split('/').filter(Boolean);
       if (parts.length === 2) {
         // Base category
-        if (!map.has(cat.name)) {
-          map.set(cat.name, { url: cat.url, subs: new Map<string, string>() });
-        } else {
+        if (map.has(cat.name)) {
           map.get(cat.name)!.url = cat.url;
+        } else {
+          map.set(cat.name, { url: cat.url, subs: new Map<string, string>() });
         }
       } else if (parts.length === 3) {
         // Subcategory

@@ -8,6 +8,65 @@ const recipesRouter = Router();
 
 recipesRouter.use(authMiddleware);
 
+interface CategoryNode {
+  name: string;
+  url: string;
+}
+
+function formatCategoryTrails(recipeCategories: unknown): { trails: CategoryNode[][] } | null {
+  if (!recipeCategories || !Array.isArray(recipeCategories) || recipeCategories.length === 0) {
+    return null;
+  }
+
+  const cats = recipeCategories
+    .map((rc: Record<string, unknown>) => rc?.['categories'])
+    .filter((c: unknown): c is CategoryNode => {
+      const cat = c as CategoryNode;
+      return !!cat && typeof cat.name === 'string' && typeof cat.url === 'string';
+    });
+
+  if (cats.length === 0) {
+    return null;
+  }
+
+  cats.sort((a: CategoryNode, b: CategoryNode) => b.url.length - a.url.length);
+
+  const trails: CategoryNode[][] = [];
+  for (const cat of cats) {
+    let matched = false;
+    for (const trail of trails) {
+      if (trail[0].url.startsWith(cat.url)) {
+        trail.push(cat);
+        matched = true;
+        break;
+      }
+    }
+    if (!matched) {
+      trails.push([cat]);
+    }
+  }
+
+  const finalTrails = trails.map((trail) => {
+    trail.reverse();
+    const first = trail[0];
+    if (first?.url.startsWith('/the-best-recipes')) {
+      return [
+        { name: 'Home', url: '/' },
+        { name: 'The Best Recipes', url: '/the-best-recipes' },
+        ...trail.map((c: CategoryNode) => ({ name: c.name, url: c.url })),
+      ];
+    }
+
+    return [
+      { name: 'Home', url: '/' },
+      { name: 'Recipes', url: '/recipes' },
+      ...trail.map((c: CategoryNode) => ({ name: c.name, url: c.url })),
+    ];
+  });
+
+  return { trails: finalTrails };
+}
+
 function formatRecipeList(
   data: unknown[],
   statusOrder: Record<string, number>,
@@ -22,65 +81,7 @@ function formatRecipeList(
     const specialDiets =
       recipe.recipe_special_diets?.map((d) => d?.special_diets?.name).filter(Boolean) || [];
 
-    interface CategoryNode {
-      name: string;
-      url: string;
-    }
-
-    let category: { trails: CategoryNode[][] } | null = null;
-    if (
-      recipe['recipe_categories'] &&
-      Array.isArray(recipe['recipe_categories']) &&
-      recipe['recipe_categories'].length > 0
-    ) {
-      const cats = recipe['recipe_categories']
-        .map((rc: Record<string, unknown>) => rc?.['categories'])
-        .filter((c: unknown): c is CategoryNode => {
-          const cat = c as CategoryNode;
-          return !!cat && typeof cat.name === 'string' && typeof cat.url === 'string';
-        });
-
-      if (cats.length > 0) {
-        // Group categories into separate trails by prefix matching (longest URL to shortest)
-        cats.sort((a: CategoryNode, b: CategoryNode) => b.url.length - a.url.length);
-
-        const trails: CategoryNode[][] = [];
-        for (const cat of cats) {
-          let matched = false;
-          for (const trail of trails) {
-            const deepest = trail[0];
-            if (deepest.url.startsWith(cat.url)) {
-              trail.push(cat);
-              matched = true;
-              break;
-            }
-          }
-          if (!matched) {
-            trails.push([cat]);
-          }
-        }
-
-        const finalTrails = trails.map((trail) => {
-          trail.reverse();
-          const first = trail[0];
-          if (first && first.url.startsWith('/the-best-recipes')) {
-            return [
-              { name: 'Home', url: '/' },
-              { name: 'The Best Recipes', url: '/the-best-recipes' },
-              ...trail.map((c: CategoryNode) => ({ name: c.name, url: c.url })),
-            ];
-          } else {
-            return [
-              { name: 'Home', url: '/' },
-              { name: 'Recipes', url: '/recipes' },
-              ...trail.map((c: CategoryNode) => ({ name: c.name, url: c.url })),
-            ];
-          }
-        });
-
-        category = { trails: finalTrails };
-      }
-    }
+    const category = formatCategoryTrails(recipe['recipe_categories']);
 
     const cleanRecipe = { ...recipe };
     delete cleanRecipe.recipe_holidays;
