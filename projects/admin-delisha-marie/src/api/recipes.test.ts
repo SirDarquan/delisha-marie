@@ -673,6 +673,18 @@ describe('Recipes Router API', () => {
       expect(res.status).toBe(500);
       expect(res.body.error).toBe('Unexpected DB error');
     });
+
+    it('should throw error if db returns non-PGRST116 error', async () => {
+      mockSingle.mockResolvedValue({
+        data: null,
+        error: { code: '500', message: 'Some db error' },
+      });
+
+      const res = await request(app).get('/recipes/999').set('Authorization', 'Bearer valid-token');
+
+      expect(res.status).toBe(500);
+      expect(res.body.error).toBe('[object Object]');
+    });
   });
 
   describe('POST /recipes', () => {
@@ -693,7 +705,7 @@ describe('Recipes Router API', () => {
         holidays: ['Christmas'],
         specialDiets: ['Vegan'],
       };
-      const createdRecipe = { id: 'recipe-3', title: 'New Salad', description: 'Fresh veggies' };
+      const createdRecipe = { id: 'recipe-3', title: 'New Salad', description: 'Fresh veggies', nutrition: { calories_count: 100 } };
 
       // Mock recipes insert
       mockSingle.mockResolvedValueOnce({ data: createdRecipe, error: null });
@@ -713,6 +725,7 @@ describe('Recipes Router API', () => {
       expect(res.status).toBe(200);
       expect(res.body.title).toBe('New Salad');
       expect(res.body.category).toEqual(inputRecipe.category);
+      expect(res.body.nutrition).toEqual({ caloriesCount: 100 });
     });
 
     it('should return 400 when recipe creation fails', async () => {
@@ -891,25 +904,15 @@ describe('Recipes Router API', () => {
       expect(res.body.error).toBe('Raw GET /home string exception');
     });
 
-    it('should return 500 when GET /holidays receives a non-Error string exception', async () => {
-      mockOrder.mockRejectedValue('Raw GET /holidays string exception');
-      const res = await request(app).get('/holidays');
+    it.each([
+      ['/holidays', 'Raw GET /holidays string exception'],
+      ['/special-diets', 'Raw GET /special-diets string exception'],
+      ['/methods', 'Raw GET /methods string exception'],
+    ])('should return 500 when GET %s receives a non-Error string exception', async (endpoint, errorMsg) => {
+      mockOrder.mockRejectedValue(errorMsg);
+      const res = await request(app).get(endpoint);
       expect(res.status).toBe(500);
-      expect(res.body.error).toBe('Raw GET /holidays string exception');
-    });
-
-    it('should return 500 when GET /special-diets receives a non-Error string exception', async () => {
-      mockOrder.mockRejectedValue('Raw GET /special-diets string exception');
-      const res = await request(app).get('/special-diets');
-      expect(res.status).toBe(500);
-      expect(res.body.error).toBe('Raw GET /special-diets string exception');
-    });
-
-    it('should return 500 when GET /methods receives a non-Error string exception', async () => {
-      mockOrder.mockRejectedValue('Raw GET /methods string exception');
-      const res = await request(app).get('/methods');
-      expect(res.status).toBe(500);
-      expect(res.body.error).toBe('Raw GET /methods string exception');
+      expect(res.body.error).toBe(errorMsg);
     });
   });
 

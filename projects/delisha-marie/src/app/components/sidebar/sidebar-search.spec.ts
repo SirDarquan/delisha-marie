@@ -34,8 +34,8 @@ describe('SidebarSearch', () => {
     component.searchControl.setValue('Chicken');
     component.search();
 
-    expect(navigateSpy).toHaveBeenCalledWith(['/recipe-index'], {
-      queryParams: { s: 'Chicken' },
+    expect(navigateSpy).toHaveBeenCalledWith(['/search'], {
+      queryParams: { q: 'Chicken' },
     });
   });
 
@@ -47,8 +47,8 @@ describe('SidebarSearch', () => {
     const event = new KeyboardEvent('keyup', { key: 'Enter' });
     input.dispatchEvent(event);
 
-    expect(navigateSpy).toHaveBeenCalledWith(['/recipe-index'], {
-      queryParams: { s: 'Pasta' },
+    expect(navigateSpy).toHaveBeenCalledWith(['/search'], {
+      queryParams: { q: 'Pasta' },
     });
   });
 
@@ -66,8 +66,8 @@ describe('SidebarSearch', () => {
     const button = fixture.debugElement.query(By.css('button'));
     button.triggerEventHandler('click', null);
 
-    expect(navigateSpy).toHaveBeenCalledWith(['/recipe-index'], {
-      queryParams: { s: 'Salad' },
+    expect(navigateSpy).toHaveBeenCalledWith(['/search'], {
+      queryParams: { q: 'Salad' },
     });
   });
 });
