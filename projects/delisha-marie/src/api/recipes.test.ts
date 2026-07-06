@@ -371,7 +371,7 @@ describe('Recipes Router API', () => {
       const res = await request(app).post('/api/recipes/search').send({ query: 'test', page: 1, pageSize: 12 });
 
       expect(res.status).toBe(200);
-      expect(res.body.items.length).toBe(1);
+      expect(res.body.items).toHaveLength(1);
       expect(res.body.total).toBe(1);
       expect(mockInvoke).toHaveBeenCalledWith('search-recipes', {
         body: { query: 'test', page: 1, pageSize: 12 },
