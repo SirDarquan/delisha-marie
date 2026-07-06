@@ -79,7 +79,7 @@ describe('SearchPage', () => {
       pageSize: 12,
     });
 
-    expect(component.recipes().length).toBe(1);
+    expect(component.recipes()).toHaveLength(1);
     expect(component.totalItems()).toBe(1);
   });
 
@@ -88,7 +88,7 @@ describe('SearchPage', () => {
     fixture.detectChanges();
     await fixture.whenStable();
 
-    expect(component.recipes().length).toBe(0);
+    expect(component.recipes()).toHaveLength(0);
     expect(component.totalItems()).toBe(0);
   });
 
