@@ -6,9 +6,9 @@ import recipesRouter from './recipes';
 
 const apiRouter = Router();
 
-// Register middleware
-apiRouter.use(cookieParser());
-apiRouter.use(express.json());
+// Register middleware ONLY for API routes to avoid consuming the body of Angular SSR requests
+apiRouter.use('/api', cookieParser());
+apiRouter.use('/api', express.json());
 
 // Register routers
 apiRouter.use('/api', recipeIndexRouter);
