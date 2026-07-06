@@ -357,10 +357,6 @@ describe('Recipes Router API', () => {
     expect(res.status).toBe(200);
   });
 
-  afterEach(() => {
-    vi.clearAllMocks();
-  });
-
   describe('POST /api/recipes/search', () => {
     it('should return recipes successfully', async () => {
       mockInvoke.mockResolvedValue({
