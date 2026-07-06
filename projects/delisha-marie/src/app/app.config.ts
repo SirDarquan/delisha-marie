@@ -3,6 +3,7 @@ import {
   ApplicationConfig,
   provideBrowserGlobalErrorListeners,
   provideZonelessChangeDetection,
+  provideExperimentalWebMcpTools,
 } from '@angular/core';
 import {
   provideClientHydration,
@@ -12,6 +13,7 @@ import {
 import { provideRouter, withComponentInputBinding, withInMemoryScrolling } from '@angular/router';
 import { routes } from './app.routes';
 import { TemplatePageTitleStrategy, provideTitleStrategy } from './services/title.strategy';
+import { withRecipes } from './webmcp';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -28,5 +30,6 @@ export const appConfig: ApplicationConfig = {
     provideTitleStrategy(TemplatePageTitleStrategy),
     provideClientHydration(withEventReplay(), withNoIncrementalHydration()),
     provideHttpClient(withInterceptors([])),
+    provideExperimentalWebMcpTools(withRecipes()),
   ],
 };
