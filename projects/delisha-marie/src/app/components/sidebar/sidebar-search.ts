@@ -80,8 +80,8 @@ export class SidebarSearch {
 
   search() {
     const query = this.searchControl.value;
-    if (query) {
-      this.router.navigate(['/recipe-index'], { queryParams: { s: query } });
+    if (query?.trim()) {
+      this.router.navigate(['/search'], { queryParams: { q: query.trim() } });
     }
   }
 }

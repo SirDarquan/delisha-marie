@@ -1,10 +1,16 @@
 import { NgOptimizedImage } from '@angular/common';
-import { ChangeDetectionStrategy, Component, ViewEncapsulation, input } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ViewEncapsulation,
+  input,
+  inject,
+} from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
-import { RouterLink } from '@angular/router';
+import { RouterLink, Router } from '@angular/router';
 import { FullCategory } from '../../models/category';
 
 @Component({
@@ -58,8 +64,13 @@ import { FullCategory } from '../../models/category';
             subscriptSizing="dynamic"
             class="w-full search-field !rounded-full overflow-hidden bg-[var(--mat-sys-surface)] shadow-sm">
             <mat-icon matPrefix class="opacity-50">search</mat-icon>
-            <input matInput [formControl]="searchControl" placeholder="e.g. Chocolate Cake" />
+            <input
+              matInput
+              [formControl]="searchControl"
+              placeholder="e.g. Chocolate Cake"
+              (keyup.enter)="search()" />
             <button
+              (click)="search()"
               mat-flat-button
               matSuffix
               class="!bg-[var(--mat-sys-primary)] !text-white !h-9 !rounded-full !mr-1 !px-6 hover:brightness-110 transition-all">
@@ -83,4 +94,12 @@ import { FullCategory } from '../../models/category';
 export class RecipeIndexCategoryImages {
   readonly categories = input.required<FullCategory[]>();
   readonly searchControl = new FormControl('');
+  private readonly router = inject(Router);
+
+  search() {
+    const query = this.searchControl.value;
+    if (query?.trim()) {
+      this.router.navigate(['/search'], { queryParams: { q: query.trim() } });
+    }
+  }
 }

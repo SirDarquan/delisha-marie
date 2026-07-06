@@ -112,5 +112,25 @@ export const routes: Routes = [
       schema: schemaRecipeResolver,
     },
   },
+  {
+    path: 'search',
+    loadComponent: () => import('./pages/search/search').then((m) => m.SearchPage),
+    title: 'Search Recipes',
+    resolve: { seo: seoResolver, schema: schemaResolver },
+    data: {
+      description: 'Search for semantic matches across all Delisha Marie recipes.',
+      keywords: ['recipe search', 'find recipe'],
+    },
+  },
+  {
+    path: 'search/page/:page',
+    loadComponent: () => import('./pages/search/search').then((m) => m.SearchPage),
+    title: 'Search Recipes',
+    resolve: { seo: seoResolver, schema: schemaResolver },
+    data: {
+      description: 'Search for semantic matches across all Delisha Marie recipes.',
+      keywords: ['recipe search', 'find recipe'],
+    },
+  },
   { path: '**', redirectTo: '' },
 ];
