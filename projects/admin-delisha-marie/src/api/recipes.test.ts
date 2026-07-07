@@ -705,7 +705,12 @@ describe('Recipes Router API', () => {
         holidays: ['Christmas'],
         specialDiets: ['Vegan'],
       };
-      const createdRecipe = { id: 'recipe-3', title: 'New Salad', description: 'Fresh veggies', nutrition: { calories_count: 100 } };
+      const createdRecipe = {
+        id: 'recipe-3',
+        title: 'New Salad',
+        description: 'Fresh veggies',
+        nutrition: { calories_count: 100 },
+      };
 
       // Mock recipes insert
       mockSingle.mockResolvedValueOnce({ data: createdRecipe, error: null });
@@ -908,12 +913,15 @@ describe('Recipes Router API', () => {
       ['/holidays', 'Raw GET /holidays string exception'],
       ['/special-diets', 'Raw GET /special-diets string exception'],
       ['/methods', 'Raw GET /methods string exception'],
-    ])('should return 500 when GET %s receives a non-Error string exception', async (endpoint, errorMsg) => {
-      mockOrder.mockRejectedValue(errorMsg);
-      const res = await request(app).get(endpoint);
-      expect(res.status).toBe(500);
-      expect(res.body.error).toBe(errorMsg);
-    });
+    ])(
+      'should return 500 when GET %s receives a non-Error string exception',
+      async (endpoint, errorMsg) => {
+        mockOrder.mockRejectedValue(errorMsg);
+        const res = await request(app).get(endpoint);
+        expect(res.status).toBe(500);
+        expect(res.body.error).toBe(errorMsg);
+      },
+    );
   });
 
   describe('Recipes Router API Coverage Boosters', () => {

@@ -1,9 +1,9 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { SearchPage } from './search';
-import { provideRouter, Router, ActivatedRoute } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { Api } from '../../services/api';
 import { WINDOW } from '../../services/global-tokens';
-import { signal } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 import { By } from '@angular/platform-browser';
 import { describe, expect, it, vi, beforeEach } from 'vitest';

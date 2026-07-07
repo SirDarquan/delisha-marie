@@ -327,8 +327,15 @@ recipesRouter.post('/recipes/search', async (req: Request, res: Response) => {
       throw error;
     }
 
+    const recipes = data.recipes || [];
+    const items = recipes.map((r: Record<string, unknown>) => {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { total_count, ...rest } = r;
+      return rest;
+    });
+
     return res.json({
-      items: data.recipes || [],
+      items,
       total: data.total || 0,
     });
   } catch (err: unknown) {

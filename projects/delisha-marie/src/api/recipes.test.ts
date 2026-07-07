@@ -364,7 +364,9 @@ describe('Recipes Router API', () => {
         error: null,
       });
 
-      const res = await request(app).post('/api/recipes/search').send({ query: 'test', page: 1, pageSize: 12 });
+      const res = await request(app)
+        .post('/api/recipes/search')
+        .send({ query: 'test', page: 1, pageSize: 12 });
 
       expect(res.status).toBe(200);
       expect(res.body.items).toHaveLength(1);
