@@ -1,5 +1,6 @@
 import { DOCUMENT, inject } from '@angular/core';
 import { Api } from './services/api';
+import type { Recipe } from './services/recipe.service';
 
 export function withRecipes() {
   return [
@@ -9,34 +10,48 @@ export function withRecipes() {
       inputSchema: {
         type: 'object' as const,
         properties: {
-          query: { type: 'string' as const, description: 'The search query or concept' },
-          page: { type: 'number' as const, description: 'The page number', default: 1 },
-          pageSize: { type: 'number' as const, description: 'The page size', default: 12 },
-        },
-        required: ['query'],
-      },
-      execute: async (args: Record<string, unknown>) => {
-        const api = inject(Api);
-        const page = (args['page'] as number) || 1;
-        const pageSize = (args['pageSize'] as number) || 12;
-        const res = await api.post<{ items: Record<string, unknown>[]; total: number }>(
-          '/api/recipes/search',
-          {
-            query: args['query'],
-            page,
-            pageSize,
+          query: {
+            type: 'string' as const,
+            description: 'The search query. Leave empty to return all.',
           },
-        );
-        // Add fully-qualified URLs purely for the AI assistant
+          page: {
+            type: 'number' as const,
+            description: 'Page number.',
+            default: 1,
+          },
+          pageSize: {
+            type: 'number' as const,
+            description: 'Results per page.',
+            default: 12,
+          },
+        },
+      },
+      execute: async ({
+        query,
+        page = 1,
+        pageSize = 12,
+      }: {
+        query?: string;
+        page?: number;
+        pageSize?: number;
+      }) => {
+        const api = inject(Api);
         const window = inject(DOCUMENT).defaultView;
-        const origin =  window?.location.origin;
+        const origin = window?.location.origin;
+
+        const res = await api.post<{ items: Recipe[]; total: number }>('/api/recipes/search', {
+          query: query || '',
+          page,
+          pageSize,
+        });
+        // Add fully-qualified URLs purely for the AI assistant
         const itemsWithUrl = res.items.map((r) => ({
           ...r,
           image:
-            typeof r['image'] === 'string' && !r['image'].startsWith('https://')
-              ? `${origin}${r['image']}`
-              : r['image'],
-          url: typeof r['slug'] === 'string' ? `${origin}/recipe/${r['slug']}` : '',
+            r.image && typeof r.image === 'string' && !r.image.startsWith('https://')
+              ? `${origin}${r.image}`
+              : r.image,
+          url: `${origin}/recipe/${r.slug}`,
         }));
 
         // Return JSON string to the AI agent
