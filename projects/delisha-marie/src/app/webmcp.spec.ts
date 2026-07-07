@@ -35,7 +35,7 @@ describe('WebMCP Integration', () => {
 
   it('should return searchRecipes tool metadata', () => {
     const tools = withRecipes();
-    expect(tools.length).toBe(1);
+    expect(tools).toHaveLength(1);
     expect(tools[0].name).toBe('searchRecipes');
   });
 
