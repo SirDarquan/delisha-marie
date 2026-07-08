@@ -677,12 +677,6 @@ recipesRouter.get('/recipes/:slug', async (req: Request, res: Response) => {
       next,
     };
 
-    // Simulate configurable latency from .env
-    const latency = Number(process.env['RECIPE_DETAIL_LATENCY']) || 0;
-    if (latency > 0) {
-      await new Promise((resolve) => setTimeout(resolve, latency));
-    }
-
     return res.json(formatted);
   } catch (err: unknown) {
     console.error(err);
