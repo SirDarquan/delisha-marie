@@ -14,9 +14,9 @@ import {
 } from '@angular/platform-browser';
 import { provideRouter, withComponentInputBinding, withInMemoryScrolling } from '@angular/router';
 import { routes } from './app.routes';
-import { PluginRegistry } from './core/plugins/plugin-registry.services';
+import { PluginRegistry } from '@dm/library';
 import { provideGtm } from './provider/gtm';
-import { provideAppConfig } from './services/config.service';
+import { provideAppConfig } from './provider/app-config';
 import { TemplatePageTitleStrategy, provideTitleStrategy } from './services/title.strategy';
 import { withRecipes } from './webmcp';
 
