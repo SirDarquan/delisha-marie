@@ -27,14 +27,19 @@ describe('AppConfigService', () => {
     expect(service).toBeTruthy();
     expect(service.id).toBe('AppConfigService');
     expect(service.order).toBe(1);
-    expect(service.SocialClients()).toBeUndefined();
-    expect(service.DescopeProjectId()).toBeUndefined();
+    expect(service.config()).toBeNull();
   });
 
   it('should fetch configuration from /config and populate signal state', async () => {
     const mockConfig: AppConfig = {
-      SocialClients: { GoogleClientId: 'test-google-123' },
-      DescopeProjectId: 'test-descope-456',
+      GoogleTagManager: {
+        id: 'GTM-M73DF5VL',
+        gtm_auth: 'auth-123',
+        gtm_preview: 'preview-456',
+        gtm_resource_path: 'test-path',
+        gtm_csp_none: 'nonce-789',
+        gtm_mode: 'silent',
+      },
     };
 
     const promise = service.init();
@@ -45,8 +50,7 @@ describe('AppConfigService', () => {
 
     await promise;
 
-    expect(service.SocialClients()).toEqual(mockConfig.SocialClients);
-    expect(service.DescopeProjectId()).toBe('test-descope-456');
+    expect(service.config()).toEqual(mockConfig);
   });
 
   it('should log and throw a critical error if backend load fails', async () => {
@@ -60,8 +64,7 @@ describe('AppConfigService', () => {
     await expect(promise).rejects.toThrow();
 
     expect(consoleSpy).toHaveBeenCalled();
-    expect(service.SocialClients()).toBeUndefined();
-    expect(service.DescopeProjectId()).toBeUndefined();
+    expect(service.config()).toBeNull();
 
     consoleSpy.mockRestore();
   });

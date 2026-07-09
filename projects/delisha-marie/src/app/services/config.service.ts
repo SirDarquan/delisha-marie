@@ -3,17 +3,15 @@ import { Injectable, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { AppPlugin } from '@dm/library';
 
-export interface SocialClients {
-  GoogleClientId?: string;
-  AmazonClientId?: string;
-  FacebookClientId?: string;
-  VKClientId?: string;
-  MicrosoftClientId?: string;
-}
-
 export interface AppConfig {
-  SocialClients: SocialClients;
-  DescopeProjectId?: string;
+  GoogleTagManager: {
+    id: string;
+    gtm_auth?: string;
+    gtm_preview?: string;
+    gtm_resource_path?: string;
+    gtm_csp_none?: string;
+    gtm_mode?: string;
+  };
 }
 
 @Injectable({
@@ -28,7 +26,7 @@ export class AppConfigService implements AppPlugin {
   /**
    * Holds the fully resolved application configuration after loading completes.
    */
-  private readonly config = signal<AppConfig | null>(null);
+  readonly config = signal<AppConfig | null>(null);
 
   /**
    * Loads the application configuration from the /config endpoint.
@@ -45,11 +43,7 @@ export class AppConfigService implements AppPlugin {
     }
   }
 
-  SocialClients() {
-    return this.config()?.SocialClients;
-  }
-
-  DescopeProjectId() {
-    return this.config()?.DescopeProjectId;
+  GoogleTagManagerConfig() {
+    return this.config()?.GoogleTagManager;
   }
 }

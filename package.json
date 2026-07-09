@@ -36,6 +36,7 @@
     "@descope/angular-sdk": "^0.27.2",
     "@descope/node-sdk": "^2.6.0",
     "@supabase/supabase-js": "^2.107.0",
+    "angular-google-tag-manager": "^1.13.0",
     "change-case": "^5.4.4",
     "cookie-parser": "^1.4.7",
     "cypress": "^15.18.0",
@@ -71,5 +72,14 @@
     "typescript": "~6.0.3",
     "typescript-eslint": "8.60.1",
     "vitest": "^4.0.8"
+  },
+  "overrides": {
+    "angular-google-tag-manager": {
+      "@angular/common": "$@angular/common",
+      "@angular/core": "$@angular/core",
+      "@angular/compiler": "$@angular/compiler",
+      "@angular/platform-browser": "$@angular/platform-browser",
+      "@angular/router": "$@angular/router"
+    }
   }
 }

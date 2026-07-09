@@ -1,9 +1,11 @@
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import {
   ApplicationConfig,
+  inject,
+  provideAppInitializer,
   provideBrowserGlobalErrorListeners,
-  provideZonelessChangeDetection,
   provideExperimentalWebMcpTools,
+  provideZonelessChangeDetection,
 } from '@angular/core';
 import {
   provideClientHydration,
@@ -12,6 +14,9 @@ import {
 } from '@angular/platform-browser';
 import { provideRouter, withComponentInputBinding, withInMemoryScrolling } from '@angular/router';
 import { routes } from './app.routes';
+import { PluginRegistry } from '@dm/library';
+import { provideGtm } from './provider/gtm';
+import { provideAppConfig } from './provider/app-config';
 import { TemplatePageTitleStrategy, provideTitleStrategy } from './services/title.strategy';
 import { withRecipes } from './webmcp';
 
@@ -31,5 +36,8 @@ export const appConfig: ApplicationConfig = {
     provideClientHydration(withEventReplay(), withNoIncrementalHydration()),
     provideHttpClient(withInterceptors([])),
     provideExperimentalWebMcpTools(withRecipes()),
+    provideAppInitializer(() => inject(PluginRegistry).initAll()),
+    provideAppConfig(),
+    provideGtm(),
   ],
 };
