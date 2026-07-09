@@ -12,12 +12,12 @@ import {
   withNoIncrementalHydration,
 } from '@angular/platform-browser';
 import { provideRouter } from '@angular/router';
-import { PluginRegistry } from '../core/plugins/plugin-registry.services';
+import { PluginRegistry } from '@dm/library';
 import { routes } from './app.routes';
 import { authInterceptor } from './interceptors/auth.interceptor';
 import { BRAND_TITLE_TOKEN } from './pages/auth/auth-shared.utils';
 import { provideDescope } from './provider/descope';
-import { provideAppConfig } from './services/config.service';
+import { provideAppConfig } from './provider/app-config';
 
 export const appConfig: ApplicationConfig = {
   providers: [

@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-import { APP_PLUGINS, AppPlugin } from '../../core/plugins/plugin.token';
+import { AppPlugin } from '@dm/library';
 
 export interface SocialClients {
   GoogleClientId?: string;
@@ -15,10 +15,6 @@ export interface AppConfig {
   SocialClients: SocialClients;
   DescopeProjectId?: string;
 }
-
-export const provideAppConfig = () => [
-  { provide: APP_PLUGINS, useExisting: AppConfigService, multi: true },
-];
 
 @Injectable({
   providedIn: 'root',
