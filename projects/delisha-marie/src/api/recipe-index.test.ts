@@ -427,9 +427,12 @@ describe('Recipe Index Router API', () => {
             };
             return {
               eq: () => ({
-                ilike: () => Promise.resolve({ data: null, error: null }),
-                then: (onfulfilled?: (value: { data: unknown; error: Error | null }) => unknown) =>
-                  Promise.resolve({ data: null, error: null }).then(onfulfilled),
+                ilike: () => ({
+                  eq: () => Promise.resolve({ data: null, error: null }),
+                  then: (onfulfilled?: (value: { data: unknown; error: Error | null }) => unknown) =>
+                    Promise.resolve({ data: null, error: null }).then(onfulfilled),
+                }),
+                then,
               }),
               then,
             };
