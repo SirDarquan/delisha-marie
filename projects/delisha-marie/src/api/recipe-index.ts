@@ -69,11 +69,17 @@ async function getCategoriesFromDB(
   supabase: SupabaseClient,
   type: 'recipes' | 'the-best' = 'recipes',
 ) {
-  const { data, error } = await supabase
+  let query = supabase
     .from('recipe_categories')
-    .select('categories (name, url), recipes!inner (status)')
+    .select('categories (name, url), recipes!inner (status, the_best)')
     .eq('recipes.status', 'published')
     .ilike('categories.url', `/${type}%`);
+
+  if (type === 'the-best') {
+    query = query.eq('recipes.the_best', true);
+  }
+
+  const { data, error } = await query;
 
   if (error) throw error;
 

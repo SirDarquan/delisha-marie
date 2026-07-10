@@ -510,6 +510,18 @@ export const generateRecipeSchema = (recipe: Recipe, url: string): SchemaObject 
     dateModified: recipe.updatedAt,
     description: recipe.description,
     image: [recipe.image], // todo
+    ...(recipe.video
+      ? {
+          video: {
+            '@type': 'VideoObject',
+            name: recipe.title,
+            description: recipe.description,
+            thumbnailUrl: recipe.image,
+            contentUrl: `https://www.youtube.com/embed/${recipe.video}`,
+            uploadDate: recipe.createdAt,
+          },
+        }
+      : {}),
     recipeYield: recipe.yield,
     prepTime: convertToIso8601Duration(recipe.prepTime),
     cookTime: convertToIso8601Duration(recipe.cookTime),
