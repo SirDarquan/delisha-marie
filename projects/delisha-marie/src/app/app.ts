@@ -4,7 +4,6 @@ import {
   Component,
   PLATFORM_ID,
   ViewEncapsulation,
-  afterNextRender,
   effect,
   inject,
   signal,
@@ -50,13 +49,6 @@ export class App {
   readonly isPrintPage = signal(false);
   constructor() {
     const router = inject(Router);
-
-    afterNextRender(() => {
-      // Add Google Tag Manager to the DOM (afterNextRender only runs in the browser)
-      this.gtmService.addGtmToDom().catch((err) => {
-        console.warn('Failed to add GTM to DOM:', err);
-      });
-    });
 
     router.events.pipe(filter((event) => event instanceof NavigationEnd)).subscribe((event) => {
       this.isPrintPage.set(router.url.includes('/print'));
