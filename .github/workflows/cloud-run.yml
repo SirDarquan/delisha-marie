@@ -2,7 +2,7 @@ name: Deploy to Cloud Run
 
 on:
   schedule:
-    - cron: '30 10 * * 1,5' # Daily at 10:30 UTC (5:30 AM EST)
+    - cron: '30 10 * * 2,4' # Tues and Thurs at 10:30 UTC (5:30 AM EST)
   workflow_dispatch: # Enable manual triggers
 
 env:
