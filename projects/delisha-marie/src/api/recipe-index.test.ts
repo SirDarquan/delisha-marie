@@ -429,8 +429,9 @@ describe('Recipe Index Router API', () => {
               eq: () => ({
                 ilike: () => ({
                   eq: () => Promise.resolve({ data: null, error: null }),
-                  then: (onfulfilled?: (value: { data: unknown; error: Error | null }) => unknown) =>
-                    Promise.resolve({ data: null, error: null }).then(onfulfilled),
+                  then: (
+                    onfulfilled?: (value: { data: unknown; error: Error | null }) => unknown,
+                  ) => Promise.resolve({ data: null, error: null }).then(onfulfilled),
                 }),
                 then,
               }),
