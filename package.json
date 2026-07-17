@@ -20,19 +20,18 @@
     "cypress:run": "cypress run"
   },
   "private": true,
-  "packageManager": "npm@11.10.1",
   "dependencies": {
-    "@angular/aria": "^22.0.4",
-    "@angular/cdk": "^22.0.4",
-    "@angular/common": "^22.0.6",
-    "@angular/compiler": "^22.0.6",
-    "@angular/core": "^22.0.6",
-    "@angular/forms": "^22.0.6",
-    "@angular/material": "^22.0.4",
-    "@angular/platform-browser": "^22.0.6",
-    "@angular/platform-server": "^22.0.6",
-    "@angular/router": "^22.0.6",
-    "@angular/ssr": "^22.0.6",
+    "@angular/aria": "^22.0.5",
+    "@angular/cdk": "^22.0.5",
+    "@angular/common": "^22.0.7",
+    "@angular/compiler": "^22.0.7",
+    "@angular/core": "^22.0.7",
+    "@angular/forms": "^22.0.7",
+    "@angular/material": "^22.0.5",
+    "@angular/platform-browser": "^22.0.7",
+    "@angular/platform-server": "^22.0.7",
+    "@angular/router": "^22.0.7",
+    "@angular/ssr": "^22.0.7",
     "@descope/angular-sdk": "^0.27.2",
     "@descope/node-sdk": "^2.6.0",
     "@supabase/supabase-js": "^2.107.0",
@@ -47,9 +46,9 @@
     "tslib": "^2.3.0"
   },
   "devDependencies": {
-    "@angular/build": "^22.0.6",
-    "@angular/cli": "^22.0.6",
-    "@angular/compiler-cli": "^22.0.6",
+    "@angular/build": "^22.0.7",
+    "@angular/cli": "^22.0.7",
+    "@angular/compiler-cli": "^22.0.7",
     "@cypress/schematic": "^5.0.0",
     "@eslint/js": "^10.0.1",
     "@mcp-b/webmcp-polyfill": "^4.0.0",
@@ -81,5 +80,13 @@
       "@angular/platform-browser": "$@angular/platform-browser",
       "@angular/router": "$@angular/router"
     }
+  },
+  "allowScripts": {
+    "@parcel/watcher@2.5.6": true,
+    "cypress@15.18.1": true,
+    "esbuild@0.28.1": true,
+    "esbuild@0.27.7": true,
+    "lmdb@3.5.4": true,
+    "msgpackr-extract@3.0.4": true
   }
 }
