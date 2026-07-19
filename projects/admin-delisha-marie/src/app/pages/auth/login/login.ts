@@ -535,9 +535,10 @@ export class LoginComponent implements OnInit, AfterViewInit {
         this.isGoogleLogin.set(true);
         this.submittingStep1.set(true);
         this.snackBar.open('Finishing Google sign in...', 'Close', { duration: 3000 });
+        let loginSuccess = false;
         try {
-          const success = await this.auth.exchangeDescopeOAuthCode(code);
-          if (success) {
+          loginSuccess = await this.auth.exchangeDescopeOAuthCode(code);
+          if (loginSuccess) {
             if (this.auth.isNewUserFlag()) {
               this.userEmail.set(this.auth.descopeEmail());
               this.snackBar.open("Successfully verified! Let's set up your profile.", 'Close', {
@@ -564,13 +565,16 @@ export class LoginComponent implements OnInit, AfterViewInit {
         } finally {
           this.submittingStep1.set(false);
           this.exchangingOAuth.set(false);
-          // Clean up the URL query params so they don't persist
-          this.router.navigate([], {
-            relativeTo: this.route,
-            queryParams: { code: null, state: null },
-            queryParamsHandling: 'merge',
-            replaceUrl: true,
-          });
+
+          if (!loginSuccess) {
+            // Clean up the URL query params so they don't persist if it failed
+            this.router.navigate([], {
+              relativeTo: this.route,
+              queryParams: { code: null, state: null },
+              queryParamsHandling: 'merge',
+              replaceUrl: true,
+            });
+          }
         }
       }
     });
