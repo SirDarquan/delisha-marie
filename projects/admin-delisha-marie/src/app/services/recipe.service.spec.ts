@@ -252,6 +252,51 @@ describe('RecipeService', () => {
     });
   });
 
+  describe('upload', () => {
+    it('should successfully upload an image and return the file url', async () => {
+      service = TestBed.inject(RecipeService);
+      httpMock = TestBed.inject(HttpTestingController);
+
+      const fakeFile = new File([''], 'test.png', { type: 'image/png' });
+      const promise = service.upload(fakeFile);
+
+      const req = httpMock.expectOne('/api/upload');
+      expect(req.request.method).toBe('POST');
+      expect(req.request.body instanceof FormData).toBe(true);
+      expect(req.request.body.has('image')).toBe(true);
+
+      req.flush({ success: true, files: ['/images/test.webp'] });
+
+      const result = await promise;
+      expect(result).toBe('/images/test.webp');
+    });
+
+    it('should return empty string if upload returns success true but no files', async () => {
+      service = TestBed.inject(RecipeService);
+      httpMock = TestBed.inject(HttpTestingController);
+
+      const promise = service.upload(new File([''], 't.png'));
+      const req = httpMock.expectOne('/api/upload');
+      req.flush({ success: true, files: [] });
+
+      expect(await promise).toBe('');
+    });
+
+    it('should return empty string on API error', async () => {
+      service = TestBed.inject(RecipeService);
+      httpMock = TestBed.inject(HttpTestingController);
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+      const promise = service.upload(new File([''], 't.png'));
+      const req = httpMock.expectOne('/api/upload');
+      req.error(new ProgressEvent('Network error'));
+
+      expect(await promise).toBe('');
+      expect(consoleSpy).toHaveBeenCalled();
+      consoleSpy.mockRestore();
+    });
+  });
+
   describe('State Restoration and Cache', () => {
     it('should store and retrieve scroll offset', () => {
       service = TestBed.inject(RecipeService);

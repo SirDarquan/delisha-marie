@@ -675,5 +675,52 @@ describe('ImageUploaderComponent', () => {
     expect(imgElement).toBeTruthy();
     expect(imgElement.getAttribute('src')).toContain('data:image');
     expect(imgElement.getAttribute('ng-reflect-ng-src')).toBeNull();
+
+    // Trigger error on this standard image
+    const errorEv = new CustomEvent('error');
+    imgElement.dispatchEvent(errorEv);
+    fixture.detectChanges();
+    expect(component['previewError']()).toBe(true);
+  });
+
+  it('should trigger removeImage click on normal preview image', () => {
+    fixture.componentRef.setInput('initialImage', '/images/recipes/2026/06/pasta.png');
+    fixture.componentRef.setInput('initialWidth', '800');
+    fixture.componentRef.setInput('initialHeight', '600');
+    fixture.componentRef.setInput('initialType', 'image/png');
+    fixture.detectChanges();
+
+    // The normal remove button has class 'close-btn'
+    const removeBtn = fixture.nativeElement.querySelector('.close-btn');
+    expect(removeBtn).toBeTruthy();
+
+    const spy = vi.spyOn(component, 'removeImage');
+    removeBtn.click();
+    expect(spy).toHaveBeenCalled();
+  });
+
+  it('should calculate aspectRatio computed property correctly', () => {
+    fixture.detectChanges();
+    expect(component.aspectRatio()).toBe('');
+
+    component['currentWidth'].set('1600');
+    component['currentHeight'].set('900');
+    expect(component.aspectRatio()).toBe('1600 / 900');
+
+    component['currentWidth'].set('invalid');
+    expect(component.aspectRatio()).toBe('');
+
+    component['currentWidth'].set('0');
+    component['currentHeight'].set('0');
+    expect(component.aspectRatio()).toBe('');
+  });
+
+  it('should handle null and undefined in hasValue', () => {
+    fixture.detectChanges();
+    expect(component['hasValue'](null)).toBe(false);
+    expect(component['hasValue'](undefined)).toBe(false);
+    expect(component['hasValue']('   ')).toBe(false);
+    expect(component['hasValue']('null')).toBe(false);
+    expect(component['hasValue']('undefined')).toBe(false);
   });
 });

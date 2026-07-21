@@ -143,6 +143,22 @@ describe('Recipes Router API', () => {
       expect(res.body.error).toBe('Database error');
     });
 
+    it('should handle non-string status and dates in fetchAllRecipes', async () => {
+      mockRange.mockResolvedValueOnce({
+        data: [
+          { id: '1', status: null, updated_at: null },
+          { id: '2', status: 123, updated_at: 456 },
+          { id: '3' },
+        ],
+        error: null,
+      });
+
+      const res = await request(app).get('/recipes');
+      expect(res.status).toBe(200);
+      expect(Array.isArray(res.body)).toBe(true);
+      expect(res.body.length).toBe(3);
+    });
+
     it('should successfully return paginated recipes with search', async () => {
       const mockSkeleton = [
         { id: 'recipe-1', status: 'published', updated_at: '2026-06-01T00:00:00Z' },
@@ -205,6 +221,47 @@ describe('Recipes Router API', () => {
       mockChain.then = vi
         .fn()
         .mockImplementationOnce((resolve) => resolve({ data: [], error: null }));
+
+      const res = await request(app).get('/recipes?offset=0&limit=10');
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual([]);
+    });
+
+    it('should successfully return paginated recipes with no results and handle non-string statuses', async () => {
+      // Skeleton query with non-string fields
+      mockSelect.mockReturnValueOnce(mockChain);
+      mockIlike.mockReturnValue(mockChain);
+      mockChain.then = vi.fn().mockImplementationOnce((resolve) =>
+        resolve({
+          data: [
+            { id: '1', status: null, updated_at: null },
+            { id: '2', status: 123, updated_at: 123 },
+          ],
+          error: null,
+        }),
+      );
+
+      // Simulate a slice that evaluates to empty
+      const res = await request(app).get('/recipes?offset=500&limit=10');
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual([]);
+    });
+
+    it('should handle null pageData in fetchPaginatedRecipes', async () => {
+      // Skeleton query
+      mockSelect.mockReturnValueOnce(mockChain);
+      mockChain.then = vi
+        .fn()
+        .mockImplementationOnce((resolve) =>
+          resolve({ data: [{ id: '1', status: 'draft', updated_at: '2026-06-03' }], error: null }),
+        );
+
+      // Page query returning null data
+      mockSelect.mockReturnValueOnce(mockChain);
+      mockIn.mockReturnValueOnce(mockChain);
+      mockChain.then = vi
+        .fn()
+        .mockImplementationOnce((resolve) => resolve({ data: null, error: null }));
 
       const res = await request(app).get('/recipes?offset=0&limit=10');
       expect(res.status).toBe(200);
@@ -443,6 +500,36 @@ describe('Recipes Router API', () => {
 
       expect(res.status).toBe(500);
       expect(res.body.error).toBe('Recent error');
+    });
+
+    it('should handle recipes with missing author, prep_time, and categories', async () => {
+      mockSelect.mockReturnValueOnce({
+        then: (resolve: (val: unknown) => void) => resolve({ count: null, error: null }),
+      });
+      mockLimit.mockResolvedValueOnce({
+        data: [
+          {
+            id: '1',
+            title: 'Empty Recipe',
+            recipe_categories: [{ categories: { name: null } }],
+          },
+          {
+            id: '2',
+            title: 'Empty Recipe 2',
+            recipe_categories: null,
+          },
+        ],
+        error: null,
+      });
+
+      const res = await request(app).get('/home');
+
+      expect(res.status).toBe(200);
+      expect(res.body.totalRecipes).toBe(0);
+      expect(res.body.recentRecipes[0].author).toBe('Delisha Marie');
+      expect(res.body.recentRecipes[0].prepTime).toBe('');
+      expect(res.body.recentRecipes[0].category).toBe('Uncategorized');
+      expect(res.body.recentRecipes[1].category).toBe('Uncategorized');
     });
   });
 
