@@ -168,7 +168,7 @@ authRouter.get('/auth/me', async (req: Request, res: Response) => {
       try {
         const user = await backendService.verifyToken(token);
         if (user) return res.json({ user });
-      } catch (_err) {
+      } catch {
         // Token might be expired, continue to refresh logic
       }
     }
@@ -182,13 +182,13 @@ authRouter.get('/auth/me', async (req: Request, res: Response) => {
           setAuthCookies(res, data.session);
           return res.json({ user: data.user });
         }
-      } catch (_err) {
+      } catch {
         // Ignore refresh errors and fall through
       }
     }
 
     return res.status(401).json({ error: 'Token missing or invalid' });
-  } catch (_err) {
+  } catch {
     return res.status(401).json({ error: 'Token missing or invalid' });
   }
 });
