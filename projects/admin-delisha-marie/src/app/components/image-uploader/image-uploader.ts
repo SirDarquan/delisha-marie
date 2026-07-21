@@ -289,9 +289,9 @@ export class ImageUploaderComponent implements FormValueControl<string> {
   protected readonly previewUrl = signal<string>('');
   readonly currentPath = computed(() => this.value());
   readonly aspectRatio = computed(() => {
-    const w = parseFloat(this.currentWidth());
-    const h = parseFloat(this.currentHeight());
-    if (!isNaN(w) && !isNaN(h) && w > 0 && h > 0) {
+    const w = Number.parseFloat(this.currentWidth());
+    const h = Number.parseFloat(this.currentHeight());
+    if (!Number.isNaN(w) && !Number.isNaN(h) && w > 0 && h > 0) {
       return `${w} / ${h}`;
     }
     return '';

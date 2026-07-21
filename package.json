@@ -44,6 +44,7 @@
     "multer": "^2.2.0",
     "ngx-pagination": "^6.0.3",
     "rxjs": "~7.8.0",
+    "sharp": "^0.35.3",
     "tailwindcss": "^4.3.0",
     "tslib": "^2.3.0"
   },
@@ -55,7 +56,6 @@
     "@eslint/js": "^10.0.1",
     "@mcp-b/webmcp-polyfill": "^4.0.0",
     "@tailwindcss/postcss": "^4.3.0",
-    "@the-node-forge/image-resizer-cli": "^1.1.0",
     "@types/cookie-parser": "^1.4.10",
     "@types/express": "^5.0.1",
     "@types/multer": "^2.2.0",
@@ -91,6 +91,7 @@
     "esbuild@0.28.1": true,
     "esbuild@0.27.7": true,
     "lmdb@3.5.4": true,
-    "msgpackr-extract@3.0.4": true
+    "msgpackr-extract@3.0.4": true,
+    "sharp": true
   }
 }

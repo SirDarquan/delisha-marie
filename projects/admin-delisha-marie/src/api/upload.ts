@@ -1,40 +1,30 @@
 import { Router } from 'express';
 import ImageKit from 'imagekit';
 import multer from 'multer';
-import { exec } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
-import { promisify } from 'node:util';
-
-const execPromise = promisify(exec);
+import sharp from 'sharp';
 
 const imagekit = new ImageKit({
-  publicKey: process.env['IMAGEKIT_PUBLIC_KEY'] || '',
-  privateKey: process.env['IMAGEKIT_PRIVATE_KEY'] || '',
-  urlEndpoint: process.env['IMAGEKIT_URL_ENDPOINT'] || '',
+  publicKey: process.env['IMAGEKIT_PUBLIC_KEY'] || 'dummy_public_key',
+  privateKey: process.env['IMAGEKIT_PRIVATE_KEY'] || 'dummy_private_key',
+  urlEndpoint: process.env['IMAGEKIT_URL_ENDPOINT'] || 'https://ik.imagekit.io/dummy',
 });
 
 const uploadRouter = Router();
 
-// Define paths
-// process.cwd() points to the root 'delisha-marie' directory when running `npm run serve`
-const imagesDir = path.join(process.cwd(), 'images');
-
 // Ensure temp dir exists
+const imagesDir = path.join(process.cwd(), 'images');
 if (!fs.existsSync(imagesDir)) {
   fs.mkdirSync(imagesDir, { recursive: true });
 }
 
-// Setup multer
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, imagesDir),
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-    const ext = path.extname(file.originalname);
-    cb(null, file.fieldname + '-' + uniqueSuffix + ext);
-  },
-});
-const upload = multer({ storage });
+// Setup multer with memory storage
+const storage = multer.memoryStorage();
+const limits = {
+  fileSize: 1024 * 1024 * 20, // 20MB
+};
+const upload = multer({ storage, limits });
 
 uploadRouter.post('/upload', upload.single('image'), async (req, res) => {
   if (!req.file) {
@@ -43,42 +33,28 @@ uploadRouter.post('/upload', upload.single('image'), async (req, res) => {
   }
 
   try {
-    const inputPath = req.file.path;
-    // Clean original basename to avoid shell injection
+    const fileBuffer = req.file.buffer;
+    // Clean original basename to avoid weird characters
     const basename = path.parse(req.file.originalname).name.replace(/[^a-zA-Z0-9_-]/g, '');
 
     const now = new Date();
     const year = now.getFullYear().toString();
     const month = (now.getMonth() + 1).toString().padStart(2, '0');
 
-    const results: string[] = [];
+    // Convert to webp in memory using sharp
+    const webpBuffer = await sharp(fileBuffer).webp().toBuffer();
 
-    // 1. Convert original to .webp
-    const originalOutputName = `${basename}.webp`;
-    const originalOutputPath = path.join(imagesDir, originalOutputName);
-    await execPromise(`npx img-resizer convert "${inputPath}" "${originalOutputPath}"`);
-
-    // 2. Upload to ImageKit
-    const fileBuffer = fs.readFileSync(originalOutputPath);
+    // Upload directly to ImageKit
     const ikResponse = await imagekit.upload({
-      file: fileBuffer,
-      fileName: originalOutputName,
+      file: webpBuffer,
+      fileName: `${basename}.webp`,
       folder: `/${year}/${month}`,
       useUniqueFileName: false,
     });
 
-    results.push(ikResponse.filePath);
-
-    // Cleanup temp files
-    fs.unlinkSync(inputPath);
-    fs.unlinkSync(originalOutputPath);
-
-    res.json({ success: true, files: results });
+    res.json({ success: true, files: [ikResponse.filePath] });
   } catch (error: unknown) {
     console.error('Upload processing error:', error);
-    if (req.file && fs.existsSync(req.file.path)) {
-      fs.unlinkSync(req.file.path);
-    }
     res.status(500).json({ error: 'Failed to process image' });
   }
 });
