@@ -237,6 +237,10 @@
               {
                 "glob": "**/*",
                 "input": "projects/admin-delisha-marie/public"
+              },
+              {
+                "glob": "**/*",
+                "input": "projects/admin-delisha-marie/images"
               }
             ],
             "styles": [
@@ -298,6 +302,10 @@
               {
                 "glob": "**/*",
                 "input": "projects/admin-delisha-marie/public"
+              },
+              {
+                "glob": "**/*",
+                "input": "projects/admin-delisha-marie/images"
               }
             ],
             "styles": [

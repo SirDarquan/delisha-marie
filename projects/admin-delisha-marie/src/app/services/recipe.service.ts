@@ -113,6 +113,25 @@ export class RecipeService {
     return this.api.delete<{ success: boolean }>(`/recipes/${id}`);
   }
 
+  async upload(file: File): Promise<string> {
+    const formData = new FormData();
+    formData.append('image', file);
+
+    try {
+      const response = await this.api.post<{ success: boolean; files: string[] }>(
+        '/api/upload',
+        formData,
+      );
+      if (response.success && response.files?.length > 0) {
+        return response.files[0];
+      }
+      return '';
+    } catch (error) {
+      console.error('Failed to upload image:', error);
+      return '';
+    }
+  }
+
   private loadInitialCategories(): void {
     this.api
       .get<{ id: string; name: string; url: string }[]>('/categories')

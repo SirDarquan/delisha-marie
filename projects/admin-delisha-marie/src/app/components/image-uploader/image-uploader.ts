@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+import { NgOptimizedImage } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -12,15 +12,18 @@ import {
   untracked,
   viewChild,
   ViewEncapsulation,
+  inject,
 } from '@angular/core';
 import { FormValueControl } from '@angular/forms/signals';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { RecipeService } from '../../services/recipe.service';
 
 @Component({
   selector: 'app-image-uploader',
-  imports: [CommonModule, MatButtonModule, MatFormFieldModule, MatInputModule],
+  imports: [MatButtonModule, MatFormFieldModule, MatInputModule, NgOptimizedImage],
   template: `
     <div class="flex flex-col gap-5">
       <span class="text-xs font-semibold text-slate-300">
@@ -65,11 +68,11 @@ import { MatInputModule } from '@angular/material/input';
             class="flex flex-col items-center gap-4 w-full animate-fadeIn"
             (click)="$event.stopPropagation()">
             <div
-              class="relative max-h-[180px] rounded-xl overflow-hidden shadow-lg border border-slate-700/60 bg-slate-900 flex items-center justify-center p-1 group/img">
+              class="relative w-full min-h-[350px] max-h-[600px] rounded-xl shadow-lg border border-slate-700/60 bg-slate-900 flex items-center justify-center p-1">
               @if (previewError()) {
                 <!-- Beautiful fallback placeholder for broken images -->
                 <div
-                  class="flex flex-col items-center justify-center bg-slate-950/60 text-slate-400 p-6 rounded-lg w-[240px] h-[160px] border border-slate-800/80">
+                  class="flex flex-col items-center justify-center bg-slate-950/60 text-slate-400 p-6 rounded-lg w-full h-full border border-slate-800/80">
                   <span class="material-icons text-3xl text-rose-500/80 mb-2">broken_image</span>
                   <span class="text-[10px] font-bold text-slate-300">Preview Unavailable</span>
                   @if (hasValue(currentWidth()) && hasValue(currentHeight())) {
@@ -83,27 +86,73 @@ import { MatInputModule } from '@angular/material/input';
                     <span class="text-[9px] text-slate-500 mt-1 font-mono">Image load failed</span>
                   }
                 </div>
+
+                <!-- Remove Image Button (Error fallback) -->
+                @if (!isUploading()) {
+                  <button
+                    mat-icon-button
+                    type="button"
+                    (click)="removeImage()"
+                    aria-label="Remove image"
+                    class="absolute top-2 right-2 bg-rose-600/90 hover:bg-rose-500 text-white shadow-md transition duration-300 hover:scale-105 flex items-center justify-center w-8 h-8 rounded-full border-0 cursor-pointer z-20">
+                    <span class="material-icons text-sm leading-none">close</span>
+                  </button>
+                }
               } @else {
-                <img
-                  [src]="previewUrl()"
-                  alt="Recipe preview"
-                  class="max-h-[160px] max-w-full rounded-lg object-contain transition duration-300 group-hover/img:brightness-90"
-                  (error)="onPreviewError()" />
+                <div
+                  class="image-wrapper relative max-w-full max-h-full inline-flex rounded-lg overflow-hidden">
+                  @if (previewUrl().startsWith('blob:') || previewUrl().startsWith('data:')) {
+                    <img
+                      [src]="previewUrl()"
+                      alt="Recipe preview"
+                      class="max-w-full max-h-[590px] object-contain rounded-lg transition duration-300"
+                      (error)="onPreviewError()" />
+                  } @else if (
+                    previewUrl() &&
+                    hasValue(currentWidth()) &&
+                    hasValue(currentHeight()) &&
+                    !previewUrl().startsWith('blob:') &&
+                    !previewUrl().startsWith('data:')
+                  ) {
+                    <img
+                      [ngSrc]="previewUrl()"
+                      [width]="currentWidth()"
+                      [height]="currentHeight()"
+                      alt="Recipe preview"
+                      class="max-w-full max-h-[590px] w-auto h-auto object-contain rounded-lg transition duration-300"
+                      (error)="onPreviewError()" />
+                  }
+
+                  <!-- Remove Image Button -->
+                  @if (!isUploading()) {
+                    <button
+                      mat-icon-button
+                      type="button"
+                      (click)="removeImage()"
+                      aria-label="Remove image"
+                      class="close-btn absolute top-2 right-2 bg-rose-600/90 hover:bg-rose-500 text-white shadow-md transition-all duration-300 hover:scale-105 flex items-center justify-center w-8 h-8 rounded-full border-0 cursor-pointer z-20">
+                      <span class="material-icons text-sm leading-none">close</span>
+                    </button>
+                  }
+                </div>
               }
 
-              <!-- Remove Image Button -->
-              <button
-                mat-icon-button
-                type="button"
-                (click)="removeImage()"
-                aria-label="Remove image"
-                class="absolute top-2 right-2 bg-rose-600/90 hover:bg-rose-500 text-white shadow-md transition duration-300 hover:scale-105 flex items-center justify-center w-8 h-8 rounded-full border-0 cursor-pointer">
-                <span class="material-icons text-sm leading-none">close</span>
-              </button>
+              <!-- Uploading Overlay -->
+              @if (isUploading()) {
+                <div
+                  class="absolute inset-0 bg-slate-900/80 rounded-xl flex flex-col items-center justify-center z-10 backdrop-blur-sm">
+                  <span class="material-icons animate-spin text-4xl text-purple-400 mb-2"
+                    >autorenew</span
+                  >
+                  <span class="text-xs font-bold text-slate-200 tracking-wider uppercase"
+                    >Processing...</span
+                  >
+                </div>
+              }
             </div>
             <p
               class="text-[10px] font-semibold text-slate-400 font-mono select-all bg-slate-950/60 px-3 py-1.5 rounded-full border border-slate-800/80 max-w-full truncate text-center">
-              {{ currentPath() }}
+              {{ currentPath() || 'Uploading...' }}
             </p>
           </div>
         } @else {
@@ -213,6 +262,8 @@ import { MatInputModule } from '@angular/material/input';
 export class ImageUploaderComponent implements FormValueControl<string> {
   // Grab reference to file input in template
   readonly fileInput = viewChild<ElementRef<HTMLInputElement>>('fileInput');
+  private readonly snackBar = inject(MatSnackBar);
+  private readonly recipe = inject(RecipeService);
 
   // FormValueControl contract
   readonly value = model<string>('');
@@ -237,10 +288,19 @@ export class ImageUploaderComponent implements FormValueControl<string> {
   protected readonly dragOver = signal<boolean>(false);
   protected readonly previewUrl = signal<string>('');
   readonly currentPath = computed(() => this.value());
+  readonly aspectRatio = computed(() => {
+    const w = parseFloat(this.currentWidth());
+    const h = parseFloat(this.currentHeight());
+    if (!isNaN(w) && !isNaN(h) && w > 0 && h > 0) {
+      return `${w} / ${h}`;
+    }
+    return '';
+  });
   protected readonly currentWidth = signal<string>('');
   protected readonly currentHeight = signal<string>('');
   protected readonly currentType = signal<string>('');
   protected readonly previewError = signal<boolean>(false);
+  protected readonly isUploading = signal<boolean>(false);
 
   constructor() {
     // Automatically load incoming parent model image data reactively
@@ -315,41 +375,53 @@ export class ImageUploaderComponent implements FormValueControl<string> {
 
   // --- CORE IMAGE PROCESSING LOGIC ---
 
-  private processFile(file: File): void {
-    const standardizedPath = file.name;
-    const objectUrl = URL.createObjectURL(file);
-
-    this.value.set(standardizedPath);
-    this.currentType.set(file.type);
-    this.previewUrl.set(objectUrl);
+  private async processFile(file: File): Promise<void> {
     this.previewError.set(false);
+    this.isUploading.set(true);
+
+    // Create a local blob URL to show the preview immediately
+    const objectUrl = URL.createObjectURL(file);
+    this.previewUrl.set(objectUrl);
 
     // Extract natural width and height of the local file
-    const img = new Image();
-    img.onload = () => {
-      const w = img.naturalWidth.toString();
-      const h = img.naturalHeight.toString();
-      this.currentWidth.set(w);
-      this.currentHeight.set(h);
+    let width = '';
+    let height = '';
+    await new Promise<void>((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        width = img.naturalWidth.toString();
+        height = img.naturalHeight.toString();
+        this.currentWidth.set(width);
+        this.currentHeight.set(height);
+        resolve();
+      };
+      img.onerror = () => {
+        this.currentWidth.set('');
+        this.currentHeight.set('');
+        resolve();
+      };
+      img.src = objectUrl;
+    });
 
-      this.imageChange.emit({
-        image: standardizedPath,
-        imageWidth: w,
-        imageHeight: h,
-        imageType: file.type,
-      });
-    };
-    img.onerror = () => {
-      this.currentWidth.set('');
-      this.currentHeight.set('');
-      this.imageChange.emit({
-        image: standardizedPath,
-        imageWidth: '',
-        imageHeight: '',
-        imageType: file.type,
-      });
-    };
-    img.src = objectUrl;
+    const serverPath = await this.recipe.upload(file);
+    if (serverPath === '') {
+      this.removeImage();
+      return;
+    }
+    // Use the original .webp (first in array) as the main DB reference
+    this.value.set(serverPath);
+    this.currentType.set('image/webp');
+    this.previewUrl.set(serverPath); // Switch preview from local blob to the new server path
+    this.isUploading.set(false);
+
+    this.imageChange.emit({
+      image: serverPath,
+      imageWidth: width,
+      imageHeight: height,
+      imageType: 'image/webp',
+    });
+
+    this.snackBar.open('Image uploaded and processed successfully!', 'Close', { duration: 3000 });
   }
 
   private processUrl(urlStr: string): void {

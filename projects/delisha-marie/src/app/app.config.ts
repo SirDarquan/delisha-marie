@@ -1,3 +1,4 @@
+import { provideImageKitLoader } from '@angular/common';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import {
   ApplicationConfig,
@@ -13,10 +14,10 @@ import {
   withNoIncrementalHydration,
 } from '@angular/platform-browser';
 import { provideRouter, withComponentInputBinding, withInMemoryScrolling } from '@angular/router';
-import { routes } from './app.routes';
 import { PluginRegistry } from '@dm/library';
-import { provideGtm } from './provider/gtm';
+import { routes } from './app.routes';
 import { provideAppConfig } from './provider/app-config';
+import { provideGtm } from './provider/gtm';
 import { TemplatePageTitleStrategy, provideTitleStrategy } from './services/title.strategy';
 import { withRecipes } from './webmcp';
 
@@ -36,6 +37,7 @@ export const appConfig: ApplicationConfig = {
     provideClientHydration(withEventReplay(), withNoIncrementalHydration()),
     provideHttpClient(withInterceptors([])),
     provideExperimentalWebMcpTools(withRecipes()),
+    provideImageKitLoader('https://ik.imagekit.io/delishamarie'),
     provideAppInitializer(() => inject(PluginRegistry).initAll()),
     provideAppConfig(),
     provideGtm(),
