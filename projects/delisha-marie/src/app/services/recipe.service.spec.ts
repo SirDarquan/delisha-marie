@@ -115,8 +115,7 @@ describe('RecipeService', () => {
       expect(result1).toEqual(mockRecipe);
 
       // Test with full slug
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (service as any).recipeCache.clear();
+      (service as unknown as { recipeCache: Map<string, unknown> }).recipeCache.clear();
       const promise2 = service.getRecipeBySlug('/recipe/test-recipe');
       const req2 = httpMock.expectOne('/api/recipes/test-recipe');
       req2.flush(mockRecipe);

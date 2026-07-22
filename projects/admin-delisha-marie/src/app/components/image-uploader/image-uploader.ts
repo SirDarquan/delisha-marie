@@ -64,9 +64,10 @@ import { RecipeService } from '../../services/recipe.service';
 
         <!-- CASE A: Image is uploaded (Show Preview) -->
         @if (previewUrl()) {
-          <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
           <div
             class="flex flex-col items-center gap-4 w-full animate-fadeIn"
+            tabindex="0"
+            (keydown.enter)="$event.stopPropagation()"
             (click)="$event.stopPropagation()">
             <div
               class="relative w-full min-h-[350px] max-h-[600px] rounded-xl shadow-lg border border-slate-700/60 bg-slate-900 flex items-center justify-center p-1">

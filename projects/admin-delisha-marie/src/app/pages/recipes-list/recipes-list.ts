@@ -98,9 +98,9 @@ import { RecipeService } from '../../services/recipe.service';
 
             <!-- Virtual Scroll Viewport -->
             <cdk-virtual-scroll-viewport
-              itemSize="72"
-              class="h-[55vh] w-full custom-scroll"
-              (scrolledIndexChange)="onScroll($event)">
+              itemSize="120"
+              class="h-full w-full"
+              (scrolledIndexChange)="onScroll()">
               <div class="divide-y divide-slate-800/40">
                 <div
                   *cdkVirtualFor="let recipe of filteredRecipes(); trackBy: trackByRecipeId"
@@ -270,8 +270,7 @@ export class RecipesListComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  onScroll(_index: number): void {
+  onScroll(): void {
     const end = this.viewport()?.getRenderedRange().end;
     const total = this.recipes().length;
     // Fetch more when we are within 10 items of the end

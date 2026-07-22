@@ -10,20 +10,20 @@ const { mockFrom } = vi.hoisted(() => ({
 }));
 
 vi.mock('@supabase/supabase-js', () => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const wrapQueryChain = (chain: any): any => {
+  const wrapQueryChain = (chain: unknown): unknown => {
     if (!chain || typeof chain !== 'object') return chain;
     if (chain instanceof Promise) return chain;
-    return new Proxy(chain, {
+    return new Proxy(chain as Record<string | symbol, unknown>, {
       get(target, prop) {
         if (prop === 'then') {
-          return target.then ? target.then.bind(target) : undefined;
+          return target['then']
+            ? (target['then'] as (...args: unknown[]) => unknown).bind(target)
+            : undefined;
         }
         if (prop in target) {
           const val = target[prop];
           if (typeof val === 'function') {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            return (...args: any[]) => {
+            return (...args: unknown[]) => {
               const res = val.apply(target, args);
               return wrapQueryChain(res);
             };
