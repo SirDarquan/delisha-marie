@@ -1,6 +1,6 @@
 import DescopeClient from '@descope/node-sdk';
 import { Request, Response, Router } from 'express';
-import { authMiddleware, AuthRequest, setAuthCookies } from './middleware/auth.middleware';
+import { setAuthCookies } from './middleware/auth.middleware';
 import { backendService } from './supabase-backend.service';
 
 function cleanEnvValue(val: string | undefined): string {
@@ -94,9 +94,8 @@ async function signInWithPassword(email: string, password: string) {
   return data;
 }
 
-async function signOut() {
-  const { error } = await getSupabase().auth.signOut();
-  if (error) throw error;
+function getErrorMessage(err: unknown): string {
+  return err instanceof Error ? err.message : String(err);
 }
 
 const authRouter = Router();
@@ -117,8 +116,7 @@ authRouter.post('/auth/signup', async (req: Request, res: Response) => {
       session: data.session,
     });
   } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : String(err);
-    return res.status(400).json({ error: msg });
+    return res.status(400).json({ error: getErrorMessage(err) });
   }
 });
 
@@ -142,25 +140,58 @@ authRouter.post('/auth/login', async (req: Request, res: Response) => {
     }
     return res.json({ session: data.session, user: data.user });
   } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : String(err);
-    return res.status(401).json({ error: msg });
+    return res.status(401).json({ error: getErrorMessage(err) });
   }
 });
 
-authRouter.post('/auth/signout', async (_req: Request, res: Response) => {
+authRouter.post('/auth/signout', async (req: Request, res: Response) => {
   try {
-    await signOut();
+    const { error } = await getSupabase().auth.signOut();
+    if (error) throw error;
     res.clearCookie('admin_access_token', { path: '/' });
     res.clearCookie('admin_refresh_token', { path: '/' });
     return res.json({ message: 'Signed out successfully' });
   } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : String(err);
-    return res.status(500).json({ error: msg });
+    return res.status(500).json({ error: getErrorMessage(err) });
   }
 });
 
-authRouter.get('/auth/me', authMiddleware, (req: Request, res: Response) => {
-  return res.json({ user: (req as AuthRequest).user });
+authRouter.get('/auth/me', async (req: Request, res: Response) => {
+  try {
+    const token = req.cookies?.['admin_access_token'];
+    const refreshToken = req.cookies?.['admin_refresh_token'];
+
+    if (!token && !refreshToken) {
+      return res.status(401).json({ error: 'Token missing or invalid' });
+    }
+
+    if (token) {
+      try {
+        const user = await backendService.verifyToken(token);
+        if (user) return res.json({ user });
+      } catch {
+        // Token might be expired, continue to refresh logic
+      }
+    }
+
+    if (refreshToken) {
+      try {
+        const { data, error } = await backendService.supabase.auth.refreshSession({
+          refresh_token: refreshToken,
+        });
+        if (!error && data.session && data.user) {
+          setAuthCookies(res, data.session);
+          return res.json({ user: data.user });
+        }
+      } catch {
+        // Ignore refresh errors and fall through
+      }
+    }
+
+    return res.status(401).json({ error: 'Token missing or invalid' });
+  } catch {
+    return res.status(401).json({ error: 'Token missing or invalid' });
+  }
 });
 
 authRouter.get('/auth/check-username', async (req: Request, res: Response) => {
@@ -172,8 +203,7 @@ authRouter.get('/auth/check-username', async (req: Request, res: Response) => {
     const available = await isUsernameAvailable(username);
     return res.json({ available });
   } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : String(err);
-    return res.status(400).json({ error: msg });
+    return res.status(400).json({ error: getErrorMessage(err) });
   }
 });
 
@@ -186,8 +216,7 @@ authRouter.get('/auth/check-email', async (req: Request, res: Response) => {
     const available = await isEmailAvailable(email);
     return res.json({ available });
   } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : String(err);
-    return res.status(400).json({ error: msg });
+    return res.status(400).json({ error: getErrorMessage(err) });
   }
 });
 
@@ -205,8 +234,7 @@ authRouter.post('/auth/descope/send-otp', async (req: Request, res: Response) =>
     }
     return res.json({ success: true, isNewUser: isNew });
   } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : String(err);
-    return res.status(400).json({ error: msg });
+    return res.status(400).json({ error: getErrorMessage(err) });
   }
 });
 
@@ -264,8 +292,7 @@ authRouter.post('/auth/descope/verify-otp', async (req: Request, res: Response) 
 
     return await handleDescopeVerification(email, verifyResp.data?.sessionJwt || '', res);
   } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : String(err);
-    return res.status(400).json({ error: msg });
+    return res.status(400).json({ error: getErrorMessage(err) });
   }
 });
 
@@ -354,8 +381,7 @@ authRouter.post('/auth/descope/register', async (req: Request, res: Response) =>
     try {
       await validateDescopeSession(descopeToken);
     } catch (descopeErr: unknown) {
-      const msg = descopeErr instanceof Error ? descopeErr.message : String(descopeErr);
-      return res.status(401).json({ error: msg });
+      return res.status(401).json({ error: getErrorMessage(descopeErr) });
     }
 
     // Try to create/update user in Descope using management API if management key is available
@@ -385,8 +411,7 @@ authRouter.post('/auth/descope/register', async (req: Request, res: Response) =>
 
     return res.json({ success: true, session: sessionData.session, user: sessionData.user });
   } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : String(err);
-    return res.status(400).json({ error: msg });
+    return res.status(400).json({ error: getErrorMessage(err) });
   }
 });
 
@@ -402,14 +427,12 @@ authRouter.post('/auth/descope/verify-oauth', async (req: Request, res: Response
     try {
       await validateDescopeSession(descopeToken);
     } catch (descopeErr: unknown) {
-      const msg = descopeErr instanceof Error ? descopeErr.message : String(descopeErr);
-      return res.status(401).json({ error: msg });
+      return res.status(401).json({ error: getErrorMessage(descopeErr) });
     }
 
     return await handleDescopeVerification(email, descopeToken, res);
   } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : String(err);
-    return res.status(400).json({ error: msg });
+    return res.status(400).json({ error: getErrorMessage(err) });
   }
 });
 

@@ -2,6 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { vi } from 'vitest';
 import { ImageUploaderComponent } from './image-uploader';
+import { RecipeService } from '../../services/recipe.service';
 
 describe('ImageUploaderComponent', () => {
   let component: ImageUploaderComponent;
@@ -62,6 +63,9 @@ describe('ImageUploaderComponent', () => {
 
     fixture = TestBed.createComponent(ImageUploaderComponent);
     component = fixture.componentInstance;
+
+    const recipeService = TestBed.inject(RecipeService);
+    vi.spyOn(recipeService, 'upload').mockImplementation(async (file: File) => file.name);
   });
 
   it('should create the image uploader component with default empty states', () => {
@@ -151,14 +155,14 @@ describe('ImageUploaderComponent', () => {
     await new Promise((resolve) => setTimeout(resolve, 0));
 
     expect(component['currentPath']()).toBe('tasty-tacos.jpg');
-    expect(component['currentType']()).toBe('image/jpeg');
+    expect(component['currentType']()).toBe('image/webp');
     expect(component['currentWidth']()).toBe('800');
     expect(component['currentHeight']()).toBe('600');
     expect(changePayload).toEqual({
       image: 'tasty-tacos.jpg',
       imageWidth: '800',
       imageHeight: '600',
-      imageType: 'image/jpeg',
+      imageType: 'image/webp',
     });
 
     URL.createObjectURL = originalCreateObjectURL;
@@ -414,6 +418,9 @@ describe('ImageUploaderComponent', () => {
 
   it('should trigger removeImage and onPreviewError DOM bindings when preview exists', async () => {
     fixture.componentRef.setInput('initialImage', '/images/recipes/2026/06/pasta.png');
+    fixture.componentRef.setInput('initialWidth', '800');
+    fixture.componentRef.setInput('initialHeight', '600');
+    fixture.componentRef.setInput('initialType', 'image/png');
     fixture.detectChanges();
 
     const imgEl = fixture.nativeElement.querySelector('img');
@@ -623,5 +630,108 @@ describe('ImageUploaderComponent', () => {
 
     const allFields = fixture.nativeElement.querySelectorAll('mat-form-field');
     expect(allFields).toHaveLength(3);
+  });
+
+  it('should handle failed upload by removing the image', async () => {
+    fixture.detectChanges();
+    const recipeService = TestBed.inject(RecipeService);
+    vi.spyOn(recipeService, 'upload').mockResolvedValue('');
+
+    const file = new File(['mock content'], 'tasty-tacos.jpg', { type: 'image/jpeg' });
+    const dropEvent = {
+      preventDefault: vi.fn(),
+      stopPropagation: vi.fn(),
+      dataTransfer: {
+        files: [file],
+      },
+    } as unknown as DragEvent;
+
+    component.onDrop(dropEvent);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(component['previewUrl']()).toBe('');
+    expect(component['currentPath']()).toBe('');
+  });
+
+  it('should test isUploading state branch in template', () => {
+    fixture.componentRef.setInput('initialImage', '/images/recipes/2026/06/pasta.png');
+    component['isUploading'].set(true);
+    fixture.detectChanges();
+    const uploadingDiv = fixture.nativeElement.querySelector('.bg-slate-900\\/80');
+    expect(uploadingDiv).toBeTruthy();
+  });
+
+  it('should render standard img tag when previewUrl is a blob or data url', () => {
+    fixture.componentRef.setInput(
+      'initialImage',
+      'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
+    );
+    fixture.componentRef.setInput('initialWidth', '800');
+    fixture.componentRef.setInput('initialHeight', '600');
+    fixture.detectChanges();
+
+    // An NgOptimizedImage will have a ng-img attribute or class. A regular one won't have ngSrc.
+    const imgElement = fixture.nativeElement.querySelector('img');
+    expect(imgElement).toBeTruthy();
+    expect(imgElement.getAttribute('src')).toContain('data:image');
+    expect(imgElement.getAttribute('ng-reflect-ng-src')).toBeNull();
+
+    // Trigger error on this standard image
+    const errorEv = new CustomEvent('error');
+    imgElement.dispatchEvent(errorEv);
+    fixture.detectChanges();
+    expect(component['previewError']()).toBe(true);
+  });
+
+  it('should trigger removeImage click on normal preview image', () => {
+    fixture.componentRef.setInput('initialImage', '/images/recipes/2026/06/pasta.png');
+    fixture.componentRef.setInput('initialWidth', '800');
+    fixture.componentRef.setInput('initialHeight', '600');
+    fixture.componentRef.setInput('initialType', 'image/png');
+    fixture.detectChanges();
+
+    // The normal remove button has class 'close-btn'
+    const removeBtn = fixture.nativeElement.querySelector('.close-btn');
+    expect(removeBtn).toBeTruthy();
+
+    const spy = vi.spyOn(component, 'removeImage');
+    removeBtn.click();
+    expect(spy).toHaveBeenCalled();
+  });
+
+  it('should calculate aspectRatio computed property correctly', () => {
+    fixture.detectChanges();
+    expect(component.aspectRatio()).toBe('');
+
+    component['currentWidth'].set('1600');
+    component['currentHeight'].set('900');
+    expect(component.aspectRatio()).toBe('1600 / 900');
+
+    component['currentWidth'].set('invalid');
+    expect(component.aspectRatio()).toBe('');
+
+    component['currentWidth'].set('0');
+    component['currentHeight'].set('0');
+    expect(component.aspectRatio()).toBe('');
+  });
+
+  it('should handle null and undefined in hasValue', () => {
+    fixture.detectChanges();
+    expect(component['hasValue'](null)).toBe(false);
+    expect(component['hasValue'](undefined)).toBe(false);
+    expect(component['hasValue']('   ')).toBe(false);
+    expect(component['hasValue']('null')).toBe(false);
+    expect(component['hasValue']('undefined')).toBe(false);
+  });
+
+  it('should cover the !isUploading branch when previewError is true', () => {
+    fixture.componentRef.setInput('initialImage', 'fake.jpg');
+    component['previewError'].set(true);
+    component['isUploading'].set(true);
+    fixture.detectChanges();
+
+    // The close button should NOT be present when isUploading is true, even if previewError is true
+    const closeBtn = fixture.nativeElement.querySelector('button[aria-label="Remove image"]');
+    expect(closeBtn).toBeFalsy();
   });
 });

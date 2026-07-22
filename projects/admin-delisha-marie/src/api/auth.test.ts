@@ -181,6 +181,17 @@ describe('Auth Router API', () => {
       expect(res.status).toBe(400);
       expect(res.body.error).toBe('Signup failed');
     });
+
+    it('should return 400 if signUp throws a non-Error string', async () => {
+      vi.mocked(backendService.supabase.auth.signUp).mockRejectedValue('Raw string error');
+
+      const res = await request(app)
+        .post('/auth/signup')
+        .send({ email: 'test@example.com', password: 'password123' });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe('Raw string error');
+    });
   });
 
   describe('POST /auth/login', () => {
@@ -468,6 +479,56 @@ describe('Auth Router API', () => {
 
       expect(res.status).toBe(401);
       expect(res.body.error).toBe('Token missing or invalid');
+    });
+
+    it('should return 401 if token is provided but user is null', async () => {
+      vi.mocked(backendService.verifyToken).mockResolvedValue(
+        null as unknown as Awaited<ReturnType<typeof backendService.verifyToken>>,
+      );
+      const res = await request(app)
+        .get('/auth/me')
+        .set('Cookie', ['admin_access_token=valid-but-no-user']);
+      expect(res.status).toBe(401);
+    });
+
+    it('should fall through to refresh token if verifyToken throws', async () => {
+      vi.mocked(backendService.verifyToken).mockRejectedValue(new Error('Invalid token'));
+      vi.mocked(backendService.supabase.auth.refreshSession).mockResolvedValue({
+        data: { user: null, session: null },
+        error: new Error('Refresh error'),
+      } as unknown as Awaited<ReturnType<typeof backendService.supabase.auth.refreshSession>>);
+
+      const res = await request(app)
+        .get('/auth/me')
+        .set('Cookie', ['admin_access_token=invalid', 'admin_refresh_token=valid']);
+      expect(res.status).toBe(401);
+    });
+
+    it('should use refresh token when only refresh token is provided and it works', async () => {
+      const mockUser = { id: 'user-123', email: 'test@example.com' };
+      const mockSession = { access_token: 'new-acc', refresh_token: 'new-ref', expires_in: 3600 };
+      vi.mocked(backendService.supabase.auth.refreshSession).mockResolvedValue({
+        data: { user: mockUser, session: mockSession },
+        error: null,
+      } as unknown as Awaited<ReturnType<typeof backendService.supabase.auth.refreshSession>>);
+
+      const res = await request(app)
+        .get('/auth/me')
+        .set('Cookie', ['admin_refresh_token=valid-only']);
+      expect(res.status).toBe(200);
+      expect(res.body.user.id).toBe('user-123');
+    });
+
+    it('should return 401 if refreshSession returns falsy data', async () => {
+      vi.mocked(backendService.supabase.auth.refreshSession).mockResolvedValue({
+        data: { user: null, session: null },
+        error: null,
+      } as unknown as Awaited<ReturnType<typeof backendService.supabase.auth.refreshSession>>);
+
+      const res = await request(app)
+        .get('/auth/me')
+        .set('Cookie', ['admin_refresh_token=valid-only']);
+      expect(res.status).toBe(401);
     });
   });
 

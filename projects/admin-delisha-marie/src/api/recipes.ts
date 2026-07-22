@@ -622,8 +622,8 @@ async function getOrCreateLookupItem(
   urlOverride?: string,
 ): Promise<string> {
   const isCategory = tableName === 'categories';
-  const matchField = isCategory ? 'url' : 'slug';
-  const matchValue = isCategory ? urlOverride || '' : slugify(name);
+  const matchField = isCategory ? 'url' : 'name';
+  const matchValue = isCategory ? urlOverride || '' : name;
 
   const { data, error } = await client
     .from(tableName)
@@ -633,9 +633,12 @@ async function getOrCreateLookupItem(
   if (error) throw error;
   if (data) return data.id as string;
 
+  const matchFieldInsert = isCategory ? 'url' : 'slug';
+  const matchValueInsert = isCategory ? urlOverride || '' : slugify(name);
+
   const { data: newItem, error: insertError } = await client
     .from(tableName)
-    .insert({ name, [matchField]: matchValue })
+    .insert({ name, [matchFieldInsert]: matchValueInsert })
     .select('id')
     .single();
   if (insertError) throw insertError;

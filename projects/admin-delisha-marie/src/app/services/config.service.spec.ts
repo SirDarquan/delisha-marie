@@ -29,12 +29,14 @@ describe('AppConfigService', () => {
     expect(service.order).toBe(1);
     expect(service.SocialClients()).toBeUndefined();
     expect(service.DescopeProjectId()).toBeUndefined();
+    expect(service.ImageKitUrlEndpoint()).toBeUndefined();
   });
 
   it('should fetch configuration from /config and populate signal state', async () => {
     const mockConfig: AppConfig = {
       SocialClients: { GoogleClientId: 'test-google-123' },
       DescopeProjectId: 'test-descope-456',
+      ImageKitUrlEndpoint: 'https://ik.imagekit.io/test',
     };
 
     const promise = service.init();
@@ -47,6 +49,7 @@ describe('AppConfigService', () => {
 
     expect(service.SocialClients()).toEqual(mockConfig.SocialClients);
     expect(service.DescopeProjectId()).toBe('test-descope-456');
+    expect(service.ImageKitUrlEndpoint()).toBe('https://ik.imagekit.io/test');
   });
 
   it('should log and throw a critical error if backend load fails', async () => {
@@ -62,6 +65,7 @@ describe('AppConfigService', () => {
     expect(consoleSpy).toHaveBeenCalled();
     expect(service.SocialClients()).toBeUndefined();
     expect(service.DescopeProjectId()).toBeUndefined();
+    expect(service.ImageKitUrlEndpoint()).toBeUndefined();
 
     consoleSpy.mockRestore();
   });

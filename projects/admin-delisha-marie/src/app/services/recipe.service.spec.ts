@@ -252,6 +252,51 @@ describe('RecipeService', () => {
     });
   });
 
+  describe('upload', () => {
+    it('should successfully upload an image and return the file url', async () => {
+      service = TestBed.inject(RecipeService);
+      httpMock = TestBed.inject(HttpTestingController);
+
+      const fakeFile = new File([''], 'test.png', { type: 'image/png' });
+      const promise = service.upload(fakeFile);
+
+      const req = httpMock.expectOne('/api/upload');
+      expect(req.request.method).toBe('POST');
+      expect(req.request.body instanceof FormData).toBe(true);
+      expect(req.request.body.has('image')).toBe(true);
+
+      req.flush({ success: true, files: ['/images/test.webp'] });
+
+      const result = await promise;
+      expect(result).toBe('/images/test.webp');
+    });
+
+    it('should return empty string if upload returns success true but no files', async () => {
+      service = TestBed.inject(RecipeService);
+      httpMock = TestBed.inject(HttpTestingController);
+
+      const promise = service.upload(new File([''], 't.png'));
+      const req = httpMock.expectOne('/api/upload');
+      req.flush({ success: true, files: [] });
+
+      expect(await promise).toBe('');
+    });
+
+    it('should return empty string on API error', async () => {
+      service = TestBed.inject(RecipeService);
+      httpMock = TestBed.inject(HttpTestingController);
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+      const promise = service.upload(new File([''], 't.png'));
+      const req = httpMock.expectOne('/api/upload');
+      req.error(new ProgressEvent('Network error'));
+
+      expect(await promise).toBe('');
+      expect(consoleSpy).toHaveBeenCalled();
+      consoleSpy.mockRestore();
+    });
+  });
+
   describe('State Restoration and Cache', () => {
     it('should store and retrieve scroll offset', () => {
       service = TestBed.inject(RecipeService);
@@ -365,6 +410,30 @@ describe('RecipeService', () => {
       req.flush(null);
       await new Promise((resolve) => setTimeout(resolve, 0));
       expect(service.specialDiets()).toEqual([]);
+    });
+  });
+
+  describe('Categories Initialization', () => {
+    it('should not update categories if data is null', async () => {
+      httpMock = TestBed.inject(HttpTestingController);
+      service = TestBed.inject(RecipeService);
+
+      // Before loading, the categories should be empty
+      const initialCount = service.categories().length;
+
+      // The constructor already called loadInitialCategories()
+      // Mock the get call to return null
+      const reqs = httpMock.match('/api/categories');
+      reqs.forEach((req) => {
+        if (!req.cancelled) {
+          req.flush(null);
+        }
+      });
+
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      // Should not have updated
+      expect(service.categories().length).toBe(initialCount);
     });
   });
 });

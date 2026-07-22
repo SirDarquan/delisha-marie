@@ -11,7 +11,7 @@ import { MatButtonModule } from '@angular/material/button';
       aria-labelledby="author-title">
       <div class="relative w-40 h-40 mx-auto mb-6">
         <img
-          ngSrc="/assets/delisha_marie_profile.png"
+          ngSrc="/delisha_marie_profile.png"
           fill
           alt="Delisha Marie"
           class="rounded-full object-cover border-4 border-[var(--mat-sys-outline-variant)] shadow-xl" />

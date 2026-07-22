@@ -96,9 +96,12 @@ describe('AuthService', () => {
   });
 
   it('should return false for username availability if backend fails', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
     apiMock.get.mockRejectedValue(new Error('Network error'));
     const available = await service.isUsernameAvailable('newuser');
     expect(available).toBe(false);
+    expect(console.error).toHaveBeenCalled();
+    vi.restoreAllMocks();
   });
 
   it('should call backend for email availability', async () => {
@@ -524,10 +527,12 @@ describe('AuthService', () => {
     });
 
     it('should handle verifyOtp rejection with a non-Error', async () => {
+      vi.spyOn(console, 'error').mockImplementation(() => undefined);
       apiMock.post.mockRejectedValue({ error: { error: 'Invalid token' } });
       const res = await service.verifyOtp('test@test.com', '123456');
       expect(res).toBe(false);
       expect(service.authError()).toBe('Invalid token');
+      vi.restoreAllMocks();
     });
 
     it('should handle registerDescope resolving with success: false', async () => {
@@ -538,10 +543,12 @@ describe('AuthService', () => {
     });
 
     it('should handle registerDescope rejection with a non-Error', async () => {
+      vi.spyOn(console, 'error').mockImplementation(() => undefined);
       apiMock.post.mockRejectedValue('Raw registration error');
       const res = await service.registerDescope('e@e.com', 't', 'F', 'L', 'D');
       expect(res).toBe(false);
       expect(service.authError()).toBe('Registration failed');
+      vi.restoreAllMocks();
     });
 
     it('should swallow errors when signout endpoint fails in logout', async () => {

@@ -1,4 +1,5 @@
 import { CdkVirtualScrollViewport, ScrollingModule } from '@angular/cdk/scrolling';
+import { NgOptimizedImage } from '@angular/common';
 import {
   AfterViewInit,
   ChangeDetectionStrategy,
@@ -25,7 +26,15 @@ import { RecipeService } from '../../services/recipe.service';
 
 @Component({
   selector: 'app-recipes-list',
-  imports: [RouterLink, MatButtonModule, MatIconModule, ScrollingModule, Stars, MatBadgeModule],
+  imports: [
+    RouterLink,
+    MatButtonModule,
+    MatIconModule,
+    ScrollingModule,
+    Stars,
+    MatBadgeModule,
+    NgOptimizedImage,
+  ],
   template: `
     <div class="p-4 md:p-8">
       <div class="mb-6 flex justify-between items-center">
@@ -101,7 +110,9 @@ import { RecipeService } from '../../services/recipe.service';
                   <div role="cell" class="flex-1 px-4 flex items-center gap-3 overflow-hidden">
                     @if (recipe.image) {
                       <img
-                        [src]="recipe.image"
+                        [ngSrc]="recipe.image"
+                        width="44"
+                        height="44"
                         alt=""
                         class="w-11 h-11 object-cover rounded-lg border border-slate-700/50 bg-slate-800 flex-shrink-0" />
                     }

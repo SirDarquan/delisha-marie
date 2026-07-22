@@ -11,6 +11,7 @@ export interface AppConfig {
     MicrosoftClientId?: string;
   };
   DescopeProjectId: string;
+  ImageKitUrlEndpoint: string;
 }
 
 const appConfig: AppConfig = {
@@ -18,6 +19,7 @@ const appConfig: AppConfig = {
     GoogleClientId: process.env['GOOGLE_CLIENT_ID'],
   },
   DescopeProjectId: process.env['DESCOPE_PROJECT_ID'] || '',
+  ImageKitUrlEndpoint: process.env['IMAGEKIT_URL_ENDPOINT'] || '',
 };
 
 configRouter.get('/config', (req: Request, res: Response) => {
