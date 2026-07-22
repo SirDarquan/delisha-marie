@@ -156,7 +156,7 @@ describe('Recipes Router API', () => {
       const res = await request(app).get('/recipes');
       expect(res.status).toBe(200);
       expect(Array.isArray(res.body)).toBe(true);
-      expect(res.body.length).toBe(3);
+      expect(res.body).toHaveLength(3);
     });
 
     it('should successfully return paginated recipes with search', async () => {
