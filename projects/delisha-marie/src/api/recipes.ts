@@ -227,15 +227,41 @@ async function getTagMatchedIds(
   return matchedIds;
 }
 
+interface SupabaseQueryBuilder {
+  eq: (col: string, val: unknown) => SupabaseQueryBuilder;
+  or: (
+    filter: string,
+    options?: { foreignTable?: string; referencedTable?: string },
+  ) => SupabaseQueryBuilder;
+  in: (col: string, vals: unknown[]) => SupabaseQueryBuilder;
+  order: (
+    col: string,
+    options?: {
+      ascending?: boolean;
+      nullsFirst?: boolean;
+      foreignTable?: string;
+      referencedTable?: string;
+    },
+  ) => SupabaseQueryBuilder;
+  range: (
+    from: number,
+    to: number,
+    options?: { foreignTable?: string; referencedTable?: string },
+  ) => SupabaseQueryBuilder;
+  then: (
+    onfulfilled?: ((value: unknown) => unknown) | null,
+    onrejected?: ((reason: unknown) => unknown) | null,
+  ) => Promise<unknown>;
+  [key: string]: unknown;
+}
+
 function applyRecipeFilters(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  query: any,
+  query: SupabaseQueryBuilder,
   method: string,
   category: string,
   subcategory: string,
   matchedIds: string[],
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-): any {
+): SupabaseQueryBuilder {
   if (method === 'the-best-recipes') {
     query = query.eq('the_best', true);
   }
@@ -329,9 +355,9 @@ recipesRouter.post('/recipes/search', async (req: Request, res: Response) => {
 
     const recipes = data.recipes || [];
     const items = recipes.map((r: Record<string, unknown>) => {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { total_count, ...rest } = r;
-      return rest;
+      const rCopy = { ...r };
+      delete rCopy['total_count'];
+      return rCopy;
     });
 
     return res.json({
@@ -362,7 +388,9 @@ recipesRouter.get('/recipes', async (req: Request, res: Response) => {
 
     const selectStr = getSelectString(method, category);
 
-    let query = supabase.from('recipes').select(selectStr, { count: 'exact' });
+    let query: SupabaseQueryBuilder = supabase
+      .from('recipes')
+      .select(selectStr, { count: 'exact' }) as unknown as SupabaseQueryBuilder;
     query = query.eq('status', 'published');
     query = applyRecipeFilters(query, method, category, subcategory, matchedIds);
 
@@ -370,7 +398,11 @@ recipesRouter.get('/recipes', async (req: Request, res: Response) => {
     const end = start + pageSize - 1;
     query = query.order('created_at', { ascending: false }).range(start, end);
 
-    const { data, error, count } = await query;
+    const { data, error, count } = (await query) as {
+      data: unknown;
+      error: unknown;
+      count: number | null;
+    };
     if (error) throw error;
 
     const formatted = formatDbRecipes((data || []) as unknown as DbRecipe[]);

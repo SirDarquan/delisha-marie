@@ -174,15 +174,6 @@ describe('HolidaysSelectorComponent', () => {
     expect(component.customHolidayText()).toBe('');
   });
 
-  it('should handle onHolidaySelect when selectField is undefined (line 207)', () => {
-    fixture.detectChanges();
-    // @ts-expect-error - mock the selectField signal to return undefined
-    component.selectField = (() => undefined) as unknown as typeof component.selectField;
-
-    // Call the method and assert it does not throw
-    expect(() => component.onHolidaySelect('Test')).not.toThrow();
-  });
-
   it('should prepopulate compiledHolidays with baseline holidays from service', () => {
     fixture.detectChanges();
     const compiled = component.compiledHolidays();

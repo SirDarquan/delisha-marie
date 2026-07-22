@@ -11,20 +11,20 @@ const { mockFrom, mockInvoke } = vi.hoisted(() => ({
 }));
 
 vi.mock('@supabase/supabase-js', () => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const wrapQueryChain = (chain: any): any => {
+  const wrapQueryChain = (chain: unknown): unknown => {
     if (!chain || typeof chain !== 'object') return chain;
     if (chain instanceof Promise) return chain;
-    return new Proxy(chain, {
+    return new Proxy(chain as Record<string | symbol, unknown>, {
       get(target, prop) {
         if (prop === 'then') {
-          return target.then ? target.then.bind(target) : undefined;
+          return target['then']
+            ? (target['then'] as (...args: unknown[]) => unknown).bind(target)
+            : undefined;
         }
         if (prop in target) {
           const val = target[prop];
           if (typeof val === 'function') {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            return (...args: any[]) => {
+            return (...args: unknown[]) => {
               const res = val.apply(target, args);
               return wrapQueryChain(res);
             };
@@ -911,8 +911,7 @@ describe('Recipes Router API', () => {
 
       mockFrom.mockImplementation((table: string) => {
         if (table === 'comments') {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const queryChain: any = {
+          const queryChain: Record<string, unknown> = {
             select: vi.fn().mockImplementation((_selectString, options) => {
               if (options && options.count === 'exact') {
                 return {
@@ -975,8 +974,7 @@ describe('Recipes Router API', () => {
     it('should return empty comments if total is 0', async () => {
       mockFrom.mockImplementation((table: string) => {
         if (table === 'comments') {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const queryChain: any = {
+          const queryChain: Record<string, unknown> = {
             select: vi.fn().mockImplementation((_selectString, options) => {
               if (options && options.count === 'exact') {
                 return {
@@ -1014,8 +1012,7 @@ describe('Recipes Router API', () => {
 
       mockFrom.mockImplementation((table: string) => {
         if (table === 'comments') {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const queryChain: any = {
+          const queryChain: Record<string, unknown> = {
             select: vi.fn().mockImplementation((_selectString, options) => {
               if (options && options.count === 'exact') {
                 return {
@@ -1136,8 +1133,7 @@ describe('Recipes Router API', () => {
       const mockComments = [{ id: 'c1', recipe_id: '123', parent_id: null }];
       mockFrom.mockImplementation((table: string) => {
         if (table === 'comments') {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const queryChain: any = {
+          const queryChain: Record<string, unknown> = {
             select: vi.fn().mockImplementation((_selectString, options) => {
               if (options && options.count === 'exact') {
                 return {
@@ -1175,8 +1171,7 @@ describe('Recipes Router API', () => {
       const mockComments = [{ id: 'c1', recipe_id: '123', parent_id: null }];
       mockFrom.mockImplementation((table: string) => {
         if (table === 'comments') {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const queryChain: any = {
+          const queryChain: Record<string, unknown> = {
             select: vi.fn().mockImplementation((_selectString, options) => {
               if (options && options.count === 'exact') {
                 return {
@@ -1231,8 +1226,7 @@ describe('Recipes Router API', () => {
           };
         }
         if (table === 'comments') {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const queryChain: any = {
+          const queryChain: Record<string, unknown> = {
             insert: vi.fn().mockImplementation(() => queryChain),
             select: vi.fn().mockImplementation(() => queryChain),
             single: vi.fn().mockResolvedValue({ data: mockComment, error: null }),
@@ -1370,8 +1364,7 @@ describe('Recipes Router API', () => {
           };
         }
         if (table === 'comments') {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const queryChain: any = {
+          const queryChain: Record<string, unknown> = {
             insert: vi.fn().mockImplementation(() => queryChain),
             select: vi.fn().mockImplementation(() => queryChain),
             single: vi.fn().mockResolvedValue({ data: null, error: new Error('Insert failed') }),
@@ -1415,8 +1408,7 @@ describe('Recipes Router API', () => {
           };
         }
         if (table === 'comments') {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const queryChain: any = {
+          const queryChain: Record<string, unknown> = {
             insert: vi.fn().mockImplementation(() => queryChain),
             select: vi.fn().mockImplementation(() => queryChain),
             single: vi.fn().mockResolvedValue({ data: mockComment, error: null }),
@@ -1497,8 +1489,7 @@ describe('Recipes Router API', () => {
           };
         }
         if (table === 'comments') {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const queryChain: any = {
+          const queryChain: Record<string, unknown> = {
             insert: vi.fn().mockImplementation(() => queryChain),
             select: vi.fn().mockImplementation(() => queryChain),
             single: vi.fn().mockResolvedValue({ data: mockComment, error: null }),

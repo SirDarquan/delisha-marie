@@ -225,7 +225,7 @@ describe('RecipesListComponent', () => {
       });
       component['recipes'].set(Array(50).fill({}) as never);
 
-      component.onScroll(45);
+      component.onScroll();
 
       expect(fetchSpy).toHaveBeenCalled();
     });
@@ -243,7 +243,7 @@ describe('RecipesListComponent', () => {
       });
       component['recipes'].set(Array(50).fill({}) as never);
 
-      component.onScroll(10);
+      component.onScroll();
 
       expect(fetchSpy).not.toHaveBeenCalled();
     });

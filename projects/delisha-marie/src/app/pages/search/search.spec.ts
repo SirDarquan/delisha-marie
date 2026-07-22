@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { SearchPage } from './search';
 import { Router, ActivatedRoute } from '@angular/router';
@@ -11,11 +10,11 @@ import { describe, expect, it, vi, beforeEach } from 'vitest';
 describe('SearchPage', () => {
   let component: SearchPage;
   let fixture: ComponentFixture<SearchPage>;
-  let mockApi: any;
-  let mockWindow: any;
-  let mockRouter: any;
-  let paramsSubject: any;
-  let queryParamsSubject: any;
+  let mockApi: Record<string, ReturnType<typeof vi.fn>>;
+  let mockWindow: Record<string, ReturnType<typeof vi.fn>>;
+  let mockRouter: Record<string, ReturnType<typeof vi.fn>>;
+  let paramsSubject: BehaviorSubject<Record<string, string>>;
+  let queryParamsSubject: BehaviorSubject<Record<string, string>>;
 
   beforeEach(async () => {
     mockApi = {
@@ -40,8 +39,8 @@ describe('SearchPage', () => {
     mockRouter = {
       navigate: vi.fn(),
     };
-    paramsSubject = new BehaviorSubject({ page: '2' });
-    queryParamsSubject = new BehaviorSubject({ q: 'chicken' });
+    paramsSubject = new BehaviorSubject<Record<string, string>>({ page: '2' });
+    queryParamsSubject = new BehaviorSubject<Record<string, string>>({ q: 'chicken' });
 
     await TestBed.configureTestingModule({
       imports: [SearchPage],
@@ -73,7 +72,7 @@ describe('SearchPage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect(mockApi.post).toHaveBeenCalledWith('/api/recipes/search', {
+    expect(mockApi['post']).toHaveBeenCalledWith('/api/recipes/search', {
       query: 'chicken',
       page: 2,
       pageSize: 12,
@@ -106,7 +105,7 @@ describe('SearchPage', () => {
     formEl.triggerEventHandler('submit', new Event('submit'));
 
     await fixture.whenStable();
-    expect(mockRouter.navigate).toHaveBeenCalledWith(['/search'], {
+    expect(mockRouter['navigate']).toHaveBeenCalledWith(['/search'], {
       queryParams: { q: 'pasta ' },
       queryParamsHandling: 'merge',
     });
@@ -118,25 +117,25 @@ describe('SearchPage', () => {
     formEl.triggerEventHandler('submit', new Event('submit'));
 
     await fixture.whenStable();
-    expect(mockRouter.navigate).not.toHaveBeenCalled();
+    expect(mockRouter['navigate']).not.toHaveBeenCalled();
   });
 
   it('should navigate and scroll on page change', () => {
     component.searchModel.set({ q: 'fish' });
     component.onPageChange(3);
 
-    expect(mockRouter.navigate).toHaveBeenCalledWith(['/search/page/3'], {
+    expect(mockRouter['navigate']).toHaveBeenCalledWith(['/search/page/3'], {
       queryParams: { q: 'fish' },
       queryParamsHandling: 'merge',
     });
-    expect(mockWindow.scrollTo).toHaveBeenCalledWith({ top: 0, behavior: 'smooth' });
+    expect(mockWindow['scrollTo']).toHaveBeenCalledWith({ top: 0, behavior: 'smooth' });
   });
 
   it('should navigate to /search on page 1', () => {
     component.searchModel.set({ q: 'fish' });
     component.onPageChange(1);
 
-    expect(mockRouter.navigate).toHaveBeenCalledWith(['/search'], {
+    expect(mockRouter['navigate']).toHaveBeenCalledWith(['/search'], {
       queryParams: { q: 'fish' },
       queryParamsHandling: 'merge',
     });
@@ -145,7 +144,7 @@ describe('SearchPage', () => {
   it('should render loading skeletons when loading', async () => {
     // Component is initially loading when resource is pending
     queryParamsSubject.next({ q: 'slow' });
-    mockApi.post.mockImplementation(() => new Promise((resolve) => setTimeout(resolve, 100)));
+    mockApi['post'].mockImplementation(() => new Promise((resolve) => setTimeout(resolve, 100)));
     fixture.detectChanges();
 
     const skeletons = fixture.debugElement.queryAll(By.css('.animate-pulse'));
@@ -153,7 +152,7 @@ describe('SearchPage', () => {
   });
 
   it('should render no results message when search returns empty', async () => {
-    mockApi.post.mockResolvedValue({ items: [], total: 0 });
+    mockApi['post'].mockResolvedValue({ items: [], total: 0 });
     queryParamsSubject.next({ q: 'nomatch' });
     fixture.detectChanges();
     await fixture.whenStable();

@@ -176,13 +176,6 @@ describe('SpecialDietsSelectorComponent', () => {
     expect(component.customDietText()).toBe('');
   });
 
-  it('should handle fallback selectField inside onSelectionChange (line 217)', () => {
-    fixture.detectChanges();
-    // @ts-expect-error - mock selectField to undefined
-    component.selectField = (() => undefined) as unknown as typeof component.selectField;
-    expect(() => component.onSelectionChange(['Vegan'])).not.toThrow();
-  });
-
   it('should prepopulate compiledDiets with baseline diets from service', () => {
     fixture.detectChanges();
     const compiled = component.compiledDiets();

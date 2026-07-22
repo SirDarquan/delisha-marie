@@ -6,12 +6,11 @@ import {
   model,
   output,
   signal,
-  viewChild,
   ViewEncapsulation,
 } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatSelect, MatSelectModule } from '@angular/material/select';
+import { MatSelectModule } from '@angular/material/select';
 import { RecipeService } from '../../services/recipe.service';
 import { FormValueControl } from '@angular/forms/signals';
 
@@ -103,8 +102,6 @@ import { FormValueControl } from '@angular/forms/signals';
 })
 export class HolidaysSelectorComponent implements FormValueControl<string> {
   private readonly recipeService = inject(RecipeService);
-
-  readonly selectField = viewChild<MatSelect>('select');
 
   // Standalone Inputs & Outputs
   holidayChange = output<string>();
