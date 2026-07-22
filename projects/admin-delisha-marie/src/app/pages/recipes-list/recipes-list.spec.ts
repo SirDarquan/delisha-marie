@@ -329,7 +329,7 @@ describe('RecipesListComponent', () => {
   it('should open CreateRecipeDialogComponent when onCreateRecipe is called and handle new recipe', () => {
     mockMatDialog.open.mockReturnValueOnce({
       afterClosed: () => of({ id: 99, title: 'New Recipe' }),
-    } as unknown);
+    } as unknown as ReturnType<typeof mockMatDialog.open>);
     const spySetCache = vi.spyOn(fakeRecipeService, 'setCachedRecipesList');
 
     component.onCreateRecipe();
@@ -340,7 +340,9 @@ describe('RecipesListComponent', () => {
   });
 
   it('should handle falsy return value from onCreateRecipe dialog', () => {
-    mockMatDialog.open.mockReturnValueOnce({ afterClosed: () => of(null) } as unknown);
+    mockMatDialog.open.mockReturnValueOnce({
+      afterClosed: () => of(null),
+    } as unknown as ReturnType<typeof mockMatDialog.open>);
     const spySetCache = vi.spyOn(fakeRecipeService, 'setCachedRecipesList');
     spySetCache.mockClear();
     const initialLen = component['recipes']().length;

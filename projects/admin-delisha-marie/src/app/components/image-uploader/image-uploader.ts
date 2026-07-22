@@ -13,6 +13,7 @@ import {
   viewChild,
   ViewEncapsulation,
   inject,
+  DestroyRef,
 } from '@angular/core';
 import { FormValueControl } from '@angular/forms/signals';
 import { MatButtonModule } from '@angular/material/button';
@@ -262,8 +263,10 @@ import { RecipeService } from '../../services/recipe.service';
 export class ImageUploaderComponent implements FormValueControl<string> {
   // Grab reference to file input in template
   readonly fileInput = viewChild<ElementRef<HTMLInputElement>>('fileInput');
-  private readonly snackBar = inject(MatSnackBar);
   private readonly recipe = inject(RecipeService);
+  private readonly snackBar = inject(MatSnackBar);
+  private readonly destroyRef = inject(DestroyRef);
+  private _isDestroyed = false;
 
   // FormValueControl contract
   readonly value = model<string>('');
@@ -303,6 +306,10 @@ export class ImageUploaderComponent implements FormValueControl<string> {
   protected readonly isUploading = signal<boolean>(false);
 
   constructor() {
+    this.destroyRef.onDestroy(() => {
+      this._isDestroyed = true;
+    });
+
     // Automatically load incoming parent model image data reactively
     effect(() => {
       const imgPath = this.initialImage();
@@ -405,9 +412,15 @@ export class ImageUploaderComponent implements FormValueControl<string> {
 
     const serverPath = await this.recipe.upload(file);
     if (serverPath === '') {
+      this.snackBar.open('Upload failed. Please try again.', 'Close', { duration: 3000 });
       this.removeImage();
       return;
     }
+
+    if (this._isDestroyed) {
+      return;
+    }
+
     // Use the original .webp (first in array) as the main DB reference
     this.value.set(serverPath);
     this.currentType.set('image/webp');

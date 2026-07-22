@@ -412,4 +412,28 @@ describe('RecipeService', () => {
       expect(service.specialDiets()).toEqual([]);
     });
   });
+
+  describe('Categories Initialization', () => {
+    it('should not update categories if data is null', async () => {
+      httpMock = TestBed.inject(HttpTestingController);
+      service = TestBed.inject(RecipeService);
+
+      // Before loading, the categories should be empty
+      const initialCount = service.categories().length;
+
+      // The constructor already called loadInitialCategories()
+      // Mock the get call to return null
+      const reqs = httpMock.match('/api/categories');
+      reqs.forEach((req) => {
+        if (!req.cancelled) {
+          req.flush(null);
+        }
+      });
+
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      // Should not have updated
+      expect(service.categories().length).toBe(initialCount);
+    });
+  });
 });

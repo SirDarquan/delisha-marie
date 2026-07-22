@@ -723,4 +723,15 @@ describe('ImageUploaderComponent', () => {
     expect(component['hasValue']('null')).toBe(false);
     expect(component['hasValue']('undefined')).toBe(false);
   });
+
+  it('should cover the !isUploading branch when previewError is true', () => {
+    fixture.componentRef.setInput('initialImage', 'fake.jpg');
+    component['previewError'].set(true);
+    component['isUploading'].set(true);
+    fixture.detectChanges();
+
+    // The close button should NOT be present when isUploading is true, even if previewError is true
+    const closeBtn = fixture.nativeElement.querySelector('button[aria-label="Remove image"]');
+    expect(closeBtn).toBeFalsy();
+  });
 });
