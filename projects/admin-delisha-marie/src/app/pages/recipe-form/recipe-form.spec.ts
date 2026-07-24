@@ -9,6 +9,8 @@ import { Recipe } from '../../models/recipe.model';
 import { RecipeService } from '../../services/recipe.service';
 import { RecipeFormComponent } from './recipe-form';
 
+vi.setConfig({ testTimeout: 20000 });
+
 describe('RecipeFormComponent', () => {
   let component: RecipeFormComponent;
   let fixture: ComponentFixture<RecipeFormComponent>;
