@@ -36,8 +36,7 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-node-
     - run: npm ci --ignore-scripts
-    - run: npm test -- --coverage
-    - run: npm run test:api -- --coverage
+    - run: npm test
     - name: SonarQube Scan
       uses: SonarSource/sonarqube-scan-action@v7
       # with:

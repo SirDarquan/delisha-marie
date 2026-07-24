@@ -98,14 +98,14 @@ import { RecipeService } from '../../services/recipe.service';
 
             <!-- Virtual Scroll Viewport -->
             <cdk-virtual-scroll-viewport
-              itemSize="120"
-              class="h-full w-full"
+              itemSize="48"
+              class="h-[calc(100vh-370px)] w-full"
               (scrolledIndexChange)="onScroll()">
               <div class="divide-y divide-slate-800/40">
                 <div
                   *cdkVirtualFor="let recipe of filteredRecipes(); trackBy: trackByRecipeId"
                   role="row"
-                  class="flex items-center hover:bg-slate-800/20 transition h-[72px]"
+                  class="flex items-center hover:bg-slate-800/20 transition h-[48px]"
                   [class.bg-purple-900/20]="recipe.id === highlightedRecipeId()">
                   <div role="cell" class="flex-1 px-4 flex items-center gap-3 overflow-hidden">
                     @if (recipe.image) {
@@ -149,29 +149,29 @@ import { RecipeService } from '../../services/recipe.service';
                       [matBadge]="recipe.reviewCount"
                       matBadgeColor="accent"
                       [matBadgeHidden]="!recipe.reviewCount"
-                      class="px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
+                      class="px-2 py-1 rounded-md text-[10px] font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
                       Edit Review
                     </button>
                   </div>
 
                   <div role="cell" class="w-40 px-4 text-center">
-                    <div class="flex items-center justify-center gap-2">
+                    <div class="flex items-center justify-center gap-1">
                       <a
                         mat-icon-button
                         [routerLink]="['/recipes/edit', recipe.id]"
                         (click)="setLastActiveRecipe(recipe.id)"
-                        class="!text-white hover:!text-purple-400 hover:drop-shadow-[0_0_8px_rgba(168,85,247,0.8)] transition-all cursor-pointer"
+                        class="!w-7 !h-7 !p-0 flex items-center justify-center !text-white hover:!text-purple-400 hover:drop-shadow-[0_0_8px_rgba(168,85,247,0.8)] transition-all cursor-pointer"
                         aria-label="Edit recipe">
-                        <mat-icon class="text-[20px] h-5 w-5 flex items-center justify-center"
+                        <mat-icon class="text-[16px] h-4 w-4 flex items-center justify-center"
                           >edit</mat-icon
                         >
                       </a>
                       <button
                         mat-icon-button
                         (click)="onDelete(recipe.id)"
-                        class="!text-white hover:!text-rose-400 hover:drop-shadow-[0_0_8px_rgba(244,63,94,0.8)] transition-all cursor-pointer"
+                        class="!w-7 !h-7 !p-0 flex items-center justify-center !text-white hover:!text-rose-400 hover:drop-shadow-[0_0_8px_rgba(244,63,94,0.8)] transition-all cursor-pointer"
                         aria-label="Delete recipe">
-                        <mat-icon class="text-[20px] h-5 w-5 flex items-center justify-center"
+                        <mat-icon class="text-[16px] h-4 w-4 flex items-center justify-center"
                           >delete</mat-icon
                         >
                       </button>

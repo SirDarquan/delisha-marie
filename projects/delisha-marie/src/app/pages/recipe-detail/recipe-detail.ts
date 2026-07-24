@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+import { CommonModule, IMAGE_LOADER } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -105,7 +105,7 @@ import { extractYouTubeVideoId } from '@dm/library';
                 class="order-1 lg:order-none prose prose-lg max-w-none px-4 sm:px-0 py-8 sm:py-0 min-w-0">
                 <div
                   class="recipe-story text-lg md:text-xl text-[var(--mat-sys-on-surface-variant)] leading-relaxed font-serif first-letter:text-6xl first-letter:font-black first-letter:mr-1 first-letter:text-[var(--mat-sys-primary)]"
-                  [innerHTML]="r.content"
+                  [innerHTML]="optimizedContent()"
                   [dmPinterestHover]="r"></div>
 
                 @if (videoId()) {
@@ -227,12 +227,61 @@ export class RecipeDetail {
   });
 
   private readonly sanitizer = inject(DomSanitizer);
+  private readonly imageLoader = inject(IMAGE_LOADER);
 
   readonly safeVideoUrl = computed(() => {
     const id = this.videoId();
     return id
       ? this.sanitizer.bypassSecurityTrustResourceUrl(`https://www.youtube.com/embed/${id}`)
       : null;
+  });
+
+  readonly optimizedContent = computed(() => {
+    const r = this.recipe();
+    if (!r?.content) return null;
+
+    const optimizedHtml = r.content.replace(/<img([^>]+)>/gi, (match, attrs) => {
+      const srcMatch = attrs.match(/(?:src)=["']([^"']+)["']/i);
+      if (!srcMatch) return match;
+
+      const originalSrc = srcMatch[1];
+      if (originalSrc.startsWith('data:')) return match;
+
+      try {
+        const isAbsolute = originalSrc.startsWith('http://') || originalSrc.startsWith('https://');
+
+        let optimizedSrc = originalSrc;
+        let srcsetAttr = '';
+
+        if (!isAbsolute) {
+          optimizedSrc = this.imageLoader({ src: originalSrc, width: 800 });
+          const srcset = `
+            ${this.imageLoader({ src: originalSrc, width: 400 })} 400w,
+            ${this.imageLoader({ src: originalSrc, width: 800 })} 800w,
+            ${this.imageLoader({ src: originalSrc, width: 1200 })} 1200w,
+            ${this.imageLoader({ src: originalSrc, width: 1600 })} 1600w
+          `
+            .replace(/\s+/g, ' ')
+            .trim();
+          srcsetAttr = ` srcset="${srcset}" sizes="(max-width: 768px) 100vw, 800px"`;
+        }
+
+        let newAttrs = attrs;
+        newAttrs = newAttrs.replace(/(?:src)=["'][^"']+["']/gi, '');
+
+        if (!/loading=/i.test(newAttrs)) newAttrs += ' loading="lazy"';
+        if (!/decoding=/i.test(newAttrs)) newAttrs += ' decoding="async"';
+        if (!/fetchpriority=/i.test(newAttrs)) newAttrs += ' fetchpriority="auto"';
+
+        return `<img src="${optimizedSrc}"${srcsetAttr}${newAttrs}>`;
+      } catch {
+        let newAttrs = attrs.replace(/src=["']([^"']+)["']/gi, 'src="$1"');
+        if (!/loading=/i.test(newAttrs)) newAttrs += ' loading="lazy"';
+        return `<img${newAttrs}>`;
+      }
+    });
+
+    return this.sanitizer.bypassSecurityTrustHtml(optimizedHtml);
   });
 
   private readonly window = inject(WINDOW);
