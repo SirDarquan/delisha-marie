@@ -283,4 +283,67 @@ describe('RecipeDetail', () => {
     expect(component.videoId()).toBeNull();
     expect(component.safeVideoUrl()).toBeNull();
   });
+
+  describe('optimizedContent', () => {
+    it('should return null if recipe is undefined', () => {
+      fixture.componentRef.setInput('recipe', null);
+      fixture.detectChanges();
+      expect(component.optimizedContent()).toBeNull();
+    });
+
+    it('should optimize relative images with srcset and lazy loading', async () => {
+      const customRecipe = { ...mockRecipe, content: '<img src="/images/pic.png" alt="Pic">' };
+      fixture.componentRef.setInput('recipe', customRecipe);
+      fixture.detectChanges();
+      await fixture.whenStable();
+      
+      const compiled = fixture.nativeElement as HTMLElement;
+      const img = compiled.querySelector('.recipe-story img') as HTMLImageElement;
+      expect(img).toBeTruthy();
+      expect(img.getAttribute('srcset')).toBeTruthy();
+      expect(img.getAttribute('loading')).toBe('lazy');
+      expect(img.getAttribute('decoding')).toBe('async');
+      expect(img.getAttribute('fetchpriority')).toBe('auto');
+    });
+
+    it('should add lazy loading to absolute images but not srcset', async () => {
+      const customRecipe = { ...mockRecipe, content: '<img src="https://example.com/pic.png" alt="Pic">' };
+      fixture.componentRef.setInput('recipe', customRecipe);
+      fixture.detectChanges();
+      await fixture.whenStable();
+      
+      const compiled = fixture.nativeElement as HTMLElement;
+      const img = compiled.querySelector('.recipe-story img') as HTMLImageElement;
+      expect(img).toBeTruthy();
+      expect(img.getAttribute('srcset')).toBeFalsy();
+      expect(img.getAttribute('loading')).toBe('lazy');
+      expect(img.getAttribute('src')).toBe('https://example.com/pic.png');
+    });
+
+    it('should ignore data: URIs', async () => {
+      const dataUri = 'data:image/png;base64,iVBORw0KGgo=';
+      const customRecipe = { ...mockRecipe, content: `<img src="${dataUri}" alt="Pic">` };
+      fixture.componentRef.setInput('recipe', customRecipe);
+      fixture.detectChanges();
+      await fixture.whenStable();
+      
+      const compiled = fixture.nativeElement as HTMLElement;
+      const img = compiled.querySelector('.recipe-story img') as HTMLImageElement;
+      expect(img).toBeTruthy();
+      expect(img.getAttribute('srcset')).toBeFalsy();
+      expect(img.getAttribute('loading')).toBeFalsy();
+      expect(img.getAttribute('src')).toBe(dataUri);
+    });
+
+    it('should handle images without src attribute safely', async () => {
+      const customRecipe = { ...mockRecipe, content: '<img alt="Pic">' };
+      fixture.componentRef.setInput('recipe', customRecipe);
+      fixture.detectChanges();
+      await fixture.whenStable();
+      
+      const compiled = fixture.nativeElement as HTMLElement;
+      const img = compiled.querySelector('.recipe-story img') as HTMLImageElement;
+      expect(img).toBeTruthy();
+    });
+  });
 });
