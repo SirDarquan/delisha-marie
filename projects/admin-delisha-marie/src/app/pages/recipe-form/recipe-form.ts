@@ -24,6 +24,7 @@ import { CookingMethodSelectorComponent } from '../../components/cooking-method-
 import { HolidaysSelectorComponent } from '../../components/holidays-selector/holidays-selector';
 import { ImageUploaderComponent } from '../../components/image-uploader/image-uploader';
 import { SpecialDietsSelectorComponent } from '../../components/special-diets-selector/special-diets-selector';
+import { StoryHtmlEditorComponent } from '../../components/story-html-editor/story-html-editor';
 import { Recipe } from '../../models/recipe.model';
 import { RecipeService } from '../../services/recipe.service';
 
@@ -85,6 +86,7 @@ interface RecipeFormModel {
     SpecialDietsSelectorComponent,
     HolidaysSelectorComponent,
     ImageUploaderComponent,
+    StoryHtmlEditorComponent,
   ],
   template: `
     <div class="p-4 md:p-8">
@@ -340,6 +342,10 @@ interface RecipeFormModel {
                   placeholder="Detailed story or description..."
                   class="resize-y"></textarea>
               </mat-form-field>
+
+              <div class="md:col-span-2 mb-4">
+                <app-story-html-editor [formField]="recipeForm.content"> </app-story-html-editor>
+              </div>
 
               <mat-form-field appearance="outline" class="w-full md:col-span-2">
                 <mat-label>Ingredients (One per line)</mat-label>
@@ -839,31 +845,33 @@ export class RecipeFormComponent implements OnInit {
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
       this.idToEdit.set(id);
-      this.recipeService
-        .fetchRecipeById(id)
-        .then((recipe) => {
-          if (recipe) {
-            this.originalRecipe.set(recipe);
-            const mapped = this.mapRecipeToForm(recipe);
-            this.recipeModel.set(mapped);
-            this.initialModel.set(mapped);
+      const fetchPromise = this.recipeService.fetchRecipeById(id);
+      if (fetchPromise && typeof fetchPromise.then === 'function') {
+        fetchPromise
+          .then((recipe) => {
+            if (recipe) {
+              this.originalRecipe.set(recipe);
+              const mapped = this.mapRecipeToForm(recipe);
+              this.recipeModel.set(mapped);
+              this.initialModel.set(mapped);
 
-            // Propagate loaded data directly to the form controls (targets)
-            Object.keys(mapped).forEach((key) => {
-              const formObj = this.recipeForm as unknown as Record<
-                string,
-                () => { value: { set: (v: unknown) => void } }
-              >;
-              const mappedObj = mapped as unknown as Record<string, unknown>;
-              if (typeof formObj[key] === 'function') {
-                formObj[key]().value.set(mappedObj[key]);
-              }
-            });
-          } else {
-            this.initialModel.set({ ...this.recipeModel() });
-          }
-        })
-        .catch((err) => console.error('Failed to load recipe:', err));
+              // Propagate loaded data directly to the form controls (targets)
+              Object.keys(mapped).forEach((key) => {
+                const formObj = this.recipeForm as unknown as Record<
+                  string,
+                  () => { value: { set: (v: unknown) => void } }
+                >;
+                const mappedObj = mapped as unknown as Record<string, unknown>;
+                if (typeof formObj[key] === 'function') {
+                  formObj[key]().value.set(mappedObj[key]);
+                }
+              });
+            } else {
+              this.initialModel.set({ ...this.recipeModel() });
+            }
+          })
+          .catch((err) => console.error('Failed to load recipe:', err));
+      }
     } else {
       this.initialModel.set({ ...this.recipeModel() });
     }
@@ -979,6 +987,14 @@ export class RecipeFormComponent implements OnInit {
       ...model,
       holidays: holiday,
     }));
+  }
+
+  onContentEditorChanged(newContent: string): void {
+    this.recipeModel.update((model) => ({
+      ...model,
+      content: newContent,
+    }));
+    this.recipeForm.content().value.set(newContent);
   }
 
   addKeyword(): void {

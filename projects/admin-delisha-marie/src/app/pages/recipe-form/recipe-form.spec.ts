@@ -2,6 +2,7 @@ import { Location } from '@angular/common';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormField, FormRoot } from '@angular/forms/signals';
 import { MatDialog } from '@angular/material/dialog';
+import { Subject } from 'rxjs';
 import { By } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CategoryTrails } from '@dm/library';
@@ -111,6 +112,7 @@ describe('RecipeFormComponent', () => {
 
   const fakeLocation = {
     back: vi.fn(),
+    subscribe: () => ({ unsubscribe: () => undefined }),
   };
 
   const fakeDialog = {
@@ -119,6 +121,11 @@ describe('RecipeFormComponent', () => {
         subscribe: (cb: (val: boolean) => void) => cb(dialogResult),
       }),
     }),
+    openDialogs: [],
+    _openDialogs: [],
+    _afterOpened: new Subject(),
+    afterOpened: new Subject(),
+    _getAfterAllClosed: () => new Subject(),
   };
 
   beforeEach(async () => {

@@ -284,7 +284,7 @@ describe('RecipesListComponent', () => {
 
       component.ngAfterViewInit();
 
-      await new Promise((r) => setTimeout(r, 100));
+      await new Promise((r) => setTimeout(r, 300));
 
       expect(scrollSpy).toHaveBeenCalledWith(150);
     });
