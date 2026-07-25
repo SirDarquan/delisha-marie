@@ -296,7 +296,7 @@ describe('RecipeDetail', () => {
       fixture.componentRef.setInput('recipe', customRecipe);
       fixture.detectChanges();
       await fixture.whenStable();
-      
+
       const compiled = fixture.nativeElement as HTMLElement;
       const img = compiled.querySelector('.recipe-story img') as HTMLImageElement;
       expect(img).toBeTruthy();
@@ -307,11 +307,14 @@ describe('RecipeDetail', () => {
     });
 
     it('should add lazy loading to absolute images but not srcset', async () => {
-      const customRecipe = { ...mockRecipe, content: '<img src="https://example.com/pic.png" alt="Pic">' };
+      const customRecipe = {
+        ...mockRecipe,
+        content: '<img src="https://example.com/pic.png" alt="Pic">',
+      };
       fixture.componentRef.setInput('recipe', customRecipe);
       fixture.detectChanges();
       await fixture.whenStable();
-      
+
       const compiled = fixture.nativeElement as HTMLElement;
       const img = compiled.querySelector('.recipe-story img') as HTMLImageElement;
       expect(img).toBeTruthy();
@@ -326,7 +329,7 @@ describe('RecipeDetail', () => {
       fixture.componentRef.setInput('recipe', customRecipe);
       fixture.detectChanges();
       await fixture.whenStable();
-      
+
       const compiled = fixture.nativeElement as HTMLElement;
       const img = compiled.querySelector('.recipe-story img') as HTMLImageElement;
       expect(img).toBeTruthy();
@@ -340,7 +343,7 @@ describe('RecipeDetail', () => {
       fixture.componentRef.setInput('recipe', customRecipe);
       fixture.detectChanges();
       await fixture.whenStable();
-      
+
       const compiled = fixture.nativeElement as HTMLElement;
       const img = compiled.querySelector('.recipe-story img') as HTMLImageElement;
       expect(img).toBeTruthy();
