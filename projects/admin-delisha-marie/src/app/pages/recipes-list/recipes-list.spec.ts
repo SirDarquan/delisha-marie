@@ -425,4 +425,15 @@ describe('RecipesListComponent', () => {
 
     expect(spy).toHaveBeenCalledWith(mockRecipesData[0].id);
   });
+
+  it('should test trackByRecipeId and scroll offset tracking', () => {
+    fixture = TestBed.createComponent(RecipesListComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+
+    expect(component.trackByRecipeId(0, mockRecipesData[0])).toBe(mockRecipesData[0].id);
+
+    component.onScroll();
+    expect(fakeRecipeService.setLastScrollOffset).toHaveBeenCalled();
+  });
 });

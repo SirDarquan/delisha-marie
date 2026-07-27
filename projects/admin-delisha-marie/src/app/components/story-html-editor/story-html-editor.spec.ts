@@ -158,4 +158,243 @@ describe('StoryHtmlEditorComponent', () => {
       expect(imgEl.classList.contains('active-highlight')).toBe(true);
     }
   });
+
+  it('should trigger image upload input click', () => {
+    const inputEl = document.createElement('input');
+    const clickSpy = vi.spyOn(inputEl, 'click');
+    vi.spyOn(component, 'imageFileInput').mockReturnValue({ nativeElement: inputEl });
+
+    component.triggerImageUpload();
+    expect(clickSpy).toHaveBeenCalled();
+  });
+
+  it('should prompt for link URL and execute createLink command', () => {
+    const promptSpy = vi.spyOn(window, 'prompt').mockReturnValue('https://example.com');
+    const execSpy = vi.spyOn(document, 'execCommand');
+
+    component.promptLink();
+    expect(promptSpy).toHaveBeenCalledWith('Enter URL:');
+    expect(execSpy).toHaveBeenCalledWith('createLink', false, 'https://example.com');
+  });
+
+  it('should handle onFileSelected when recipeService is undefined', async () => {
+    (component as unknown as { recipeService: unknown }).recipeService = undefined;
+    const createObjectURLSpy = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:test');
+    const execSpy = vi.spyOn(document, 'execCommand');
+
+    const fakeFile = new File(['fake'], 'test.jpg', { type: 'image/jpeg' });
+    const event = { target: { files: [fakeFile] } } as unknown as Event;
+
+    await component.onFileSelected(event);
+    expect(createObjectURLSpy).toHaveBeenCalledWith(fakeFile);
+    expect(execSpy).toHaveBeenCalledWith('insertImage', false, 'blob:test');
+  });
+
+  it('should handle onFileSelected error gracefully', async () => {
+    const recipeService = TestBed.inject(RecipeService);
+    vi.spyOn(recipeService, 'upload').mockRejectedValue(new Error('Upload failed'));
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    const fakeFile = new File(['fake'], 'test.jpg', { type: 'image/jpeg' });
+    const event = { target: { files: [fakeFile] } } as unknown as Event;
+
+    await component.onFileSelected(event);
+    expect(consoleSpy).toHaveBeenCalled();
+  });
+
+  it('should handle openFigureDialog when editing inside existing gallery container', async () => {
+    fixture.componentRef.setInput(
+      'value',
+      '<figure class="recipe-gallery column-2"><figure class="recipe-step-image"><img src="/2026/07/test1.webp"></figure><figure class="recipe-step-image"><img src="/2026/07/test2.webp"></figure></figure>',
+    );
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const dialog = (component as unknown as { dialog: MatDialog }).dialog;
+    vi.spyOn(dialog, 'open').mockReturnValue({
+      afterClosed: () =>
+        of({
+          outerFigureClass: 'recipe-gallery column-3',
+          innerFigureClass: 'recipe-step-image',
+          imgClass: 'custom-img',
+          captionText: 'Gallery Caption',
+          captionClass: 'caption-style',
+        }),
+    } as unknown as ReturnType<MatDialog['open']>);
+
+    const canvasEl = component.editorCanvas()?.nativeElement;
+    const imgEl = canvasEl?.querySelectorAll('img')[1];
+    if (imgEl) {
+      component.onCanvasClick({ target: imgEl } as unknown as Event);
+    }
+
+    component.openFigureDialog();
+    expect(component.value()).toContain('column-3');
+    expect(component.value()).toContain('test1.webp');
+  });
+
+  it('should handle openFigureDialog when highlightedEl is a figure container', async () => {
+    fixture.componentRef.setInput(
+      'value',
+      '<figure class="recipe-step-image active-highlight"><img src="/2026/07/test.webp"></figure>',
+    );
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const dialog = (component as unknown as { dialog: MatDialog }).dialog;
+    const openSpy = vi.spyOn(dialog, 'open').mockReturnValue({
+      afterClosed: () => of(undefined),
+    } as unknown as ReturnType<MatDialog['open']>);
+
+    component.openFigureDialog();
+    expect(openSpy).toHaveBeenCalled();
+  });
+
+  it('should remove imgClass if empty when applying figure dialog result', async () => {
+    fixture.componentRef.setInput('value', '<img src="/2026/07/test.webp" class="old-class">');
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const dialog = (component as unknown as { dialog: MatDialog }).dialog;
+    vi.spyOn(dialog, 'open').mockReturnValue({
+      afterClosed: () =>
+        of({
+          outerFigureClass: '',
+          innerFigureClass: 'recipe-step-image',
+          imgClass: '',
+          captionText: '',
+          captionClass: '',
+        }),
+    } as unknown as ReturnType<MatDialog['open']>);
+
+    const canvasEl = component.editorCanvas()?.nativeElement;
+    const imgEl = canvasEl?.querySelector('img');
+    if (imgEl) {
+      component.onCanvasClick({ target: imgEl } as unknown as Event);
+    }
+
+    component.openFigureDialog();
+    expect(component.value()).not.toContain('class="old-class"');
+  });
+
+  it('should preserve external http/https image src when setting value', async () => {
+    fixture.componentRef.setInput('value', '<img src="https://external.com/pic.jpg">');
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(component.value()).toContain('https://external.com/pic.jpg');
+  });
+
+  it('should handle openFigureDialog when targetImg is nested inside parent figure', async () => {
+    fixture.componentRef.setInput(
+      'value',
+      '<figure class="recipe-gallery"><figure class="recipe-step-image"><img src="/2026/07/test.webp"></figure></figure>',
+    );
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const dialog = (component as unknown as { dialog: MatDialog }).dialog;
+    vi.spyOn(dialog, 'open').mockReturnValue({
+      afterClosed: () => of(undefined),
+    } as unknown as ReturnType<MatDialog['open']>);
+
+    const canvasEl = component.editorCanvas()?.nativeElement;
+    const imgEl = canvasEl?.querySelector('img');
+    if (imgEl) {
+      component.onCanvasClick({ target: imgEl } as unknown as Event);
+    }
+
+    component.openFigureDialog();
+    expect(component).toBeTruthy();
+  });
+
+  it('should exercise execCmd formatting actions', () => {
+    const docExecSpy = vi.spyOn(document, 'execCommand').mockImplementation(() => true);
+    component.execCmd('bold');
+    component.execCmd('italic');
+    component.execCmd('formatBlock', 'h2');
+    component.execCmd('insertUnorderedList');
+
+    expect(docExecSpy).toHaveBeenCalled();
+    docExecSpy.mockRestore();
+  });
+
+  it('should fallback to window.getSelection() in openFigureDialog when no active highlight', async () => {
+    fixture.componentRef.setInput('value', '<p id="para"><img src="/2026/07/test.webp"></p>');
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const canvasEl = component.editorCanvas()?.nativeElement;
+    const imgEl = canvasEl?.querySelector('img');
+
+    const mockRange = {
+      commonAncestorContainer: imgEl as Node,
+    } as unknown as Range;
+
+    const mockSelection = {
+      rangeCount: 1,
+      getRangeAt: () => mockRange,
+    } as unknown as Selection;
+
+    vi.spyOn(window, 'getSelection').mockReturnValue(mockSelection);
+
+    const dialog = (component as unknown as { dialog: MatDialog }).dialog;
+    const openSpy = vi.spyOn(dialog, 'open').mockReturnValue({
+      afterClosed: () => of(undefined),
+    } as unknown as ReturnType<MatDialog['open']>);
+
+    component.openFigureDialog();
+    expect(openSpy).toHaveBeenCalled();
+  });
+
+  it('should handle openFigureDialog when outer figure is highlighted with child figure and result has caption', async () => {
+    fixture.componentRef.setInput(
+      'value',
+      '<figure class="recipe-gallery active-highlight"><figure class="recipe-step-image"><img src="/2026/07/test.webp"></figure></figure>',
+    );
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const dialog = (component as unknown as { dialog: MatDialog }).dialog;
+    vi.spyOn(dialog, 'open').mockReturnValue({
+      afterClosed: () =>
+        of({
+          outerFigureClass: 'recipe-gallery column-2',
+          innerFigureClass: 'recipe-step-image',
+          imgClass: 'my-img',
+          captionText: 'Delicious Pasta',
+          captionClass: 'sup',
+        }),
+    } as unknown as ReturnType<MatDialog['open']>);
+
+    component.openFigureDialog();
+    expect(component.value()).toContain('<figcaption class="sup">Delicious Pasta</figcaption>');
+  });
+
+  it('should trigger promptLink and triggerImageUpload', () => {
+    const promptSpy = vi.spyOn(window, 'prompt').mockReturnValue('https://example.com');
+    const execSpy = vi.spyOn(component, 'execCmd');
+    component.promptLink();
+    expect(execSpy).toHaveBeenCalledWith('createLink', 'https://example.com');
+    promptSpy.mockRestore();
+
+    component.triggerImageUpload();
+  });
+
+  it('should click all toolbar buttons and trigger canvas input/blur events', () => {
+    fixture.detectChanges();
+    vi.spyOn(window, 'prompt').mockReturnValue(null);
+    vi.spyOn(document, 'execCommand').mockImplementation(() => true);
+
+    const buttons = Array.from(
+      fixture.nativeElement.querySelectorAll('button'),
+    ) as HTMLButtonElement[];
+    buttons.forEach((btn) => btn.click());
+
+    const canvasEl = component.editorCanvas()?.nativeElement;
+    if (canvasEl) {
+      canvasEl.dispatchEvent(new Event('input'));
+      canvasEl.dispatchEvent(new Event('blur'));
+    }
+    expect(buttons.length).toBeGreaterThan(0);
+  });
 });

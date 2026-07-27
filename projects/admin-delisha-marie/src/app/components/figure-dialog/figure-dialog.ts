@@ -78,7 +78,7 @@ export interface FigureDialogData {
           <input
             matInput
             [ngModel]="innerFigureClass()"
-            (ngModelChange)="innerFigureClass.set($event)"
+            (ngModelChange)="setInnerFigureClass($event)"
             placeholder="e.g. recipe-step-image" />
         </mat-form-field>
 
@@ -87,7 +87,7 @@ export interface FigureDialogData {
           <input
             matInput
             [ngModel]="imgClass()"
-            (ngModelChange)="imgClass.set($event)"
+            (ngModelChange)="setImgClass($event)"
             placeholder="e.g. rounded-xl mx-auto w-full" />
         </mat-form-field>
 
@@ -97,7 +97,7 @@ export interface FigureDialogData {
             matInput
             rows="2"
             [ngModel]="captionText()"
-            (ngModelChange)="captionText.set($event)"
+            (ngModelChange)="setCaptionText($event)"
             placeholder="Optional image caption description..."></textarea>
         </mat-form-field>
 
@@ -106,7 +106,7 @@ export interface FigureDialogData {
           <input
             matInput
             [ngModel]="captionClass()"
-            (ngModelChange)="captionClass.set($event)"
+            (ngModelChange)="setCaptionClass($event)"
             placeholder="e.g. text-sm text-slate-400 mt-2 italic font-sans" />
         </mat-form-field>
       </mat-dialog-content>
@@ -150,6 +150,26 @@ export class FigureDialogComponent {
   readonly imgClass = signal<string>(this.data?.imgClass || '');
   readonly captionText = signal<string>(this.data?.captionText || '');
   readonly captionClass = signal<string>(this.data?.captionClass || '');
+
+  setOuterFigureClass(v: string): void {
+    this.outerFigureClass.set(v);
+  }
+
+  setInnerFigureClass(v: string): void {
+    this.innerFigureClass.set(v);
+  }
+
+  setImgClass(v: string): void {
+    this.imgClass.set(v);
+  }
+
+  setCaptionText(v: string): void {
+    this.captionText.set(v);
+  }
+
+  setCaptionClass(v: string): void {
+    this.captionClass.set(v);
+  }
 
   readonly currentColumn = computed<'none' | 'column-2' | 'column-3'>(() => {
     const cls = this.outerFigureClass();

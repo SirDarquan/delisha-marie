@@ -1473,4 +1473,17 @@ describe('RecipeFormComponent', () => {
     expect(updatePayload.updatedAt).toBeDefined();
     expect(updatePayload.createdAt).toBe(updatePayload.updatedAt);
   });
+
+  it('should add, edit, and remove keywords', () => {
+    fixture = TestBed.createComponent(RecipeFormComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+
+    // Keywords
+    component.addKeyword();
+    expect(component['recipeModel']().keyword.length).toBeGreaterThan(0);
+    component.onKeywordInput(0, { target: { value: 'Spicy' } } as unknown as Event);
+    expect(component['recipeModel']().keyword[0]).toBe('Spicy');
+    component.removeKeyword(0);
+  });
 });
