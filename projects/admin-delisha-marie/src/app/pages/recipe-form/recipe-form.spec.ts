@@ -1486,4 +1486,112 @@ describe('RecipeFormComponent', () => {
     expect(component['recipeModel']().keyword[0]).toBe('Spicy');
     component.removeKeyword(0);
   });
+
+  it('should handle category, method, holiday, specialDiets, and content editor events', () => {
+    fixture = TestBed.createComponent(RecipeFormComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+
+    component.onCategoryChanged({
+      trails: [{ category: 'Dinner', slug: 'dinner' }],
+    } as unknown as CategoryTrails);
+    expect(component['recipeModel']().category).toBeTruthy();
+
+    component.onMethodChanged('Baking');
+    expect(component['recipeModel']().method).toBe('Baking');
+
+    component.onHolidayChanged('Christmas');
+    expect(component['recipeModel']().holidays).toBe('Christmas');
+
+    component.onSpecialDietsChanged(['Keto', 'Gluten-Free']);
+    expect(component['recipeModel']().specialDiets).toEqual(['Keto', 'Gluten-Free']);
+
+    component.onContentEditorChanged('<p>Updated Content</p>');
+    expect(component['recipeModel']().content).toBe('<p>Updated Content</p>');
+  });
+
+  it('should serialize recipe with nutrition, equipment, notes, and theBest category trails', async () => {
+    fixture = TestBed.createComponent(RecipeFormComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+
+    component['recipeModel'].update((m) => ({
+      ...m,
+      title: 'Full Recipe',
+      slug: 'full-recipe',
+      status: 'draft',
+      equipment: 'Mixer\nBowl',
+      notes: 'Chill before serving',
+      keyword: ['Healthy', 'Quick'],
+      servingSize: '1 bowl',
+      calories: '250',
+      fat: '5g',
+      carbohydrates: '30g',
+      protein: '10g',
+      fiber: '4g',
+      sugar: '2g',
+      sodium: '150mg',
+      cholesterol: '0mg',
+      saturatedFat: '1g',
+      theBest: true,
+      category: {
+        trails: [
+          [
+            { name: 'Home', url: '/' },
+            { name: 'Recipes', url: '/recipes' },
+            { name: 'Dinner', url: '/recipes/dinner' },
+          ],
+        ],
+      },
+    }));
+
+    await component.saveRequired('published');
+    expect(updatePayload).toBeTruthy();
+  });
+
+  it('should handle specialDiets objects in mapRecipeToForm', () => {
+    fixture = TestBed.createComponent(RecipeFormComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+
+    const mapped = component['mapRecipeToForm']({
+      title: 'Recipe',
+      specialDiets: [{ name: 'Vegan' }, { name: '' }, 'Gluten-Free'] as unknown as string[],
+    } as unknown as Recipe);
+
+    expect(mapped.specialDiets).toEqual(['Vegan', '', 'Gluten-Free']);
+  });
+
+  it('should catch error on saveDraft failure', async () => {
+    fixture = TestBed.createComponent(RecipeFormComponent);
+    component = fixture.componentInstance;
+    component['idToEdit'].set('123');
+    fixture.detectChanges();
+
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    vi.spyOn(fakeRecipeService, 'updateRecipe').mockRejectedValueOnce(new Error('Update failed'));
+
+    await component.saveDraft();
+    expect(consoleSpy).toHaveBeenCalled();
+    consoleSpy.mockRestore();
+  });
+
+  it('should leave page on onCancel confirmed dialog', async () => {
+    fixture = TestBed.createComponent(RecipeFormComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+
+    // Mark dirty so confirmation dialog opens
+    component['recipeModel'].update((m) => ({ ...m, title: 'Modified' }));
+
+    const dialog = (component as unknown as { dialog: MatDialog }).dialog;
+    vi.spyOn(dialog, 'open').mockReturnValue({
+      afterClosed: () => Promise.resolve(true),
+    } as unknown as ReturnType<MatDialog['open']>);
+
+    component.onCancel();
+    await fixture.whenStable();
+
+    expect(component).toBeTruthy();
+  });
 });

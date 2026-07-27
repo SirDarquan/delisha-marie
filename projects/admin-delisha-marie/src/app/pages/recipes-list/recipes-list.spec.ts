@@ -18,10 +18,10 @@ describe('RecipesListComponent', () => {
   const fakeRecipeService = {
     fetchRecipes: vi.fn().mockResolvedValue(mockRecipesData),
     getCachedRecipesList: () => [] as Recipe[],
-    deleteRecipe: (id: string | number) => {
+    deleteRecipe: vi.fn((id: string | number) => {
       deletedId = id;
       return Promise.resolve({ success: true });
-    },
+    }),
     getLastActiveRecipeId: () => null as number | string | null,
     getLastScrollOffset: () => 0,
     setLastActiveRecipeId: vi.fn(),
@@ -435,5 +435,57 @@ describe('RecipesListComponent', () => {
 
     component.onScroll();
     expect(fakeRecipeService.setLastScrollOffset).toHaveBeenCalled();
+  });
+
+  it('should handle onCreateRecipe when dialog closes with new recipe', async () => {
+    fixture = TestBed.createComponent(RecipesListComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+
+    const newRecipe = { id: 999, title: 'New Created Recipe' } as Recipe;
+    const dialog = (component as unknown as { dialog: MatDialog }).dialog;
+    vi.spyOn(dialog, 'open').mockReturnValue({
+      afterClosed: () => of(newRecipe),
+    } as unknown as ReturnType<MatDialog['open']>);
+
+    component.onCreateRecipe();
+
+    expect(component['recipes']()[0].id).toBe(999);
+  });
+
+  it('should delete recipe when confirmed in onDelete dialog', async () => {
+    fixture = TestBed.createComponent(RecipesListComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+
+    const dialog = (component as unknown as { dialog: MatDialog }).dialog;
+    vi.spyOn(dialog, 'open').mockReturnValue({
+      afterClosed: () => of(true),
+    } as unknown as ReturnType<MatDialog['open']>);
+
+    component.onDelete(mockRecipesData[0].id);
+    await fixture.whenStable();
+
+    expect(fakeRecipeService.deleteRecipe).toHaveBeenCalledWith(mockRecipesData[0].id);
+  });
+
+  it('should not delete recipe when cancelled in onDelete dialog', async () => {
+    fixture = TestBed.createComponent(RecipesListComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+
+    const dialog = (component as unknown as { dialog: MatDialog }).dialog;
+    vi.spyOn(dialog, 'open').mockReturnValue({
+      afterClosed: () => of(false),
+    } as unknown as ReturnType<MatDialog['open']>);
+
+    const deleteSpy = fakeRecipeService.deleteRecipe as unknown as { mockClear: () => void };
+    if (typeof deleteSpy.mockClear === 'function') {
+      deleteSpy.mockClear();
+    }
+    component.onDelete(mockRecipesData[0].id);
+    await fixture.whenStable();
+
+    expect(fakeRecipeService.deleteRecipe).not.toHaveBeenCalled();
   });
 });
