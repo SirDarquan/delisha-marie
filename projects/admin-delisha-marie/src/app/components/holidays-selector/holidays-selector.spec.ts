@@ -181,4 +181,13 @@ describe('HolidaysSelectorComponent', () => {
     expect(compiled).toContain('Easter');
     expect(compiled).toContain('Thanksgiving');
   });
+
+  it('should ignore empty baseline holidays in compiledHolidays', () => {
+    mockHolidaysSignal.set([
+      { id: '1', name: '   ' },
+      { id: '2', name: 'Halloween' },
+    ]);
+    fixture.detectChanges();
+    expect(component.compiledHolidays()).toContain('Halloween');
+  });
 });

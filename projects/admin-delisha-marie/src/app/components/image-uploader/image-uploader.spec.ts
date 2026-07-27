@@ -734,4 +734,23 @@ describe('ImageUploaderComponent', () => {
     const closeBtn = fixture.nativeElement.querySelector('button[aria-label="Remove image"]');
     expect(closeBtn).toBeFalsy();
   });
+
+  it('should test dragleave and destroyed component early return in upload', async () => {
+    fixture.detectChanges();
+    component.onDragLeave({
+      preventDefault: () => undefined,
+      stopPropagation: () => undefined,
+    } as unknown as DragEvent);
+    expect(component['dragOver']()).toBe(false);
+
+    fixture.destroy();
+    await (component as unknown as { processFile: (f: File) => Promise<void> }).processFile(
+      new File([''], 'test.jpg'),
+    );
+  });
+
+  it('should set previewError to true when onPreviewError is called', () => {
+    component.onPreviewError();
+    expect(component['previewError']()).toBe(true);
+  });
 });

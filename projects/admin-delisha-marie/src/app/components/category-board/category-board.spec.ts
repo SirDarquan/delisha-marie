@@ -483,5 +483,22 @@ describe('CategoryBoardComponent', () => {
       // Active index should shift down
       expect(component.activeTrailIndex()).toBe(len - 2);
     });
+
+    it('should update customName and clean recipeUrl when recipeSlug is provided', () => {
+      fixture.componentRef.setInput('recipeTitle', 'Spaghetti');
+      fixture.componentRef.setInput('recipeSlug', 'spaghetti-bolognese');
+      fixture.detectChanges();
+
+      component.updateCustomName({ target: { value: 'My Pathway' } } as unknown as Event);
+      expect(component.customName()).toBe('My Pathway');
+
+      const categories = component.categories();
+      const dinnerCat = categories.find((c) => c.name === 'Dinner')!;
+      component.toggleCategory(dinnerCat);
+      fixture.detectChanges();
+
+      const lastTrail = component.value()?.trails[0];
+      expect(lastTrail?.some((p) => p.url.includes('spaghetti-bolognese'))).toBe(true);
+    });
   });
 });

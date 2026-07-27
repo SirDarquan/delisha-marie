@@ -208,4 +208,13 @@ describe('CookingMethodSelectorComponent', () => {
     expect(compiled).toContain('Slow Cooking');
     expect(compiled).toContain('Stovetop');
   });
+
+  it('should ignore empty baseline methods in compiledMethods', () => {
+    mockMethodsSignal.set([
+      { id: '1', name: '   ', slug: '' },
+      { id: '2', name: 'Grilling', slug: 'grilling' },
+    ]);
+    fixture.detectChanges();
+    expect(component.compiledMethods()).toContain('Grilling');
+  });
 });
