@@ -185,6 +185,98 @@ import { extractYouTubeVideoId } from '@dm/library';
       .recipe-story p:last-child {
         margin-bottom: 0;
       }
+      .recipe-story h2 {
+        font-size: 1.75rem;
+        font-weight: 700;
+        margin-top: 2.5rem;
+        margin-bottom: 1.25rem;
+        color: var(--mat-sys-on-surface);
+      }
+      .recipe-story h3 {
+        font-size: 1.35rem;
+        font-weight: 600;
+        margin-top: 2rem;
+        margin-bottom: 1rem;
+        color: var(--mat-sys-on-surface);
+      }
+      .recipe-story blockquote {
+        border-left: 4px solid var(--mat-sys-primary);
+        padding-left: 1.25rem;
+        font-style: italic;
+        margin: 2rem 0;
+        color: var(--mat-sys-on-surface-variant);
+      }
+      .recipe-story ul {
+        list-style-type: disc;
+        padding-left: 1.75rem;
+        margin-bottom: 2rem;
+      }
+      .recipe-story ol {
+        list-style-type: decimal;
+        padding-left: 1.75rem;
+        margin-bottom: 2rem;
+      }
+      .recipe-story a {
+        color: var(--mat-sys-primary);
+        text-decoration: underline;
+      }
+      .recipe-story img {
+        max-width: 100%;
+        height: auto;
+        border-radius: 1rem;
+        margin: 1.5rem 0;
+      }
+      .recipe-story figure {
+        margin: 1.5rem 0;
+      }
+      .recipe-story figure.recipe-gallery {
+        display: grid;
+        grid-template-columns: repeat(1, minmax(0, 1fr));
+        gap: 1.5rem;
+        margin: 2.5rem 0;
+        align-items: start;
+      }
+      .recipe-story figure.recipe-gallery:has(.column-2),
+      .recipe-story figure.recipe-gallery.column-2,
+      .recipe-story figure.column-2 {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 1.25rem;
+        align-items: start;
+      }
+      .recipe-story figure.recipe-gallery:has(.column-3),
+      .recipe-story figure.recipe-gallery.column-3,
+      .recipe-story figure.column-3 {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+        gap: 1rem;
+        align-items: start;
+      }
+      .recipe-story figure.recipe-step-image,
+      .recipe-story figure.recipe-image {
+        margin: 0.5rem 0;
+      }
+      .recipe-story figure.recipe-step-image img,
+      .recipe-story figure.recipe-image img {
+        width: 100%;
+        height: auto;
+        object-fit: cover;
+        border-radius: 0.75rem;
+        display: block;
+      }
+      .recipe-story figcaption {
+        font-size: 0.875rem;
+        line-height: 1.35rem;
+        color: var(--mat-sys-on-surface-variant);
+        margin-top: 0.5rem;
+        text-align: center;
+        font-style: italic;
+      }
+      .recipe-story figcaption.sup,
+      .recipe-story figcaption sup {
+        vertical-align: super;
+        font-size: 0.75em;
+      }
       @keyframes shimmer {
         0% {
           background-position: -200% 0;

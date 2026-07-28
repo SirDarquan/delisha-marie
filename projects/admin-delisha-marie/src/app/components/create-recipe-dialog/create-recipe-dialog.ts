@@ -133,58 +133,51 @@ export class CreateRecipeDialogComponent {
             params,
             loader: async ({ params }) => await this.recipeService.checkSlugAvailability(params),
           }),
-        onSuccess: (value: boolean) => {
-          if (!value) {
-            return null;
-          }
-
-          return {
-            kind: 'slug_taken',
-            message: 'Slug is already taken',
-          };
-        },
-        onError: (error: unknown) => {
-          console.error('Failed to check slug availability', error);
-        },
+        onSuccess: (value: boolean) => this.checkSlugSuccess(value),
+        onError: (error: unknown) => this.checkSlugError(error),
       });
     },
     {
       submission: {
-        action: async (f) => {
-          if (this.isSubmitting()) return;
-          const value = f().value();
-          this.isSubmitting.set(true);
-          try {
-            const title = value.title;
-            const slug = value.slug;
-
-            const newRecipe = await this.recipeService.createRecipe({
-              title,
-              slug,
-              status: 'draft',
-              author: 'Delisha Marie',
-              difficulty: 'Easy',
-              description: '',
-              content: '',
-              ingredients: [],
-              instructions: [],
-              image: '',
-              prepTime: '',
-              cookTime: '',
-              totalTime: '',
-              yield: '',
-            });
-
-            this.dialogRef.close(newRecipe);
-            this.router.navigate(['/recipes/edit', newRecipe.id]);
-          } catch (err) {
-            console.error('Failed to create recipe', err);
-            this.isSubmitting.set(false);
-          }
+        action: async () => {
+          await this.submitRecipe();
         },
       },
     },
   );
+
+  async submitRecipe(): Promise<void> {
+    if (this.isSubmitting()) return;
+    const value = this.createForm().value();
+    this.isSubmitting.set(true);
+    try {
+      const title = value.title;
+      const slug = value.slug;
+
+      const newRecipe = await this.recipeService.createRecipe({
+        title,
+        slug,
+        status: 'draft',
+        author: 'Delisha Marie',
+        difficulty: 'Easy',
+        description: '',
+        content: '',
+        ingredients: [],
+        instructions: [],
+        image: '',
+        prepTime: '',
+        cookTime: '',
+        totalTime: '',
+        yield: '',
+      });
+
+      this.dialogRef.close(newRecipe);
+      this.router.navigate(['/recipes/edit', newRecipe.id]);
+    } catch (err) {
+      console.error('Failed to create recipe', err);
+      this.isSubmitting.set(false);
+    }
+  }
 
   private userEditedSlug = false;
 
@@ -199,5 +192,17 @@ export class CreateRecipeDialogComponent {
 
   onSlugInput() {
     this.userEditedSlug = true;
+  }
+
+  checkSlugSuccess(isTaken: boolean): { kind: string; message: string } | null {
+    if (!isTaken) return null;
+    return {
+      kind: 'slug_taken',
+      message: 'Slug is already taken',
+    };
+  }
+
+  checkSlugError(error: unknown): void {
+    console.error('Failed to check slug availability', error);
   }
 }
