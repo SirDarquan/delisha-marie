@@ -846,32 +846,30 @@ export class RecipeFormComponent implements OnInit {
     if (id) {
       this.idToEdit.set(id);
       const fetchPromise = this.recipeService.fetchRecipeById(id);
-      if (fetchPromise && typeof fetchPromise.then === 'function') {
-        fetchPromise
-          .then((recipe) => {
-            if (recipe) {
-              this.originalRecipe.set(recipe);
-              const mapped = this.mapRecipeToForm(recipe);
-              this.recipeModel.set(mapped);
-              this.initialModel.set(mapped);
+      fetchPromise
+        .then((recipe) => {
+          if (recipe) {
+            this.originalRecipe.set(recipe);
+            const mapped = this.mapRecipeToForm(recipe);
+            this.recipeModel.set(mapped);
+            this.initialModel.set(mapped);
 
-              // Propagate loaded data directly to the form controls (targets)
-              Object.keys(mapped).forEach((key) => {
-                const formObj = this.recipeForm as unknown as Record<
-                  string,
-                  () => { value: { set: (v: unknown) => void } }
-                >;
-                const mappedObj = mapped as unknown as Record<string, unknown>;
-                if (typeof formObj[key] === 'function') {
-                  formObj[key]().value.set(mappedObj[key]);
-                }
-              });
-            } else {
-              this.initialModel.set({ ...this.recipeModel() });
-            }
-          })
-          .catch((err) => console.error('Failed to load recipe:', err));
-      }
+            // Propagate loaded data directly to the form controls (targets)
+            Object.keys(mapped).forEach((key) => {
+              const formObj = this.recipeForm as unknown as Record<
+                string,
+                () => { value: { set: (v: unknown) => void } }
+              >;
+              const mappedObj = mapped as unknown as Record<string, unknown>;
+              if (typeof formObj[key] === 'function') {
+                formObj[key]().value.set(mappedObj[key]);
+              }
+            });
+          } else {
+            this.initialModel.set({ ...this.recipeModel() });
+          }
+        })
+        .catch((err) => console.error('Failed to load recipe:', err));
     } else {
       this.initialModel.set({ ...this.recipeModel() });
     }

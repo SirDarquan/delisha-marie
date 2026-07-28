@@ -361,8 +361,9 @@ export class StoryHtmlEditorComponent implements FormValueControl<string> {
 
   private stripImageBaseUrl(html: string): string {
     if (!html) return '';
-    let clean = html.replace(/\s*active-highlight\b/g, '');
-    clean = clean.replace(/class=""/g, '');
+    let clean = html.replace(/\bactive-highlight\b/g, '');
+    clean = clean.replaceAll('class=" "', '');
+    clean = clean.replaceAll('class=""', '');
 
     return clean.replace(/<img([^>]+)>/gi, (match, attrs) => {
       const srcMatch = attrs.match(/(?:src)=["']([^"']+)["']/i);
@@ -420,78 +421,107 @@ export class StoryHtmlEditorComponent implements FormValueControl<string> {
     }
   }
 
+  private getTargetImage(canvasEl: HTMLElement): HTMLImageElement | null {
+    const highlightedEl = canvasEl.querySelector('.active-highlight');
+    if (highlightedEl) {
+      if (highlightedEl instanceof HTMLImageElement) return highlightedEl;
+      if (highlightedEl instanceof HTMLElement) {
+        return highlightedEl.querySelector('img') || highlightedEl.closest('img');
+      }
+    }
+    const selection = window.getSelection();
+    if (selection && selection.rangeCount > 0) {
+      const range = selection.getRangeAt(0);
+      let node: Node | null = range.commonAncestorContainer;
+      if (node.nodeType === Node.TEXT_NODE) node = node.parentElement;
+      if (node instanceof HTMLElement && canvasEl.contains(node)) {
+        return node.closest('img') || node.querySelector('img');
+      }
+    }
+    return null;
+  }
+
+  private getFigureElements(targetImg: HTMLImageElement): {
+    inner: HTMLElement | null;
+    outer: HTMLElement | null;
+  } {
+    const parentFig = targetImg.closest('figure');
+    if (!parentFig) return { inner: null, outer: null };
+    if (parentFig.parentElement?.tagName.toLowerCase() === 'figure') {
+      return { inner: parentFig, outer: parentFig.parentElement };
+    }
+    const childFigs = Array.from(parentFig.querySelectorAll('figure'));
+    const matchingChild = childFigs.find((fig) => fig.contains(targetImg));
+    return matchingChild
+      ? { inner: matchingChild, outer: parentFig }
+      : { inner: parentFig, outer: null };
+  }
+
+  private cleanFigureClass(cls: string | undefined): string {
+    return (cls || '').replace(/\bactive-highlight\b/g, '').trim();
+  }
+
+  private applyDialogResult(
+    result: FigureDialogData,
+    targetImg: HTMLImageElement,
+    innerFigure: HTMLElement | null,
+    outerFigure: HTMLElement | null,
+    isGalleryContainer: boolean,
+  ): void {
+    const imgClone = targetImg.cloneNode(true) as HTMLImageElement;
+    if (result.imgClass) imgClone.className = result.imgClass;
+    else imgClone.removeAttribute('class');
+
+    const innerFig: HTMLElement = document.createElement('figure');
+    if (result.innerFigureClass) innerFig.className = result.innerFigureClass;
+    innerFig.appendChild(imgClone);
+
+    if (result.captionText) {
+      const figcap = document.createElement('figcaption');
+      figcap.textContent = result.captionText;
+      if (result.captionClass) figcap.className = result.captionClass;
+      innerFig.appendChild(figcap);
+    }
+
+    if (isGalleryContainer && outerFigure) {
+      if (result.outerFigureClass) outerFigure.className = result.outerFigureClass;
+      const targetToReplace = innerFigure || targetImg;
+      targetToReplace.parentNode?.replaceChild(innerFig, targetToReplace);
+    } else {
+      let replacementNode: HTMLElement = innerFig;
+      if (result.outerFigureClass) {
+        const outerFig = document.createElement('figure');
+        outerFig.className = result.outerFigureClass;
+        outerFig.appendChild(innerFig);
+        replacementNode = outerFig;
+      }
+      const topTargetNode = outerFigure || innerFigure || targetImg;
+      topTargetNode.parentNode?.replaceChild(replacementNode, topTargetNode);
+    }
+  }
+
   openFigureDialog(): void {
     const canvasEl = this.editorCanvas()?.nativeElement;
     if (!canvasEl) return;
 
-    let targetImg: HTMLImageElement | null = null;
-    let innerFigure: HTMLElement | null = null;
-    let outerFigure: HTMLElement | null = null;
-    let captionEl: HTMLElement | null = null;
-
-    // 1. Check for element with active-highlight class first
-    const highlightedEl = canvasEl.querySelector('.active-highlight');
-    if (highlightedEl) {
-      if (highlightedEl instanceof HTMLImageElement) {
-        targetImg = highlightedEl;
-      } else if (highlightedEl instanceof HTMLElement) {
-        targetImg = highlightedEl.querySelector('img') || highlightedEl.closest('img');
-      }
-    }
-
-    // 2. Fall back to current DOM Selection if no active-highlight found
-    if (!targetImg) {
-      const selection = window.getSelection();
-      if (selection && selection.rangeCount > 0) {
-        const range = selection.getRangeAt(0);
-        let node: Node | null = range.commonAncestorContainer;
-        if (node.nodeType === Node.TEXT_NODE) {
-          node = node.parentElement;
-        }
-        if (node instanceof HTMLElement && canvasEl.contains(node)) {
-          targetImg = node.closest('img') || node.querySelector('img');
-        }
-      }
-    }
-
+    const targetImg = this.getTargetImage(canvasEl);
     if (!targetImg) return;
 
-    // 4. Derive inner figure, outer figure, and caption element strictly relative to targetImg
-    const parentFig = targetImg.closest('figure');
-    if (parentFig) {
-      if (parentFig.parentElement?.tagName.toLowerCase() === 'figure') {
-        innerFigure = parentFig;
-        outerFigure = parentFig.parentElement;
-      } else {
-        const childFigs = Array.from(parentFig.querySelectorAll('figure'));
-        const matchingChild = childFigs.find((fig) => fig.contains(targetImg));
-        if (matchingChild) {
-          innerFigure = matchingChild;
-          outerFigure = parentFig;
-        } else {
-          innerFigure = parentFig;
-        }
-      }
-    }
+    const { inner: innerFigure, outer: outerFigure } = this.getFigureElements(targetImg);
+    const captionEl = innerFigure?.querySelector('figcaption');
 
-    if (innerFigure) {
-      captionEl = innerFigure.querySelector('figcaption');
-    }
-
-    const isGalleryContainer =
+    const isGalleryContainer = !!(
       outerFigure &&
       (outerFigure.classList.contains('recipe-gallery') ||
-        outerFigure.querySelectorAll('figure').length > 1);
-
-    const cleanClass = (cls: string | undefined) =>
-      (cls || '').replace(/\s*active-highlight\b/g, '').trim();
+        outerFigure.querySelectorAll('figure').length > 1)
+    );
 
     const initialData: FigureDialogData = {
-      outerFigureClass: cleanClass(outerFigure?.className),
-      innerFigureClass: cleanClass(innerFigure?.className),
-      imgClass: cleanClass(targetImg.className),
+      outerFigureClass: this.cleanFigureClass(outerFigure?.className),
+      innerFigureClass: this.cleanFigureClass(innerFigure?.className),
+      imgClass: this.cleanFigureClass(targetImg.className),
       captionText: captionEl?.textContent || '',
-      captionClass: cleanClass(captionEl?.className),
+      captionClass: this.cleanFigureClass(captionEl?.className),
     };
 
     const dialogRef = this.dialog.open(FigureDialogComponent, {
@@ -501,48 +531,7 @@ export class StoryHtmlEditorComponent implements FormValueControl<string> {
 
     dialogRef.afterClosed().subscribe((result: FigureDialogData | undefined) => {
       if (!result || !targetImg) return;
-
-      const imgClone = targetImg.cloneNode(true) as HTMLImageElement;
-      if (result.imgClass) {
-        imgClone.className = result.imgClass;
-      } else {
-        imgClone.removeAttribute('class');
-      }
-
-      const innerFig: HTMLElement = document.createElement('figure');
-      if (result.innerFigureClass) {
-        innerFig.className = result.innerFigureClass;
-      }
-      innerFig.appendChild(imgClone);
-
-      if (result.captionText) {
-        const figcap = document.createElement('figcaption');
-        figcap.textContent = result.captionText;
-        if (result.captionClass) {
-          figcap.className = result.captionClass;
-        }
-        innerFig.appendChild(figcap);
-      }
-
-      if (isGalleryContainer && outerFigure) {
-        if (result.outerFigureClass) {
-          outerFigure.className = result.outerFigureClass;
-        }
-        const targetToReplace = innerFigure || targetImg;
-        targetToReplace.parentNode?.replaceChild(innerFig, targetToReplace);
-      } else {
-        let replacementNode: HTMLElement = innerFig;
-        if (result.outerFigureClass) {
-          const outerFig = document.createElement('figure');
-          outerFig.className = result.outerFigureClass;
-          outerFig.appendChild(innerFig);
-          replacementNode = outerFig;
-        }
-
-        const topTargetNode = outerFigure || innerFigure || targetImg;
-        topTargetNode.parentNode?.replaceChild(replacementNode, topTargetNode);
-      }
-
+      this.applyDialogResult(result, targetImg, innerFigure, outerFigure, isGalleryContainer);
       this.onInput();
     });
   }
