@@ -376,6 +376,7 @@ describe('RecipeComments', () => {
       content: 'Comment',
       rating: null,
       alt_email: '',
+      isNew: false,
     });
     fixture.detectChanges();
     expect(compiled.textContent).toContain('Enter a valid email');
@@ -401,6 +402,7 @@ describe('RecipeComments', () => {
       content: 'hello',
       rating: null,
       alt_email: '',
+      isNew: false,
     });
     fixture.detectChanges();
 
@@ -470,6 +472,7 @@ describe('RecipeComments', () => {
       content: 'hello',
       rating: null,
       alt_email: '',
+      isNew: false,
     });
     fixture.detectChanges();
 
