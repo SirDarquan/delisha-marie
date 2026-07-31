@@ -735,6 +735,7 @@ export class RecipeFormComponent implements OnInit {
       required(fields.content, { message: 'Content is required' });
       required(fields.ingredients, { message: 'Ingredients is required' });
       required(fields.instructions, { message: 'Instructions are required' });
+      required(fields.method, { message: 'Method is required' });
       required(fields.cuisine, { message: 'Cuisine is required' });
       required(fields.course, { message: 'Course is required' });
       required(fields.servingSize, { message: 'Serving size is required' });

@@ -20,6 +20,12 @@ export const routes: Routes = [
     canActivate: [authGuard],
   },
   {
+    path: 'recipes/:id/comments',
+    loadComponent: () =>
+      import('./pages/recipe-comments/recipe-comments').then((m) => m.RecipeCommentsComponent),
+    canActivate: [authGuard],
+  },
+  {
     path: '',
     loadComponent: () => import('./pages/home/home').then((m) => m.HomeComponent),
     canActivate: [authGuard],

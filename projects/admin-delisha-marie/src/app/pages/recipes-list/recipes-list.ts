@@ -139,19 +139,19 @@ import { RecipeService } from '../../services/recipe.service';
 
                   <div role="cell" class="w-56 px-4 text-sm text-slate-300 flex items-center gap-2">
                     <dml-stars [rating]="recipe.ratingCount || 0" [interactive]="false"></dml-stars>
-                    <span class="text-xs font-medium">({{ recipe.reviewCount || 0 }})</span>
+                    <span class="text-xs font-medium">({{ recipe.topCommentsCount || 0 }})</span>
                   </div>
 
                   <div role="cell" class="w-32 px-4 text-sm">
-                    <button
+                    <a
                       mat-button
-                      [disabled]="!recipe.reviewCount"
-                      [matBadge]="recipe.reviewCount"
+                      [routerLink]="['/recipes', recipe.id, 'comments']"
+                      [matBadge]="recipe.newCommentsCount || null"
                       matBadgeColor="accent"
-                      [matBadgeHidden]="!recipe.reviewCount"
+                      [matBadgeHidden]="!recipe.newCommentsCount"
                       class="px-2 py-1 rounded-md text-[10px] font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
                       Edit Review
-                    </button>
+                    </a>
                   </div>
 
                   <div role="cell" class="w-40 px-4 text-center">
