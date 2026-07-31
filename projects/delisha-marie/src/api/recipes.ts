@@ -595,7 +595,7 @@ recipesRouter.post(
       const { data: settingsData } = await supabase
         .from('site_settings')
         .select('key, value')
-        .in('key', ['require_comment_approval', 'blocked_domains']);
+        .in('key', ['require_comment_approval', 'blocked_domains', 'comment_new_cutoff_seconds']);
 
       const settings =
         settingsData?.reduce(
@@ -641,6 +641,14 @@ recipesRouter.post(
 
       const requireApproval = settings['require_comment_approval'] === 'true';
       const status = requireApproval ? 'pending' : 'approved';
+      const { data: recipe } = await supabase
+        .from('recipes')
+        .select('*')
+        .eq('id', recipeId)
+        .single();
+      const isNew =
+        Date.now() <
+        Number(recipe.created_at) + Number(settings['comment_new_cutoff_seconds']) * 1000;
 
       const insertObj = {
         recipe_id: recipeId,
@@ -651,6 +659,7 @@ recipesRouter.post(
         website: website || null,
         parent_id: parentId || null,
         status,
+        is_new: isNew,
       };
 
       const { data, error } = await supabase.from('comments').insert([insertObj]).select().single();

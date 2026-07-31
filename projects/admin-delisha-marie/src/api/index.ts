@@ -6,6 +6,7 @@ import { join } from 'node:path';
 import authRouter from './auth';
 import recipesRouter from './recipes';
 import uploadRouter from './upload';
+import commentsRouter from './comments';
 const apiRouter = Router();
 
 // Register middleware
@@ -19,5 +20,6 @@ apiRouter.use('/images', express.static(imagesDir, { maxAge: '1y' }));
 apiRouter.use('/api', authRouter);
 apiRouter.use('/api', recipesRouter);
 apiRouter.use('/api', uploadRouter);
+apiRouter.use('/api', commentsRouter);
 
 export default apiRouter;

@@ -87,11 +87,15 @@ describe('Recipes Router API', () => {
     mockLimit.mockReturnValue(mockChain);
     mockRange.mockReturnValue(mockChain);
     mockIlike.mockReturnValue(mockChain);
+    mockIn.mockReturnValue(mockChain);
     mockSingle.mockResolvedValue({ data: null, error: null });
     mockMaybeSingle.mockResolvedValue({ data: null, error: null });
     mockUpsert.mockResolvedValue({ data: null, error: null });
-    mockChain.then = <T>(resolve: (val: T) => void) =>
-      resolve({ data: null, error: null } as unknown as T);
+    mockChain.then = vi
+      .fn()
+      .mockImplementation(<T>(resolve: (val: T) => void) =>
+        resolve({ data: null, error: null } as unknown as T),
+      );
 
     vi.mocked(backendService.getClient).mockReturnValue({
       from: mockFrom,
@@ -121,10 +125,52 @@ describe('Recipes Router API', () => {
       const mockList = [{ id: 'recipe-1', title: 'Salad', updated_at: new Date().toISOString() }];
       mockRange.mockResolvedValueOnce({ data: mockList, error: null });
 
+      const eightDaysAgo = new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString();
+      const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString();
+
+      mockChain.then = vi.fn().mockImplementation(<T>(resolve: (val: T) => void) =>
+        resolve({
+          data: [
+            {
+              recipe_id: 'recipe-1',
+              parent_id: null,
+              created_at: threeDaysAgo,
+              status: 'approved',
+            },
+            {
+              recipe_id: 'recipe-1',
+              parent_id: null,
+              created_at: eightDaysAgo,
+              status: 'approved',
+            },
+            {
+              recipe_id: 'recipe-1',
+              parent_id: 'some-id',
+              created_at: threeDaysAgo,
+              status: 'skipped',
+            },
+            {
+              recipe_id: 'recipe-1',
+              parent_id: 'some-id',
+              created_at: threeDaysAgo,
+              status: 'approved',
+            },
+          ],
+          error: null,
+        } as unknown as T),
+      );
+
       const res = await request(app).get('/recipes');
 
       expect(res.status).toBe(200);
-      expect(res.body).toEqual([expect.objectContaining({ id: 'recipe-1', title: 'Salad' })]);
+      expect(res.body).toEqual([
+        expect.objectContaining({
+          id: 'recipe-1',
+          title: 'Salad',
+          topCommentsCount: 2,
+          newCommentsCount: 2,
+        }),
+      ]);
       expect(backendService.getClient).toHaveBeenCalledWith('test-token-xyz');
       expect(mockFrom).toHaveBeenCalledWith('recipes');
       expect(mockSelect).toHaveBeenCalledWith(
@@ -170,7 +216,8 @@ describe('Recipes Router API', () => {
       mockIlike.mockReturnValue(mockChain);
       mockChain.then = vi
         .fn()
-        .mockImplementationOnce((resolve) => resolve({ data: mockSkeleton, error: null }));
+        .mockImplementationOnce((resolve) => resolve({ data: mockSkeleton, error: null }))
+        .mockImplementation((resolve) => resolve({ data: null, error: null } as never));
 
       // Page query
       mockSelect.mockReturnValueOnce(mockChain);
@@ -190,6 +237,25 @@ describe('Recipes Router API', () => {
             recipe_holidays: [{ holidays: { name: 'Cinco de Mayo' } }],
             recipe_special_diets: [{ special_diets: { name: 'Gluten-Free' } }],
           },
+        ],
+        error: null,
+      });
+
+      const eightDaysAgo = new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString();
+      const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString();
+
+      // Comments query
+      mockIn.mockResolvedValueOnce({
+        data: [
+          { recipe_id: 'recipe-1', parent_id: null, created_at: threeDaysAgo, status: 'approved' },
+          { recipe_id: 'recipe-1', parent_id: null, created_at: eightDaysAgo, status: 'approved' },
+          {
+            recipe_id: 'recipe-1',
+            parent_id: 'some-id',
+            created_at: threeDaysAgo,
+            status: 'skipped',
+          },
+          { recipe_id: 'recipe-2', parent_id: null, created_at: threeDaysAgo, status: 'approved' },
         ],
         error: null,
       });
@@ -363,6 +429,9 @@ describe('Recipes Router API', () => {
         .fn()
         .mockImplementationOnce(<T>(resolve: (val: T) => void) =>
           resolve({ data: null, error: null } as unknown as T),
+        )
+        .mockImplementation(<T>(resolve: (val: T) => void) =>
+          resolve({ data: null, error: null } as unknown as T),
         );
       const res3 = await request(app).get('/recipes?limit=1');
       expect(res3.status).toBe(200);
@@ -372,6 +441,9 @@ describe('Recipes Router API', () => {
       mockChain.then = vi
         .fn()
         .mockImplementationOnce(<T>(resolve: (val: T) => void) =>
+          resolve({ data: null, error: null } as unknown as T),
+        )
+        .mockImplementation(<T>(resolve: (val: T) => void) =>
           resolve({ data: null, error: null } as unknown as T),
         );
       const res = await request(app).get('/recipes');
@@ -391,6 +463,9 @@ describe('Recipes Router API', () => {
         .fn()
         .mockImplementationOnce(<T>(resolve: (val: T) => void) =>
           resolve({ data: messyData, error: null } as unknown as T),
+        )
+        .mockImplementation(<T>(resolve: (val: T) => void) =>
+          resolve({ data: null, error: null } as unknown as T),
         );
       const res = await request(app).get('/recipes');
       expect(res.status).toBe(200);
@@ -415,6 +490,9 @@ describe('Recipes Router API', () => {
         )
         .mockImplementationOnce(<T>(resolve: (val: T) => void) =>
           resolve({ data: batch2, error: null } as unknown as T),
+        )
+        .mockImplementation(<T>(resolve: (val: T) => void) =>
+          resolve({ data: null, error: null } as unknown as T),
         );
 
       const res = await request(app).get('/recipes');

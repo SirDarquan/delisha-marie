@@ -178,6 +178,21 @@ async function fetchPaginatedRecipes(
 
   if (pageError) throw pageError;
 
+  // Fetch comments to calculate counts
+  const { data: commentsData } = await client
+    .from('comments')
+    .select('recipe_id, parent_id, is_new')
+    .in('recipe_id', pageIds);
+
+  // Attach counts to pageData
+  pageData?.forEach((recipe) => {
+    const recipeComments = commentsData?.filter((c) => c.recipe_id === recipe.id) || [];
+    const topCommentsCount = recipeComments.filter((c) => !c.parent_id).length;
+    const newCommentsCount = recipeComments.filter((c) => c.is_new === true).length;
+    recipe['top_comments_count'] = topCommentsCount;
+    recipe['new_comments_count'] = newCommentsCount;
+  });
+
   // 5. Format and re-sort
   return formatRecipeList(pageData || [], statusOrder, pageIds);
 }
@@ -208,6 +223,20 @@ async function fetchAllRecipes(
       from += step;
     }
   }
+
+  // Fetch comments to calculate counts
+  const { data: commentsData } = await client
+    .from('comments')
+    .select('recipe_id, parent_id, is_new');
+
+  // Attach counts to allData
+  allData.forEach((recipe) => {
+    const recipeComments = commentsData?.filter((c) => c.recipe_id === recipe['id']) || [];
+    const topCommentsCount = recipeComments.filter((c) => !c.parent_id).length;
+    const newCommentsCount = recipeComments.filter((c) => c.is_new === true).length;
+    recipe['top_comments_count'] = topCommentsCount;
+    recipe['new_comments_count'] = newCommentsCount;
+  });
 
   return formatRecipeList(allData, statusOrder);
 }
