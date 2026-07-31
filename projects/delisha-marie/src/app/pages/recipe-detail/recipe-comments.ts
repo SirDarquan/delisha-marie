@@ -28,6 +28,7 @@ export interface CommentFormValue {
   content: string;
   rating: number | null;
   alt_email: string;
+  isNew: boolean;
 }
 
 @Component({
@@ -460,6 +461,7 @@ export class RecipeComments {
     content: '',
     rating: null,
     alt_email: '',
+    isNew: false,
   });
 
   protected commentForm = form(
@@ -503,6 +505,7 @@ export class RecipeComments {
               content: '',
               rating: null,
               alt_email: '',
+              isNew: false,
             });
 
             const isReply = !!this.replyTo();
