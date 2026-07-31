@@ -29,6 +29,7 @@ describe('RecipeCommentsComponent', () => {
       is_admin: false,
       status: 'approved',
       created_at: new Date().toISOString(), // New
+      is_new: true,
     },
     {
       id: '2',
@@ -40,6 +41,7 @@ describe('RecipeCommentsComponent', () => {
       is_admin: true,
       status: 'approved',
       created_at: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(), // Old
+      is_new: false,
     },
   ];
 
@@ -103,16 +105,8 @@ describe('RecipeCommentsComponent', () => {
     expect(component.comments().length).toBe(2);
     expect(component.topLevelComments().length).toBe(1);
     expect(component.getReplies('1').length).toBe(1);
-    expect(component.isNew(mockComments[0].created_at)).toBe(true);
-    expect(component.isNew(mockComments[1].created_at)).toBe(false);
-
-    // Exactly 7 days
-    const exactlySevenDays = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-    expect(component.isNew(exactlySevenDays)).toBe(true);
-
-    // More than 7 days
-    const eightDays = new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString();
-    expect(component.isNew(eightDays)).toBe(false);
+    expect(component.isNew(mockComments[0])).toBe(true);
+    expect(component.isNew(mockComments[1])).toBe(false);
   });
 
   it('should handle load errors', () => {
@@ -147,6 +141,7 @@ describe('RecipeCommentsComponent', () => {
       is_admin: true,
       status: 'approved',
       created_at: new Date().toISOString(),
+      is_new: true,
     };
     component.onReplySuccess('1', mockReply as unknown as Comment);
     expect(component.replying()['1']).toBe(false);
@@ -167,6 +162,7 @@ describe('RecipeCommentsComponent', () => {
       is_admin: true,
       status: 'approved',
       created_at: new Date().toISOString(),
+      is_new: true,
     };
     commentsService.deleteComment.mockReturnValue(of({ success: true }));
 
@@ -180,27 +176,28 @@ describe('RecipeCommentsComponent', () => {
     expect(component.replying()['1']).toBe(true); // Re-opened
   });
 
-  it('should skip comment and handle undo', () => {
+  it('should skip comment and handle undo', async () => {
     component.loadComments('r-1');
 
     commentsService.skipComment.mockReturnValue(of({ success: true }));
 
-    component.skipComment('1');
+    await component.skipComment('1');
     expect(commentsService.skipComment).toHaveBeenCalledWith('r-1', '1', true);
     expect(component.comments()[0].status).toBe('skipped');
 
     // Trigger undo
     snackBarActionSubject.next();
+    await new Promise((r) => setTimeout(r, 0));
     expect(commentsService.skipComment).toHaveBeenCalledWith('r-1', '1', false);
     expect(component.comments()[0].status).toBe('approved');
   });
 
-  it('should skip comment and handle error', () => {
+  it('should skip comment and handle error', async () => {
     component.loadComments('r-1');
 
     commentsService.skipComment.mockReturnValue(throwError(() => new Error('Error')));
 
-    component.skipComment('1');
+    await component.skipComment('1');
     expect(commentsService.skipComment).toHaveBeenCalledWith('r-1', '1', true);
     // Should revert back to approved
     expect(component.comments()[0].status).toBe('approved');
@@ -231,15 +228,16 @@ describe('RecipeCommentsComponent', () => {
     expect(snackBar.open).toHaveBeenCalledWith('Failed to undo reply', 'Close', { duration: 3000 });
   });
 
-  it('should handle error when undoing skip comment', () => {
+  it('should handle error when undoing skip comment', async () => {
     component.loadComments('r-1');
     commentsService.skipComment.mockReturnValue(of({ success: true }));
 
-    component.skipComment('1');
+    await component.skipComment('1');
 
     // Mock the undo to fail
     commentsService.skipComment.mockReturnValue(throwError(() => new Error('Error')));
     snackBarActionSubject.next();
+    await new Promise((r) => setTimeout(r, 0));
 
     // Should still be skipped
     expect(component.comments()[0].status).toBe('skipped');

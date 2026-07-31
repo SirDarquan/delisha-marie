@@ -140,6 +140,7 @@ describe('Comments Router API', () => {
           email: 'admin@delishamarie.com',
           content: 'My reply',
           is_admin: true,
+          is_new: false,
           status: 'approved',
         },
       ]);
@@ -221,7 +222,7 @@ describe('Comments Router API', () => {
 
       expect(res.status).toBe(200);
       expect(res.body).toEqual(mockUpdated);
-      expect(mockUpdate).toHaveBeenCalledWith({ status: 'skipped' });
+      expect(mockUpdate).toHaveBeenCalledWith({ status: 'skipped', is_new: false });
     });
 
     it('should update status to approved when skipped is false', async () => {
@@ -237,7 +238,7 @@ describe('Comments Router API', () => {
 
       expect(res.status).toBe(200);
       expect(res.body).toEqual(mockUpdated);
-      expect(mockUpdate).toHaveBeenCalledWith({ status: 'approved' });
+      expect(mockUpdate).toHaveBeenCalledWith({ status: 'approved', is_new: true });
     });
 
     it('should return 400 on error', async () => {

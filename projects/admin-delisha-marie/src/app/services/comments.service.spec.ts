@@ -35,6 +35,7 @@ describe('CommentsService', () => {
         is_admin: false,
         status: 'approved',
         created_at: '2026-06-29T10:00:00Z',
+        is_new: true,
       },
     ];
 
@@ -58,6 +59,7 @@ describe('CommentsService', () => {
       is_admin: true,
       status: 'approved',
       created_at: '2026-06-29T10:05:00Z',
+      is_new: true,
     };
 
     service.replyToComment('1', '1', 'Reply').subscribe((res) => {
@@ -91,6 +93,7 @@ describe('CommentsService', () => {
       is_admin: false,
       status: 'skipped',
       created_at: '2026-06-29T10:00:00Z',
+      is_new: false,
     };
 
     service.skipComment('1', '1', true).subscribe((res) => {

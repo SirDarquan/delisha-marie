@@ -45,6 +45,7 @@ commentsRouter.post(
         author: 'Delisha Marie',
         email: 'admin@delishamarie.com', // fallback or actual if needed
         content: content,
+        is_admin: true,
         status: 'approved',
         is_new: false,
       };
