@@ -1,4 +1,4 @@
-import { ViewportScroller, isPlatformBrowser } from '@angular/common';
+import { ViewportScroller } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -10,7 +10,6 @@ import {
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterOutlet, Scroll } from '@angular/router';
-import { GoogleTagManagerService } from 'angular-google-tag-manager';
 import { filter } from 'rxjs';
 import { Footer } from './components/footer/footer';
 import { Header } from './components/header/header';
@@ -44,26 +43,14 @@ import { Header } from './components/header/header';
 })
 export class App {
   private readonly viewportScroller = inject(ViewportScroller);
-  private readonly gtmService = inject(GoogleTagManagerService);
   private readonly platformId = inject(PLATFORM_ID);
   readonly isPrintPage = signal(false);
+
   constructor() {
     const router = inject(Router);
 
-    router.events.pipe(filter((event) => event instanceof NavigationEnd)).subscribe((event) => {
+    router.events.pipe(filter((event) => event instanceof NavigationEnd)).subscribe(() => {
       this.isPrintPage.set(router.url.includes('/print'));
-
-      // Push page view event to GTM only in browser
-      if (isPlatformBrowser(this.platformId)) {
-        this.gtmService
-          .pushTag({
-            event: 'page',
-            pageName: (event as NavigationEnd).url,
-          })
-          .catch((err) => {
-            console.warn('Failed to push GTM tag:', err);
-          });
-      }
     });
 
     const scrollEvent = toSignal(

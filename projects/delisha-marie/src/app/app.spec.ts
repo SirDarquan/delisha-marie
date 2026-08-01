@@ -6,7 +6,6 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter, Router, Scroll, Event, NavigationEnd } from '@angular/router';
 import { Subject } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { GoogleTagManagerService } from 'angular-google-tag-manager';
 import { App } from './app';
 import { ThemeService } from './services/theme.service';
 
@@ -22,13 +21,6 @@ describe('App', () => {
         {
           provide: ThemeService,
           useValue: { isDark: signal(false), toggle: vi.fn() },
-        },
-        {
-          provide: GoogleTagManagerService,
-          useValue: {
-            addGtmToDom: vi.fn().mockResolvedValue(undefined),
-            pushTag: vi.fn().mockResolvedValue(undefined),
-          },
         },
       ],
     }).compileComponents();
