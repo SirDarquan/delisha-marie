@@ -19,8 +19,8 @@ export interface Comment {
   providedIn: 'root',
 })
 export class CommentsService {
-  private http = inject(HttpClient);
-  private apiUrl = '/api';
+  private readonly http = inject(HttpClient);
+  private readonly apiUrl = '/api';
 
   getComments(recipeId: string): Observable<{ comments: Comment[] }> {
     return this.http.get<{ comments: Comment[] }>(`${this.apiUrl}/recipes/${recipeId}/comments`, {

@@ -95,16 +95,16 @@ describe('RecipeCommentsComponent', () => {
     commentsService.getComments.mockReturnValue(of({ comments: [] }));
     component.loadComments('r-1');
     fixture.detectChanges();
-    expect(component.topLevelComments().length).toBe(0);
+    expect(component.topLevelComments()).toHaveLength(0);
   });
 
   it('should load comments on init', () => {
     component.loadComments('r-1');
     fixture.detectChanges();
     expect(commentsService.getComments).toHaveBeenCalledWith('r-1');
-    expect(component.comments().length).toBe(2);
-    expect(component.topLevelComments().length).toBe(1);
-    expect(component.getReplies('1').length).toBe(1);
+    expect(component.comments()).toHaveLength(2);
+    expect(component.topLevelComments()).toHaveLength(1);
+    expect(component.getReplies('1')).toHaveLength(1);
     expect(component.isNew(mockComments[0])).toBe(true);
     expect(component.isNew(mockComments[1])).toBe(false);
   });
@@ -145,7 +145,7 @@ describe('RecipeCommentsComponent', () => {
     };
     component.onReplySuccess('1', mockReply as unknown as Comment);
     expect(component.replying()['1']).toBe(false);
-    expect(component.comments().length).toBe(3);
+    expect(component.comments()).toHaveLength(3);
   });
 
   it('should undo send reply', () => {
@@ -167,12 +167,12 @@ describe('RecipeCommentsComponent', () => {
     commentsService.deleteComment.mockReturnValue(of({ success: true }));
 
     component.onReplySuccess('1', mockReply as unknown as Comment);
-    expect(component.comments().length).toBe(3);
+    expect(component.comments()).toHaveLength(3);
 
     // Trigger undo
     snackBarActionSubject.next();
     expect(commentsService.deleteComment).toHaveBeenCalledWith('r-1', '3');
-    expect(component.comments().length).toBe(2); // Removed
+    expect(component.comments()).toHaveLength(2); // Removed
     expect(component.replying()['1']).toBe(true); // Re-opened
   });
 
@@ -224,7 +224,7 @@ describe('RecipeCommentsComponent', () => {
     snackBarActionSubject.next();
 
     // Should still be in state since delete failed
-    expect(component.comments().length).toBe(3);
+    expect(component.comments()).toHaveLength(3);
     expect(snackBar.open).toHaveBeenCalledWith('Failed to undo reply', 'Close', { duration: 3000 });
   });
 
