@@ -1,4 +1,4 @@
-import { CommonModule, DOCUMENT } from '@angular/common';
+import { CommonModule, DOCUMENT, NgOptimizedImage } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -15,7 +15,7 @@ import { Recipe } from '../../services/recipe.service';
 
 @Component({
   selector: 'dm-recipe-print',
-  imports: [CommonModule, MatButtonModule, MatIconModule, RouterLink],
+  imports: [CommonModule, MatButtonModule, MatIconModule, NgOptimizedImage, RouterLink],
   template: `
     <div
       class="print-page w-full min-h-screen bg-white text-black"
@@ -108,8 +108,11 @@ import { Recipe } from '../../services/recipe.service';
           <!-- Main Image (Floated Top Right) -->
           @if (showImage() && r.image) {
             <img
-              [src]="r.image"
+              [ngSrc]="r.image"
               [alt]="r.title"
+              priority
+              width="400"
+              height="300"
               class="float-right w-1/3 h-auto object-cover rounded-xl ml-8 mb-8 border border-gray-200" />
           }
 
