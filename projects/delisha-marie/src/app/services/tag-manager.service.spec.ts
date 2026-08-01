@@ -6,9 +6,18 @@ import { vi, describe, it, expect, beforeEach } from 'vitest';
 
 describe('GoogleTagManagerPlugin', () => {
   let plugin: GoogleTagManagerPlugin;
-  let mockDocument: Record<string, unknown>;
-  let mockConfigService: Record<string, unknown>;
-  let mockWindow: Record<string, unknown>;
+  let mockWindow: {
+    dataLayer?: { push: ReturnType<typeof vi.fn> };
+    gtag?: { apply: (thisArg: unknown, args: unknown[]) => void };
+  };
+  let mockDocument: {
+    defaultView: typeof mockWindow | null;
+    createElement: ReturnType<typeof vi.fn>;
+    head: { prepend: ReturnType<typeof vi.fn> };
+  };
+  let mockConfigService: {
+    GoogleTagManagerConfig: ReturnType<typeof vi.fn>;
+  };
 
   beforeEach(() => {
     mockWindow = {
@@ -100,9 +109,9 @@ describe('GoogleTagManagerPlugin', () => {
       expect(mockWindow.dataLayer).toBeDefined();
       expect(mockWindow.gtag).toBeDefined();
 
-      mockWindow.dataLayer.push = vi.fn();
-      mockWindow.gtag.apply(mockWindow, ['event', 'test']);
-      expect(mockWindow.dataLayer.push).toHaveBeenCalled();
+      mockWindow.dataLayer!.push = vi.fn();
+      mockWindow.gtag!.apply(mockWindow, ['event', 'test']);
+      expect(mockWindow.dataLayer!.push).toHaveBeenCalled();
     });
 
     it('should reject if script fails to load', async () => {
@@ -120,10 +129,13 @@ describe('GoogleTagManagerPlugin', () => {
         return script;
       });
 
+      const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
       const initPromise = plugin.init();
       rejectScript!();
 
-      await expect(initPromise).rejects.toBeUndefined();
+      await expect(initPromise).resolves.toBeUndefined();
+      expect(consoleSpy).toHaveBeenCalledWith('GTM Script failed to load', undefined);
+      consoleSpy.mockRestore();
     });
   });
 });
