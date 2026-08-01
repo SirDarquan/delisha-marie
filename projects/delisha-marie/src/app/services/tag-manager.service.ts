@@ -44,8 +44,8 @@ export class GoogleTagManagerPlugin implements AppPlugin {
         window.dataLayer!.push(args);
       };
 
-        window.gtag('js', new Date());
-        window.gtag('config', id, { anonymize_ip: true });
+      window.gtag('js', new Date());
+      window.gtag('config', id, { anonymize_ip: true });
     } catch (e) {
       console.warn('GTM Script failed to load', e);
     }
