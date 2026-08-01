@@ -17,7 +17,7 @@ import { provideRouter, withComponentInputBinding, withInMemoryScrolling } from 
 import { PluginRegistry } from '@dm/library';
 import { routes } from './app.routes';
 import { provideAppConfig } from './provider/app-config';
-import { provideGtm } from './provider/gtm';
+import { provideGtm } from './provider/tag-manager';
 import { TemplatePageTitleStrategy, provideTitleStrategy } from './services/title.strategy';
 import { withRecipes } from './webmcp';
 
