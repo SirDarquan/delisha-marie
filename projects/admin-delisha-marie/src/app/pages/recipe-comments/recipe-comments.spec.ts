@@ -12,8 +12,15 @@ import { vi } from 'vitest';
 describe('RecipeCommentsComponent', () => {
   let component: RecipeCommentsComponent;
   let fixture: ComponentFixture<RecipeCommentsComponent>;
-  let commentsService: any;
-  let snackBar: any;
+  let commentsService: {
+    getComments: ReturnType<typeof vi.fn>;
+    replyToComment: ReturnType<typeof vi.fn>;
+    skipComment: ReturnType<typeof vi.fn>;
+    deleteComment: ReturnType<typeof vi.fn>;
+  };
+  let snackBar: {
+    open: ReturnType<typeof vi.fn>;
+  };
   let snackBarActionSubject: Subject<void>;
 
   const mockComments: Comment[] = [
