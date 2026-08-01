@@ -1333,6 +1333,15 @@ describe('Auth Router API', () => {
         .post('/auth/signup')
         .send({ email: 'test@example.com', password: 'password' });
       expect(res.status).toBe(400);
+
+      // Trigger cleanEnvValue(undefined) by deleting DESCOPE_PROJECT_ID
+      const oldDescopeId = process.env['DESCOPE_PROJECT_ID'];
+      delete process.env['DESCOPE_PROJECT_ID'];
+      await request(app).post('/auth/descope/verify-oauth').send({
+        email: 'john@example.com',
+        descopeToken: 'valid.token.signature',
+      });
+      process.env['DESCOPE_PROJECT_ID'] = oldDescopeId;
       expect(res.body.error).toBe('SignUp error');
 
       // Line 93 signInWithPassword error:
