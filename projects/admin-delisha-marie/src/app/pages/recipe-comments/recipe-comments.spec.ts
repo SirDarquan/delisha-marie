@@ -12,9 +12,7 @@ import { vi } from 'vitest';
 describe('RecipeCommentsComponent', () => {
   let component: RecipeCommentsComponent;
   let fixture: ComponentFixture<RecipeCommentsComponent>;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let commentsService: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let snackBar: any;
   let snackBarActionSubject: Subject<void>;
 
