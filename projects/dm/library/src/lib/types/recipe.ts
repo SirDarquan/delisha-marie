@@ -66,6 +66,8 @@ export interface BaseRecipe {
   rating?: number;
   ratingCount?: number;
   reviewCount?: number;
+  topCommentsCount?: number;
+  newCommentsCount?: number;
   comments?: Comment[];
   notes?: string[];
   equipment?: string[];
