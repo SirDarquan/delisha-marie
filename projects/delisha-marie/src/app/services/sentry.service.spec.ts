@@ -50,6 +50,9 @@ describe('SentryPlugin', () => {
     // Vitest can't easily mock dynamic imports of @sentry/browser without some configuration,
     // so we'll just test that it runs without crashing for coverage.
     // If it dynamically imports during the test, it might try to initialize sentry for real or mock it.
+    const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(vi.fn());
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(vi.fn());
+
     try {
       await plugin.init();
     } catch {
@@ -58,5 +61,8 @@ describe('SentryPlugin', () => {
 
     // As long as we hit the code path, code coverage will register it.
     expect(mockConfigService.SentryConfig).toHaveBeenCalled();
+
+    consoleWarnSpy.mockRestore();
+    consoleErrorSpy.mockRestore();
   });
 });

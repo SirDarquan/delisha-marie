@@ -27,7 +27,7 @@ import { MatInputModule } from '@angular/material/input';
             [formField]="newsletterForm.email"
             placeholder="Your email address"
             aria-label="Email address" />
-          @for (error of newsletterForm.email().errors(); track error) {
+          @for (error of newsletterForm.email().errors(); track error.message) {
             <mat-error>{{ error.message }}</mat-error>
           }
         </mat-form-field>

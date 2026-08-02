@@ -245,7 +245,6 @@ export class SearchPage {
     {
       submission: {
         action: async (forms) => {
-          console.log(forms().value());
           const vals = forms().value();
           if (vals.q?.trim()) {
             await this.router.navigate(['/search'], {

@@ -48,7 +48,7 @@ import { Sidebar } from '../../components/sidebar/sidebar';
                 <mat-form-field appearance="outline" class="w-full">
                   <mat-label>Name</mat-label>
                   <input matInput [formField]="contactForm.name" placeholder="Delisha Marie" />
-                  @for (error of contactForm.name().errors(); track error) {
+                  @for (error of contactForm.name().errors(); track error.message) {
                     <mat-error>{{ error.message }}</mat-error>
                   }
                 </mat-form-field>
@@ -59,7 +59,7 @@ import { Sidebar } from '../../components/sidebar/sidebar';
                     matInput
                     [formField]="contactForm.email"
                     placeholder="hello@delishamarie.com" />
-                  @for (error of contactForm.email().errors(); track error) {
+                  @for (error of contactForm.email().errors(); track error.message) {
                     <mat-error>{{ error.message }}</mat-error>
                   }
                 </mat-form-field>
@@ -77,7 +77,7 @@ import { Sidebar } from '../../components/sidebar/sidebar';
                   [formField]="contactForm.message"
                   rows="5"
                   placeholder="Your beautiful message..."></textarea>
-                @for (error of contactForm.message().errors(); track error) {
+                @for (error of contactForm.message().errors(); track error.message) {
                   <mat-error>{{ error.message }}</mat-error>
                 }
               </mat-form-field>
@@ -153,10 +153,8 @@ export class Contact {
     },
     {
       submission: {
-        action: async (f) => {
+        action: async () => {
           this.isSubmitting.set(true);
-          console.log('Form submitted with:', f().value());
-
           try {
             // Simulate API call
             await new Promise((resolve) => setTimeout(resolve, 1500));
