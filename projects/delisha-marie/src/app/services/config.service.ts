@@ -12,6 +12,17 @@ export interface AppConfig {
     gtm_csp_none?: string;
     gtm_mode?: string;
   };
+
+  Sentry?: {
+    dsn: string;
+    tracesSampleRate: number;
+    tracePropagationTargets: string[];
+    replaySessionSampleRate?: number;
+    replaysOnErrorSampleRate?: number;
+    environment?: string;
+    release?: string;
+    debug?: boolean;
+  };
 }
 
 @Injectable({
@@ -45,5 +56,9 @@ export class AppConfigService implements AppPlugin {
 
   GoogleTagManagerConfig() {
     return this.config()?.GoogleTagManager;
+  }
+
+  SentryConfig() {
+    return this.config()?.Sentry;
   }
 }
