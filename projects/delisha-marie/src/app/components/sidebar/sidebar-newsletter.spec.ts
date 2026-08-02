@@ -53,9 +53,7 @@ describe('SidebarNewsletter', () => {
   });
 
   it('should call submission action and reset form on valid submission', async () => {
-    const alertSpy = vi.spyOn(window, 'alert').mockImplementation((msg: string) => {
-      console.log(msg);
-    });
+    const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => undefined);
 
     const testInstance = component as unknown as SidebarNewsletterTestInstance;
     const userModel = testInstance.userModel;

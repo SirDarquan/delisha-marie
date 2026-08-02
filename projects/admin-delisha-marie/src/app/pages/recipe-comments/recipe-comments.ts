@@ -238,7 +238,6 @@ export class RecipeCommentsComponent {
   async skipComment(id: string) {
     const prevStatus = this.comments().find((c) => c.id === id)?.status;
     const prevIsNew = this.comments().find((c) => c.id === id)?.is_new;
-    console.log('prevStatus:', prevStatus);
 
     // Optimistically update
     this.comments.update((comments) =>
@@ -246,9 +245,7 @@ export class RecipeCommentsComponent {
     );
 
     try {
-      console.log('calling skipComment service');
       await firstValueFrom(this.commentsService.skipComment(this.recipeId(), id, true));
-      console.log('skipComment service success');
 
       const snackRef = this.snackBar.open('This comment was skipped', 'Undo', {
         duration: 10000,
@@ -256,9 +253,7 @@ export class RecipeCommentsComponent {
 
       snackRef.onAction().subscribe(async () => {
         try {
-          console.log('undoing skip');
           await firstValueFrom(this.commentsService.skipComment(this.recipeId(), id, false));
-          console.log('undo success');
           this.comments.update((comments) =>
             comments.map((c) =>
               c.id === id
@@ -266,13 +261,11 @@ export class RecipeCommentsComponent {
                 : c,
             ),
           );
-        } catch (err) {
-          console.error('undo failed:', err);
+        } catch {
           this.snackBar.open('Failed to undo skip', 'Close', { duration: 3000 });
         }
       });
-    } catch (err) {
-      console.error('skip failed:', err);
+    } catch {
       // Revert on error
       this.comments.update((comments) =>
         comments.map((c) =>
