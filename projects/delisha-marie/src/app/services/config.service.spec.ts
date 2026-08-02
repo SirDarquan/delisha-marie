@@ -68,7 +68,19 @@ describe('AppConfigService', () => {
 
     consoleSpy.mockRestore();
   });
+  it('should return GoogleTagManagerConfig', () => {
+    service.config.set({ GoogleTagManager: { id: 'GTM-123' } } as AppConfig);
+    expect(service.GoogleTagManagerConfig()).toEqual({ id: 'GTM-123' });
+    service.config.set(null);
+    expect(service.GoogleTagManagerConfig()).toBeUndefined();
+  });
 
+  it('should return SentryConfig', () => {
+    service.config.set({ Sentry: { dsn: 'test-dsn' } } as AppConfig);
+    expect(service.SentryConfig()).toEqual({ dsn: 'test-dsn' } as AppConfig['Sentry']);
+    service.config.set(null);
+    expect(service.SentryConfig()).toBeUndefined();
+  });
   describe('provideAppConfig', () => {
     it('should return valid plugin token provider definition', () => {
       const providers = provideAppConfig();

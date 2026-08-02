@@ -9,7 +9,7 @@
     "test": "npm run test:app && npm run test:api",
     "test:api": "ng run delisha-marie:test-api --coverage && ng run admin-delisha-marie:test-api --coverage && ng run @dm/backend-shared:test-api --coverage",
     "test:app": "ng test --coverage",
-    "test:all": "concurrently -m 6 \"ng test delisha-marie --coverage\" \"ng test admin-delisha-marie --coverage\" \"ng test @dm/library --coverage\" \"ng run delisha-marie:test-api --coverage\" \"ng run admin-delisha-marie:test-api --coverage\" \"ng run @dm/backend-shared:test-api --coverage\" \"ng lint\" \"ng run delisha-marie:cypress-run\" \"ng run admin-delisha-marie:cypress-run\"",
+    "test:all": "npm run lint && npm run test:app && npm run test:api && npm run e2e",
     "e2e": "npm run e2e:blog && npm run e2e:admin",
     "e2e:admin": "ng run admin-delisha-marie:cypress-run",
     "e2e:blog": "ng run delisha-marie:cypress-run",
@@ -34,6 +34,7 @@
     "@angular/ssr": "^22.1.2",
     "@descope/angular-sdk": "^0.27.2",
     "@descope/node-sdk": "^2.6.0",
+    "@sentry/browser": "^10.69.0",
     "@supabase/supabase-js": "^2.107.0",
     "change-case": "^5.4.4",
     "cookie-parser": "^1.4.7",
@@ -80,7 +81,7 @@
     "@parcel/watcher@2.5.6": true,
     "cypress@15.18.1": true,
     "esbuild@0.28.1": true,
-    "lmdb@3.5.4": true,
+    "lmdb@3.5.6": true,
     "msgpackr-extract@3.0.4": true
   }
 }

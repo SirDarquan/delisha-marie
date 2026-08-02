@@ -20,6 +20,7 @@ import { provideAppConfig } from './provider/app-config';
 import { provideGtm } from './provider/tag-manager';
 import { TemplatePageTitleStrategy, provideTitleStrategy } from './services/title.strategy';
 import { withRecipes } from './webmcp';
+import { provideSentry } from './provider/sentry';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -41,5 +42,6 @@ export const appConfig: ApplicationConfig = {
     provideAppInitializer(() => inject(PluginRegistry).initAll()),
     provideAppConfig(),
     provideGtm(),
+    provideSentry(),
   ],
 };

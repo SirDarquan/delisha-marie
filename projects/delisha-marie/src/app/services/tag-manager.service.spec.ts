@@ -129,7 +129,7 @@ describe('GoogleTagManagerPlugin', () => {
         return script;
       });
 
-      const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
       const initPromise = plugin.init();
       rejectScript!();
 
