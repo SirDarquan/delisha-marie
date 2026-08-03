@@ -11,6 +11,7 @@ import { MatDividerModule } from '@angular/material/divider';
 import { MatIconModule } from '@angular/material/icon';
 import { RouterLink } from '@angular/router';
 import { Stars } from '@dm/library';
+import { WakeLock } from '../../components/wake-lock/wake-lock';
 import { Recipe } from '../../services/recipe.service';
 
 @Component({
@@ -23,6 +24,7 @@ import { Recipe } from '../../services/recipe.service';
     MatDividerModule,
     RouterLink,
     Stars,
+    WakeLock,
   ],
   template: `
     <div
@@ -87,20 +89,23 @@ import { Recipe } from '../../services/recipe.service';
           </div>
         </div>
 
-        <!-- 4. Stars (Rating) -->
+        <!-- 4. Stars (Rating) & Wake Lock Toggle -->
         <div
-          class="recipe-card-rating flex items-center gap-2 pt-3 border-t border-[var(--mat-sys-outline-variant)]">
-          @if (recipe().rating && recipe().rating! > 0) {
-            <dml-stars [rating]="recipe().rating!" />
-            <span class="rating-text text-xs font-bold">({{ recipe().ratingCount || 0 }})</span>
-          } @else {
-            <a
-              [routerLink]="recipe().slug"
-              fragment="respond"
-              class="font-bold text-[var(--mat-sys-primary)] hover:underline decoration-2 underline-offset-4 transition-all"
-              >Be the first!</a
-            >
-          }
+          class="recipe-card-rating flex items-center justify-between gap-2 pt-3 border-t border-[var(--mat-sys-outline-variant)]">
+          <div class="flex items-center gap-2">
+            @if (recipe().rating && recipe().rating! > 0) {
+              <dml-stars [rating]="recipe().rating!" />
+              <span class="rating-text text-xs font-bold">({{ recipe().ratingCount || 0 }})</span>
+            } @else {
+              <a
+                [routerLink]="recipe().slug"
+                fragment="respond"
+                class="font-bold text-[var(--mat-sys-primary)] hover:underline decoration-2 underline-offset-4 transition-all"
+                >Be the first!</a
+              >
+            }
+          </div>
+          <dml-wake-lock />
         </div>
       </div>
     </div>
