@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, DOCUMENT, inject, OnDestroy, OnInit, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DOCUMENT,
+  inject,
+  OnDestroy,
+  OnInit,
+  signal,
+} from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 
@@ -30,7 +38,7 @@ import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 })
 export class WakeLock implements OnInit, OnDestroy {
   private readonly document = inject(DOCUMENT);
-  
+
   protected readonly isSupported = signal<boolean>(false);
   protected readonly isActive = signal<boolean>(false);
 
