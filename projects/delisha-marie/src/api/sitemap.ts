@@ -30,11 +30,6 @@ function getBaseUrl(): string {
  */
 sitemapRouter.get('/sitemap.xml', (_req: Request, res: Response): void => {
   const baseUrl = getBaseUrl();
-  if (!baseUrl) {
-    res.status(200);
-    return;
-  }
-
   const today = new Date().toISOString().split('T')[0];
 
   const xmlContent = `<?xml version="1.0" encoding="UTF-8"?>
@@ -64,10 +59,6 @@ sitemapRouter.get('/sitemap.xml', (_req: Request, res: Response): void => {
  */
 sitemapRouter.get('/sitemap-pages.xml', (_req: Request, res: Response): void => {
   const baseUrl = getBaseUrl();
-  if (!baseUrl) {
-    res.status(200);
-    return;
-  }
   const pages = [
     { url: '/', changefreq: 'weekly', priority: '1.0' },
     { url: '/recipe-index', changefreq: 'weekly', priority: '0.9' },
@@ -102,10 +93,6 @@ ${pages
  */
 sitemapRouter.get('/sitemap-categories.xml', (_req: Request, res: Response): void => {
   const baseUrl = getBaseUrl();
-  if (!baseUrl) {
-    res.status(200);
-    return;
-  }
   const categories = ['/recipes', '/methods', '/holidays', '/special-diets', '/the-best-recipes'];
 
   const xmlContent = `<?xml version="1.0" encoding="UTF-8"?>
