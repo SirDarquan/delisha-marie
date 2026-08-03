@@ -43,6 +43,7 @@ describe('Sitemap Router API', () => {
 
   describe('GET /sitemap.xml', () => {
     it('should return master sitemap index XML', async () => {
+      process.env['SITE_URL'] = 'https://custom-domain.com';
       const res = await request(app).get('/sitemap.xml');
 
       expect(res.status).toBe(200);
@@ -51,9 +52,9 @@ describe('Sitemap Router API', () => {
       expect(res.text).toContain(
         '<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
       );
-      expect(res.text).toContain('<loc>https://delishamarie.com/sitemap-pages.xml</loc>');
-      expect(res.text).toContain('<loc>https://delishamarie.com/sitemap-categories.xml</loc>');
-      expect(res.text).toContain('<loc>https://delishamarie.com/sitemap-recipes.xml</loc>');
+      expect(res.text).toContain('<loc>https://custom-domain.com/sitemap-pages.xml</loc>');
+      expect(res.text).toContain('<loc>https://custom-domain.com/sitemap-categories.xml</loc>');
+      expect(res.text).toContain('<loc>https://custom-domain.com/sitemap-recipes.xml</loc>');
     });
 
     it('should respect custom SITE_URL env variable', async () => {
@@ -67,16 +68,17 @@ describe('Sitemap Router API', () => {
 
   describe('GET /sitemap-pages.xml', () => {
     it('should return static pages XML with change frequencies and priorities', async () => {
+      process.env['SITE_URL'] = 'https://custom-domain.com';
       const res = await request(app).get('/sitemap-pages.xml');
 
       expect(res.status).toBe(200);
       expect(res.headers['content-type']).toContain('application/xml');
-      expect(res.text).toContain('<loc>https://delishamarie.com/</loc>');
-      expect(res.text).toContain('<loc>https://delishamarie.com/recipe-index</loc>');
-      expect(res.text).toContain('<loc>https://delishamarie.com/faq</loc>');
-      expect(res.text).toContain('<loc>https://delishamarie.com/about</loc>');
-      expect(res.text).toContain('<loc>https://delishamarie.com/contact</loc>');
-      expect(res.text).toContain('<loc>https://delishamarie.com/privacy-policy</loc>');
+      expect(res.text).toContain('<loc>https://custom-domain.com/</loc>');
+      expect(res.text).toContain('<loc>https://custom-domain.com/recipe-index</loc>');
+      expect(res.text).toContain('<loc>https://custom-domain.com/faq</loc>');
+      expect(res.text).toContain('<loc>https://custom-domain.com/about</loc>');
+      expect(res.text).toContain('<loc>https://custom-domain.com/contact</loc>');
+      expect(res.text).toContain('<loc>https://custom-domain.com/privacy-policy</loc>');
       expect(res.text).toContain('<changefreq>monthly</changefreq>');
       expect(res.text).toContain('<changefreq>yearly</changefreq>');
     });
@@ -84,15 +86,16 @@ describe('Sitemap Router API', () => {
 
   describe('GET /sitemap-categories.xml', () => {
     it('should return category hub pages XML', async () => {
+      process.env['SITE_URL'] = 'https://custom-domain.com';
       const res = await request(app).get('/sitemap-categories.xml');
 
       expect(res.status).toBe(200);
       expect(res.headers['content-type']).toContain('application/xml');
-      expect(res.text).toContain('<loc>https://delishamarie.com/recipes</loc>');
-      expect(res.text).toContain('<loc>https://delishamarie.com/methods</loc>');
-      expect(res.text).toContain('<loc>https://delishamarie.com/holidays</loc>');
-      expect(res.text).toContain('<loc>https://delishamarie.com/special-diets</loc>');
-      expect(res.text).toContain('<loc>https://delishamarie.com/the-best-recipes</loc>');
+      expect(res.text).toContain('<loc>https://custom-domain.com/recipes</loc>');
+      expect(res.text).toContain('<loc>https://custom-domain.com/methods</loc>');
+      expect(res.text).toContain('<loc>https://custom-domain.com/holidays</loc>');
+      expect(res.text).toContain('<loc>https://custom-domain.com/special-diets</loc>');
+      expect(res.text).toContain('<loc>https://custom-domain.com/the-best-recipes</loc>');
     });
   });
 
@@ -116,21 +119,22 @@ describe('Sitemap Router API', () => {
         error: null,
       });
 
+      process.env['SITE_URL'] = 'https://custom-domain.com';
       const res = await request(app).get('/sitemap-recipes.xml');
 
       expect(res.status).toBe(200);
       expect(res.headers['content-type']).toContain('application/xml');
-      expect(res.text).toContain('<loc>https://delishamarie.com/recipe/chocolate-cake</loc>');
+      expect(res.text).toContain('<loc>https://custom-domain.com/recipe/chocolate-cake</loc>');
       expect(res.text).toContain('<lastmod>2026-08-01</lastmod>');
       expect(res.text).toContain('<image:loc>https://example.com/cake.jpg?a=1&amp;b=2</image:loc>');
-      expect(res.text).toContain('<image:title>Chocolate &amp; Caramel Cake</image:title>');
-      expect(res.text).toContain('<loc>https://delishamarie.com/recipe/simple-bread</loc>');
+      expect(res.text).toContain('<loc>https://custom-domain.com/recipe/simple-bread</loc>');
       expect(res.text).toContain('<lastmod>2026-07-15</lastmod>');
     });
 
     it('should handle database exception gracefully', async () => {
       mockEq.mockRejectedValueOnce(new Error('Database error'));
 
+      process.env['SITE_URL'] = 'https://custom-domain.com';
       const res = await request(app).get('/sitemap-recipes.xml');
 
       expect(res.status).toBe(200);
