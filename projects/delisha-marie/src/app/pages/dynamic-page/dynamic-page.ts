@@ -123,6 +123,8 @@ export class DynamicPage {
       last = words.slice(-2).join(' ');
     }
 
+    // return { first, middle, last }
     return { first, middle, last };
   });
 }
+
