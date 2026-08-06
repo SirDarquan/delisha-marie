@@ -45,32 +45,7 @@ import { Router } from '@angular/router';
       </button>
     </section>
   `,
-  styles: [
-    `
-      :host {
-        display: block;
-      }
-      dm-sidebar-search .search-field .mat-mdc-text-field-wrapper {
-        background: var(--mat-sys-surface-container);
-        border-radius: 2rem;
-        padding-top: 0;
-        padding-bottom: 0;
-      }
-      dm-sidebar-search .search-field input {
-        color: var(--mat-sys-on-surface);
-      }
-      dm-sidebar-search .search-field .mdc-notched-outline {
-        display: none;
-      }
-      dm-sidebar-search .search-field .mat-mdc-form-field-flex {
-        padding-left: 1.5rem;
-        padding-right: 1.5rem;
-        height: 3.5rem;
-        display: flex;
-        align-items: center;
-      }
-    `,
-  ],
+
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

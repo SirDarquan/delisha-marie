@@ -44,28 +44,28 @@ import { Header } from './components/header/header';
 export class App {
   private readonly viewportScroller = inject(ViewportScroller);
   private readonly platformId = inject(PLATFORM_ID);
+  private readonly router = inject(Router);
+
   readonly isPrintPage = signal(false);
 
-  constructor() {
-    const router = inject(Router);
-
-    router.events.pipe(filter((event) => event instanceof NavigationEnd)).subscribe(() => {
-      this.isPrintPage.set(router.url.includes('/print'));
+  private readonly _navSub = this.router.events
+    .pipe(filter((event) => event instanceof NavigationEnd))
+    .subscribe(() => {
+      this.isPrintPage.set(this.router.url.includes('/print'));
     });
 
-    const scrollEvent = toSignal(
-      inject(Router).events.pipe(filter((event): event is Scroll => event instanceof Scroll)),
-    );
+  private readonly scrollEvent = toSignal(
+    this.router.events.pipe(filter((event): event is Scroll => event instanceof Scroll)),
+  );
 
-    effect(() => {
-      const ev = scrollEvent();
-      if (ev) {
-        if (ev.position) {
-          this.viewportScroller.scrollToPosition(ev.position);
-        } else if (ev.anchor) {
-          this.viewportScroller.scrollToAnchor(ev.anchor);
-        }
+  private readonly _scrollEffect = effect(() => {
+    const ev = this.scrollEvent();
+    if (ev) {
+      if (ev.position) {
+        this.viewportScroller.scrollToPosition(ev.position);
+      } else if (ev.anchor) {
+        this.viewportScroller.scrollToAnchor(ev.anchor);
       }
-    });
-  }
+    }
+  });
 }

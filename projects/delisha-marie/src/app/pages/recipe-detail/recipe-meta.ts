@@ -72,18 +72,7 @@ import { Recipe, RecipeService } from '../../services/recipe.service';
       </div>
     </div>
   `,
-  styles: `
-    .recipe-meta a.no-underline {
-      text-decoration: none;
-      color: inherit;
-    }
-    .glow-button:hover {
-      background-color: var(--mat-sys-primary-container) !important;
-      color: var(--mat-sys-on-primary-container) !important;
-      box-shadow: 0 0 15px rgba(var(--mat-sys-primary-rgb), 0.4);
-      border-color: var(--mat-sys-primary) !important;
-    }
-  `,
+
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

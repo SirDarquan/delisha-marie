@@ -94,7 +94,7 @@ export interface CommentFormValue {
                 placeholder="Your Name"
                 class="w-full h-14 px-6 rounded-2xl bg-[var(--mat-sys-surface-container-high)] border-transparent focus:border-[var(--mat-sys-primary)] focus:ring-0 transition-all font-medium" />
               @if (commentForm.author().invalid() && commentForm.author().touched()) {
-                <span class="text-xs text-red-500 ml-2">{{
+                <span class="text-xs text-[var(--mat-sys-error)] ml-2">{{
                   commentForm.author().errors()?.[0]?.message
                 }}</span>
               }
@@ -113,7 +113,7 @@ export interface CommentFormValue {
                 placeholder="email@example.com"
                 class="w-full h-14 px-6 rounded-2xl bg-[var(--mat-sys-surface-container-high)] border-transparent focus:border-[var(--mat-sys-primary)] focus:ring-0 transition-all font-medium" />
               @if (commentForm.email().invalid() && commentForm.email().touched()) {
-                <span class="text-xs text-red-500 ml-2">{{
+                <span class="text-xs text-[var(--mat-sys-error)] ml-2">{{
                   commentForm.email().errors()?.[0]?.message
                 }}</span>
               }
@@ -163,7 +163,7 @@ export interface CommentFormValue {
               placeholder="Share your thoughts..."
               class="w-full p-6 rounded-2xl bg-[var(--mat-sys-surface-container-high)] border-transparent focus:border-[var(--mat-sys-primary)] focus:ring-0 transition-all font-medium resize-none"></textarea>
             @if (commentForm.content().invalid() && commentForm.content().touched()) {
-              <span class="text-xs text-red-500 ml-2">{{
+              <span class="text-xs text-[var(--mat-sys-error)] ml-2">{{
                 commentForm.content().errors()?.[0]?.message
               }}</span>
             }
@@ -337,66 +337,7 @@ export interface CommentFormValue {
       }
     </div>
   `,
-  styles: [
-    `
-      :host {
-        display: block;
-      }
-      /* ngx-pagination customization to match recipe-list */
-      .recipe-pagination .ngx-pagination {
-        margin-bottom: 0;
-        padding-left: 0;
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: center;
-        gap: 0.5rem;
-        font-family: inherit;
-      }
 
-      .recipe-pagination .ngx-pagination .small-screen {
-        display: none;
-        padding: 0.75rem 1rem;
-      }
-
-      .recipe-pagination .ngx-pagination li {
-        display: inline-block;
-        border-radius: 0.75rem;
-        transition: all 0.3s ease;
-        font-weight: 700;
-        font-size: 0.875rem;
-        margin: 0;
-      }
-
-      .recipe-pagination .ngx-pagination a,
-      .recipe-pagination .ngx-pagination button {
-        padding: 0.75rem 1rem !important;
-        border-radius: 0.75rem !important;
-        color: var(--mat-sys-on-surface) !important;
-        text-decoration: none !important;
-        display: block !important;
-        outline: none !important;
-        background: transparent !important;
-      }
-
-      .recipe-pagination .ngx-pagination a:hover,
-      .recipe-pagination .ngx-pagination button:hover {
-        background: var(--mat-sys-surface-container-highest) !important;
-        color: var(--mat-sys-primary) !important;
-      }
-
-      .recipe-pagination .ngx-pagination .current {
-        background: var(--mat-sys-primary) !important;
-        color: var(--mat-sys-on-primary) !important;
-        padding: 0.75rem 1rem !important;
-        border-radius: 0.75rem !important;
-      }
-
-      .recipe-pagination .ngx-pagination .disabled {
-        opacity: 0.3;
-        padding: 0.75rem 1rem;
-      }
-    `,
-  ],
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

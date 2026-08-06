@@ -47,13 +47,7 @@ import { FullCategory } from '../../models/category';
       </div>
     </section>
   `,
-  styles: [
-    `
-      :host {
-        display: block;
-      }
-    `,
-  ],
+
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

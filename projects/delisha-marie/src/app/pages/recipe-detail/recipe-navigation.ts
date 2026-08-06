@@ -60,26 +60,7 @@ export interface NavRecipe {
       </div>
     }
   `,
-  styles: [
-    `
-      :host {
-        display: block;
-      }
-      .recipe-navigation {
-        animation: slideInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1);
-      }
-      @keyframes slideInUp {
-        from {
-          opacity: 0;
-          transform: translateY(30px);
-        }
-        to {
-          opacity: 1;
-          transform: translateY(0);
-        }
-      }
-    `,
-  ],
+
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

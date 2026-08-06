@@ -44,33 +44,7 @@ import { MatInputModule } from '@angular/material/input';
       </p>
     </section>
   `,
-  styles: [
-    `
-      :host {
-        display: block;
-      }
-      dm-sidebar-newsletter .newsletter-field .mat-mdc-text-field-wrapper {
-        background: var(--mat-sys-surface-container);
-        border-radius: 1.5rem;
-      }
-      dm-sidebar-newsletter .newsletter-field .mdc-notched-outline {
-        display: none;
-      }
-      dm-sidebar-newsletter .newsletter-field input {
-        color: var(--mat-sys-on-surface) !important;
-      }
-      dm-sidebar-newsletter .newsletter-field .mat-mdc-form-field-flex {
-        padding-top: 0;
-        padding-bottom: 0;
-        height: 3.5rem;
-        display: flex;
-        align-items: center;
-      }
-      dm-sidebar-newsletter .newsletter-field .mat-mdc-form-field-subscript-wrapper {
-        padding: 0 1rem;
-      }
-    `,
-  ],
+
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

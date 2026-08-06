@@ -15,13 +15,7 @@ import { SidebarSearch } from './sidebar-search';
       <ng-content />
     </div>
   `,
-  styles: [
-    `
-      :host {
-        display: block;
-      }
-    `,
-  ],
+
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
