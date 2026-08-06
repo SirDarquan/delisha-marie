@@ -24,9 +24,7 @@ pagesRouter.get('/:slug', async (req: Request, res: Response): Promise<void> => 
     }
 
     res.json(data);
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    console.error(`Error fetching page ${req.params['slug']}:`, message);
+  } catch {
     res.status(500).json({ error: 'Failed to fetch page' });
   }
 });

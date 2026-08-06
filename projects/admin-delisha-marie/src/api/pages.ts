@@ -17,9 +17,7 @@ pagesRouter.get('/pages', async (_req: AuthRequest, res: Response): Promise<void
 
     if (error) throw error;
     res.json(data || []);
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    console.error('Error fetching pages:', message);
+  } catch {
     res.status(500).json({ error: 'Failed to fetch pages' });
   }
 });
@@ -39,9 +37,7 @@ pagesRouter.get('/pages/:slug', async (req: AuthRequest, res: Response): Promise
       throw error;
     }
     res.json(data);
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    console.error(`Error fetching page ${req.params['slug']}:`, message);
+  } catch {
     res.status(500).json({ error: 'Failed to fetch page' });
   }
 });
@@ -90,9 +86,7 @@ pagesRouter.put('/pages/:slug', async (req: AuthRequest, res: Response): Promise
     }
 
     res.json(result);
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    console.error(`Error updating page ${req.params['slug']}:`, message);
+  } catch {
     res.status(500).json({ error: 'Failed to update page' });
   }
 });
