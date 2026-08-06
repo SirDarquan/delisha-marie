@@ -328,22 +328,14 @@ export class LoginComponent implements OnInit, AfterViewInit {
 
   protected readonly common = injectAuthCommon();
 
-  constructor() {
-    const code = this.route.snapshot.queryParams['code'];
-    if (code) {
-      this.exchangingOAuth.set(true);
-      this.isGoogleLogin.set(true);
-    }
-  }
-
   // State signals
   protected readonly isDescopeAvailable = computed(() => this.auth.isDescopeAvailable());
   protected readonly currentStep = signal<'email' | 'otp' | 'info'>('email');
   protected readonly isNewUser = signal<boolean>(false);
   protected readonly userEmail = signal<string>('');
   protected readonly otpCode = signal<string>('');
-  protected readonly exchangingOAuth = signal<boolean>(false);
-  protected readonly isGoogleLogin = signal<boolean>(false);
+  protected readonly exchangingOAuth = signal<boolean>(!!this.route.snapshot.queryParams['code']);
+  protected readonly isGoogleLogin = signal<boolean>(!!this.route.snapshot.queryParams['code']);
   protected readonly backButtonLabel = computed(() => {
     return this.isGoogleLogin() ? '← Back to Login' : '← Back to Verification Code';
   });

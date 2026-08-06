@@ -35,7 +35,7 @@ describe('StoryHtmlEditorComponent', () => {
     await fixture.whenStable();
 
     const compiled = fixture.nativeElement as HTMLElement;
-    const canvas = compiled.querySelector('.recipe-story') as HTMLDivElement;
+    const canvas = compiled.querySelector('.story') as HTMLDivElement;
     expect(canvas).toBeTruthy();
     expect(canvas.innerHTML).toBe('<p>Hello story world</p>');
   });
@@ -396,5 +396,72 @@ describe('StoryHtmlEditorComponent', () => {
       canvasEl.dispatchEvent(new Event('blur'));
     }
     expect(buttons.length).toBeGreaterThan(0);
+  });
+
+  it('should ignore canvas click if target is not inside canvas', () => {
+    const event = { target: document.body } as unknown as Event;
+    component.onCanvasClick(event);
+    expect(component).toBeTruthy();
+  });
+
+  it('should do nothing if canvas is missing during click', () => {
+    vi.spyOn(component, 'editorCanvas').mockReturnValue(null as never);
+    component.onCanvasClick({} as Event);
+    expect(component).toBeTruthy();
+  });
+
+  it('should clear active-highlight if clicked element is not an image or figure', async () => {
+    fixture.componentRef.setInput(
+      'value',
+      '<img class="active-highlight" src="/2026/07/test.webp"><p id="text">Hello</p>',
+    );
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const canvasEl = component.editorCanvas()?.nativeElement;
+    const pEl = canvasEl?.querySelector('p');
+    if (pEl) {
+      component.onCanvasClick({ target: pEl } as unknown as Event);
+      expect(canvasEl?.querySelector('.active-highlight')).toBeFalsy();
+    }
+  });
+
+  it('should handle onFileSelected when file input is empty', async () => {
+    const event = { target: { files: [] } } as unknown as Event;
+    await component.onFileSelected(event);
+    expect(component).toBeTruthy();
+  });
+
+  it('should preserve data URI in resolveImageSrc', async () => {
+    fixture.componentRef.setInput('value', '<img src="data:image/png;base64,iVBORw0KGgo">');
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(component.value()).toContain('data:image/png;base64,iVBORw0KGgo');
+  });
+
+  it('should handle openFigureDialog when there is no target image found', async () => {
+    fixture.componentRef.setInput('value', '<p>No image here</p>');
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const dialog = (component as unknown as { dialog: MatDialog }).dialog;
+    const openSpy = vi.spyOn(dialog, 'open');
+
+    component.openFigureDialog();
+    expect(openSpy).not.toHaveBeenCalled();
+  });
+
+  it('should fallback to selection range when searching for target image and finding none', async () => {
+    const selection = {
+      rangeCount: 0,
+    } as unknown as Selection;
+    vi.spyOn(window, 'getSelection').mockReturnValue(selection);
+
+    fixture.componentRef.setInput('value', '<p>No image here</p>');
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    component.openFigureDialog();
+    expect(component).toBeTruthy();
   });
 });

@@ -14,6 +14,7 @@ import {
   ViewEncapsulation,
   inject,
   DestroyRef,
+  OnInit,
 } from '@angular/core';
 import { FormValueControl } from '@angular/forms/signals';
 import { MatButtonModule } from '@angular/material/button';
@@ -261,7 +262,7 @@ import { RecipeService } from '../../services/recipe.service';
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ImageUploaderComponent implements FormValueControl<string> {
+export class ImageUploaderComponent implements FormValueControl<string>, OnInit {
   // Grab reference to file input in template
   readonly fileInput = viewChild<ElementRef<HTMLInputElement>>('fileInput');
   private readonly recipe = inject(RecipeService);
@@ -306,37 +307,37 @@ export class ImageUploaderComponent implements FormValueControl<string> {
   protected readonly previewError = signal<boolean>(false);
   protected readonly isUploading = signal<boolean>(false);
 
-  constructor() {
+  ngOnInit() {
     this.destroyRef.onDestroy(() => {
       this._isDestroyed = true;
     });
-
-    // Automatically load incoming parent model image data reactively
-    effect(() => {
-      const imgPath = this.initialImage();
-      const width = this.initialWidth();
-      const height = this.initialHeight();
-      const type = this.initialType();
-
-      if (imgPath) {
-        // Only update internal state if incoming image path is different from currently processed path
-        // (to preserve working local blob preview URLs when the parent form model updates)
-        this.value.set(imgPath);
-        this.previewUrl.set(imgPath);
-        this.currentWidth.set(width);
-        this.currentHeight.set(height);
-        this.currentType.set(type);
-        this.previewError.set(false);
-
-        // Edit Mode background dimension sync: if image path is loaded but width/height are blank, extract them
-        if (!width || !height) {
-          this.loadDimensionsFromUrl(imgPath);
-        }
-      } else {
-        untracked(() => this.clearInternalState());
-      }
-    });
   }
+
+  // Automatically load incoming parent model image data reactively
+  private readonly _initEffect = effect(() => {
+    const imgPath = this.initialImage();
+    const width = this.initialWidth();
+    const height = this.initialHeight();
+    const type = this.initialType();
+
+    if (imgPath) {
+      // Only update internal state if incoming image path is different from currently processed path
+      // (to preserve working local blob preview URLs when the parent form model updates)
+      this.value.set(imgPath);
+      this.previewUrl.set(imgPath);
+      this.currentWidth.set(width);
+      this.currentHeight.set(height);
+      this.currentType.set(type);
+      this.previewError.set(false);
+
+      // Edit Mode background dimension sync: if image path is loaded but width/height are blank, extract them
+      if (!width || !height) {
+        this.loadDimensionsFromUrl(imgPath);
+      }
+    } else {
+      untracked(() => this.clearInternalState());
+    }
+  });
 
   // --- DRAG & DROP EVENT HANDLERS ---
 

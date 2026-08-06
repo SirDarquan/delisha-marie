@@ -138,24 +138,23 @@ describe('CookingMethodSelectorComponent', () => {
   });
 
   // --- NEW ADDITIONAL BOOSTERS ---
-  it('should ignore empty or null methods in database or localCustomMethods lists', () => {
+  it('should ignore empty or null methods in database lists', () => {
     mockRecipesSignal.set([
       { title: 'A', slug: 'a', method: 'Smoking' },
       { title: 'B', slug: 'b', method: '' }, // empty
       { title: 'C', slug: 'c', method: null as unknown as string }, // null
     ]);
-    component.localCustomMethods.set(['', null as unknown as string, '  ', 'Baking']);
+    fixture.componentRef.setInput('value', null);
     fixture.detectChanges();
 
     const compiled = component.compiledMethods();
     expect(compiled).toContain('Smoking');
-    expect(compiled).toContain('Baking');
     expect(compiled.includes('')).toBe(false);
   });
 
   it('should return early in addCustomMethod if trimmed value is empty', () => {
     component.customMethodText.set('   ');
-    const spy = vi.spyOn(component.localCustomMethods, 'update');
+    const spy = vi.spyOn(component.value, 'set');
     component.addCustomMethod();
     expect(spy).not.toHaveBeenCalled();
   });
