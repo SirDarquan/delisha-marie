@@ -8,7 +8,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { CategoryTrails } from '@dm/library';
 import { Recipe } from '../../models/recipe.model';
 import { RecipeService } from '../../services/recipe.service';
-import { RecipeFormComponent } from './recipe-form';
+import { RecipeFormComponent, RecipeFormModel } from './recipe-form';
 
 vi.setConfig({ testTimeout: 20000 });
 
@@ -1593,5 +1593,106 @@ describe('RecipeFormComponent', () => {
     await fixture.whenStable();
 
     expect(component).toBeTruthy();
+  });
+
+  it('should thoroughly test valuesAreEqual branches', () => {
+    fixture = TestBed.createComponent(RecipeFormComponent);
+    component = fixture.componentInstance;
+
+    const cat1 = { trails: [] } as unknown as CategoryTrails;
+    const cat2 = { trails: [] } as unknown as CategoryTrails;
+    expect(component['valuesAreEqual']('category', cat1, cat1)).toBe(true);
+    expect(component['valuesAreEqual']('category', cat1, null)).toBe(false);
+    expect(component['valuesAreEqual']('category', null, cat2)).toBe(false);
+    expect(component['valuesAreEqual']('category', cat1, cat2)).toBe(true);
+    expect(
+      component['valuesAreEqual']('category', cat1, { trails: [[]] } as unknown as CategoryTrails),
+    ).toBe(false);
+
+    expect(component['valuesAreEqual']('keyword', ['a'], ['a'])).toBe(true);
+    expect(component['valuesAreEqual']('keyword', ['a'], ['a', 'b'])).toBe(false);
+    expect(component['valuesAreEqual']('keyword', ['a'], ['b'])).toBe(false);
+    expect(component['valuesAreEqual']('keyword', null, ['a'])).toBe(false);
+
+    expect(component['valuesAreEqual']('title', { a: 1 }, { a: 1 })).toBe(true);
+    expect(component['valuesAreEqual']('title', { a: 1 }, { a: 2 })).toBe(false);
+    expect(component['valuesAreEqual']('title', { a: 1 }, null)).toBe(false);
+    expect(component['valuesAreEqual']('title', null, { a: 1 })).toBe(false);
+
+    expect(component['valuesAreEqual']('title', '  text  ', 'text')).toBe(true);
+    expect(component['valuesAreEqual']('title', 'a', 'b')).toBe(false);
+    expect(component['valuesAreEqual']('theBest', true, true)).toBe(true);
+    expect(component['valuesAreEqual']('theBest', true, 'true')).toBe(true);
+    expect(component['valuesAreEqual']('theBest', false, true)).toBe(false);
+    expect(component['valuesAreEqual']('title', undefined, ' text ')).toBe(false);
+  });
+
+  it('should test getFieldValue edge cases', () => {
+    fixture = TestBed.createComponent(RecipeFormComponent);
+    component = fixture.componentInstance;
+    component['recipeModel'].update((m) => ({ ...m, title: 'ModelTitle' }));
+
+    const originalTitle = component['recipeForm'].title;
+
+    Object.defineProperty(component['recipeForm'], 'title', {
+      value: () => {
+        throw new Error('Test Error');
+      },
+      configurable: true,
+    });
+    expect(component['getFieldValue']('title')).toBe('ModelTitle');
+
+    Object.defineProperty(component['recipeForm'], 'title', {
+      value: () => ({ noControlValue: true }),
+      configurable: true,
+    });
+    expect(component['getFieldValue']('title')).toBe('ModelTitle');
+
+    Object.defineProperty(component['recipeForm'], 'title', {
+      value: 'not-a-function',
+      configurable: true,
+    });
+    expect(component['getFieldValue']('title')).toBe('ModelTitle');
+
+    Object.defineProperty(component['recipeForm'], 'title', {
+      value: originalTitle,
+      configurable: true,
+    });
+  });
+
+  it('should handle holiday parsing edge cases in mapRecipeToForm', () => {
+    fixture = TestBed.createComponent(RecipeFormComponent);
+    component = fixture.componentInstance;
+
+    let mapped = component['mapRecipeToForm']({
+      holidays: [{ name: 'Christmas' }],
+    } as unknown as Recipe);
+    expect(mapped.holidays).toBe('Christmas');
+
+    mapped = component['mapRecipeToForm']({
+      holidays: [{ noName: true }],
+    } as unknown as Recipe);
+    expect(mapped.holidays).toBe('');
+
+    mapped = component['mapRecipeToForm']({
+      holidays: ['Thanksgiving'],
+    } as unknown as Recipe);
+    expect(mapped.holidays).toBe('Thanksgiving');
+  });
+
+  it('should handle nutrition edge cases in serializeRecipe', () => {
+    fixture = TestBed.createComponent(RecipeFormComponent);
+    component = fixture.componentInstance;
+
+    const result = component['serializeRecipe'](
+      {
+        fat: '5g',
+      } as unknown as RecipeFormModel,
+      'draft',
+    );
+
+    expect(result.nutrition?.servingSize).toBe('');
+    expect(result.nutrition?.calories).toBe('');
+    expect(result.nutrition?.fat).toBe('5g');
   });
 });

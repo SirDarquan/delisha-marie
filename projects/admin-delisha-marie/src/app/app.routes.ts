@@ -14,6 +14,23 @@ export const routes: Routes = [
   },
 
   {
+    path: 'recipes/new',
+    loadComponent: () =>
+      import('./pages/recipe-form/recipe-form').then((m) => m.RecipeFormComponent),
+    canActivate: [authGuard],
+  },
+  {
+    path: 'pages',
+    loadComponent: () => import('./pages/pages-list/pages-list').then((m) => m.PagesListComponent),
+    canActivate: [authGuard],
+  },
+  {
+    path: 'pages/:slug',
+    loadComponent: () =>
+      import('./pages/page-editor/page-editor').then((m) => m.PageEditorComponent),
+    canActivate: [authGuard],
+  },
+  {
     path: 'recipes/edit/:id',
     loadComponent: () =>
       import('./pages/recipe-form/recipe-form').then((m) => m.RecipeFormComponent),

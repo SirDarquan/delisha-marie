@@ -73,6 +73,18 @@ describe('CreateRecipeDialogComponent', () => {
     expect(component['createForm']().invalid()).toBe(true);
   });
 
+  it('should invoke submitRecipe via form submission action', async () => {
+    component['createForm'].title().value.set('Test');
+    component['createForm'].slug().value.set('test');
+
+    const submitSpy = vi.spyOn(component, 'submitRecipe');
+    const formEl = fixture.nativeElement.querySelector('form');
+    formEl.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+    await fixture.whenStable();
+
+    expect(submitSpy).toHaveBeenCalled();
+  });
+
   it('should call createRecipe and navigate on submit', async () => {
     component['createForm'].title().value.set('Test');
     component['createForm'].slug().value.set('test');
