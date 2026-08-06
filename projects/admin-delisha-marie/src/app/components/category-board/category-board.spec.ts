@@ -500,5 +500,58 @@ describe('CategoryBoardComponent', () => {
       const lastTrail = component.value()?.trails[0];
       expect(lastTrail?.some((p) => p.url.includes('spaghetti-bolognese'))).toBe(true);
     });
+    it('should ignore empty trails in init effect', async () => {
+      const value: CategoryTrails = { trails: [[]] };
+      const customFixture = TestBed.createComponent(CategoryBoardComponent);
+      customFixture.componentRef.setInput('value', value);
+      customFixture.detectChanges();
+      await new Promise((r) => setTimeout(r, 0));
+      expect(customFixture.componentInstance.boardPiecesList().length).toBe(1);
+    });
+
+    it('should add missing parent node in init effect', async () => {
+      const value: CategoryTrails = {
+        trails: [
+          [
+            { name: 'Home', url: '/' },
+            { name: 'Recipes', url: '/recipes' },
+            { name: 'Chicken', url: '/recipes/dinner/chicken' },
+          ],
+        ],
+      };
+      const customFixture = TestBed.createComponent(CategoryBoardComponent);
+      customFixture.componentRef.setInput('value', value);
+      customFixture.detectChanges();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      customFixture.detectChanges();
+      expect(customFixture.componentInstance.boardPieces()[2].name).toBe('Dinner');
+      expect(customFixture.componentInstance.boardPieces()[3].name).toBe('Chicken');
+    });
+
+    it('should update custom url when prefix is empty', () => {
+      fixture.detectChanges();
+      component.boardPiecesList.set([[]]); // forces pieces length to 0, currentUrlPrefix to '/'
+      const event = { target: { value: 'something' } } as unknown as Event;
+      component.updateCustomUrl(event);
+      expect(component.customUrl()).toBe('something');
+    });
+
+    it('should add custom piece when prefix is empty', () => {
+      fixture.detectChanges();
+      component.boardPiecesList.set([[]]); // forces pieces length to 0
+      component.customName.set('New');
+      component.customUrl.set('new-piece');
+      component.addCustomPiece();
+      expect(component.boardPiecesList()[0][0].name).toBe('New');
+    });
+
+    it('should handle value effect gracefully if initial value trails do not start with standard pattern', async () => {
+      const value: CategoryTrails = { trails: [[{ name: 'Bad', url: '/bad' }]] };
+      const customFixture = TestBed.createComponent(CategoryBoardComponent);
+      customFixture.componentRef.setInput('value', value);
+      customFixture.detectChanges();
+      await new Promise((r) => setTimeout(r, 0));
+      expect(customFixture.componentInstance.boardPiecesList()[0][0].name).toBe('Home');
+    });
   });
 });

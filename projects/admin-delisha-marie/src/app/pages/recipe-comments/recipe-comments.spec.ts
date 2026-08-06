@@ -248,4 +248,80 @@ describe('RecipeCommentsComponent', () => {
     expect(component.comments()[0].status).toBe('skipped');
     expect(snackBar.open).toHaveBeenCalledWith('Failed to undo skip', 'Close', { duration: 3000 });
   });
+  it('should not load comments if route id is null', () => {
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      imports: [RecipeCommentsComponent],
+      providers: [
+        {
+          provide: ActivatedRoute,
+          useValue: {
+            paramMap: of({ get: () => null }),
+          },
+        },
+        { provide: CommentsService, useValue: commentsService },
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        { provide: MatSnackBar, useValue: snackBar },
+      ],
+    }).overrideProvider(MatSnackBar, { useValue: snackBar });
+    const nullFixture = TestBed.createComponent(RecipeCommentsComponent);
+    nullFixture.detectChanges();
+    expect(commentsService.getComments).not.toHaveBeenCalledWith(null);
+  });
+
+  it('should show comment if undoing skip', () => {
+    component.loadComments('r-1');
+    // Set comment 1 to not new so it wouldn't normally show
+    component.comments.update((comments) =>
+      comments.map((c) => (c.id === '1' ? ({ ...c, is_new: false } as unknown as Comment) : c)),
+    );
+
+    // Check it's not visible normally
+    expect(component.visibleComments()).toHaveLength(0);
+
+    // Set undoing skip
+    component.undoingSkip.set({ '1': true });
+
+    // Now it should be visible
+    expect(component.visibleComments()).toHaveLength(1);
+  });
+
+  it('should handle load errors with default message', () => {
+    commentsService.getComments.mockReturnValue(throwError(() => ({ error: {} })));
+    component.loadComments('r-1');
+    fixture.detectChanges();
+    expect(component.error()).toBe('Failed to load comments');
+  });
+
+  it('should skip comment and handle undo with fallback status', async () => {
+    component.loadComments('r-1');
+    // Delete status and is_new to test fallback
+    component.comments.update((comments) =>
+      comments.map((c) =>
+        c.id === '1' ? ({ ...c, status: undefined, is_new: undefined } as unknown as Comment) : c,
+      ),
+    );
+    commentsService.skipComment.mockReturnValue(of({ success: true }));
+
+    await component.skipComment('1');
+    snackBarActionSubject.next();
+    await new Promise((r) => setTimeout(r, 0));
+    expect(component.comments()[0].status).toBe('approved'); // fallback
+    expect(component.comments()[0].is_new).toBe(true); // fallback
+  });
+
+  it('should skip comment and handle error with fallback status', async () => {
+    component.loadComments('r-1');
+    // Delete status and is_new to test fallback
+    component.comments.update((comments) =>
+      comments.map((c) =>
+        c.id === '1' ? ({ ...c, status: undefined, is_new: undefined } as unknown as Comment) : c,
+      ),
+    );
+    commentsService.skipComment.mockReturnValue(throwError(() => new Error('Error')));
+
+    await component.skipComment('1');
+    expect(component.comments()[0].status).toBe('approved'); // fallback
+  });
 });

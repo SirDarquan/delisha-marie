@@ -232,18 +232,16 @@ export class RecipesListComponent implements OnInit, AfterViewInit, OnDestroy {
   private offset = this.recipes().length;
   private readonly limit = 50;
 
-  constructor() {
-    toObservable(this.searchTerm)
-      .pipe(skip(1), debounceTime(500))
-      .subscribe(() => {
-        this.recipes.set([]);
-        this.offset = 0;
-        this.hasMore = true;
-        this.fetchNextBatch();
-      });
-  }
-
   protected readonly filteredRecipes = this.recipes;
+
+  private readonly _searchSub = toObservable(this.searchTerm)
+    .pipe(skip(1), debounceTime(500))
+    .subscribe(() => {
+      this.recipes.set([]);
+      this.offset = 0;
+      this.hasMore = true;
+      this.fetchNextBatch();
+    });
 
   ngOnInit(): void {
     if (this.recipes().length === 0) {

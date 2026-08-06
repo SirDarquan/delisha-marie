@@ -28,7 +28,7 @@ import { StoryHtmlEditorComponent } from '../../components/story-html-editor/sto
 import { Recipe } from '../../models/recipe.model';
 import { RecipeService } from '../../services/recipe.service';
 
-interface RecipeFormModel {
+export interface RecipeFormModel {
   title: string;
   slug: string;
   author: string;

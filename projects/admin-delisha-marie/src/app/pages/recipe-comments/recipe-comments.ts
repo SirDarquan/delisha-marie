@@ -164,15 +164,13 @@ export class RecipeCommentsComponent {
     );
   });
 
-  constructor() {
-    this.route.paramMap.subscribe((params) => {
-      const id = params.get('id');
-      if (id) {
-        this.recipeId.set(id);
-        this.loadComments(id);
-      }
-    });
-  }
+  private readonly _routeSub = this.route.paramMap.subscribe((params) => {
+    const id = params.get('id');
+    if (id) {
+      this.recipeId.set(id);
+      this.loadComments(id);
+    }
+  });
 
   loadComments(id: string) {
     this.loading.set(true);
