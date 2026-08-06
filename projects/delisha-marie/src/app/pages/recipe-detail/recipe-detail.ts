@@ -1,8 +1,9 @@
-import { CommonModule, IMAGE_LOADER } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  DOCUMENT,
   effect,
   inject,
   input,
@@ -17,7 +18,6 @@ import { BreadcrumbItem, Breadcrumbs } from '../../components/breadcrumbs/breadc
 import { Sidebar } from '../../components/sidebar/sidebar';
 import { SidebarQuickView } from '../../components/sidebar/sidebar-quick-view';
 import { PinterestHoverDirective } from '../../directives/pinterest-hover.directive';
-import { WINDOW } from '../../services/global-tokens';
 import { Recipe } from '../../services/recipe.service';
 import { RecipeCard } from './recipe-card';
 import { RecipeComments } from './recipe-comments';
@@ -27,6 +27,7 @@ import { RecipeNavigation } from './recipe-navigation';
 import { RecipeSource } from './recipe-source';
 import { RecipeTags } from './recipe-tags';
 import { extractYouTubeVideoId } from '@dm/library';
+import { useOptimizedContent } from '../../utils/optimized-content';
 
 @Component({
   selector: 'dm-recipe-detail',
@@ -104,13 +105,13 @@ import { extractYouTubeVideoId } from '@dm/library';
               <section
                 class="order-1 lg:order-none prose prose-lg max-w-none px-4 sm:px-0 py-8 sm:py-0 min-w-0">
                 <div
-                  class="recipe-story text-lg md:text-xl text-[var(--mat-sys-on-surface-variant)] leading-relaxed font-serif first-letter:text-6xl first-letter:font-black first-letter:mr-1 first-letter:text-[var(--mat-sys-primary)]"
+                  class="story text-lg md:text-xl text-[var(--mat-sys-on-surface-variant)] leading-relaxed font-serif first-letter:text-6xl first-letter:font-black first-letter:mr-1 first-letter:text-[var(--mat-sys-primary)]"
                   [innerHTML]="optimizedContent()"
                   [dmPinterestHover]="r"></div>
 
                 @if (videoId()) {
                   <div
-                    class="mt-12 mb-8 flex justify-center w-full rounded-2xl overflow-hidden shadow-lg border border-slate-700/50">
+                    class="mt-12 mb-8 flex justify-center w-full rounded-2xl overflow-hidden shadow-lg border border-[var(--mat-sys-outline-variant)]">
                     <iframe
                       width="100%"
                       height="400"
@@ -174,129 +175,7 @@ import { extractYouTubeVideoId } from '@dm/library';
       }
     </div>
   `,
-  styles: [
-    `
-      :host {
-        display: block;
-      }
-      .recipe-story p {
-        margin-bottom: 2.5rem;
-      }
-      .recipe-story p:last-child {
-        margin-bottom: 0;
-      }
-      .recipe-story h2 {
-        font-size: 1.75rem;
-        font-weight: 700;
-        margin-top: 2.5rem;
-        margin-bottom: 1.25rem;
-        color: var(--mat-sys-on-surface);
-      }
-      .recipe-story h3 {
-        font-size: 1.35rem;
-        font-weight: 600;
-        margin-top: 2rem;
-        margin-bottom: 1rem;
-        color: var(--mat-sys-on-surface);
-      }
-      .recipe-story blockquote {
-        border-left: 4px solid var(--mat-sys-primary);
-        padding-left: 1.25rem;
-        font-style: italic;
-        margin: 2rem 0;
-        color: var(--mat-sys-on-surface-variant);
-      }
-      .recipe-story ul {
-        list-style-type: disc;
-        padding-left: 1.75rem;
-        margin-bottom: 2rem;
-      }
-      .recipe-story ol {
-        list-style-type: decimal;
-        padding-left: 1.75rem;
-        margin-bottom: 2rem;
-      }
-      .recipe-story a {
-        color: var(--mat-sys-primary);
-        text-decoration: underline;
-      }
-      .recipe-story img {
-        max-width: 100%;
-        height: auto;
-        border-radius: 1rem;
-        margin: 1.5rem 0;
-      }
-      .recipe-story figure {
-        margin: 1.5rem 0;
-      }
-      .recipe-story figure.recipe-gallery {
-        display: grid;
-        grid-template-columns: repeat(1, minmax(0, 1fr));
-        gap: 1.5rem;
-        margin: 2.5rem 0;
-        align-items: start;
-      }
-      .recipe-story figure.recipe-gallery:has(.column-2),
-      .recipe-story figure.recipe-gallery.column-2,
-      .recipe-story figure.column-2 {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-        gap: 1.25rem;
-        align-items: start;
-      }
-      .recipe-story figure.recipe-gallery:has(.column-3),
-      .recipe-story figure.recipe-gallery.column-3,
-      .recipe-story figure.column-3 {
-        display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-        gap: 1rem;
-        align-items: start;
-      }
-      .recipe-story figure.recipe-step-image,
-      .recipe-story figure.recipe-image {
-        margin: 0.5rem 0;
-      }
-      .recipe-story figure.recipe-step-image img,
-      .recipe-story figure.recipe-image img {
-        width: 100%;
-        height: auto;
-        object-fit: cover;
-        border-radius: 0.75rem;
-        display: block;
-      }
-      .recipe-story figcaption {
-        font-size: 0.875rem;
-        line-height: 1.35rem;
-        color: var(--mat-sys-on-surface-variant);
-        margin-top: 0.5rem;
-        text-align: center;
-        font-style: italic;
-      }
-      .recipe-story figcaption.sup,
-      .recipe-story figcaption sup {
-        vertical-align: super;
-        font-size: 0.75em;
-      }
-      @keyframes shimmer {
-        0% {
-          background-position: -200% 0;
-        }
-        100% {
-          background-position: 200% 0;
-        }
-      }
-      .skeleton {
-        background: linear-gradient(
-          90deg,
-          var(--mat-sys-surface-container) 25%,
-          var(--mat-sys-surface-container-high) 50%,
-          var(--mat-sys-surface-container) 75%
-        );
-        background-size: 200% 100%;
-        animation: shimmer 1.5s infinite linear;
-      }
-    `,
-  ],
+
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -319,7 +198,6 @@ export class RecipeDetail {
   });
 
   private readonly sanitizer = inject(DomSanitizer);
-  private readonly imageLoader = inject(IMAGE_LOADER);
 
   readonly safeVideoUrl = computed(() => {
     const id = this.videoId();
@@ -328,73 +206,26 @@ export class RecipeDetail {
       : null;
   });
 
-  readonly optimizedContent = computed(() => {
-    const r = this.recipe();
-    if (!r?.content) return null;
+  readonly optimizedContent = useOptimizedContent(computed(() => this.recipe()?.content));
 
-    const optimizedHtml = r.content.replace(/<img([^>]+)>/gi, (match, attrs) => {
-      const srcMatch = attrs.match(/(?:src)=["']([^"']+)["']/i);
-      if (!srcMatch) return match;
+  private readonly document = inject(DOCUMENT);
 
-      const originalSrc = srcMatch[1];
-      if (originalSrc.startsWith('data:')) return match;
-
-      try {
-        const isAbsolute = originalSrc.startsWith('http://') || originalSrc.startsWith('https://');
-
-        let optimizedSrc = originalSrc;
-        let srcsetAttr = '';
-
-        if (!isAbsolute) {
-          optimizedSrc = this.imageLoader({ src: originalSrc, width: 800 });
-          const srcset = `
-            ${this.imageLoader({ src: originalSrc, width: 400 })} 400w,
-            ${this.imageLoader({ src: originalSrc, width: 800 })} 800w,
-            ${this.imageLoader({ src: originalSrc, width: 1200 })} 1200w,
-            ${this.imageLoader({ src: originalSrc, width: 1600 })} 1600w
-          `
-            .replace(/\s+/g, ' ')
-            .trim();
-          srcsetAttr = ` srcset="${srcset}" sizes="(max-width: 768px) 100vw, 800px"`;
-        }
-
-        let newAttrs = attrs;
-        newAttrs = newAttrs.replace(/(?:src)=["'][^"']+["']/gi, '');
-
-        if (!/loading=/i.test(newAttrs)) newAttrs += ' loading="lazy"';
-        if (!/decoding=/i.test(newAttrs)) newAttrs += ' decoding="async"';
-        if (!/fetchpriority=/i.test(newAttrs)) newAttrs += ' fetchpriority="auto"';
-
-        return `<img src="${optimizedSrc}"${srcsetAttr}${newAttrs}>`;
-      } catch {
-        let newAttrs = attrs.replace(/src=["']([^"']+)["']/gi, 'src="$1"');
-        if (!/loading=/i.test(newAttrs)) newAttrs += ' loading="lazy"';
-        return `<img${newAttrs}>`;
+  private readonly _scrollEffect = effect(() => {
+    // Run when recipe finishes loading
+    if (!this.isLoading()) {
+      const window = this.document.defaultView;
+      const hash = window?.location.hash;
+      if (hash) {
+        // Wait a tick for the DOM to render the components
+        setTimeout(() => {
+          const id = hash.replace('#', '');
+          const el = this.document.getElementById(id);
+          if (el && window) {
+            const y = el.getBoundingClientRect().top + window.scrollY - 120;
+            window.scrollTo({ top: y, behavior: 'smooth' });
+          }
+        }, 100);
       }
-    });
-
-    return this.sanitizer.bypassSecurityTrustHtml(optimizedHtml);
+    }
   });
-
-  private readonly window = inject(WINDOW);
-
-  constructor() {
-    effect(() => {
-      // Run when recipe finishes loading
-      if (!this.isLoading()) {
-        const hash = this.window.location.hash;
-        if (hash) {
-          // Wait a tick for the DOM to render the components
-          setTimeout(() => {
-            const id = hash.replace('#', '');
-            const el = this.window.document.getElementById(id);
-            if (el) {
-              const y = el.getBoundingClientRect().top + this.window.scrollY - 120;
-              this.window.scrollTo({ top: y, behavior: 'smooth' });
-            }
-          }, 100);
-        }
-      }
-    });
-  }
 }

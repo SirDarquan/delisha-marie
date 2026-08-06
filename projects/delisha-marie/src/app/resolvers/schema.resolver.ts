@@ -1,9 +1,9 @@
 import { DOCUMENT } from '@angular/common';
 import { inject } from '@angular/core';
 import { ResolveFn } from '@angular/router';
-
-import { Recipe, RecipeService } from '../services/recipe.service';
 import { deslugify } from '@dm/library';
+import { Recipe, RecipeService } from '../services/recipe.service';
+import { PagesService } from '../services/pages.service';
 
 export interface SchemaObject {
   '@context'?: string;
@@ -49,24 +49,78 @@ export const schemaResolver: ResolveFn<SchemaObject[]> = (route, state) => {
     state.url.includes('/the-best-recipe')
   ) {
     schema.push(generateCollectionPageSchema(origin, siteName, description));
-  } else if (url.includes('/about')) {
-    schema.push(generateAboutPageSchema(url, siteName, description));
-  } else if (url.includes('/contact')) {
-    schema.push(generateContactPageSchema(url, siteName, description));
-    // } else if (url.includes('/faq')) {
-    //   const breadcrumbs = breadcrumbService.getBaseBreadcrumbs(route.data['breadcrumbs'], true);
-    //   return from(faqService.getFAQs()).pipe(
-    //     map((faqs) => {
-    //       schema.push(generateFAQPageSchema(url, name, faqs));
-    //       schema.push(generateBreadcrumbSchema(breadcrumbs, origin, ''));
-    //       return {
-    //         '@context': 'https://schema.org',
-    //         '@graph': schema,
-    //       };
-    //     }),
-    //   );
   } else {
     schema.push(generateWebPageSchema(url, slug, siteName, description, '', ''));
+  }
+
+  const breadcrumbs = getBaseBreadcrumbs(path);
+  schema.push(generateBreadcrumbSchema(breadcrumbs, origin, path));
+
+  const schemaObj = {
+    '@context': 'https://schema.org',
+    '@graph': schema,
+  };
+
+  let script = document.querySelector('script#dynamic-schema');
+  if (!script) {
+    script = document.createElement('script');
+    script.setAttribute('id', 'dynamic-schema');
+    script.setAttribute('type', 'application/ld+json');
+    document.head.appendChild(script);
+  }
+  script.textContent = JSON.stringify(schemaObj);
+
+  return schema;
+};
+
+export const schemaDynamicPageResolver: ResolveFn<SchemaObject[]> = async (route, state) => {
+  const document = inject(DOCUMENT);
+  const schema: SchemaObject[] = [];
+  const origin = document.location.origin;
+  const path = state.url.split('?')[0].split('#')[0];
+  const url = origin + path;
+
+  const siteName = 'Delisha Marie';
+  const description = route.data['description'];
+  const slug = route.paramMap.get('slug') || '';
+
+  schema.push(
+    generateOrganizationSchema(
+      origin,
+      siteName,
+      `${origin}/assets/delisha-marie.jpg`,
+      '1024',
+      '1024',
+    ),
+    generateWebSiteSchema(origin, siteName),
+  );
+
+  if (slug === '') {
+    schema.push(generateWebPageSchema(url, slug, siteName, description, '', ''));
+  } else if (slug === 'about') {
+    schema.push(generateAboutPageSchema(url, siteName, description));
+  } else if (slug === 'contact') {
+    schema.push(generateContactPageSchema(url, siteName, description));
+  } else if (slug === 'faq') {
+    const pageService = inject(PagesService);
+    const page = await pageService.getPage('faq');
+    if (!page) return schema;
+    const parsedFaqs: { question: string; answer: string }[] = [];
+    const regex = /<h2[^>]*>(.*?)<\/h2>([\s\S]*?)(?=<h2|$)/gi;
+    let match;
+    while ((match = regex.exec(page.content)) !== null) {
+      const question = match[1].replace(/<[^>]+>/g, '').trim();
+      const answer = match[2]
+        .replace(/<[^>]+>/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+      if (question && answer) {
+        parsedFaqs.push({ question, answer });
+      }
+    }
+    if (parsedFaqs.length > 0) {
+      schema.push(generateFAQPageSchema(url, siteName, parsedFaqs));
+    }
   }
 
   const breadcrumbs = getBaseBreadcrumbs(path);

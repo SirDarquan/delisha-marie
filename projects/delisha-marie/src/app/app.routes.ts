@@ -5,8 +5,18 @@ import {
   recipeResolver,
   recipeTitleResolver,
 } from './resolvers/recipe.resolver';
-import { schemaRecipeResolver, schemaResolver } from './resolvers/schema.resolver';
-import { seoRecipeListResolver, seoRecipeResolver, seoResolver } from './resolvers/seo.resolver';
+import {
+  schemaDynamicPageResolver,
+  schemaRecipeResolver,
+  schemaResolver,
+} from './resolvers/schema.resolver';
+import {
+  seoDynamicPageResolver,
+  seoRecipeListResolver,
+  seoRecipeResolver,
+  seoResolver,
+} from './resolvers/seo.resolver';
+import { dynamicPageResolver } from './resolvers/dynamic-page.resolver';
 
 export const routes: Routes = [
   {
@@ -20,17 +30,17 @@ export const routes: Routes = [
       keywords: ['food blog', 'delisha marie', 'authentic recipes', 'home cooking', 'dallas food'],
     },
   },
-  {
-    path: 'about',
-    loadComponent: () => import('./pages/about/about').then((m) => m.About),
-    title: 'About',
-    resolve: { seo: seoResolver, schema: schemaResolver },
-    data: {
-      description:
-        'Learn about Delisha Marie, her culinary journey from family Sunday dinners to a lifelong passion for elevated simplicity in cooking.',
-      keywords: ['delisha marie biography', 'culinary journey', 'cooking philosophy'],
-    },
-  },
+  // {
+  //   path: 'about',
+  //   loadComponent: () => import('./pages/about/about').then((m) => m.About),
+  //   title: 'About',
+  //   resolve: { seo: seoResolver, schema: schemaResolver },
+  //   data: {
+  //     description:
+  //       'Learn about Delisha Marie, her culinary journey from family Sunday dinners to a lifelong passion for elevated simplicity in cooking.',
+  //     keywords: ['delisha marie biography', 'culinary journey', 'cooking philosophy'],
+  //   },
+  // },
   {
     path: 'recipe-index',
     loadComponent: () => import('./pages/recipe-index/recipe-index').then((m) => m.RecipeIndex),
@@ -42,17 +52,17 @@ export const routes: Routes = [
       keywords: ['recipe index', 'food categories', 'delisha marie masterlist'],
     },
   },
-  {
-    path: 'contact',
-    loadComponent: () => import('./pages/contact/contact').then((m) => m.Contact),
-    title: 'Contact',
-    resolve: { seo: seoResolver, schema: schemaResolver },
-    data: {
-      description:
-        'Get in touch with Delisha Marie for recipe questions, collaborations, or just to say hi. Reach out via our studio in Dallas, TX.',
-      keywords: ['contact delisha marie', 'recipe collaborations', 'dallas food studio'],
-    },
-  },
+  // {
+  //   path: 'contact',
+  //   loadComponent: () => import('./pages/contact/contact').then((m) => m.Contact),
+  //   title: 'Contact',
+  //   resolve: { seo: seoResolver, schema: schemaResolver },
+  //   data: {
+  //     description:
+  //       'Get in touch with Delisha Marie for recipe questions, collaborations, or just to say hi. Reach out via our studio in Dallas, TX.',
+  //     keywords: ['contact delisha marie', 'recipe collaborations', 'dallas food studio'],
+  //   },
+  // },
   // Top-level Collection Routes
   ...[
     'recipes',
@@ -131,6 +141,12 @@ export const routes: Routes = [
       description: 'Search for semantic matches across all Delisha Marie recipes.',
       keywords: ['recipe search', 'find recipe'],
     },
+  },
+  {
+    path: ':slug',
+    loadComponent: () => import('./pages/dynamic-page/dynamic-page').then((m) => m.DynamicPage),
+    title: dynamicPageResolver,
+    resolve: { seo: seoDynamicPageResolver, schema: schemaDynamicPageResolver },
   },
   { path: '**', redirectTo: '' },
 ];

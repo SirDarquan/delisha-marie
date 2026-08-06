@@ -125,61 +125,7 @@ import { RecipeIndexService } from '../recipe-index/recipe-index.service';
       }
     </div>
   `,
-  styles: [
-    `
-      /* ngx-pagination customization */
-      .recipe-pagination .ngx-pagination {
-        margin-bottom: 0;
-        padding-left: 0;
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: center;
-        gap: 0.5rem;
-        font-family: inherit;
-      }
 
-      .recipe-pagination .ngx-pagination .small-screen {
-        display: none;
-        padding: 0.75rem 1rem;
-      }
-
-      .recipe-pagination .ngx-pagination li {
-        display: inline-block;
-        border-radius: 0.75rem;
-        transition: all 0.3s ease;
-        font-weight: 700;
-        font-size: 0.875rem;
-        margin: 0;
-      }
-
-      .recipe-pagination .ngx-pagination a,
-      .recipe-pagination .ngx-pagination button {
-        padding: 0.75rem 1rem;
-        border-radius: 0.75rem;
-        color: var(--mat-sys-on-surface);
-        text-decoration: none;
-        display: block;
-        outline: none;
-      }
-
-      .recipe-pagination .ngx-pagination a:hover,
-      .recipe-pagination .ngx-pagination button:hover {
-        background: var(--mat-sys-surface-container-highest);
-        color: var(--mat-sys-primary);
-      }
-
-      .recipe-pagination .ngx-pagination .current {
-        background: var(--mat-sys-primary) !important;
-        color: var(--mat-sys-on-primary) !important;
-        padding: 0.75rem 1rem;
-      }
-
-      .recipe-pagination .ngx-pagination .disabled {
-        opacity: 0.3;
-        padding: 0.75rem 1rem;
-      }
-    `,
-  ],
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

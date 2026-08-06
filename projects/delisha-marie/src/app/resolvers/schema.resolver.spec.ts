@@ -161,8 +161,6 @@ describe('schemaResolver', () => {
         { url: '/special-diets/vegan', type: 'CollectionPage' },
         { url: '/tag/chicken', type: 'CollectionPage' },
         { url: '/the-best-recipes', type: 'CollectionPage' },
-        { url: '/about', type: 'AboutPage' },
-        { url: '/contact', type: 'ContactPage' },
       ];
 
       for (const page of pages) {

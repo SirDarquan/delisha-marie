@@ -215,66 +215,7 @@ import { Recipe } from '../../services/recipe.service';
       }
     </div>
   `,
-  styles: [
-    `
-      :host {
-        display: block;
-        font-family: var(--mat-sys-body-large-font);
-      }
 
-      /* Base Variables for Sizes */
-      .print-size-smaller {
-        --size-title: 2rem;
-        --size-heading: 1.15rem;
-        --size-text: 0.95rem;
-        --size-meta: 0.75rem;
-      }
-
-      .print-size-normal {
-        --size-title: 2.75rem;
-        --size-heading: 1.5rem;
-        --size-text: 1.125rem;
-        --size-meta: 0.875rem;
-      }
-
-      .print-size-larger {
-        --size-title: 3.5rem;
-        --size-heading: 2rem;
-        --size-text: 1.35rem;
-        --size-meta: 1rem;
-      }
-
-      .print-title {
-        font-size: var(--size-title);
-      }
-      .print-heading {
-        font-size: var(--size-heading);
-      }
-      .print-text {
-        font-size: var(--size-text);
-      }
-      .print-meta {
-        font-size: var(--size-meta);
-      }
-
-      /* Print Specific Styles */
-      @media print {
-        .no-print {
-          display: none !important;
-        }
-        body,
-        .print-page {
-          background-color: white !important;
-          color: black !important;
-          -webkit-print-color-adjust: exact;
-          print-color-adjust: exact;
-        }
-        @page {
-          margin: 0.5in;
-        }
-      }
-    `,
-  ],
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

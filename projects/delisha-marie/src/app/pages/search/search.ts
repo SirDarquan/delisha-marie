@@ -10,7 +10,7 @@ import {
   untracked,
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { CommonModule } from '@angular/common';
+import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { form, FormField, FormRoot, required } from '@angular/forms/signals';
 import { Router, ActivatedRoute, RouterLink } from '@angular/router';
@@ -37,6 +37,7 @@ interface SearchResultRecipe {
   imports: [
     CommonModule,
     MatIconModule,
+    NgOptimizedImage,
     FormField,
     FormRoot,
     RouterLink,
@@ -49,7 +50,7 @@ interface SearchResultRecipe {
         <!-- Search Header -->
         <div class="text-center max-w-3xl mx-auto mb-12">
           <h1 class="text-4xl font-black text-[var(--mat-sys-on-surface)] mb-6 font-serif">
-            Semantic Recipe Search
+            Recipe Search
           </h1>
 
           <form [formRoot]="searchForm" class="relative max-w-2xl mx-auto">
@@ -132,7 +133,9 @@ interface SearchResultRecipe {
                       <div
                         class="aspect-video w-full overflow-hidden bg-[var(--mat-sys-surface-container)] relative">
                         <img
-                          [src]="recipe.image"
+                          [ngSrc]="recipe.image"
+                          priority
+                          fill
                           [alt]="recipe.title"
                           class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                         <!-- Match Score Badge -->
@@ -177,61 +180,7 @@ interface SearchResultRecipe {
       </div>
     </main>
   `,
-  styles: [
-    `
-      /* ngx-pagination customization */
-      .recipe-pagination .ngx-pagination {
-        margin-bottom: 0;
-        padding-left: 0;
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: center;
-        gap: 0.5rem;
-        font-family: inherit;
-      }
 
-      .recipe-pagination .ngx-pagination .small-screen {
-        display: none;
-        padding: 0.75rem 1rem;
-      }
-
-      .recipe-pagination .ngx-pagination li {
-        display: inline-block;
-        border-radius: 0.75rem;
-        transition: all 0.3s ease;
-        font-weight: 700;
-        font-size: 0.875rem;
-        margin: 0;
-      }
-
-      .recipe-pagination .ngx-pagination a,
-      .recipe-pagination .ngx-pagination button {
-        padding: 0.75rem 1rem;
-        border-radius: 0.75rem;
-        color: var(--mat-sys-on-surface);
-        text-decoration: none;
-        display: block;
-        outline: none;
-      }
-
-      .recipe-pagination .ngx-pagination a:hover,
-      .recipe-pagination .ngx-pagination button:hover {
-        background: var(--mat-sys-surface-container-highest);
-        color: var(--mat-sys-primary);
-      }
-
-      .recipe-pagination .ngx-pagination .current {
-        background: var(--mat-sys-primary) !important;
-        color: var(--mat-sys-on-primary) !important;
-        padding: 0.75rem 1rem;
-      }
-
-      .recipe-pagination .ngx-pagination .disabled {
-        opacity: 0.3;
-        padding: 0.75rem 1rem;
-      }
-    `,
-  ],
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -291,16 +240,14 @@ export class SearchPage {
   readonly loading = computed(() => this.searchResource.isLoading());
   readonly hasSearched = computed(() => !!this.query());
 
-  constructor() {
-    effect(() => {
-      const q = this.query();
-      untracked(() => {
-        if (this.searchModel().q !== q) {
-          this.searchModel.update((m) => ({ ...m, q }));
-        }
-      });
+  private readonly _syncEffect = effect(() => {
+    const q = this.query();
+    untracked(() => {
+      if (this.searchModel().q !== q) {
+        this.searchModel.update((m) => ({ ...m, q }));
+      }
     });
-  }
+  });
 
   onPageChange(p: number): void {
     const query = this.searchModel().q;

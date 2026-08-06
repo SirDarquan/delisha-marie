@@ -386,16 +386,7 @@ import { Recipe } from '../../services/recipe.service';
       }
     </div>
   `,
-  styles: [
-    `
-      :host {
-        display: block;
-      }
-      .recipe-card {
-        font-family: var(--mat-sys-body-large-font);
-      }
-    `,
-  ],
+
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
