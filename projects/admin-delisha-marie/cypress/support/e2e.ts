@@ -17,6 +17,16 @@
 // import './commands';
 
 beforeEach(() => {
+  cy.intercept('GET', '/config', {
+    statusCode: 200,
+    body: {
+      supabaseUrl: 'http://localhost:54321',
+      supabaseAnonKey: 'mock-key',
+      imagekitUrlEndpoint: 'https://ik.imagekit.io/mock',
+    },
+  }).as('getConfig');
+});
+beforeEach(() => {
   cy.intercept('GET', '**/config', {
     statusCode: 200,
     body: {
