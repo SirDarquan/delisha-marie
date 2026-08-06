@@ -6,6 +6,21 @@ describe('Main Blog Global Navigation', () => {
       body: [],
     }).as('getEmptyRecipes');
 
+    cy.intercept('GET', '**/api/pages/about', {
+      statusCode: 200,
+      body: { id: '1', slug: 'about', title: 'About' },
+    }).as('getAboutPage');
+
+    cy.intercept('GET', '**/api/pages/contact', {
+      statusCode: 200,
+      body: { id: '2', slug: 'contact', title: 'Contact' },
+    }).as('getContactPage');
+
+    cy.intercept('GET', '**/api/pages/non-existent-route-goes-here', {
+      statusCode: 404,
+      body: { error: 'Not found' },
+    }).as('getMissingPage');
+
     cy.visit('/');
   });
 
@@ -45,9 +60,11 @@ describe('Main Blog Global Navigation', () => {
     cy.title().should('eq', "Contact | Delisha Marie's Kitchen");
   });
 
-  it('should successfully fallback to Home page if an unknown URL is specified', () => {
-    // Router redirects '**' back to ''
+  it('should successfully fallback to a 404 page if an unknown URL is specified', () => {
+    // Router matches ':slug' and shows a 404 page if not found in db
     cy.visit('/non-existent-route-goes-here');
-    cy.url().should('eq', Cypress.config().baseUrl + '/');
+    cy.title().should('eq', "Page Not Found | Delisha Marie's Kitchen");
+    cy.get('dm-dynamic-page').should('be.visible');
+    cy.contains('Page Not Found').should('be.visible');
   });
 });
