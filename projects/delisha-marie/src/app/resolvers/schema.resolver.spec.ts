@@ -148,7 +148,7 @@ describe('schemaResolver', () => {
       >[];
 
       expect(Array.isArray(result)).toBe(true);
-      expect(result.length).toBe(4); // Org, WebSite, WebPage, Breadcrumb
+      expect(result).toHaveLength(4); // Org, WebSite, WebPage, Breadcrumb
       expect(mockDocument.createElement).toHaveBeenCalledWith('script');
       expect(result.some((s) => s['@type'] === 'WebPage')).toBe(true);
     });
@@ -244,7 +244,7 @@ describe('schemaResolver', () => {
       )) as Record<string, unknown>[];
 
       expect(recipeService.getRecipeBySlug).toHaveBeenCalledWith('recipe');
-      expect(result.length).toBe(8); // Org, Person, WebSite, Image, WebPage, Article, Recipe, Breadcrumb
+      expect(result).toHaveLength(8); // Org, Person, WebSite, Image, WebPage, Article, Recipe, Breadcrumb
       const recipeSchema = result.find((s) => s['@type'] === 'Recipe') as Record<string, string>;
       expect(recipeSchema).toBeDefined();
       expect(recipeSchema['prepTime']).toBe('PT1440M');
@@ -308,7 +308,7 @@ describe('schemaResolver', () => {
       expect(recipeSchema['cookTime']).toBe(''); // From '' (line 675)
       expect(recipeSchema['review']).toBeDefined();
       expect(Array.isArray(recipeSchema['review'])).toBe(true);
-      expect((recipeSchema['review'] as unknown[]).length).toBe(1);
+      expect(recipeSchema['review'] as unknown[]).toHaveLength(1);
 
       const breadcrumbSchema = result.find((s) => s['@type'] === 'BreadcrumbList') as Record<
         string,
@@ -370,7 +370,7 @@ describe('schemaResolver', () => {
         unknown
       >;
       const items = breadcrumbList['itemListElement'] as { name: string }[];
-      expect(items.length).toBe(1);
+      expect(items).toHaveLength(1);
       expect(items[0].name).toBe('Home');
     });
 

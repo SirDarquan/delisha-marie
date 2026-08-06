@@ -109,9 +109,9 @@ export const schemaDynamicPageResolver: ResolveFn<SchemaObject[]> = async (route
     const regex = /<h2[^>]*>(.*?)<\/h2>([\s\S]*?)(?=<h2|$)/gi;
     let match;
     while ((match = regex.exec(page.content)) !== null) {
-      const question = match[1].replace(/<[^>]+>/g, '').trim();
+      const question = match[1].replace(/<[^>]*>/g, '').trim();
       const answer = match[2]
-        .replace(/<[^>]+>/g, ' ')
+        .replace(/<[^>]*>/g, ' ')
         .replace(/\s+/g, ' ')
         .trim();
       if (question && answer) {
