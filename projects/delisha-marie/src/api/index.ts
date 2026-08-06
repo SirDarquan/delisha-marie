@@ -3,6 +3,7 @@ import cookieParser from 'cookie-parser';
 import express, { Router } from 'express';
 import recipeIndexRouter from './recipe-index';
 import recipesRouter from './recipes';
+import { pagesRouter } from './pages';
 
 const apiRouter = Router();
 
@@ -13,5 +14,6 @@ apiRouter.use('/api', express.json());
 // Register routers
 apiRouter.use('/api', recipeIndexRouter);
 apiRouter.use('/api', recipesRouter);
+apiRouter.use('/api/pages', pagesRouter);
 
 export default apiRouter;
