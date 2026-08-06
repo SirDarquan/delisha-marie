@@ -26,7 +26,9 @@ export class RecipeService {
   private readonly _specialDiets = signal<{ id: string; name: string }[]>([]);
   readonly specialDiets = computed(() => this._specialDiets());
 
-  constructor() {
+  private readonly _init = this.loadInitialData();
+
+  private loadInitialData() {
     this.loadInitialCategories();
     this.loadInitialMethods();
     this.loadInitialHolidays();

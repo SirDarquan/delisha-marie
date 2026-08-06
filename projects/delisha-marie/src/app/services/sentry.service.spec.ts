@@ -3,6 +3,12 @@ import { beforeEach, describe, expect, it, vi, afterEach } from 'vitest';
 import { SentryPlugin } from './sentry.service';
 import { AppConfigService } from './config.service';
 
+vi.mock('@sentry/angular', () => ({
+  init: vi.fn(),
+  browserTracingIntegration: vi.fn(),
+  replayIntegration: vi.fn(),
+}));
+
 describe('SentryPlugin', () => {
   let plugin: SentryPlugin;
   let mockConfigService: { SentryConfig: ReturnType<typeof vi.fn> };

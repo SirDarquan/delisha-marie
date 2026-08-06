@@ -85,13 +85,7 @@ import { Recipe } from '../../services/recipe.service';
       </button>
     </div>
   `,
-  styles: [
-    `
-      :host {
-        display: block;
-      }
-    `,
-  ],
+
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

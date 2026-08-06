@@ -26,17 +26,7 @@ import { Recipe } from '../../services/recipe.service';
       </div>
     }
   `,
-  styles: `
-    .source-content a {
-      color: var(--mat-sys-primary);
-      text-decoration: underline;
-      font-weight: bold;
-      transition: opacity 0.2s ease;
-    }
-    .source-content a:hover {
-      opacity: 0.8;
-    }
-  `,
+
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

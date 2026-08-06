@@ -94,19 +94,7 @@ import { Ingredient } from '../../models/category';
       </div>
     </section>
   `,
-  styles: [
-    `
-      :host {
-        display: block;
-      }
-      html {
-        scroll-behavior: smooth;
-      }
-      .scroll-mt-24 {
-        scroll-margin-top: 6rem;
-      }
-    `,
-  ],
+
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

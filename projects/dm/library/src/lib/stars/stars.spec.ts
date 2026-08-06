@@ -24,7 +24,7 @@ describe('Stars', () => {
 
   it('should render 5 star buttons', () => {
     const starButtons = fixture.debugElement.queryAll(By.css('.star-wrapper'));
-    expect(starButtons.length).toBe(5);
+    expect(starButtons).toHaveLength(5);
   });
 
   it('should reflect the input rating', async () => {
@@ -32,7 +32,7 @@ describe('Stars', () => {
     fixture.detectChanges();
 
     const activeStars = fixture.debugElement.queryAll(By.css('.star-icon.active'));
-    expect(activeStars.length).toBe(3);
+    expect(activeStars).toHaveLength(3);
   });
 
   it('should handle hover in interactive mode', () => {
@@ -45,7 +45,7 @@ describe('Stars', () => {
 
     expect(component['hoverRating']()).toBe(2);
     const hoveringStars = fixture.debugElement.queryAll(By.css('.star-icon.hovering'));
-    expect(hoveringStars.length).toBe(2);
+    expect(hoveringStars).toHaveLength(2);
 
     const container = fixture.debugElement.query(By.css('.flex'));
     container.triggerEventHandler('mouseleave', null);
@@ -101,7 +101,7 @@ describe('Stars', () => {
     fixture.detectChanges();
 
     const activeStars = fixture.debugElement.queryAll(By.css('.star-icon.active'));
-    expect(activeStars.length).toBe(4); // 1, 2, 3 (full) + 4 (half)
+    expect(activeStars).toHaveLength(4); // 1, 2, 3 (full) + 4 (half)
   });
 
   it('should do nothing in mouse/click handlers if not interactive', () => {

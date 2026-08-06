@@ -120,7 +120,6 @@ export class CookingMethodSelectorComponent implements FormValueControl<string> 
   readonly selectedMethod = computed(() => this.value());
 
   customMethodText = signal<string>('');
-  localCustomMethods = signal<string[]>([]);
 
   readonly baselineMethods = computed(() => {
     return this.recipeService.methods().map((m) => m.name);

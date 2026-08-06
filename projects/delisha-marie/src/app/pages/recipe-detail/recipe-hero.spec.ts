@@ -71,7 +71,7 @@ describe('RecipeHero', () => {
     expect(descElement.textContent).toContain(mockRecipe.description);
   });
 
-  it('should display the description', () => {
+  it('should display the description text', () => {
     const descElement = fixture.nativeElement.querySelector('.hero-container p');
     expect(descElement.textContent).toContain(mockRecipe.description);
   });

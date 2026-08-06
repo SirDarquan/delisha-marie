@@ -147,7 +147,7 @@ import { FigureDialogComponent, FigureDialogData } from '../figure-dialog/figure
         </button>
       </div>
 
-      <!-- Editable Canvas (styled as recipe-story from delisha-marie) -->
+      <!-- Editable Canvas (styled as story from delisha-marie) -->
       <div
         #editorCanvas
         contenteditable="true"
@@ -155,53 +155,53 @@ import { FigureDialogComponent, FigureDialogData } from '../figure-dialog/figure
         (blur)="onInput()"
         (click)="onCanvasClick($event)"
         (keyup)="onCanvasClick($event)"
-        class="recipe-story text-lg md:text-xl text-slate-200 leading-relaxed font-serif p-6 rounded-2xl bg-slate-900/60 border border-slate-700/50 min-h-[250px] max-h-[600px] overflow-y-auto focus:outline-none focus:ring-2 focus:ring-purple-500/80 transition-all"></div>
+        class="story text-lg md:text-xl text-slate-200 leading-relaxed font-serif p-6 rounded-2xl bg-slate-900/60 border border-slate-700/50 min-h-[250px] max-h-[600px] overflow-y-auto focus:outline-none focus:ring-2 focus:ring-purple-500/80 transition-all"></div>
     </div>
   `,
   styles: [
     `
-      .recipe-story p {
+      .story p {
         margin-bottom: 1.5rem;
       }
-      .recipe-story p:last-child {
+      .story p:last-child {
         margin-bottom: 0;
       }
-      .recipe-story h2 {
+      .story h2 {
         font-size: 1.75rem;
         font-weight: 700;
         margin-top: 2rem;
         margin-bottom: 1rem;
         color: #f8fafc;
       }
-      .recipe-story h3 {
+      .story h3 {
         font-size: 1.35rem;
         font-weight: 600;
         margin-top: 1.5rem;
         margin-bottom: 0.75rem;
         color: #f1f5f9;
       }
-      .recipe-story blockquote {
+      .story blockquote {
         border-left: 4px solid #a855f7;
         padding-left: 1rem;
         font-style: italic;
         margin: 1.5rem 0;
         color: #cbd5e1;
       }
-      .recipe-story ul {
+      .story ul {
         list-style-type: disc;
         padding-left: 1.5rem;
         margin-bottom: 1.5rem;
       }
-      .recipe-story ol {
+      .story ol {
         list-style-type: decimal;
         padding-left: 1.5rem;
         margin-bottom: 1.5rem;
       }
-      .recipe-story a {
+      .story a {
         color: #c084fc;
         text-decoration: underline;
       }
-      .recipe-story img {
+      .story img {
         max-width: 100%;
         height: auto;
         border-radius: 1rem;
@@ -211,60 +211,60 @@ import { FigureDialogComponent, FigureDialogData } from '../figure-dialog/figure
           outline 0.2s ease,
           box-shadow 0.2s ease;
       }
-      .recipe-story figure {
+      .story figure {
         margin: 1.5rem 0;
         cursor: pointer;
         transition:
           outline 0.2s ease,
           box-shadow 0.2s ease;
       }
-      .recipe-story figure.recipe-gallery {
+      .story figure.recipe-gallery {
         display: grid;
         grid-template-columns: repeat(1, minmax(0, 1fr));
         gap: 1.5rem;
         margin: 2rem 0;
         align-items: start;
       }
-      .recipe-story figure.recipe-gallery:has(.column-2),
-      .recipe-story figure.recipe-gallery.column-2,
-      .recipe-story figure.column-2 {
+      .story figure.recipe-gallery:has(.column-2),
+      .story figure.recipe-gallery.column-2,
+      .story figure.column-2 {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
         gap: 1.25rem;
         align-items: start;
       }
-      .recipe-story figure.recipe-gallery:has(.column-3),
-      .recipe-story figure.recipe-gallery.column-3,
-      .recipe-story figure.column-3 {
+      .story figure.recipe-gallery:has(.column-3),
+      .story figure.recipe-gallery.column-3,
+      .story figure.column-3 {
         display: grid;
         grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
         gap: 1rem;
         align-items: start;
       }
-      .recipe-story figure.recipe-step-image,
-      .recipe-story figure.recipe-image {
+      .story figure.recipe-step-image,
+      .story figure.recipe-image {
         margin: 0.5rem 0;
       }
-      .recipe-story figure.recipe-step-image img,
-      .recipe-story figure.recipe-image img {
+      .story figure.recipe-step-image img,
+      .story figure.recipe-image img {
         width: 100%;
         height: auto;
         object-fit: cover;
         border-radius: 0.75rem;
       }
-      .recipe-story img:hover,
-      .recipe-story figure:hover {
+      .story img:hover,
+      .story figure:hover {
         outline: 2px dashed #c084fc;
         outline-offset: 4px;
       }
-      .recipe-story img.active-highlight,
-      .recipe-story figure.active-highlight {
+      .story img.active-highlight,
+      .story figure.active-highlight {
         outline: 3px solid #a855f7 !important;
         outline-offset: 6px !important;
         box-shadow: 0 0 25px rgba(168, 85, 247, 0.6) !important;
         border-radius: 1rem;
       }
-      .recipe-story figcaption {
+      .story figcaption {
         font-size: 0.875rem;
         line-height: 1.25rem;
         color: #94a3b8;
@@ -272,7 +272,7 @@ import { FigureDialogComponent, FigureDialogData } from '../figure-dialog/figure
         text-align: center;
         font-style: italic;
       }
-      .recipe-story:first-letter {
+      .story:first-letter {
         font-size: 3.75rem;
         line-height: 1;
         font-weight: 900;
@@ -303,22 +303,20 @@ export class StoryHtmlEditorComponent implements FormValueControl<string> {
 
   private readonly baseUrl = 'https://ik.imagekit.io/delishamarie';
 
-  constructor() {
-    // Sync model signal changes into DOM contenteditable when different
-    effect(() => {
-      const rawValue = this.value();
-      const canvasEl = this.editorCanvas()?.nativeElement;
-      if (canvasEl) {
-        const formatted = this.resolveImageSrc(rawValue || '');
-        const currentClean = this.stripImageBaseUrl(canvasEl.innerHTML);
-        if (currentClean !== rawValue && canvasEl.innerHTML !== formatted) {
-          untracked(() => {
-            canvasEl.innerHTML = formatted;
-          });
-        }
+  // Sync model signal changes into DOM contenteditable when different
+  private readonly _syncEffect = effect(() => {
+    const rawValue = this.value();
+    const canvasEl = this.editorCanvas()?.nativeElement;
+    if (canvasEl) {
+      const formatted = this.resolveImageSrc(rawValue || '');
+      const currentClean = this.stripImageBaseUrl(canvasEl.innerHTML);
+      if (currentClean !== rawValue && canvasEl.innerHTML !== formatted) {
+        untracked(() => {
+          canvasEl.innerHTML = formatted;
+        });
       }
-    });
-  }
+    }
+  });
 
   onCanvasClick(event: Event): void {
     const canvasEl = this.editorCanvas()?.nativeElement;

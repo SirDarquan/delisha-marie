@@ -24,13 +24,7 @@ import { MatButtonModule } from '@angular/material/button';
       <button mat-stroked-button class="rounded-full px-8 font-bold">My Story</button>
     </section>
   `,
-  styles: [
-    `
-      :host {
-        display: block;
-      }
-    `,
-  ],
+
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

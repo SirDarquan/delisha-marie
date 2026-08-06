@@ -340,10 +340,14 @@ describe('RecipeService', () => {
       expect(service.methods()).toEqual(mockMethods);
     });
 
-    it('should handle API errors gracefully in loadInitialMethods', async () => {
+    it.each([
+      { method: 'loadInitialMethods', url: '/api/methods' },
+      { method: 'loadInitialHolidays', url: '/api/holidays' },
+      { method: 'loadInitialSpecialDiets', url: '/api/special-diets' },
+    ])('should handle API errors gracefully in $method', async ({ method, url }) => {
       const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
-      service['loadInitialMethods']();
-      const req = httpMock.expectOne('/api/methods');
+      (service as any)[method]();
+      const req = httpMock.expectOne(url);
       req.error(new ProgressEvent('Error'));
       await new Promise((resolve) => setTimeout(resolve, 0));
       expect(consoleSpy).toHaveBeenCalled();
@@ -367,15 +371,7 @@ describe('RecipeService', () => {
       expect(service.holidays()).toEqual(mockHolidays);
     });
 
-    it('should handle API errors gracefully in loadInitialHolidays', async () => {
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
-      service['loadInitialHolidays']();
-      const req = httpMock.expectOne('/api/holidays');
-      req.error(new ProgressEvent('Error'));
-      await new Promise((resolve) => setTimeout(resolve, 0));
-      expect(consoleSpy).toHaveBeenCalled();
-      consoleSpy.mockRestore();
-    });
+
 
     it('should not set holidays if API returns null or non-array', async () => {
       service['loadInitialHolidays']();
@@ -394,15 +390,7 @@ describe('RecipeService', () => {
       expect(service.specialDiets()).toEqual(mockDiets);
     });
 
-    it('should handle API errors gracefully in loadInitialSpecialDiets', async () => {
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
-      service['loadInitialSpecialDiets']();
-      const req = httpMock.expectOne('/api/special-diets');
-      req.error(new ProgressEvent('Error'));
-      await new Promise((resolve) => setTimeout(resolve, 0));
-      expect(consoleSpy).toHaveBeenCalled();
-      consoleSpy.mockRestore();
-    });
+
 
     it('should not set special diets if API returns null or non-array', async () => {
       service['loadInitialSpecialDiets']();

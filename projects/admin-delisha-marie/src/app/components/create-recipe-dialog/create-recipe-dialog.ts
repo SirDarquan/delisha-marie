@@ -181,14 +181,12 @@ export class CreateRecipeDialogComponent {
 
   private userEditedSlug = false;
 
-  constructor() {
-    // Auto-slugify title
-    toObservable(this.createForm.title().value).subscribe((title) => {
-      if (!this.userEditedSlug && title !== undefined) {
-        this.createForm.slug().value.set(slugify(title));
-      }
-    });
-  }
+  // Auto-slugify title
+  private readonly _titleSub = toObservable(this.createForm.title().value).subscribe((title) => {
+    if (!this.userEditedSlug && typeof title === 'string') {
+      this.createForm.slug().value.set(slugify(title));
+    }
+  });
 
   onSlugInput() {
     this.userEditedSlug = true;

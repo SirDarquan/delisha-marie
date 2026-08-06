@@ -372,71 +372,69 @@ export class CategoryBoardComponent implements FormValueControl<CategoryTrails |
   customName = signal<string>('');
   customUrl = signal<string>('');
 
-  constructor() {
-    // Automatically load incoming category structures when initialized
-    effect(() => {
-      const initial = this.value();
-      if (initial?.trails) {
-        // Extract standard trails (starts with Home and Recipes, url not matching auto-generated paths)
-        const standardTrails = initial.trails.filter((trail) => {
-          if (trail.length === 0) return false;
-          return trail[0]?.url === '/' && trail[1]?.url === '/recipes';
-        });
+  // Automatically load incoming category structures when initialized
+  private readonly _initEffect = effect(() => {
+    const initial = this.value();
+    if (initial?.trails) {
+      // Extract standard trails (starts with Home and Recipes, url not matching auto-generated paths)
+      const standardTrails = initial.trails.filter((trail) => {
+        if (trail.length === 0) return false;
+        return trail[0]?.url === '/' && trail[1]?.url === '/recipes';
+      });
 
-        if (standardTrails.length > 0) {
-          // Fill in missing intermediate category nodes (e.g. if the trail jumps from Recipes directly to a subcategory)
-          const dbCategories = this.recipeService.categories() || [];
-          const expandedStandardTrails = standardTrails.map((trail) => {
-            const expandedTrail: { name: string; url: string }[] = [];
-            for (const node of trail) {
-              const urlPart = typeof node.url === 'string' ? node.url : '';
-              const parts = urlPart.split('/').filter(Boolean);
+      if (standardTrails.length > 0) {
+        // Fill in missing intermediate category nodes (e.g. if the trail jumps from Recipes directly to a subcategory)
+        const dbCategories = this.recipeService.categories() || [];
+        const expandedStandardTrails = standardTrails.map((trail) => {
+          const expandedTrail: { name: string; url: string }[] = [];
+          for (const node of trail) {
+            const urlPart = typeof node.url === 'string' ? node.url : '';
+            const parts = urlPart.split('/').filter(Boolean);
 
-              if (parts.length === 3 && parts[0] === 'recipes') {
-                const parentUrl = `/${parts[0]}/${parts[1]}`;
-                const hasParent =
-                  expandedTrail.some((t) => t.url === parentUrl) ||
-                  trail.some((t: { url: string }) => t.url === parentUrl);
-                if (!hasParent) {
-                  const parentCat = dbCategories.find(
-                    (c: { url: string; name: string }) => c.url === parentUrl,
-                  );
-                  if (parentCat) {
-                    expandedTrail.push({ name: parentCat.name, url: parentCat.url });
-                  }
+            if (parts.length === 3 && parts[0] === 'recipes') {
+              const parentUrl = `/${parts[0]}/${parts[1]}`;
+              const hasParent =
+                expandedTrail.some((t) => t.url === parentUrl) ||
+                trail.some((t: { url: string }) => t.url === parentUrl);
+              if (!hasParent) {
+                const parentCat = dbCategories.find(
+                  (c: { url: string; name: string }) => c.url === parentUrl,
+                );
+                if (parentCat) {
+                  expandedTrail.push({ name: parentCat.name, url: parentCat.url });
                 }
               }
-
-              expandedTrail.push({ name: node.name || '', url: urlPart });
             }
-            return expandedTrail;
-          });
 
-          // Clean recipe leaf nodes before serialization comparison
-          const cleanedInputTrails = expandedStandardTrails.map((trail) =>
-            trail.filter((t) => t.url && !t.url.startsWith('/recipe/')),
-          );
-
-          const inputStr = JSON.stringify(cleanedInputTrails.map((t) => t.map((b) => b.url)));
-          const currentStr = JSON.stringify(this.boardPiecesList().map((t) => t.map((p) => p.url)));
-
-          // Only reload and reset active index if there is an external data change
-          if (inputStr !== currentStr) {
-            const mappedList = expandedStandardTrails.map((trail) =>
-              trail
-                .filter((b) => b.url && !b.url.startsWith('/recipe/'))
-                .map((b) => ({
-                  name: b.name,
-                  url: b.url,
-                })),
-            );
-            this.boardPiecesList.set(mappedList);
-            this.activeTrailIndex.set(0);
+            expandedTrail.push({ name: node.name || '', url: urlPart });
           }
+          return expandedTrail;
+        });
+
+        // Clean recipe leaf nodes before serialization comparison
+        const cleanedInputTrails = expandedStandardTrails.map((trail) =>
+          trail.filter((t) => t.url && !t.url.startsWith('/recipe/')),
+        );
+
+        const inputStr = JSON.stringify(cleanedInputTrails.map((t) => t.map((b) => b.url)));
+        const currentStr = JSON.stringify(this.boardPiecesList().map((t) => t.map((p) => p.url)));
+
+        // Only reload and reset active index if there is an external data change
+        if (inputStr !== currentStr) {
+          const mappedList = expandedStandardTrails.map((trail) =>
+            trail
+              .filter((b) => b.url && !b.url.startsWith('/recipe/'))
+              .map((b) => ({
+                name: b.name,
+                url: b.url,
+              })),
+          );
+          this.boardPiecesList.set(mappedList);
+          this.activeTrailIndex.set(0);
         }
       }
-    });
-  }
+    }
+  });
 
   switchTrail(idx: number): void {
     this.activeTrailIndex.set(idx);
