@@ -7,6 +7,7 @@ import authRouter from './auth';
 import recipesRouter from './recipes';
 import uploadRouter from './upload';
 import commentsRouter from './comments';
+import { pagesRouter } from './pages';
 const apiRouter = Router();
 
 // Register middleware
@@ -21,5 +22,6 @@ apiRouter.use('/api', authRouter);
 apiRouter.use('/api', recipesRouter);
 apiRouter.use('/api', uploadRouter);
 apiRouter.use('/api', commentsRouter);
+apiRouter.use('/api', pagesRouter);
 
 export default apiRouter;
