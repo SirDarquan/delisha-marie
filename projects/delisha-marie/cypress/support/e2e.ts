@@ -15,3 +15,19 @@
 
 // When a command from ./commands is ready to use, import with `import './commands'` syntax
 // import './commands';
+
+beforeEach(() => {
+  cy.intercept('GET', '/config', {
+    statusCode: 200,
+    body: {
+      supabaseUrl: 'http://localhost:54321',
+      supabaseAnonKey: 'mock-key',
+      imagekitUrlEndpoint: 'https://ik.imagekit.io/mock',
+    },
+  }).as('getConfig');
+
+  cy.intercept('GET', '**/api/recipes*', {
+    statusCode: 200,
+    body: [],
+  }).as('getApiRecipes');
+});
