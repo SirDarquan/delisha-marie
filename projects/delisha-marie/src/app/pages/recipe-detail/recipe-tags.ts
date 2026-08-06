@@ -25,11 +25,7 @@ import { Recipe } from '../../services/recipe.service';
       }
     </div>
   `,
-  styles: `
-    .tag-link {
-      text-decoration: none;
-    }
-  `,
+
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

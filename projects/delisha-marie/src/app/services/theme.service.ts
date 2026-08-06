@@ -13,16 +13,14 @@ export class ThemeService {
   // Signal to track the current theme
   readonly isDark = signal<boolean>(this.getInitialTheme());
 
-  constructor() {
-    // Effect to update the document class when theme changes
-    effect(() => {
-      if (isPlatformBrowser(this.platformId)) {
-        const dark = this.isDark();
-        this.document.documentElement.classList.toggle('dark-theme', dark);
-        localStorage.setItem('theme', dark ? 'dark' : 'light');
-      }
-    });
-  }
+  // Effect to update the document class when theme changes
+  private readonly _themeEffect = effect(() => {
+    if (isPlatformBrowser(this.platformId)) {
+      const dark = this.isDark();
+      this.document.documentElement.classList.toggle('dark-theme', dark);
+      localStorage.setItem('theme', dark ? 'dark' : 'light');
+    }
+  });
 
   toggle() {
     this.isDark.update((v) => !v);

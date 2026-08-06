@@ -16,68 +16,7 @@ import { ThemeService } from '../../services/theme.service';
     MatIconModule,
     MatSlideToggleModule,
   ],
-  styles: [
-    `
-      .logo-container {
-        display: flex;
-        align-items: center;
-        text-decoration: none;
-        cursor: pointer;
-        user-select: none;
-        gap: 0.25rem;
-      }
 
-      .logo-word {
-        display: flex;
-        align-items: center;
-      }
-
-      .logo-letter-bold {
-        font-size: 1.875rem; /* text-3xl for better presence */
-        font-weight: 900;
-        letter-spacing: -0.05em;
-        color: var(--mat-sys-primary);
-        line-height: 1;
-      }
-
-      .logo-letter-fade {
-        font-size: 1.5rem; /* text-2xl */
-        font-weight: 300;
-        letter-spacing: 0.05em;
-        color: var(--mat-sys-primary-inverse);
-        opacity: 1;
-        max-width: 200px;
-        overflow: hidden;
-        transition:
-          opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1),
-          max-width 0.6s cubic-bezier(0.4, 0, 0.2, 1),
-          transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-        white-space: nowrap;
-        display: inline-block;
-        transform-origin: left;
-      }
-
-      @media (max-width: 767px) {
-        .logo-letter-fade {
-          opacity: 0;
-          max-width: 0;
-          pointer-events: none;
-          transform: scaleX(0);
-        }
-        .logo-container {
-          gap: 0;
-        }
-      }
-
-      @media (min-width: 768px) {
-        .logo-letter-fade {
-          opacity: 1;
-          max-width: 200px;
-          transform: scaleX(1);
-        }
-      }
-    `,
-  ],
   host: {
     class: 'sticky top-0 z-50 block',
   },

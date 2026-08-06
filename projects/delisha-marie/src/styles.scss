@@ -3,6 +3,7 @@
 // Tailwind CSS v4 import
 @use "tailwindcss";
 @use "./theme-1" as delisha-marie;
+@use "./app-theme";
 
 // Custom Material 3 theme colors
 // We override the system variables directly for exact HEX control as requested

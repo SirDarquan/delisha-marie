@@ -52,6 +52,7 @@ describe('Seo Resolvers', () => {
           description: 'Test Description',
         },
         title: 'Test',
+        paramMap: { get: () => null },
       } as unknown as ActivatedRouteSnapshot;
       const state = { url: '/test' } as RouterStateSnapshot;
 
@@ -69,7 +70,11 @@ describe('Seo Resolvers', () => {
     });
 
     it('should handle root path correctly', () => {
-      const route = { data: {}, title: 'Home' } as unknown as ActivatedRouteSnapshot;
+      const route = {
+        data: {},
+        title: 'Home',
+        paramMap: { get: () => null },
+      } as unknown as ActivatedRouteSnapshot;
       const state = { url: '/' } as RouterStateSnapshot;
 
       TestBed.runInInjectionContext(() => {
@@ -85,6 +90,7 @@ describe('Seo Resolvers', () => {
       const route = {
         data: { image: undefined },
         title: 'No Image',
+        paramMap: { get: () => null },
       } as unknown as ActivatedRouteSnapshot;
       const state = { url: '/no-image' } as RouterStateSnapshot;
 
@@ -99,6 +105,7 @@ describe('Seo Resolvers', () => {
       const route = {
         data: { image: '/assets/img.jpg' },
         title: 'With Image',
+        paramMap: { get: () => null },
       } as unknown as ActivatedRouteSnapshot;
       const state = { url: '/with-image' } as RouterStateSnapshot;
 
@@ -117,6 +124,7 @@ describe('Seo Resolvers', () => {
           keywords: ['key1', '{{origin}}/key2'],
         },
         title: 'Array Test',
+        paramMap: { get: () => null },
       } as unknown as ActivatedRouteSnapshot;
       const state = { url: '/array' } as RouterStateSnapshot;
 

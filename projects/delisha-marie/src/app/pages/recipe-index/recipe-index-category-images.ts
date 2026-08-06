@@ -81,13 +81,7 @@ import { FullCategory } from '../../models/category';
       </div>
     </section>
   `,
-  styles: [
-    `
-      .search-field .mdc-notched-outline {
-        display: none;
-      }
-    `,
-  ],
+
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
