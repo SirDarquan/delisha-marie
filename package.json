@@ -49,6 +49,7 @@
     "tslib": "^2.3.0"
   },
   "devDependencies": {
+    "@angular-builders/custom-esbuild": "^22.0.1",
     "@angular/build": "^22.1.2",
     "@angular/cli": "^22.1.2",
     "@angular/compiler-cli": "^22.1.0",

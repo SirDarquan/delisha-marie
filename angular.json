@@ -25,7 +25,7 @@
       "prefix": "dm",
       "architect": {
         "build": {
-          "builder": "@angular/build:application",
+          "builder": "@angular-builders/custom-esbuild:application",
           "options": {
             "browser": "projects/delisha-marie/src/main.ts",
             "tsConfig": "projects/delisha-marie/tsconfig.app.json",
@@ -51,7 +51,14 @@
             },
             "ssr": {
               "entry": "projects/delisha-marie/src/server.ts"
-            }
+            },
+            "plugins": [
+              {
+                "path": "projects/delisha-marie/src/plugins/robots.plugin.ts",
+                "options": {
+                  "disallow": ["/", "/api/", "/admin/", "/*/*/print$", "/*?*"]                }
+              }
+            ]
           },
           "configurations": {
             "production": {
@@ -67,7 +74,15 @@
                   "maximumError": "8kB"
                 }
               ],
-              "outputHashing": "all"
+              "outputHashing": "all",
+              "plugins": [
+                {
+                  "path": "projects/delisha-marie/src/plugins/robots.plugin.ts",
+                  "options": {
+                    "allow": ["/"],
+                    "disallow": ["/api/", "/admin/", "/*/*/print$", "/*?*"]                  }
+                }
+              ]
             },
             "development": {
               "optimization": false,
