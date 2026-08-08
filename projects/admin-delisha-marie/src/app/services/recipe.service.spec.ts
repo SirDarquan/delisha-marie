@@ -346,7 +346,7 @@ describe('RecipeService', () => {
       { method: 'loadInitialSpecialDiets', url: '/api/special-diets' },
     ])('should handle API errors gracefully in $method', async ({ method, url }) => {
       const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
-      (service as any)[method]();
+      (service as unknown as Record<string, () => void>)[method]();
       const req = httpMock.expectOne(url);
       req.error(new ProgressEvent('Error'));
       await new Promise((resolve) => setTimeout(resolve, 0));
@@ -371,8 +371,6 @@ describe('RecipeService', () => {
       expect(service.holidays()).toEqual(mockHolidays);
     });
 
-
-
     it('should not set holidays if API returns null or non-array', async () => {
       service['loadInitialHolidays']();
       const req = httpMock.expectOne('/api/holidays');
@@ -389,8 +387,6 @@ describe('RecipeService', () => {
       await new Promise((resolve) => setTimeout(resolve, 0));
       expect(service.specialDiets()).toEqual(mockDiets);
     });
-
-
 
     it('should not set special diets if API returns null or non-array', async () => {
       service['loadInitialSpecialDiets']();
