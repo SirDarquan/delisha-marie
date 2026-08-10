@@ -61,8 +61,8 @@ export interface BaseRecipe {
   totalTime: string;
   yield: string;
   author: string;
-  createdAt?: string;
-  updatedAt?: string;
+  createdAt?: string | null;
+  updatedAt?: string | null;
   rating?: number;
   ratingCount?: number;
   reviewCount?: number;

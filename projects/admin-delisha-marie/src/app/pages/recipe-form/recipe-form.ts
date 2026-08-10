@@ -20,6 +20,8 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { BaseTrail, CategoryTrails, extractYouTubeVideoId } from '@dm/library';
 import { CategoryBoardComponent } from '../../components/category-board/category-board';
 import { ConfirmDialogComponent } from '../../components/confirm-dialog/confirm-dialog';
+import { SchedulePublicationDialogComponent } from '../../components/schedule-publication-dialog/schedule-publication-dialog';
+import { firstValueFrom } from 'rxjs';
 import { CookingMethodSelectorComponent } from '../../components/cooking-method-selector/cooking-method-selector';
 import { HolidaysSelectorComponent } from '../../components/holidays-selector/holidays-selector';
 import { ImageUploaderComponent } from '../../components/image-uploader/image-uploader';
@@ -582,8 +584,9 @@ export interface RecipeFormModel {
               </button>
               <button
                 mat-stroked-button
-                type="submit"
-                [disabled]="isDraftDisabled()"
+                type="button"
+                (click)="openScheduleDialog()"
+                [disabled]="recipeForm().invalid()"
                 class="px-5 py-2.5 rounded-xl font-bold text-slate-900 bg-amber-400 hover:bg-amber-300 transition shadow-md cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed border-0">
                 Schedule Publication
               </button>
@@ -594,15 +597,16 @@ export interface RecipeFormModel {
               <button
                 mat-stroked-button
                 type="button"
-                [disabled]="isDraftDisabled()"
+                [disabled]="recipeForm().invalid()"
                 (click)="saveDraft()"
                 class="px-5 py-2.5 rounded-xl font-bold text-white bg-rose-600/20 hover:bg-rose-600/30 border border-rose-500/40 text-rose-300 transition shadow-md cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed">
                 Revert to Draft
               </button>
               <button
                 mat-stroked-button
-                type="submit"
-                [disabled]="isDraftDisabled()"
+                type="button"
+                (click)="openScheduleDialog()"
+                [disabled]="true"
                 class="px-5 py-2.5 rounded-xl font-bold text-slate-900 bg-amber-400 hover:bg-amber-300 transition shadow-md cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed border-0">
                 Update Schedule
               </button>
@@ -619,15 +623,7 @@ export interface RecipeFormModel {
               </button>
               <button
                 mat-stroked-button
-                type="button"
-                [disabled]="true"
-                class="px-5 py-2.5 rounded-xl font-bold text-slate-500 bg-slate-800/40 border border-slate-700/30 opacity-40 cursor-not-allowed">
-                Schedule
-              </button>
-              <button
-                mat-stroked-button
                 type="submit"
-                [disabled]="isDraftDisabled()"
                 class="px-5 py-2.5 rounded-xl font-bold text-white bg-gradient-to-r from-purple-500 to-pink-500 hover:brightness-110 transition shadow-lg cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed border-0">
                 Update Published
               </button>
@@ -1127,10 +1123,14 @@ export class RecipeFormComponent implements OnInit {
 
   async saveDraft(): Promise<void> {
     const formValue = this.recipeModel();
+
+    const createdAt: string | null | undefined = null;
+    const updatedAt: string | null | undefined = null;
+
     const payload: Omit<Recipe, 'id'> = {
       ...this.serializeRecipe(formValue, 'draft'),
-      createdAt: undefined,
-      updatedAt: undefined,
+      createdAt,
+      updatedAt,
     };
 
     const id = this.idToEdit();
@@ -1149,7 +1149,20 @@ export class RecipeFormComponent implements OnInit {
     this.initialModel.set(this.getCurrentFormValue());
   }
 
-  async saveRequired(status: 'scheduled' | 'published'): Promise<void> {
+  async openScheduleDialog() {
+    if (this.recipeForm().invalid()) return;
+
+    const dialogRef = this.dialog.open(SchedulePublicationDialogComponent, {
+      data: { initialDate: this.originalRecipe()?.createdAt },
+    });
+
+    const result = await firstValueFrom(dialogRef.afterClosed());
+    if (result) {
+      this.saveRequired('scheduled', result);
+    }
+  }
+
+  async saveRequired(status: 'scheduled' | 'published', scheduledDate?: Date): Promise<void> {
     if (this.recipeForm().invalid()) {
       return;
     }
@@ -1158,24 +1171,27 @@ export class RecipeFormComponent implements OnInit {
     const originalRecipe = this.originalRecipe();
 
     // Timestamp calculations based on status requirements
-    let createdAt = originalRecipe?.createdAt || null;
-    let updatedAt = originalRecipe?.updatedAt || null;
+    let createdAt = originalRecipe?.createdAt;
+    let updatedAt = originalRecipe?.updatedAt;
 
     const currentTime = new Date().toISOString();
-    if (status === 'scheduled' && !createdAt && !updatedAt) {
-      createdAt = currentTime;
-      updatedAt = currentTime;
+    if (status === 'scheduled') {
+      if (scheduledDate) {
+        createdAt = scheduledDate.toISOString();
+        updatedAt = scheduledDate.toISOString();
+      } else if (!createdAt && !updatedAt) {
+        createdAt = currentTime;
+        updatedAt = currentTime;
+      }
     } else {
       updatedAt = currentTime;
-      if (!createdAt) {
-        createdAt = currentTime;
-      }
+      createdAt ??= currentTime;
     }
 
     const payload: Omit<Recipe, 'id'> = {
       ...this.serializeRecipe(formValue, status),
-      createdAt: createdAt || undefined,
-      updatedAt: updatedAt || undefined,
+      createdAt,
+      updatedAt,
     };
 
     if (id) {
