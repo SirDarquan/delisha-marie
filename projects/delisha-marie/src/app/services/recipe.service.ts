@@ -7,8 +7,6 @@ export interface Recipe extends BaseRecipe {
   breadcrumbs: Breadcrumbs;
   nutrition: Nutrition;
   comments: Comment[];
-  createdAt: string;
-  updatedAt: string;
   rating: number;
   ratingCount: number;
   reviewCount: number;

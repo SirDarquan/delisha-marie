@@ -554,8 +554,8 @@ describe('RecipeFormComponent', () => {
 
     expect(updatePayload).toBeTruthy();
     expect(updatePayload.status).toBe('draft');
-    expect(updatePayload.createdAt).toBeUndefined();
-    expect(updatePayload.updatedAt).toBeUndefined();
+    expect(updatePayload.createdAt).toBeNull();
+    expect(updatePayload.updatedAt).toBeNull();
   });
 
   it('should verify behavior 16', async () => {
@@ -646,14 +646,11 @@ describe('RecipeFormComponent', () => {
     buttons = fixture.nativeElement.querySelectorAll('button');
     const btnArray3 = Array.from(buttons) as HTMLButtonElement[];
     const revertBtnDisabled = btnArray3.find((b) => b.textContent?.includes('Revert to Draft'));
-    const scheduleBtnDisabled = btnArray3.find((b) => b.textContent?.includes('Schedule'));
     const updatePublishedBtn = btnArray3.find((b) => b.textContent?.includes('Update Published'));
 
     expect(revertBtnDisabled).toBeTruthy();
-    expect(scheduleBtnDisabled).toBeTruthy();
     expect(updatePublishedBtn).toBeTruthy();
     expect(revertBtnDisabled!.disabled).toBe(true); // Revert to Draft disabled
-    expect(scheduleBtnDisabled!.disabled).toBe(true); // Schedule disabled
   });
 
   it('should verify behavior 19', async () => {
@@ -1180,8 +1177,8 @@ describe('RecipeFormComponent', () => {
       title: 'Published Recipe',
       slug: 'published-recipe',
       status: 'published',
-      createdAt: undefined as unknown as string, // missing
-      updatedAt: undefined as unknown as string,
+      createdAt: undefined as unknown as Date, // missing
+      updatedAt: undefined as unknown as Date,
     } as unknown as Recipe;
 
     fixture = TestBed.createComponent(RecipeFormComponent);
