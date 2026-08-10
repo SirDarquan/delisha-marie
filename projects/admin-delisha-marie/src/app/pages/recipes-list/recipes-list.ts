@@ -1,17 +1,18 @@
 import { CdkVirtualScrollViewport, ScrollingModule } from '@angular/cdk/scrolling';
 import { NgOptimizedImage } from '@angular/common';
 import {
-  AfterViewInit,
   ChangeDetectionStrategy,
+  ChangeDetectorRef,
   Component,
+  DestroyRef,
+  afterNextRender,
   inject,
-  OnDestroy,
   OnInit,
   signal,
   viewChild,
   ViewEncapsulation,
 } from '@angular/core';
-import { toObservable } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
@@ -103,7 +104,7 @@ import { RecipeService } from '../../services/recipe.service';
               (scrolledIndexChange)="onScroll()">
               <div class="divide-y divide-slate-800/40">
                 <div
-                  *cdkVirtualFor="let recipe of filteredRecipes(); trackBy: trackByRecipeId"
+                  *cdkVirtualFor="let recipe of recipes(); trackBy: trackByRecipeId"
                   role="row"
                   class="flex items-center hover:bg-slate-800/20 transition h-[48px]"
                   [class.bg-purple-900/20]="recipe.id === highlightedRecipeId()">
@@ -143,15 +144,20 @@ import { RecipeService } from '../../services/recipe.service';
                   </div>
 
                   <div role="cell" class="w-32 px-4 text-sm">
-                    <a
+                    <button
                       mat-button
+                      [disabled]="
+                        recipe.status === 'draft' ||
+                        recipe.status === 'scheduled' ||
+                        !recipe.newCommentsCount
+                      "
                       [routerLink]="['/recipes', recipe.id, 'comments']"
                       [matBadge]="recipe.newCommentsCount || null"
                       matBadgeColor="accent"
                       [matBadgeHidden]="!recipe.newCommentsCount"
                       class="px-2 py-1 rounded-md text-[10px] font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
                       Edit Review
-                    </a>
+                    </button>
                   </div>
 
                   <div role="cell" class="w-40 px-4 text-center">
@@ -168,8 +174,9 @@ import { RecipeService } from '../../services/recipe.service';
                       </a>
                       <button
                         mat-icon-button
+                        [disabled]="recipe.status === 'published' || recipe.status === 'updated'"
                         (click)="onDelete(recipe.id)"
-                        class="!w-7 !h-7 !p-0 flex items-center justify-center !text-white hover:!text-rose-400 hover:drop-shadow-[0_0_8px_rgba(244,63,94,0.8)] transition-all cursor-pointer"
+                        class="!w-7 !h-7 !p-0 flex items-center justify-center !text-white hover:!text-rose-400 hover:drop-shadow-[0_0_8px_rgba(244,63,94,0.8)] transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:!text-white disabled:hover:drop-shadow-none"
                         aria-label="Delete recipe">
                         <mat-icon class="text-[16px] h-4 w-4 flex items-center justify-center"
                           >delete</mat-icon
@@ -179,7 +186,7 @@ import { RecipeService } from '../../services/recipe.service';
                   </div>
                 </div>
 
-                @if (filteredRecipes().length === 0 && !isLoading()) {
+                @if (recipes().length === 0 && !isLoading()) {
                   <div class="p-8 text-center text-slate-400 font-medium text-sm">
                     No recipes found. Try a different search term.
                   </div>
@@ -217,9 +224,11 @@ import { RecipeService } from '../../services/recipe.service';
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class RecipesListComponent implements OnInit, AfterViewInit, OnDestroy {
+export class RecipesListComponent implements OnInit {
   private readonly recipeService = inject(RecipeService);
   private readonly dialog = inject(MatDialog);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   readonly viewport = viewChild<CdkVirtualScrollViewport>(CdkVirtualScrollViewport);
 
@@ -232,16 +241,52 @@ export class RecipesListComponent implements OnInit, AfterViewInit, OnDestroy {
   private offset = this.recipes().length;
   private readonly limit = 50;
 
-  protected readonly filteredRecipes = this.recipes;
+  constructor() {
+    toObservable(this.searchTerm)
+      .pipe(skip(1), debounceTime(500), takeUntilDestroyed())
+      .subscribe(() => {
+        this.recipes.set([]);
+        this.offset = 0;
+        this.hasMore = true;
+        this.fetchNextBatch();
+      });
 
-  private readonly _searchSub = toObservable(this.searchTerm)
-    .pipe(skip(1), debounceTime(500))
-    .subscribe(() => {
-      this.recipes.set([]);
-      this.offset = 0;
-      this.hasMore = true;
-      this.fetchNextBatch();
+    afterNextRender(() => {
+      // CDK Virtual Scroll needs a moment to measure its container size
+      setTimeout(() => {
+        const lastActiveId = this.recipeService.getLastActiveRecipeId();
+        const lastOffset = this.recipeService.getLastScrollOffset();
+        const vp = this.viewport();
+
+        if (vp) {
+          // Measure the viewport BEFORE scrolling so it knows how many items to render!
+          vp.checkViewportSize();
+
+          if (lastActiveId) {
+            const index = this.recipes().findIndex((r) => r.id === lastActiveId);
+            if (index !== -1) {
+              vp.scrollToIndex(index);
+              this.highlightedRecipeId.set(lastActiveId);
+            }
+          } else if (lastOffset > 0) {
+            vp.scrollToOffset(lastOffset);
+          }
+
+          // Force angular to flush the newly created embedded views
+          this.cdr.detectChanges();
+        }
+      }, 50);
     });
+
+    this.destroyRef.onDestroy(() => {
+      // Save scroll state when navigating away
+      const vp = this.viewport();
+      if (vp) {
+        this.recipeService.setLastScrollOffset(vp.measureScrollOffset());
+      }
+      this.recipeService.setCachedRecipesList(this.recipes());
+    });
+  }
 
   ngOnInit(): void {
     if (this.recipes().length === 0) {
@@ -275,40 +320,14 @@ export class RecipesListComponent implements OnInit, AfterViewInit, OnDestroy {
     if (end && end >= total - 10) {
       this.fetchNextBatch();
     }
+
+    // Virtual Scroll programmatic updates can happen outside CD in zoneless Angular.
+    // Ensure we trigger CD when the viewport scrolls to render new virtual items!
+    this.cdr.detectChanges();
   }
 
   trackByRecipeId(_index: number, recipe: { id: string | number }): string | number {
     return recipe.id;
-  }
-
-  ngAfterViewInit(): void {
-    // Restore state if available
-    const lastActiveId = this.recipeService.getLastActiveRecipeId();
-    const lastOffset = this.recipeService.getLastScrollOffset();
-    const vp = this.viewport();
-
-    if (vp) {
-      setTimeout(() => {
-        if (lastActiveId) {
-          const index = this.filteredRecipes().findIndex((r) => r.id === lastActiveId);
-          if (index !== -1) {
-            vp.scrollToIndex(index, 'smooth');
-            this.highlightedRecipeId.set(lastActiveId);
-          }
-        } else if (lastOffset > 0) {
-          vp.scrollToOffset(lastOffset);
-        }
-      }, 50); // Small delay to ensure virtual scroll items are calculated
-    }
-  }
-
-  ngOnDestroy(): void {
-    // Save scroll state when navigating away
-    const vp = this.viewport();
-    if (vp) {
-      this.recipeService.setLastScrollOffset(vp.measureScrollOffset());
-    }
-    this.recipeService.setCachedRecipesList(this.recipes());
   }
 
   setLastActiveRecipe(id: string | number): void {

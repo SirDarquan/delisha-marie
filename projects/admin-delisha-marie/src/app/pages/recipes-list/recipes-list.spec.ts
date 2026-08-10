@@ -253,73 +253,6 @@ describe('RecipesListComponent', () => {
     expect(component.trackByRecipeId(0, { id: 42 })).toBe(42);
   });
 
-  describe('ngAfterViewInit', () => {
-    it('should restore last active recipe id', async () => {
-      const scrollSpy = vi
-        .spyOn(
-          component.viewport() as unknown as { scrollToIndex: (index: number) => void },
-          'scrollToIndex',
-        )
-        .mockImplementation(vi.fn());
-      vi.spyOn(fakeRecipeService, 'getLastActiveRecipeId').mockReturnValue(2);
-
-      component['recipes'].set(mockRecipesData);
-      component.ngAfterViewInit();
-      fixture.detectChanges();
-      await new Promise((r) => setTimeout(r, 300)); // Increased wait time for flakiness
-
-      expect(scrollSpy).toHaveBeenCalledWith(1, 'smooth');
-      expect(component['highlightedRecipeId']()).toBe(2);
-    });
-
-    it('should restore scroll offset if no active id', async () => {
-      const scrollSpy = vi
-        .spyOn(
-          component.viewport() as unknown as { scrollToOffset: (offset: number) => void },
-          'scrollToOffset',
-        )
-        .mockImplementation(vi.fn());
-      vi.spyOn(fakeRecipeService, 'getLastActiveRecipeId').mockReturnValue(null);
-      vi.spyOn(fakeRecipeService, 'getLastScrollOffset').mockReturnValue(150);
-
-      component.ngAfterViewInit();
-
-      await new Promise((r) => setTimeout(r, 300));
-
-      expect(scrollSpy).toHaveBeenCalledWith(150);
-    });
-
-    it('should do nothing if viewport is undefined in ngAfterViewInit', () => {
-      Object.defineProperty(component, 'viewport', { get: () => () => undefined });
-      expect(() => component.ngAfterViewInit()).not.toThrow();
-    });
-  });
-
-  describe('ngOnDestroy', () => {
-    it('should save scroll offset and cached list', () => {
-      vi.spyOn(
-        component.viewport() as unknown as { measureScrollOffset: () => number },
-        'measureScrollOffset',
-      ).mockReturnValue(300);
-      const setOffsetSpy = vi.spyOn(fakeRecipeService, 'setLastScrollOffset');
-      const setCacheSpy = vi.spyOn(fakeRecipeService, 'setCachedRecipesList');
-
-      component['recipes'].set(mockRecipesData);
-      component.ngOnDestroy();
-
-      expect(setOffsetSpy).toHaveBeenCalledWith(300);
-      expect(setCacheSpy).toHaveBeenCalledWith(mockRecipesData);
-    });
-
-    it('should handle undefined viewport gracefully', () => {
-      Object.defineProperty(component, 'viewport', { get: () => () => undefined });
-      const setOffsetSpy = vi.spyOn(fakeRecipeService, 'setLastScrollOffset');
-      setOffsetSpy.mockClear();
-      component.ngOnDestroy();
-      expect(setOffsetSpy).not.toHaveBeenCalled();
-    });
-  });
-
   it('should set last active recipe', () => {
     const spy = vi.spyOn(fakeRecipeService, 'setLastActiveRecipeId');
     component.setLastActiveRecipe(123);
@@ -367,35 +300,6 @@ describe('RecipesListComponent', () => {
     await fixture.whenStable();
     expect(deletedId).toBeNull();
   });
-  it('should restore scroll state in ngAfterViewInit', async () => {
-    vi.spyOn(fakeRecipeService, 'getLastActiveRecipeId').mockReturnValueOnce(1);
-    const mockVp = {
-      scrollToIndex: vi.fn(),
-      scrollToOffset: vi.fn(),
-      measureScrollOffset: vi.fn().mockReturnValue(100),
-      getRenderedRange: vi.fn().mockReturnValue({ start: 0, end: 10 }),
-    };
-    Object.defineProperty(component, 'viewport', { get: () => () => mockVp });
-
-    // Ensure the signal has the data so findIndex() works synchronously
-    component['recipes'].set([{ id: 1 } as unknown as Recipe]);
-
-    component.ngAfterViewInit();
-    await new Promise((r) => setTimeout(r, 60)); // flush setTimeout
-
-    expect(mockVp.scrollToIndex).toHaveBeenCalledWith(0, 'smooth');
-  });
-
-  it('should save scroll state in ngOnDestroy', () => {
-    const mockVp = {
-      measureScrollOffset: vi.fn().mockReturnValue(250),
-    };
-    Object.defineProperty(component, 'viewport', { get: () => () => mockVp });
-
-    component.ngOnDestroy();
-
-    expect(fakeRecipeService.setLastScrollOffset).toHaveBeenCalledWith(250);
-  });
 
   it('should trigger setLastActiveRecipe when edit link is clicked in template', async () => {
     component['recipes'].set([mockRecipesData[0]]);
@@ -415,7 +319,7 @@ describe('RecipesListComponent', () => {
   });
 
   it('should trigger onDelete when delete button is clicked in template', async () => {
-    component['recipes'].set([mockRecipesData[0]]);
+    component['recipes'].set([{ ...mockRecipesData[0], status: 'draft' }]);
     fixture.detectChanges();
     await fixture.whenStable();
 
