@@ -104,18 +104,19 @@ import { RecipeService } from '../../services/recipe.service';
               } @else {
                 <div
                   class="image-wrapper relative max-w-full max-h-full inline-flex rounded-lg overflow-hidden">
-                  @if (previewUrl().startsWith('blob:') || previewUrl().startsWith('data:')) {
+                  @if (
+                    previewUrl().startsWith('blob:') ||
+                    previewUrl().startsWith('data:') ||
+                    previewUrl().startsWith('http://') ||
+                    previewUrl().startsWith('https://')
+                  ) {
                     <img
                       [src]="previewUrl()"
                       alt="Recipe preview"
                       class="max-w-full max-h-[590px] object-contain rounded-lg transition duration-300"
                       (error)="onPreviewError()" />
                   } @else if (
-                    previewUrl() &&
-                    hasValue(currentWidth()) &&
-                    hasValue(currentHeight()) &&
-                    !previewUrl().startsWith('blob:') &&
-                    !previewUrl().startsWith('data:')
+                    previewUrl() && hasValue(currentWidth()) && hasValue(currentHeight())
                   ) {
                     <img
                       [ngSrc]="previewUrl()"

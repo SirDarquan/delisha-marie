@@ -149,8 +149,6 @@ import { Recipe } from '../../services/recipe.service';
         </button>
       </div>
 
-      <div class="h-px bg-[var(--mat-sys-outline-variant)] opacity-20 mb-8"></div>
-
       <!-- Equipment Section -->
       @if (recipe().equipment && recipe().equipment!.length > 0) {
         <section class="mb-10 relative z-10">

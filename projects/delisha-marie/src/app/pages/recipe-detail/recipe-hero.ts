@@ -22,7 +22,7 @@ import { Recipe } from '../../services/recipe.service';
         <div class="absolute bottom-8 left-8 right-8 md:bottom-12 md:left-12 md:right-12 z-10">
           <div class="group/title inline-block">
             <h1
-              class="text-3xl md:text-5xl font-bold tracking-tight text-white leading-[0.9] transition-colors duration-500 group-hover/title:text-[var(--mat-sys-primary)]">
+              class="text-3xl md:text-5xl font-bold tracking-tight text-white leading-[0.9] transition-colors duration-500 group-hover/title:text-[var(--mat-sys-primary)] [text-shadow:0_2px_10px_rgba(0,0,0,0.8)]">
               {{ recipe().title }}
             </h1>
           </div>
