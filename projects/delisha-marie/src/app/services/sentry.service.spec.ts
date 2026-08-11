@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi, afterEach } from 'vitest';
 import { SentryPlugin } from './sentry.service';
 import { AppConfigService } from './config.service';
 
-vi.mock('@sentry/angular', () => ({
+vi.mock('@sentry/browser', () => ({
   init: vi.fn(),
   browserTracingIntegration: vi.fn(),
   replayIntegration: vi.fn(),

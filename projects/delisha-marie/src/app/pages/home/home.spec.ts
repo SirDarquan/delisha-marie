@@ -42,7 +42,7 @@ describe('Home', () => {
     const fixture = TestBed.createComponent(Home);
     fixture.detectChanges();
     const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelectorAll('mat-card')).toHaveLength(mockRecipes.length);
-    expect(compiled.querySelector('h3')?.textContent).toContain('Chicken Tikka');
+    const featuredRecipes = compiled.querySelector('dm-featured-recipes');
+    expect(featuredRecipes).toBeTruthy();
   });
 });
