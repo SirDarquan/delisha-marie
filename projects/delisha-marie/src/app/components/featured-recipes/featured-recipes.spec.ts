@@ -123,7 +123,7 @@ describe('FeaturedRecipes', () => {
 
   it('should return empty array if recipeResource value is undefined (loading)', async () => {
     // Return a promise that doesn't resolve immediately
-    let resolvePromise: (value: { items: unknown[] }) => void = () => {};
+    let resolvePromise!: (value: { items: unknown[] }) => void;
     fakeRecipeService.getRecipes.mockReturnValueOnce(
       new Promise<{ items: unknown[] }>((res) => (resolvePromise = res)),
     );

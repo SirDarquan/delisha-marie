@@ -5,14 +5,42 @@ describe('Home Page', () => {
       statusCode: 200,
       body: {
         items: [
-          { id: 1, title: 'Recipe 1', slug: 'recipe-1', image: 'image.jpg', ratingCount: 5, reviewCount: 10 },
-          { id: 2, title: 'Recipe 2', slug: 'recipe-2', image: 'image.jpg', ratingCount: 5, reviewCount: 10 },
-          { id: 3, title: 'Recipe 3', slug: 'recipe-3', image: 'image.jpg', ratingCount: 5, reviewCount: 10 },
-          { id: 4, title: 'Recipe 4', slug: 'recipe-4', image: 'image.jpg', ratingCount: 5, reviewCount: 10 }
-        ]
-      }
+          {
+            id: 1,
+            title: 'Recipe 1',
+            slug: 'recipe-1',
+            image: 'image.jpg',
+            ratingCount: 5,
+            reviewCount: 10,
+          },
+          {
+            id: 2,
+            title: 'Recipe 2',
+            slug: 'recipe-2',
+            image: 'image.jpg',
+            ratingCount: 5,
+            reviewCount: 10,
+          },
+          {
+            id: 3,
+            title: 'Recipe 3',
+            slug: 'recipe-3',
+            image: 'image.jpg',
+            ratingCount: 5,
+            reviewCount: 10,
+          },
+          {
+            id: 4,
+            title: 'Recipe 4',
+            slug: 'recipe-4',
+            image: 'image.jpg',
+            ratingCount: 5,
+            reviewCount: 10,
+          },
+        ],
+      },
     }).as('getRecipes');
-    
+
     cy.visit('/');
   });
 
