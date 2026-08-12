@@ -13,6 +13,7 @@ describe('AuthorBio', () => {
 
     fixture = TestBed.createComponent(AuthorBio);
     component = fixture.componentInstance;
+    fixture.componentRef.setInput('picture', '/delisha_marie_profile.png');
     fixture.detectChanges();
   });
 

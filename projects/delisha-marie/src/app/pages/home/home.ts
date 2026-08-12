@@ -6,6 +6,7 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatIconModule } from '@angular/material/icon';
 import { FeaturedRecipes } from '../../components/featured-recipes/featured-recipes';
 import { TopRatedRecipes } from '../../components/top-rated-recipes/top-rated-recipes';
+import { AuthorBio } from '../../components/sidebar/author-bio';
 
 @Component({
   selector: 'dm-home',
@@ -18,6 +19,7 @@ import { TopRatedRecipes } from '../../components/top-rated-recipes/top-rated-re
     NgOptimizedImage,
     FeaturedRecipes,
     TopRatedRecipes,
+    AuthorBio,
   ],
   template: `
     <div class="space-y-16">
@@ -54,6 +56,8 @@ import { TopRatedRecipes } from '../../components/top-rated-recipes/top-rated-re
 
       <!-- Featured Recipes Section -->
       <dm-featured-recipes link="/recipes/dinner" />
+
+      <dm-author-bio layout="horizontal" picture="delisha_marie_profile_2.png" />
 
       <!-- Top Rated Recipes Section -->
       <dm-top-rated-recipes />
