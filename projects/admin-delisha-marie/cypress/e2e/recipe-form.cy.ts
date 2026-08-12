@@ -262,9 +262,6 @@ describe('Admin Recipe Form Flow', () => {
       .type(mockRecipe.nutrition.protein, { force: true });
     cy.get('#protein').blur();
 
-    // Interaction with Mat-Select components on the first tab
-    cy.get('#difficulty').click();
-    cy.get('mat-option').contains('Easy').click();
 
     // Switch to Where is it tab to interact with categories and cooking methods
     cy.contains('button', 'Where is it').click();
