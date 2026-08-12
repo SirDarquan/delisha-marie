@@ -9,7 +9,7 @@ import { SidebarSearch } from './sidebar-search';
   imports: [CommonModule, AuthorBio, SidebarSearch, SidebarNewsletter],
   template: `
     <div class="flex flex-col gap-8 h-full">
-      <dm-author-bio />
+      <dm-author-bio picture="/delisha_marie_profile.png" />
       <dm-sidebar-search />
       <dm-sidebar-newsletter />
       <ng-content />

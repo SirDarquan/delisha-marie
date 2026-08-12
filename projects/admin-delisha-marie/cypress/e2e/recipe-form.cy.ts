@@ -262,7 +262,6 @@ describe('Admin Recipe Form Flow', () => {
       .type(mockRecipe.nutrition.protein, { force: true });
     cy.get('#protein').blur();
 
-
     // Switch to Where is it tab to interact with categories and cooking methods
     cy.contains('button', 'Where is it').click();
 
