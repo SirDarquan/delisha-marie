@@ -3,12 +3,16 @@ import { provideRouter } from '@angular/router';
 import { FeaturedRecipes } from './featured-recipes';
 import { RecipeService } from '../../services/recipe.service';
 import { ComponentRef } from '@angular/core';
+import { vi } from 'vitest';
+import type { Mock } from 'vitest';
 
 describe('FeaturedRecipes', () => {
   let component: FeaturedRecipes;
   let fixture: ComponentFixture<FeaturedRecipes>;
   let componentRef: ComponentRef<FeaturedRecipes>;
-  let fakeRecipeService: any;
+  let fakeRecipeService: {
+    getRecipes: Mock;
+  };
 
   const mockRecipes = [
     {
@@ -34,10 +38,7 @@ describe('FeaturedRecipes', () => {
 
     await TestBed.configureTestingModule({
       imports: [FeaturedRecipes],
-      providers: [
-        provideRouter([]),
-        { provide: RecipeService, useValue: fakeRecipeService },
-      ],
+      providers: [provideRouter([]), { provide: RecipeService, useValue: fakeRecipeService }],
     }).compileComponents();
 
     fixture = TestBed.createComponent(FeaturedRecipes);
@@ -95,7 +96,7 @@ describe('FeaturedRecipes', () => {
 
     expect(fakeRecipeService.getRecipes).toHaveBeenCalledWith(1, 4, 'recipes', 'dinner', 'pasta');
     const cards = fixture.nativeElement.querySelectorAll('mat-card');
-    expect(cards.length).toBe(2);
+    expect(cards).toHaveLength(2);
     expect(cards[0].querySelector('h3').textContent.trim()).toBe('Recipe 1');
     expect(cards[1].querySelector('h3').textContent.trim()).toBe('Recipe 2');
   });
@@ -122,11 +123,13 @@ describe('FeaturedRecipes', () => {
 
   it('should return empty array if recipeResource value is undefined (loading)', async () => {
     // Return a promise that doesn't resolve immediately
-    let resolvePromise: any;
-    fakeRecipeService.getRecipes.mockReturnValueOnce(new Promise(res => resolvePromise = res));
+    let resolvePromise: (value: { items: unknown[] }) => void = () => {};
+    fakeRecipeService.getRecipes.mockReturnValueOnce(
+      new Promise<{ items: unknown[] }>((res) => (resolvePromise = res)),
+    );
     componentRef.setInput('link', '/recipes/breakfast');
     fixture.detectChanges();
-    
+
     // While loading, the value is undefined, so it should return []
     expect(component.recipes()).toEqual([]);
     resolvePromise({ items: [] }); // Cleanup
