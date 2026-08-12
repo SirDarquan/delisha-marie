@@ -590,6 +590,7 @@ function filterRecipeColumns(obj: Record<string, unknown>): Record<string, unkno
     'content',
     'ingredients',
     'instructions',
+    'method',
     'author',
     'status',
     'preview_token',
