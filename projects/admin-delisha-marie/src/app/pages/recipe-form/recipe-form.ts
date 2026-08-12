@@ -35,7 +35,6 @@ export interface RecipeFormModel {
   slug: string;
   author: string;
   category: CategoryTrails | null;
-  difficulty: string;
   prepTime: string;
   cookTime: string;
   totalTime: string;
@@ -176,15 +175,6 @@ export interface RecipeFormModel {
               </mat-form-field>
 
               <mat-form-field appearance="outline" class="w-full">
-                <mat-label>Difficulty</mat-label>
-                <mat-select id="difficulty" [formField]="recipeForm.difficulty">
-                  <mat-option value="Easy">Easy</mat-option>
-                  <mat-option value="Intermediate">Intermediate</mat-option>
-                  <mat-option value="Advanced">Advanced</mat-option>
-                </mat-select>
-              </mat-form-field>
-
-              <mat-form-field appearance="outline" class="w-full">
                 <mat-label>Prep Time</mat-label>
                 <input
                   matInput
@@ -254,7 +244,7 @@ export interface RecipeFormModel {
                   placeholder="e.g., Dinner, Breakfast" />
               </mat-form-field>
 
-              <mat-form-field appearance="outline" class="w-full md:col-span-2">
+              <mat-form-field appearance="outline" class="w-full">
                 <mat-label>YouTube Video ID</mat-label>
                 <input
                   matInput
@@ -673,7 +663,6 @@ export class RecipeFormComponent implements OnInit {
     slug: '',
     author: 'Delisha Marie',
     category: null,
-    difficulty: 'Easy',
     prepTime: '',
     cookTime: '',
     totalTime: '',
@@ -718,7 +707,6 @@ export class RecipeFormComponent implements OnInit {
       required(fields.title, { message: 'Title is required' });
       required(fields.slug, { message: 'Slug is required' });
       required(fields.category, { message: 'Category is required' });
-      required(fields.difficulty, { message: 'Difficulty is required' });
       required(fields.prepTime, { message: 'Prep time is required' });
       required(fields.cookTime, { message: 'Cook time is required' });
       required(fields.totalTime, { message: 'Total time is required' });
@@ -898,7 +886,6 @@ export class RecipeFormComponent implements OnInit {
       slug: recipe.slug || '',
       author: recipe.author || 'Delisha Marie',
       category: recipe.category && typeof recipe.category === 'object' ? recipe.category : null,
-      difficulty: recipe.difficulty || 'Easy',
       prepTime: recipe.prepTime || '',
       cookTime: recipe.cookTime || '',
       totalTime: recipe.totalTime || '',
@@ -1091,7 +1078,6 @@ export class RecipeFormComponent implements OnInit {
       title: formValue.title || '',
       slug: formValue.slug || '',
       category: { trails: categoryTrails },
-      difficulty: formValue.difficulty || 'Easy',
       prepTime: formValue.prepTime?.trim() || null,
       cookTime: formValue.cookTime?.trim() || null,
       totalTime: formValue.totalTime?.trim() || null,

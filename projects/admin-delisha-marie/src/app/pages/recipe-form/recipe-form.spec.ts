@@ -897,7 +897,6 @@ describe('RecipeFormComponent', () => {
       ...getValidPublishedModel(),
       title: 'Action Submit',
       slug: 'action-submit',
-      difficulty: 'Intermediate',
       prepTime: '10',
       cookTime: '10',
       totalTime: '20',
@@ -994,7 +993,6 @@ describe('RecipeFormComponent', () => {
     expect(component['recipeModel']().title).toBe('');
     expect(component['recipeModel']().slug).toBe('');
     expect(component['recipeModel']().author).toBe('Delisha Marie');
-    expect(component['recipeModel']().difficulty).toBe('Easy');
     expect(component['recipeModel']().status).toBe('draft');
     expect(component['recipeModel']().previewToken).toBe('');
     expect(component['recipeModel']().holidays).toBe('');
@@ -1165,7 +1163,6 @@ describe('RecipeFormComponent', () => {
 
     const result = component['serializeRecipe'](fallbackModel, 'draft');
     expect(result.specialDiets).toEqual([]);
-    expect(result.difficulty).toBe('Easy');
     expect(result.author).toBe('Delisha Marie');
     expect(result.nutrition?.calories).toBe('');
   });
@@ -1297,7 +1294,6 @@ describe('RecipeFormComponent', () => {
       ...component['recipeModel'](),
       title: 'Brand New',
       slug: 'brand-new',
-      difficulty: 'Easy',
       status: 'draft',
     });
 

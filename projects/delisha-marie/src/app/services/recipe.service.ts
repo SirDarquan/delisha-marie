@@ -72,8 +72,9 @@ export class RecipeService {
     method: string,
     category?: string,
     subcategory?: string,
+    rating?: boolean,
   ): Promise<{ items: Recipe[]; total: number }> {
-    const url = `/api/recipes?page=${page}&pageSize=${pageSize}&method=${method}&category=${category || ''}&subcategory=${subcategory || ''}`;
+    const url = `/api/recipes?page=${page}&pageSize=${pageSize}&method=${method}&category=${category || ''}&subcategory=${subcategory || ''}&rating=${rating || ''}`;
     return this.api.get<{ items: Recipe[]; total: number }>(url);
   }
 

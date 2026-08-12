@@ -100,7 +100,6 @@ export class FeaturedRecipes {
     const url = this.link();
     const segments = url.split('/').find((s) => !!s);
     return {
-      page: 1,
       cat: this.categorySlug(),
       sub: this.subCategorySlug(),
       method: segments || 'recipes',
@@ -109,7 +108,7 @@ export class FeaturedRecipes {
 
   private readonly _recipeResource = resource({
     params: () => this._dataTrigger(),
-    loader: ({ params: t }) => this.recipeService.getRecipes(t.page, 4, t.method, t.cat, t.sub),
+    loader: ({ params: t }) => this.recipeService.getRecipes(1, 4, t.method, t.cat, t.sub),
   });
 
   readonly recipes = computed(() => this._recipeResource.value()?.items || []);

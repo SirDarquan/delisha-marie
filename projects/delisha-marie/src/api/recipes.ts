@@ -229,6 +229,8 @@ async function getTagMatchedIds(
 
 interface SupabaseQueryBuilder {
   eq: (col: string, val: unknown) => SupabaseQueryBuilder;
+  gt: (col: string, val: unknown) => SupabaseQueryBuilder;
+  gte: (col: string, val: unknown) => SupabaseQueryBuilder;
   or: (
     filter: string,
     options?: { foreignTable?: string; referencedTable?: string },
@@ -380,6 +382,7 @@ recipesRouter.get('/recipes', async (req: Request, res: Response) => {
     const method = (req.query['method'] as string) || 'recipes';
     const category = (req.query['category'] as string) || '';
     const subcategory = (req.query['subcategory'] as string) || '';
+    const rating = (req.query['rating'] as string) === 'true';
 
     let matchedIds: string[] = [];
     if (category && method === 'tag') {
@@ -393,6 +396,10 @@ recipesRouter.get('/recipes', async (req: Request, res: Response) => {
       .select(selectStr, { count: 'exact' }) as unknown as SupabaseQueryBuilder;
     query = query.eq('status', 'published');
     query = applyRecipeFilters(query, method, category, subcategory, matchedIds);
+
+    if (rating && method === 'the-best-recipes' && !category) {
+      query = query.gte('rating_count', 4.5);
+    }
 
     const start = (page - 1) * pageSize;
     const end = start + pageSize - 1;

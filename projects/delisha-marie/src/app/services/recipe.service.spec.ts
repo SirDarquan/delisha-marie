@@ -68,7 +68,7 @@ describe('RecipeService', () => {
     const promise = service.getRecipes(2, 2, 'baking', 'cakes', 'chocolate');
 
     const req = httpMock.expectOne(
-      '/api/recipes?page=2&pageSize=2&method=baking&category=cakes&subcategory=chocolate',
+      '/api/recipes?page=2&pageSize=2&method=baking&category=cakes&subcategory=chocolate&rating=',
     );
     expect(req.request.method).toBe('GET');
     req.flush({ items: [mockAllRecipes[2]], total: 3 });
@@ -82,7 +82,7 @@ describe('RecipeService', () => {
   it('should handle getRecipes with minimal parameters', async () => {
     const promise = service.getRecipes(1, 10, 'baking');
     const req = httpMock.expectOne(
-      '/api/recipes?page=1&pageSize=10&method=baking&category=&subcategory=',
+      '/api/recipes?page=1&pageSize=10&method=baking&category=&subcategory=&rating=',
     );
     expect(req.request.method).toBe('GET');
     req.flush({ items: [], total: 0 });
