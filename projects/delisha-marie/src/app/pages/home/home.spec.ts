@@ -24,6 +24,7 @@ describe('Home', () => {
     const recipeServiceMock = {
       recipes: signal(mockRecipes),
       categories: signal(['Dinner']),
+      getRecipes: vi.fn().mockResolvedValue({ items: mockRecipes, total: 1 }),
     };
 
     await TestBed.configureTestingModule({
@@ -44,5 +45,8 @@ describe('Home', () => {
     const compiled = fixture.nativeElement as HTMLElement;
     const featuredRecipes = compiled.querySelector('dm-featured-recipes');
     expect(featuredRecipes).toBeTruthy();
+
+    const topRatedRecipes = compiled.querySelector('dm-top-rated-recipes');
+    expect(topRatedRecipes).toBeTruthy();
   });
 });

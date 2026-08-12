@@ -58,7 +58,6 @@
           transform: scaleX(1);
         }
       }
-
     /* From sidebar-newsletter.ts */
       dm-sidebar-newsletter .newsletter-field .mat-mdc-text-field-wrapper {
         background: var(--mat-sys-surface-container);
@@ -393,3 +392,11 @@
     .tag-link {
       text-decoration: none;
     }
+
+/* From home.ts */
+dm-featured-recipes,
+dm-top-rated-recipes {
+  display: block;
+  margin-top: 80px !important;
+  margin-bottom: 80px !important;
+}

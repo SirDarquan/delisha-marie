@@ -5,6 +5,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatIconModule } from '@angular/material/icon';
 import { FeaturedRecipes } from '../../components/featured-recipes/featured-recipes';
+import { TopRatedRecipes } from '../../components/top-rated-recipes/top-rated-recipes';
 
 @Component({
   selector: 'dm-home',
@@ -16,6 +17,7 @@ import { FeaturedRecipes } from '../../components/featured-recipes/featured-reci
     MatChipsModule,
     NgOptimizedImage,
     FeaturedRecipes,
+    TopRatedRecipes,
   ],
   template: `
     <div class="space-y-16">
@@ -52,6 +54,15 @@ import { FeaturedRecipes } from '../../components/featured-recipes/featured-reci
 
       <!-- Featured Recipes Section -->
       <dm-featured-recipes link="/recipes/dinner" />
+
+      <!-- Top Rated Recipes Section -->
+      <dm-top-rated-recipes />
+
+      <!-- Featured Recipes Section -->
+      <dm-featured-recipes link="/recipes/breakfast" />
+
+      <!-- Featured Recipes Section -->
+      <dm-featured-recipes link="/recipes/lunch" />
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
