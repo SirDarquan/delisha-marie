@@ -74,8 +74,7 @@ describe('TopRatedRecipes', () => {
     // Wait for the resource promise to resolve
     await fixture.whenStable();
     fixture.detectChanges();
-
-    expect(component.recipes().length).toBe(4);
+    expect(component.recipes()).toHaveLength(4);
     expect(component.recipes()[0].title).toBe('Recipe 1');
     expect(component.recipes()[1].title).toBe('Recipe 3');
     expect(component.recipes()[2].title).toBe('Recipe 4');
@@ -83,7 +82,7 @@ describe('TopRatedRecipes', () => {
 
     // Verify template rendering
     const cards = fixture.debugElement.queryAll(By.css('mat-card'));
-    expect(cards.length).toBe(4);
+    expect(cards).toHaveLength(4);
 
     const firstRank = fixture.debugElement
       .query(By.css('.text-\\[64px\\]'))
@@ -101,9 +100,9 @@ describe('TopRatedRecipes', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect(component.recipes().length).toBe(0);
+    expect(component.recipes()).toHaveLength(0);
     const cards = fixture.debugElement.queryAll(By.css('mat-card'));
-    expect(cards.length).toBe(0);
+    expect(cards).toHaveLength(0);
   });
 
   it('should handle undefined items in response', async () => {
@@ -118,7 +117,6 @@ describe('TopRatedRecipes', () => {
     fixture.detectChanges();
     await fixture.whenStable();
     fixture.detectChanges();
-
-    expect(component.recipes().length).toBe(0);
+    expect(component.recipes()).toHaveLength(0);
   });
 });
