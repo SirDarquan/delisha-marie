@@ -20,9 +20,9 @@ export const recipeListTitleResolver: ResolveFn<string> = (route) => {
 
 export const recipeTitleResolver: ResolveFn<string> = (route) => {
   const slug = route.paramMap.get('slug');
-  if (!slug) return 'Recipe';
+  if (!slug) return 'Recipe Not Found';
 
   return inject(RecipeService)
     .getRecipeBySlug(slug)
-    .then((r) => r?.title || 'Recipe');
+    .then((r) => r?.title || 'Recipe Not Found');
 };

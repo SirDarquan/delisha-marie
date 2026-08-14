@@ -111,11 +111,13 @@ export const seoRecipeResolver: ResolveFn<SeoContent> = async (route, state) => 
   };
 
   if (!slug) {
+    seoService.setSEO(seoConfig404);
     return seoConfig404;
   }
   const recipe = await recipeService.getRecipeBySlug(slug);
 
   if (!recipe) {
+    seoService.setSEO(seoConfig404);
     return seoConfig404;
   }
   const urls = `${origin}${path}`;

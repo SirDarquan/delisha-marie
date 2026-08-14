@@ -18,6 +18,22 @@ export interface Breadcrumb {
   url?: string;
 }
 
+export const writeSchema = (document: Document, schema: SchemaObject[]) => {
+  const schemaObj = {
+    '@context': 'https://schema.org',
+    '@graph': schema,
+  };
+
+  let script = document.querySelector('script#dynamic-schema');
+  if (!script) {
+    script = document.createElement('script');
+    script.setAttribute('id', 'dynamic-schema');
+    script.setAttribute('type', 'application/ld+json');
+    document.head.appendChild(script);
+  }
+  script.textContent = JSON.stringify(schemaObj);
+};
+
 export const schemaResolver: ResolveFn<SchemaObject[]> = (route, state) => {
   const document = inject(DOCUMENT);
   const schema: SchemaObject[] = [];
@@ -56,19 +72,7 @@ export const schemaResolver: ResolveFn<SchemaObject[]> = (route, state) => {
   const breadcrumbs = getBaseBreadcrumbs(path);
   schema.push(generateBreadcrumbSchema(breadcrumbs, origin, path));
 
-  const schemaObj = {
-    '@context': 'https://schema.org',
-    '@graph': schema,
-  };
-
-  let script = document.querySelector('script#dynamic-schema');
-  if (!script) {
-    script = document.createElement('script');
-    script.setAttribute('id', 'dynamic-schema');
-    script.setAttribute('type', 'application/ld+json');
-    document.head.appendChild(script);
-  }
-  script.textContent = JSON.stringify(schemaObj);
+  writeSchema(document, schema);
 
   return schema;
 };
@@ -126,19 +130,7 @@ export const schemaDynamicPageResolver: ResolveFn<SchemaObject[]> = async (route
   const breadcrumbs = getBaseBreadcrumbs(path);
   schema.push(generateBreadcrumbSchema(breadcrumbs, origin, path));
 
-  const schemaObj = {
-    '@context': 'https://schema.org',
-    '@graph': schema,
-  };
-
-  let script = document.querySelector('script#dynamic-schema');
-  if (!script) {
-    script = document.createElement('script');
-    script.setAttribute('id', 'dynamic-schema');
-    script.setAttribute('type', 'application/ld+json');
-    document.head.appendChild(script);
-  }
-  script.textContent = JSON.stringify(schemaObj);
+  writeSchema(document, schema);
 
   return schema;
 };
@@ -187,19 +179,7 @@ export const schemaRecipeResolver: ResolveFn<SchemaObject[]> = async (route) => 
     generateBreadcrumbSchema(getRecipeBreadcrumbs(recipe), origin, recipe.slug),
   );
 
-  const schemaObj = {
-    '@context': 'https://schema.org',
-    '@graph': schema,
-  };
-
-  let script = document.querySelector('script#dynamic-schema');
-  if (!script) {
-    script = document.createElement('script');
-    script.setAttribute('id', 'dynamic-schema');
-    script.setAttribute('type', 'application/ld+json');
-    document.head.appendChild(script);
-  }
-  script.textContent = JSON.stringify(schemaObj);
+  writeSchema(document, schema);
 
   return schema;
 };

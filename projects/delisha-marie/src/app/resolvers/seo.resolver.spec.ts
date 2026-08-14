@@ -4,14 +4,21 @@ import { ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SeoContent } from '../models/seo-content';
 import { RecipeListService } from '../pages/recipe-list/recipe-list.service';
+import { PagesService, Page } from '../services/pages.service';
 import { Recipe, RecipeService } from '../services/recipe.service';
 import { SeoService } from '../services/seo.service';
-import { seoRecipeListResolver, seoRecipeResolver, seoResolver } from './seo.resolver';
+import {
+  seoDynamicPageResolver,
+  seoRecipeListResolver,
+  seoRecipeResolver,
+  seoResolver,
+} from './seo.resolver';
 
 describe('Seo Resolvers', () => {
   let seoService: SeoService;
   let recipeListService: RecipeListService;
   let recipeService: RecipeService;
+  let dynamicPageService: PagesService;
   let mockDocument: { location: { origin: string; href: string } };
 
   beforeEach(() => {
@@ -36,6 +43,10 @@ describe('Seo Resolvers', () => {
           provide: RecipeService,
           useValue: { getRecipeBySlug: vi.fn().mockResolvedValue(null) },
         },
+        {
+          provide: PagesService,
+          useValue: { getPage: vi.fn().mockResolvedValue(null) },
+        },
         { provide: DOCUMENT, useValue: mockDocument },
       ],
     });
@@ -43,6 +54,7 @@ describe('Seo Resolvers', () => {
     seoService = TestBed.inject(SeoService);
     recipeListService = TestBed.inject(RecipeListService);
     recipeService = TestBed.inject(RecipeService);
+    dynamicPageService = TestBed.inject(PagesService);
   });
 
   describe('seoResolver', () => {
@@ -138,6 +150,56 @@ describe('Seo Resolvers', () => {
         }),
       );
     });
+
+    it('should handle primitives and null in resolveDynamicOrigin', () => {
+      const route = {
+        data: {
+          imageWidth: null,
+          imageHeight: 42,
+        },
+        title: 'Primitives Test',
+        paramMap: { get: () => null },
+      } as unknown as ActivatedRouteSnapshot;
+      const state = { url: '/primitives' } as RouterStateSnapshot;
+
+      TestBed.runInInjectionContext(() => {
+        seoResolver(route, state);
+      });
+
+      expect(seoService.setSEO).toHaveBeenCalledWith(
+        expect.objectContaining({
+          imageWidth: null,
+          imageHeight: 42,
+        }),
+      );
+    });
+
+    it('should use slug for title if available and handle custom type, twitterCard, and content', () => {
+      const route = {
+        data: {
+          type: 'article',
+          twitterCard: 'summary',
+          content: 'noindex',
+        },
+        title: 'Fallback Title',
+        paramMap: { get: (key: string) => (key === 'slug' ? 'Slug Title' : null) },
+      } as unknown as ActivatedRouteSnapshot;
+      const state = { url: '/test-slug?q=1#hash' } as RouterStateSnapshot;
+
+      TestBed.runInInjectionContext(() => {
+        seoResolver(route, state);
+      });
+
+      expect(seoService.setSEO).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: "Slug Title | Delisha Marie's Kitchen",
+          type: 'article',
+          twitterCard: 'summary',
+          content: 'noindex',
+          url: 'http://localhost:4200/test-slug',
+        }),
+      );
+    });
   });
 
   describe('seoRecipeListResolver', () => {
@@ -187,6 +249,37 @@ describe('Seo Resolvers', () => {
         expect.objectContaining({
           category: undefined,
           url: '',
+        }),
+      );
+    });
+
+    it('should handle subcategory and full path with query/hash', () => {
+      const route = {
+        paramMap: {
+          get: vi.fn().mockImplementation((key) => {
+            if (key === 'category') return 'test-cat';
+            if (key === 'subcategory') return 'test-sub';
+            return null;
+          }),
+        },
+        routeConfig: { path: 'recipes/test-cat/test-sub' },
+      } as unknown as ActivatedRouteSnapshot;
+      const state = { url: '/recipes/test-cat/test-sub?query=1#hash' } as RouterStateSnapshot;
+
+      TestBed.runInInjectionContext(() => {
+        seoRecipeListResolver(route, state);
+      });
+
+      expect(recipeListService.getInfo).toHaveBeenCalledWith(
+        expect.objectContaining({
+          category: 'test-cat',
+          subCategory: 'test-sub',
+          url: 'recipes',
+        }),
+      );
+      expect(seoService.setSEO).toHaveBeenCalledWith(
+        expect.objectContaining({
+          url: 'http://localhost:4200/recipes/test-cat/test-sub',
         }),
       );
     });
@@ -277,6 +370,98 @@ describe('Seo Resolvers', () => {
         expect.objectContaining({
           description: '',
           image: '',
+        }),
+      );
+    });
+  });
+
+  describe('seoDynamicPageResolver', () => {
+    beforeEach(() => {
+      vi.mocked(dynamicPageService.getPage).mockClear();
+    });
+
+    it('should resolve dynamic page SEO data', async () => {
+      const mockPage: Page = {
+        id: '1',
+        slug: 'test-slug',
+        title: 'Page Title',
+        content: 'Content',
+        description: 'Page Desc',
+        updated_at: '2024-01-01',
+        keywords: ['page-key'],
+      };
+
+      vi.mocked(dynamicPageService.getPage).mockResolvedValue(mockPage);
+
+      const route = {
+        paramMap: { get: () => 'test-slug' },
+      } as unknown as ActivatedRouteSnapshot;
+      const state = { url: '/page/test-slug' } as RouterStateSnapshot;
+
+      await TestBed.runInInjectionContext(() => {
+        return seoDynamicPageResolver(route, state);
+      });
+
+      expect(dynamicPageService.getPage).toHaveBeenCalledWith('test-slug');
+      expect(seoService.setSEO).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: "Page Title | Delisha Marie's Kitchen",
+          description: 'Page Desc',
+        }),
+      );
+    });
+
+    it('should return 404 SEO if slug missing', async () => {
+      const route = {
+        paramMap: { get: () => null },
+      } as unknown as ActivatedRouteSnapshot;
+
+      const result = await TestBed.runInInjectionContext(() => {
+        return seoDynamicPageResolver(route, { url: '/page/unknown' } as RouterStateSnapshot);
+      });
+
+      expect((result as SeoContent).content).toBe('noindex,nofollow');
+    });
+
+    it('should return 404 SEO if page not found', async () => {
+      vi.mocked(dynamicPageService.getPage).mockResolvedValue(null);
+
+      const route = {
+        paramMap: { get: () => 'unknown' },
+      } as unknown as ActivatedRouteSnapshot;
+
+      const result = await TestBed.runInInjectionContext(() => {
+        return seoDynamicPageResolver(route, { url: '/page/unknown' } as RouterStateSnapshot);
+      });
+
+      expect((result as SeoContent).content).toBe('noindex,nofollow');
+    });
+
+    it('should handle missing description in seoDynamicPageResolver', async () => {
+      const mockPage: Page = {
+        id: '1',
+        slug: 'no-desc',
+        title: 'Title',
+        content: 'Content',
+        description: undefined,
+        updated_at: '2024-01-01',
+        keywords: [],
+      };
+
+      vi.mocked(dynamicPageService.getPage).mockResolvedValue(mockPage);
+
+      const route = {
+        paramMap: { get: () => 'no-desc' },
+      } as unknown as ActivatedRouteSnapshot;
+      const state = { url: '/page/no-desc' } as RouterStateSnapshot;
+
+      await TestBed.runInInjectionContext(() => {
+        return seoDynamicPageResolver(route, state);
+      });
+
+      expect(seoService.setSEO).toHaveBeenCalledWith(
+        expect.objectContaining({
+          description: '',
         }),
       );
     });
