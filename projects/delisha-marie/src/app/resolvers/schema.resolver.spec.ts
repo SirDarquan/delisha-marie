@@ -2,6 +2,7 @@ import { DOCUMENT } from '@angular/common';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
 import { beforeEach, describe, expect, it, Mock, vi } from 'vitest';
+import { PagesService } from '../services/pages.service';
 import { Recipe, RecipeService } from '../services/recipe.service';
 import { createMockRecipe } from '../utils/test-recipe';
 import {
@@ -16,6 +17,7 @@ import {
   generateWebPageSchema,
   generateWebSiteSchema,
   getRecipeBreadcrumbs,
+  schemaDynamicPageResolver,
   schemaRecipeResolver,
   schemaResolver,
 } from './schema.resolver';
@@ -43,6 +45,10 @@ describe('schemaResolver', () => {
         {
           provide: RecipeService,
           useValue: { getRecipeBySlug: vi.fn().mockResolvedValue(null) },
+        },
+        {
+          provide: PagesService,
+          useValue: { getPage: vi.fn().mockResolvedValue(null) },
         },
       ],
     });
@@ -460,6 +466,100 @@ describe('schemaResolver', () => {
         unknown
       >;
       expect(articleSchema['articleSection'] as string[]).toEqual(['Recipe']);
+    });
+  });
+
+  describe('schemaDynamicPageResolver', () => {
+    it.each([
+      { slug: '', expectedType: 'WebPage', url: '/page' },
+      { slug: 'about', expectedType: 'AboutPage', url: '/about' },
+      { slug: 'contact', expectedType: 'ContactPage', url: '/contact' },
+    ])('should handle "$slug" slug', async ({ slug, expectedType, url }) => {
+      const route = {
+        data: { description: 'desc' },
+        paramMap: { get: () => slug },
+      } as unknown as ActivatedRouteSnapshot;
+      const state = { url } as RouterStateSnapshot;
+      const result = (await TestBed.runInInjectionContext(() =>
+        schemaDynamicPageResolver(route, state),
+      )) as Record<string, unknown>[];
+      expect(result.some((s) => s['@type'] === expectedType)).toBe(true);
+    });
+
+    it('should handle faq slug and parse html', async () => {
+      const route = {
+        data: { description: 'desc' },
+        paramMap: { get: () => 'faq' },
+      } as unknown as ActivatedRouteSnapshot;
+      const state = { url: '/faq' } as RouterStateSnapshot;
+      const mockPageService = TestBed.inject(PagesService);
+      vi.mocked(mockPageService.getPage).mockResolvedValue({
+        id: 'faq',
+        slug: 'faq',
+        title: 'FAQ',
+        content: '<h2>Question 1?</h2><p>Answer 1.</p><h2>Question 2?</h2>Answer 2.',
+        updated_at: '2023-01-01',
+      });
+
+      const result = (await TestBed.runInInjectionContext(() =>
+        schemaDynamicPageResolver(route, state),
+      )) as Record<string, unknown>[];
+      const faqPage = result.find((s) => s['@type'] === 'FAQPage') as Record<string, unknown>;
+      expect(faqPage).toBeDefined();
+      const mainEntity = faqPage['mainEntity'] as Record<string, unknown>[];
+      expect(mainEntity).toHaveLength(2);
+      expect(mainEntity[0]['name']).toBe('Question 1?');
+      expect((mainEntity[0]['acceptedAnswer'] as Record<string, string>)['text']).toBe('Answer 1.');
+    });
+
+    it('should handle faq slug returning null page', async () => {
+      const route = {
+        data: { description: 'desc' },
+        paramMap: { get: () => 'faq' },
+      } as unknown as ActivatedRouteSnapshot;
+      const state = { url: '/faq' } as RouterStateSnapshot;
+      const mockPageService = TestBed.inject(PagesService);
+      vi.mocked(mockPageService.getPage).mockResolvedValue(null);
+      const result = (await TestBed.runInInjectionContext(() =>
+        schemaDynamicPageResolver(route, state),
+      )) as Record<string, unknown>[];
+      expect(result.some((s) => s['@type'] === 'FAQPage')).toBe(false);
+    });
+  });
+
+  describe('convertToIso8601Duration missing branches and video test', () => {
+    it('should parse days, hours, and minutes correctly and add video', async () => {
+      const mockRecipe = createMockRecipe({
+        title: 'Duration',
+        slug: 'duration',
+        prepTime: '2 days 4 hours 30 mins',
+        cookTime: '',
+        totalTime: undefined as unknown as string,
+        video: 'dQw4w9WgXcQ',
+      });
+      vi.mocked(recipeService.getRecipeBySlug).mockResolvedValue(mockRecipe);
+
+      const route = {
+        paramMap: { get: () => 'duration' },
+        queryParamMap: { get: () => null },
+      } as unknown as ActivatedRouteSnapshot;
+      const state = { url: '/recipe/duration' } as RouterStateSnapshot;
+
+      const result = (await TestBed.runInInjectionContext(() =>
+        schemaRecipeResolver(route, state),
+      )) as Record<string, unknown>[];
+
+      const recipeSchema = result.find((s) => s['@type'] === ('Recipe' as unknown)) as Record<
+        string,
+        unknown
+      >;
+      expect(recipeSchema['prepTime']).toBe('PT3150M');
+      expect(recipeSchema['cookTime']).toBe('');
+      expect(recipeSchema['totalTime']).toBe('');
+
+      const videoObj = recipeSchema['video'] as Record<string, unknown>;
+      expect(videoObj['@type']).toBe('VideoObject');
+      expect(videoObj['contentUrl']).toContain('dQw4w9WgXcQ');
     });
   });
 });

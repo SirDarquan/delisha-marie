@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -14,30 +13,18 @@ import { Page, PagesService } from '../../services/pages.service';
 import { ContactForm } from '../../components/contact-form/contact-form';
 import { useOptimizedContent } from '../../utils/optimized-content';
 import { SeoService } from '../../services/seo.service';
+import { ColoredHeaderComponent } from '../../components/colored-header/colored-header';
 
 @Component({
   selector: 'dm-dynamic-page',
-  imports: [CommonModule, Sidebar, ContactForm],
+  imports: [Sidebar, ContactForm, ColoredHeaderComponent],
   template: `
     <div class="into-the-box py-12">
       <div class="flex flex-col lg:flex-row gap-12">
         <!-- Main Content -->
         <div class="lg:w-2/3 space-y-16">
-          @if (formattedTitle(); as t) {
-            <header class="text-center lg:text-left space-y-4 mb-12">
-              <h1
-                class="text-5xl md:text-6xl font-black tracking-tighter text-[var(--mat-sys-on-surface)]">
-                {{ t.first }}
-                @if (t.middle) {
-                  {{ ' ' + t.middle + ' ' }}
-                } @else {
-                  {{ ' ' }}
-                }
-                <span class="text-[var(--mat-sys-primary)]">{{ t.last }}</span>
-              </h1>
-              <div
-                class="h-1.5 w-20 bg-[var(--mat-sys-primary)] mt-4 rounded-full mx-auto lg:mx-0"></div>
-            </header>
+          @if (page()) {
+            <dm-colored-header [title]="page()!.title" />
             <div
               class="story prose prose-invert prose-lg max-w-none leading-relaxed font-serif first-letter:text-6xl first-letter:font-black first-letter:mr-1 first-letter:text-[var(--mat-sys-primary)]"
               [innerHTML]="optimizedContent()"></div>
@@ -55,11 +42,8 @@ import { SeoService } from '../../services/seo.service';
               </div>
             </div>
           } @else {
-            <div class="text-center py-24 space-y-6">
-              <h1
-                class="text-5xl font-black tracking-tighter text-[var(--mat-sys-on-surface-variant)]">
-                Page Not Found
-              </h1>
+            <dm-colored-header title="Page Not Found" />
+            <div class="py-24 space-y-6">
               <p class="text-lg text-[var(--mat-sys-outline)]">
                 The page you are looking for does not exist or has not been published yet.
               </p>
@@ -103,26 +87,4 @@ export class DynamicPage {
   });
 
   protected readonly optimizedContent = useOptimizedContent(computed(() => this.page()?.content));
-
-  protected readonly formattedTitle = computed(() => {
-    const p = this.page();
-    if (!p?.title) return null;
-
-    const words = p.title.trim().split(/\s+/);
-    if (words.length === 0) return { first: '', middle: '', last: '' };
-    if (words.length === 1) return { first: words[0], middle: '', last: '' };
-
-    const first = words[0];
-    let middle = '';
-    let last: string;
-
-    if (words.length <= 3) {
-      last = words.slice(1).join(' ');
-    } else {
-      middle = words.slice(1, -2).join(' ');
-      last = words.slice(-2).join(' ');
-    }
-
-    return { first, middle, last };
-  });
 }

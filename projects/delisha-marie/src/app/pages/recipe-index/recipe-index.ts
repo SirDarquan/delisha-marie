@@ -17,10 +17,12 @@ import { RecipeIndexIngredients } from './recipe-index-ingredients';
 import { RecipeIndexLinkList } from './recipe-index-link-list';
 import { RecipeIndexMethodImages } from './recipe-index-method-images';
 import { RecipeIndexService } from './recipe-index.service';
+import { ColoredHeaderComponent } from '../../components/colored-header/colored-header';
 
 @Component({
   selector: 'dm-recipe-index',
   imports: [
+    ColoredHeaderComponent,
     MatCardModule,
     MatButtonModule,
     MatIconModule,
@@ -36,14 +38,7 @@ import { RecipeIndexService } from './recipe-index.service';
       <div class="into-the-box">
         <dml-breadcrumbs [items]="breadcrumbItems()" class="block mb-8" />
 
-        <header class="mb-16 pt-8">
-          <h1
-            id="index-title"
-            class="text-6xl md:text-7xl font-extrabold tracking-tighter text-[var(--mat-sys-on-surface)] mat-headline-medium">
-            Recipe <span class="text-[var(--mat-sys-primary)]">Index</span>
-          </h1>
-          <div class="h-1.5 w-24 bg-[var(--mat-sys-primary)] mt-6 rounded-full"></div>
-        </header>
+        <dm-colored-header title="Recipe Index" size="small" />
       </div>
 
       @if (isLoading()) {

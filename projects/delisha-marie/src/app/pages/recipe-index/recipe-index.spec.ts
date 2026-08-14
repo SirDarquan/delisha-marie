@@ -87,7 +87,7 @@ describe('RecipeIndex', () => {
     const compiled = fixture.nativeElement as HTMLElement;
     const h1 = compiled.querySelector('h1');
     expect(h1?.textContent).toContain('Recipe Index');
-    expect(h1?.classList.contains('mat-headline-medium')).toBe(true);
+    expect(h1?.classList.contains('mat-headline-small')).toBe(true);
   });
 
   it('should render the category images component', () => {

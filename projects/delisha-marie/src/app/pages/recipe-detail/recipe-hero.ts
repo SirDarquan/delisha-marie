@@ -2,10 +2,11 @@ import { NgOptimizedImage } from '@angular/common';
 import { ChangeDetectionStrategy, Component, input, ViewEncapsulation } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import { Recipe } from '../../services/recipe.service';
+import { ColoredHeaderComponent } from '../../components/colored-header/colored-header';
 
 @Component({
   selector: 'dml-recipe-hero',
-  imports: [NgOptimizedImage, MatIconModule],
+  imports: [NgOptimizedImage, MatIconModule, ColoredHeaderComponent],
   template: `
     <div class="hero-container mb-20">
       <div
@@ -21,10 +22,7 @@ import { Recipe } from '../../services/recipe.service';
         <!-- Title Overlay -->
         <div class="absolute bottom-8 left-8 right-8 md:bottom-12 md:left-12 md:right-12 z-10">
           <div class="group/title inline-block">
-            <h1
-              class="text-3xl md:text-5xl font-bold tracking-tight text-white leading-[0.9] transition-colors duration-500 group-hover/title:text-[var(--mat-sys-primary)] [text-shadow:0_2px_10px_rgba(0,0,0,0.8)]">
-              {{ recipe().title }}
-            </h1>
+            <dm-colored-header [title]="recipe().title" size="hero" />
           </div>
         </div>
       </div>

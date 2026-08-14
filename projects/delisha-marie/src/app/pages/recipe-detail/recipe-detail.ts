@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -32,7 +31,6 @@ import { useOptimizedContent } from '../../utils/optimized-content';
 @Component({
   selector: 'dm-recipe-detail',
   imports: [
-    CommonModule,
     Breadcrumbs,
     RecipeHero,
     MatIconModule,
@@ -161,6 +159,7 @@ import { useOptimizedContent } from '../../utils/optimized-content';
             >search_off</mat-icon
           >
           <h2 class="text-5xl font-black tracking-tighter mb-4">Recipe not found</h2>
+
           <p class="text-xl text-[var(--mat-sys-on-surface-variant)] mb-12 font-medium">
             Sorry, the culinary masterpiece you're looking for seems to have vanished from our
             kitchen.
@@ -183,6 +182,10 @@ export class RecipeDetail {
   recipe = input<Recipe | null | undefined>(undefined);
 
   page = input<string>();
+
+  test = computed(() => {
+    console.log();
+  });
 
   commentCountOverride = signal<number | null>(null);
 

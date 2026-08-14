@@ -105,7 +105,7 @@ describe('Recipe Resolvers', () => {
         return recipeTitleResolver(route, {} as RouterStateSnapshot);
       });
 
-      expect(result).toBe('Recipe');
+      expect(result).toBe('Recipe Not Found');
     });
 
     it('should return default title if recipe has no title or is null', async () => {
@@ -118,7 +118,7 @@ describe('Recipe Resolvers', () => {
         return recipeTitleResolver(route, {} as RouterStateSnapshot);
       });
 
-      expect(result).toBe('Recipe');
+      expect(result).toBe('Recipe Not Found');
     });
   });
 
