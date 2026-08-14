@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { DOCUMENT } from '@angular/common';
 import { SearchPage } from './search';
 import { Router, ActivatedRoute } from '@angular/router';
 import { Api } from '../../services/api';
@@ -60,6 +61,16 @@ describe('SearchPage', () => {
 
     fixture = TestBed.createComponent(SearchPage);
     component = fixture.componentInstance;
+
+    // Mock document.defaultView.scrollTo because JSDOM does not implement it
+    const defaultView = TestBed.inject(DOCUMENT).defaultView;
+    if (defaultView) {
+      Object.defineProperty(defaultView, 'scrollTo', {
+        value: mockWindow['scrollTo'],
+        writable: true,
+      });
+    }
+
     fixture.detectChanges();
   });
 
@@ -72,7 +83,7 @@ describe('SearchPage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect(mockApi['post']).toHaveBeenCalledWith('/api/recipes/search', {
+    expect(mockApi['post']).toHaveBeenCalledWith('/search', {
       query: 'chicken',
       page: 2,
       pageSize: 12,

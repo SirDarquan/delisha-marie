@@ -32,7 +32,6 @@ describe('Sidebar', () => {
 
   it('should project content', () => {
     @Component({
-      standalone: true,
       imports: [Sidebar],
       template: `<dml-sidebar><div id="test-content">Projected</div></dml-sidebar>`,
     })

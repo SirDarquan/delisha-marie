@@ -25,7 +25,7 @@ describe('Api', () => {
 
   it('should make GET request and return promise', async () => {
     const mockData = { id: 1, name: 'Test' };
-    const promise = service.get<typeof mockData>('/api/test');
+    const promise = service.get<typeof mockData>('/test');
 
     const req = httpMock.expectOne('/api/test');
     expect(req.request.method).toBe('GET');
@@ -38,7 +38,7 @@ describe('Api', () => {
   it('should make POST request and return promise', async () => {
     const mockData = { success: true };
     const body = { name: 'New' };
-    const promise = service.post<typeof mockData>('/api/test', body);
+    const promise = service.post<typeof mockData>('/test', body);
 
     const req = httpMock.expectOne('/api/test');
     expect(req.request.method).toBe('POST');
@@ -47,5 +47,13 @@ describe('Api', () => {
 
     const result = await promise;
     expect(result).toEqual(mockData);
+  });
+
+  describe('normalizeUrl', () => {
+    it('should prepend /api if not present', async () => {
+      const promise = service.get('/test/endpoint');
+      httpMock.expectOne('/api/test/endpoint').flush({});
+      await promise;
+    });
   });
 });

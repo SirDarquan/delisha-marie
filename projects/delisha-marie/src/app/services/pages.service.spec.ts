@@ -24,7 +24,7 @@ describe('PagesService', () => {
     apiSpy.get.mockResolvedValue(mockPage);
 
     const result = await service.getPage('about');
-    expect(apiSpy.get).toHaveBeenCalledWith('/api/pages/about');
+    expect(apiSpy.get).toHaveBeenCalledWith('/pages/about');
     expect(result).toEqual(mockPage);
   });
 
