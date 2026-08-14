@@ -39,7 +39,7 @@ export function withRecipes() {
         const window = inject(DOCUMENT).defaultView;
         const origin = window?.location.origin;
 
-        const res = await api.post<{ items: Recipe[]; total: number }>('/api/recipes/search', {
+        const res = await api.post<{ items: Recipe[]; total: number }>('/search', {
           query: query || '',
           page,
           pageSize,

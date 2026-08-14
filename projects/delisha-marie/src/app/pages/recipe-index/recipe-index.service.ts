@@ -12,6 +12,6 @@ export class RecipeIndexService {
    * Returns a Promise of the recipe index data.
    */
   getData(): Promise<RecipeIndexResponse> {
-    return this.api.get<RecipeIndexResponse>('/api/recipe-index');
+    return this.api.get<RecipeIndexResponse>('/recipe-index');
   }
 }
