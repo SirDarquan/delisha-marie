@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideRouter, Router } from '@angular/router';
+import { ActivatedRoute, provideRouter, Router } from '@angular/router';
+import { BehaviorSubject } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SidebarSearch } from './sidebar-search';
 import { By } from '@angular/platform-browser';
@@ -9,15 +10,26 @@ describe('SidebarSearch', () => {
   let fixture: ComponentFixture<SidebarSearch>;
   let router: Router;
 
+  const routeSubject = new BehaviorSubject<{ q?: string }>({});
+
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [SidebarSearch],
-      providers: [provideRouter([])],
+      providers: [
+        provideRouter([]),
+        {
+          provide: ActivatedRoute,
+          useValue: {
+            queryParams: routeSubject.asObservable(),
+          },
+        },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(SidebarSearch);
     component = fixture.componentInstance;
     router = TestBed.inject(Router);
+    routeSubject.next({}); // reset
     fixture.detectChanges();
   });
 
@@ -26,48 +38,53 @@ describe('SidebarSearch', () => {
   });
 
   it('should have an empty search control initially', () => {
-    expect(component.searchControl.value).toBe('');
+    expect(component.queryModel().query).toBe('');
   });
 
-  it('should navigate to recipe index with search query on search()', async () => {
+  it('should trigger search on form submit', async () => {
     const navigateSpy = vi.spyOn(router, 'navigate');
-    component.searchControl.setValue('Chicken');
-    component.search();
+    component.queryModel.set({ query: 'Pasta' });
+    fixture.detectChanges();
 
-    expect(navigateSpy).toHaveBeenCalledWith(['/search'], {
-      queryParams: { q: 'Chicken' },
-    });
-  });
+    const form = fixture.debugElement.query(By.css('form'));
+    form.triggerEventHandler('submit', new Event('submit'));
 
-  it('should trigger search on enter key', () => {
-    const navigateSpy = vi.spyOn(router, 'navigate');
-    component.searchControl.setValue('Pasta');
-
-    const input = fixture.nativeElement.querySelector('input');
-    const event = new KeyboardEvent('keyup', { key: 'Enter' });
-    input.dispatchEvent(event);
+    await fixture.whenStable();
 
     expect(navigateSpy).toHaveBeenCalledWith(['/search'], {
       queryParams: { q: 'Pasta' },
     });
   });
 
-  it('should not navigate if search query is empty', () => {
+  it('should not navigate if search query is empty', async () => {
     const navigateSpy = vi.spyOn(router, 'navigate');
-    component.searchControl.setValue('');
-    component.search();
+    component.queryModel.set({ query: '' });
+    fixture.detectChanges();
+    const form = fixture.debugElement.query(By.css('form'));
+    form.triggerEventHandler('submit', new Event('submit'));
+    await fixture.whenStable();
     expect(navigateSpy).not.toHaveBeenCalled();
   });
 
-  it('should trigger search on button click', () => {
+  it('should trigger search on button click', async () => {
     const navigateSpy = vi.spyOn(router, 'navigate');
-    component.searchControl.setValue('Salad');
+    component.queryModel.set({ query: 'Salad' });
+    fixture.detectChanges();
 
-    const button = fixture.debugElement.query(By.css('button'));
-    button.triggerEventHandler('click', null);
+    // With form signals we submit the form root
+    const form = fixture.debugElement.query(By.css('form'));
+    form.triggerEventHandler('submit', new Event('submit'));
+    await fixture.whenStable();
 
     expect(navigateSpy).toHaveBeenCalledWith(['/search'], {
       queryParams: { q: 'Salad' },
     });
+  });
+
+  it('should initialize query from ActivatedRoute queryParams', async () => {
+    routeSubject.next({ q: 'Beef' });
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(component.queryModel().query).toBe('Beef');
   });
 });

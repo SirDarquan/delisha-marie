@@ -19,7 +19,7 @@ export class PagesService {
 
   async getPage(slug: string): Promise<Page | null> {
     try {
-      return await this.api.get<Page>(`/api/pages/${slug}`);
+      return await this.api.get<Page>(`/pages/${slug}`);
     } catch {
       return null;
     }

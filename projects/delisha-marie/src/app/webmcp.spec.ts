@@ -111,7 +111,7 @@ describe('WebMCP Integration', () => {
     expect(finalResult.items![0].title).toBe('Cake');
     expect(finalResult.items![0].url).toContain('/recipe/cake');
 
-    expect(mockApi['post']).toHaveBeenCalledWith('/api/recipes/search', {
+    expect(mockApi['post']).toHaveBeenCalledWith('/search', {
       query: 'cake',
       page: 2,
       pageSize: 20,
@@ -137,7 +137,7 @@ describe('WebMCP Integration', () => {
     // Call with only the required `query` argument (defaults should take over)
     await nav.modelContextTesting?.executeTool('searchRecipes', JSON.stringify({ query: 'pie' }));
 
-    expect(mockApi['post']).toHaveBeenCalledWith('/api/recipes/search', {
+    expect(mockApi['post']).toHaveBeenCalledWith('/search', {
       query: 'pie',
       page: 1, // Default fallback
       pageSize: 12, // Default fallback
@@ -174,7 +174,7 @@ describe('WebMCP Integration', () => {
       JSON.stringify({}), // empty args
     );
 
-    expect(mockApi['post']).toHaveBeenCalledWith('/api/recipes/search', {
+    expect(mockApi['post']).toHaveBeenCalledWith('/search', {
       query: '', // defaults to empty string
       page: 1,
       pageSize: 12,

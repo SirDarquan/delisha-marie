@@ -15,7 +15,6 @@ import { Recipe, RecipeService } from '../../services/recipe.service';
 
 @Component({
   selector: 'dml-recipe-meta',
-  standalone: true,
   imports: [CommonModule, MatIconModule, MatButtonModule, RouterModule],
   template: `
     <div

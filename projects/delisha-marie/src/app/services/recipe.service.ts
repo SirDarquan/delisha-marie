@@ -38,7 +38,7 @@ export class RecipeService {
    * Completely eliminates 'from', 'Observable', and 'toSignal'.
    */
   private readonly _recipesResource = resource({
-    loader: () => this.api.get<{ items: Recipe[]; total: number }>('/api/recipes'),
+    loader: () => this.api.get<{ items: Recipe[]; total: number }>('/recipes'),
   });
 
   readonly recipes = computed(() => this._recipesResource.value()?.items || []);
@@ -52,7 +52,7 @@ export class RecipeService {
 
     let cached = this.recipeCache.get(normalizedSearch);
     if (!cached) {
-      cached = this.api.get<Recipe | null>(`/api/recipes/${normalizedSearch}`).catch(() => null);
+      cached = this.api.get<Recipe | null>(`/recipes/${normalizedSearch}`).catch(() => null);
       this.recipeCache.set(normalizedSearch, cached);
 
       setTimeout(() => {
@@ -74,7 +74,7 @@ export class RecipeService {
     subcategory?: string,
     rating?: boolean,
   ): Promise<{ items: Recipe[]; total: number }> {
-    const url = `/api/recipes?page=${page}&pageSize=${pageSize}&method=${method}&category=${category || ''}&subcategory=${subcategory || ''}&rating=${rating || ''}`;
+    const url = `/recipes?page=${page}&pageSize=${pageSize}&method=${method}&category=${category || ''}&subcategory=${subcategory || ''}&rating=${rating || ''}`;
     return this.api.get<{ items: Recipe[]; total: number }>(url);
   }
 
@@ -85,7 +85,7 @@ export class RecipeService {
     recipeId: string | number,
     page?: number,
   ): Promise<{ comments: Comment[]; total: number }> {
-    const url = `/api/recipes/${recipeId}/comments?page=${page || ''}`;
+    const url = `/recipes/${recipeId}/comments?page=${page || ''}`;
     return this.api.get<{ comments: Comment[]; total: number }>(url);
   }
 
@@ -95,6 +95,6 @@ export class RecipeService {
   addComment(
     comment: Omit<Comment, 'id' | 'createdAt'> & { alt_email?: string },
   ): Promise<Comment> {
-    return this.api.post<Comment>(`/api/recipes/${comment.recipeId}/comments`, comment);
+    return this.api.post<Comment>(`/recipes/${comment.recipeId}/comments`, comment);
   }
 }

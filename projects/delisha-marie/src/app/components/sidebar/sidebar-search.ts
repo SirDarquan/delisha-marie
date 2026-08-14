@@ -1,11 +1,22 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, ViewEncapsulation, inject } from '@angular/core';
-import { FormControl, ReactiveFormsModule } from '@angular/forms';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ViewEncapsulation,
+  inject,
+  linkedSignal,
+} from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { FormField, FormRoot, form, required } from '@angular/forms/signals';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
+
+interface SearchRecipes {
+  query: string;
+}
 
 @Component({
   selector: 'dm-sidebar-search',
@@ -15,7 +26,8 @@ import { Router } from '@angular/router';
     MatIconModule,
     MatInputModule,
     MatFormFieldModule,
-    ReactiveFormsModule,
+    FormField,
+    FormRoot,
   ],
   template: `
     <section
@@ -25,38 +37,51 @@ import { Router } from '@angular/router';
         <mat-icon class="scale-90">search</mat-icon>
         Find a Recipe
       </h3>
-      <mat-form-field
-        appearance="outline"
-        subscriptSizing="dynamic"
-        class="w-full rounded-full overflow-hidden search-field">
-        <mat-icon matPrefix class="opacity-50">search</mat-icon>
-        <input
-          matInput
-          [formControl]="searchControl"
-          placeholder="e.g. Lemon Cake..."
-          (keyup.enter)="search()" />
-      </mat-form-field>
-      <button
-        mat-flat-button
-        color="primary"
-        class="w-full h-12 rounded-full mt-4 font-bold"
-        (click)="search()">
-        Search
-      </button>
+      <form [formRoot]="searchForm">
+        <mat-form-field
+          appearance="outline"
+          subscriptSizing="dynamic"
+          class="w-full rounded-full overflow-hidden search-field">
+          <mat-icon matPrefix class="opacity-50">search</mat-icon>
+          <input matInput [formField]="searchForm.query" placeholder="e.g. Lemon Cake..." />
+        </mat-form-field>
+        <button
+          mat-flat-button
+          color="primary"
+          type="submit"
+          class="w-full h-12 rounded-full mt-4 font-bold">
+          Search
+        </button>
+      </form>
     </section>
   `,
-
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SidebarSearch {
   private readonly router = inject(Router);
-  readonly searchControl = new FormControl('');
+  private readonly route = inject(ActivatedRoute);
 
-  search() {
-    const query = this.searchControl.value;
-    if (query?.trim()) {
-      this.router.navigate(['/search'], { queryParams: { q: query.trim() } });
-    }
-  }
+  private readonly queryParams = toSignal(this.route.queryParams);
+
+  readonly queryModel = linkedSignal<SearchRecipes>(() => ({
+    query: this.queryParams()?.['q'] || '',
+  }));
+
+  readonly searchForm = form(
+    this.queryModel,
+    (s) => {
+      required(s.query, { message: 'Please enter a search query' });
+    },
+    {
+      submission: {
+        action: async (f) => {
+          const q = f().value().query;
+          if (q?.trim()) {
+            this.router.navigate(['/search'], { queryParams: { q: q.trim() } });
+          }
+        },
+      },
+    },
+  );
 }

@@ -7,7 +7,6 @@ import { BreadcrumbItem, Breadcrumbs } from './breadcrumbs';
 
 @Component({
   template: `<dml-breadcrumbs [items]="items()" />`,
-  standalone: true,
   imports: [Breadcrumbs],
 })
 class TestHostComponent {

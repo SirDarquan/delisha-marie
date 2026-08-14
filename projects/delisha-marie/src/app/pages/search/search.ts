@@ -8,28 +8,21 @@ import {
   effect,
   resource,
   untracked,
+  DOCUMENT,
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { form, FormField, FormRoot, required } from '@angular/forms/signals';
 import { Router, ActivatedRoute, RouterLink } from '@angular/router';
-import { Api } from '../../services/api';
+
 import { Sidebar } from '../../components/sidebar/sidebar';
 import { NgxPaginationModule } from 'ngx-pagination';
-import { WINDOW } from '../../services/global-tokens';
+
+import { SearchService } from './search.service';
 
 interface SearchFormValue {
   q: string;
-}
-
-interface SearchResultRecipe {
-  id: string;
-  slug: string;
-  title: string;
-  description: string;
-  image: string;
-  similarity: number;
 }
 
 @Component({
@@ -207,8 +200,8 @@ export class SearchPage {
   );
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
-  private readonly api = inject(Api);
-  private readonly window = inject(WINDOW);
+  private readonly searchService = inject(SearchService);
+  private readonly document = inject(DOCUMENT);
 
   private readonly _params = toSignal(this.route.params);
   private readonly _queryParams = toSignal(this.route.queryParams);
@@ -224,14 +217,7 @@ export class SearchPage {
   readonly searchResource = resource({
     params: () => ({ q: this.query(), page: this.currentPage(), pageSize: this.pageSize }),
     loader: async ({ params }) => {
-      if (!params.q) {
-        return { items: [], total: 0 } as { items: SearchResultRecipe[]; total: number };
-      }
-      return this.api.post<{ items: SearchResultRecipe[]; total: number }>('/api/recipes/search', {
-        query: params.q,
-        page: params.page,
-        pageSize: params.pageSize,
-      });
+      return this.searchService.searchRecipes(params.q, params.page, params.pageSize);
     },
   });
 
@@ -250,6 +236,7 @@ export class SearchPage {
   });
 
   onPageChange(p: number): void {
+    const window = this.document.defaultView;
     const query = this.searchModel().q;
     const path = p === 1 ? '/search' : `/search/page/${p}`;
 
@@ -257,6 +244,6 @@ export class SearchPage {
       queryParams: { q: query?.trim() },
       queryParamsHandling: 'merge',
     });
-    this.window.scrollTo({ top: 0, behavior: 'smooth' });
+    window?.scrollTo({ top: 0, behavior: 'smooth' });
   }
 }

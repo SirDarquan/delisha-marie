@@ -7,7 +7,6 @@ import { createMockRecipe } from '../utils/test-recipe';
 import { PinterestHoverDirective } from './pinterest-hover.directive';
 
 @Component({
-  standalone: true,
   imports: [PinterestHoverDirective],
   template: `
     <div [dmPinterestHover]="recipe" id="test-container" style="padding: 100px;">

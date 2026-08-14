@@ -12,7 +12,6 @@ import { Recipe } from '../../services/recipe.service';
 
 @Component({
   selector: 'dml-recipe-source',
-  standalone: true,
   imports: [CommonModule],
   template: `
     @if (sanitizedSource()) {
