@@ -20,6 +20,7 @@ import { WINDOW } from '../../services/global-tokens';
 import { RecipeService } from '../../services/recipe.service';
 import { deslugify } from '@dm/library';
 import { RecipeIndexService } from '../recipe-index/recipe-index.service';
+import { ColoredHeaderComponent } from '../../components/colored-header/colored-header';
 
 @Component({
   selector: 'dm-recipe-list',
@@ -34,6 +35,7 @@ import { RecipeIndexService } from '../recipe-index/recipe-index.service';
     RefineBy,
     NgxPaginationModule,
     RouterLink,
+    ColoredHeaderComponent,
   ],
   template: `
     <div class="into-the-box pt-12 pb-4">
@@ -41,13 +43,7 @@ import { RecipeIndexService } from '../recipe-index/recipe-index.service';
       <dml-breadcrumbs [items]="breadcrumbItems()" class="block mb-8" />
 
       <!-- Page Header -->
-      <header class="mb-12">
-        <h1
-          class="text-5xl md:text-6xl font-black tracking-tighter text-[var(--mat-sys-on-surface)]">
-          {{ displayTitle() }}
-        </h1>
-        <div class="h-1.5 w-20 bg-[var(--mat-sys-primary)] mt-4 rounded-full"></div>
-      </header>
+      <dm-colored-header [title]="displayTitle()" size="small" />
 
       <!-- SubCategory listing -->
       <dml-refine-by [items]="subCategories()" class="block mb-12" />
