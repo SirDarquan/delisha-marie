@@ -4,7 +4,7 @@ import { getSupabaseClient } from './supabase';
 const pagesRouter = Router();
 
 // GET /api/pages/:slug - Get public page by slug
-pagesRouter.get('/:slug', async (req: Request, res: Response): Promise<void> => {
+pagesRouter.get('/pages/:slug', async (req: Request, res: Response): Promise<void> => {
   try {
     const slug = req.params['slug'];
     const supabase = await getSupabaseClient();
@@ -29,4 +29,4 @@ pagesRouter.get('/:slug', async (req: Request, res: Response): Promise<void> => 
   }
 });
 
-export { pagesRouter };
+export default pagesRouter;

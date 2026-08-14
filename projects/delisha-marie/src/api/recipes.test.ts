@@ -357,63 +357,6 @@ describe('Recipes Router API', () => {
     expect(res.status).toBe(200);
   });
 
-  describe('POST /api/recipes/search', () => {
-    it('should return recipes successfully', async () => {
-      mockInvoke.mockResolvedValue({
-        data: { recipes: [{ id: 1, title: 'Test' }], total: 1 },
-        error: null,
-      });
-
-      const res = await request(app)
-        .post('/api/recipes/search')
-        .send({ query: 'test', page: 1, pageSize: 12 });
-
-      expect(res.status).toBe(200);
-      expect(res.body.items).toHaveLength(1);
-      expect(res.body.total).toBe(1);
-      expect(mockInvoke).toHaveBeenCalledWith('search-recipes', {
-        body: { query: 'test', page: 1, pageSize: 12 },
-      });
-    });
-
-    it('should return 400 if query is missing', async () => {
-      const res = await request(app).post('/api/recipes/search').send({ page: 1 });
-      expect(res.status).toBe(400);
-      expect(res.body.error).toBe('Query is required');
-    });
-
-    it('should return 500 if edge function returns an error', async () => {
-      mockInvoke.mockResolvedValue({
-        data: null,
-        error: new Error('Edge function failed'),
-      });
-
-      const res = await request(app).post('/api/recipes/search').send({ query: 'test' });
-      expect(res.status).toBe(500);
-      expect(res.body.error).toBe('Edge function failed');
-    });
-
-    it('should return 500 if supabase throws exception', async () => {
-      mockInvoke.mockRejectedValue(new Error('Network error'));
-
-      const res = await request(app).post('/api/recipes/search').send({ query: 'test' });
-      expect(res.status).toBe(500);
-      expect(res.body.error).toBe('Network error');
-    });
-
-    it('should handle missing data properties correctly', async () => {
-      mockInvoke.mockResolvedValue({
-        data: {},
-        error: null,
-      });
-
-      const res = await request(app).post('/api/recipes/search').send({ query: 'test' });
-      expect(res.status).toBe(200);
-      expect(res.body.items).toEqual([]);
-      expect(res.body.total).toBe(0);
-    });
-  });
-
   describe('GET /api/recipes/:slug', () => {
     it('should return a recipe by slug with breadcrumbs and navigation links', async () => {
       const mockSingleDbRecipe = {

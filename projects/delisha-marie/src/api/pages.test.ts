@@ -1,7 +1,7 @@
 import express from 'express';
 import request from 'supertest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { pagesRouter } from './pages';
+import pagesRouter from './pages';
 import { resetSupabaseClient } from './supabase';
 
 vi.hoisted(() => {
@@ -29,7 +29,7 @@ describe('Public Pages Router API', () => {
     resetSupabaseClient();
     app = express();
     app.use(express.json());
-    app.use('/api/pages', pagesRouter);
+    app.use('/api', pagesRouter);
   });
 
   describe('GET /api/pages/:slug', () => {
