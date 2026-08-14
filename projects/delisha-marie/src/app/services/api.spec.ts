@@ -52,8 +52,11 @@ describe('Api', () => {
   describe('normalizeUrl', () => {
     it('should prepend /api if not present', async () => {
       const promise = service.get('/test/endpoint');
-      httpMock.expectOne('/api/test/endpoint').flush({});
-      await promise;
+      const req = httpMock.expectOne('/api/test/endpoint');
+      expect(req.request.url).toBe('/api/test/endpoint');
+      req.flush({});
+      const result = await promise;
+      expect(result).toEqual({});
     });
   });
 });
