@@ -28,29 +28,42 @@ describe('EquipmentManagerComponent', () => {
     expect(component).toBeTruthy();
   });
 
-  it('should add an empty equipment item', () => {
-    expect(component.value().length).toBe(0);
-    component.addItem();
+  it('should add an empty equipment item via template button click', () => {
+    const button = fixture.debugElement.nativeElement.querySelector('button');
+    button.click();
     expect(component.value().length).toBe(1);
     expect(component.value()[0]).toEqual({ title: '', url: '', image: '' });
   });
 
-  it('should remove an equipment item', () => {
+  it('should remove an equipment item via template button click', () => {
     component.value.set([{ title: 'Test', url: 'https://test.com', image: '' }]);
-    component.removeItem(0);
+    fixture.detectChanges();
+    const removeBtn = fixture.debugElement.nativeElement.querySelector('.bg-rose-600');
+    removeBtn.click();
     expect(component.value().length).toBe(0);
   });
 
-  it('should update an equipment item field', () => {
+  it('should update an equipment item field via template input', () => {
     component.value.set([{ title: 'Old', url: '', image: '' }]);
-    const event = { target: { value: 'New' } } as unknown as Event;
-    component.updateItem(0, 'title', event);
-    expect(component.value()[0].title).toBe('New');
+    fixture.detectChanges();
+    const inputs = fixture.debugElement.nativeElement.querySelectorAll('input');
+    inputs[0].value = 'New Title';
+    inputs[0].dispatchEvent(new Event('input'));
+    
+    inputs[1].value = 'https://new.com';
+    inputs[1].dispatchEvent(new Event('input'));
+    
+    expect(component.value()[0].title).toBe('New Title');
+    expect(component.value()[0].url).toBe('https://new.com');
   });
 
-  it('should update an equipment item image', () => {
+  it('should update an equipment item image via template event', () => {
     component.value.set([{ title: '', url: '', image: 'old.jpg' }]);
-    component.updateImage(0, 'new.jpg');
+    fixture.detectChanges();
+    const uploader = fixture.debugElement.query(
+      (el) => el.name === 'app-image-uploader' || el.nativeElement.tagName.toLowerCase() === 'app-image-uploader'
+    );
+    uploader.triggerEventHandler('valueChange', 'new.jpg');
     expect(component.value()[0].image).toBe('new.jpg');
   });
 });
