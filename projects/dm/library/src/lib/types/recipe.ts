@@ -70,7 +70,6 @@ export interface BaseRecipe {
   newCommentsCount?: number;
   comments?: Comment[];
   notes?: string[];
-  equipment?: string[];
   nutrition?: Nutrition;
   cuisine?: string;
   course?: string;
