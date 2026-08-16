@@ -79,7 +79,7 @@ export interface BaseRecipe {
   keywords?: string[];
   specialDiets?: string[];
   holidays?: string[];
-  status: 'draft' | 'scheduled' | 'published' | 'updated';
+  status: 'draft' | 'published';
   likes?: number;
   source?: string;
   video?: string | null;
