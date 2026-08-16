@@ -115,9 +115,12 @@ export class RecipeService {
     return this.api.delete<{ success: boolean }>(`/recipes/${id}`);
   }
 
-  async upload(file: File): Promise<string> {
+  async upload(file: File, folder?: string): Promise<string> {
     const formData = new FormData();
     formData.append('image', file);
+    if (folder) {
+      formData.append('folder', folder);
+    }
 
     try {
       const response = await this.api.post<{ success: boolean; files: string[] }>(

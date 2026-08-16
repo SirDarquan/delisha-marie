@@ -51,7 +51,8 @@ describe('RecipeFormComponent', () => {
     cuisine: 'Italian',
     course: 'Dinner',
     keyword: ['key'],
-    equipment: 'equip',
+    equipment: [],
+
     notes: 'note',
     servingSize: '1',
     calories: '100',
@@ -366,7 +367,7 @@ describe('RecipeFormComponent', () => {
       cuisine: 'Italian',
       course: 'Dinner',
       keywords: ['easy', 'quick'],
-      equipment: ['Stand Mixer', 'Baking Sheet'],
+
       notes: ['Serve hot', 'Add cheese'],
       nutrition: {
         servingSize: '1 bowl',
@@ -392,7 +393,7 @@ describe('RecipeFormComponent', () => {
     expect(component['recipeModel']().course).toBe('Dinner');
     expect(component['recipeModel']().author).toBe('Chef Delisha');
     expect(component['recipeModel']().keyword).toEqual(['easy', 'quick']);
-    expect(component['recipeModel']().equipment).toBe('Stand Mixer\nBaking Sheet');
+
     expect(component['recipeModel']().notes).toBe('Serve hot\nAdd cheese');
     expect(component['recipeModel']().servingSize).toBe('1 bowl');
     expect(component['recipeModel']().calories).toBe('300 kcal');
@@ -1503,7 +1504,7 @@ describe('RecipeFormComponent', () => {
     expect(component['recipeModel']().content).toBe('<p>Updated Content</p>');
   });
 
-  it('should serialize recipe with nutrition, equipment, notes, and theBest category trails', async () => {
+  it('should serialize recipe with nutrition, notes, and theBest category trails', async () => {
     fixture = TestBed.createComponent(RecipeFormComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
@@ -1513,7 +1514,7 @@ describe('RecipeFormComponent', () => {
       title: 'Full Recipe',
       slug: 'full-recipe',
       status: 'draft',
-      equipment: 'Mixer\nBowl',
+
       notes: 'Chill before serving',
       keyword: ['Healthy', 'Quick'],
       servingSize: '1 bowl',
