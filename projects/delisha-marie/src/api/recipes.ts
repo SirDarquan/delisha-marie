@@ -231,6 +231,7 @@ interface SupabaseQueryBuilder {
   eq: (col: string, val: unknown) => SupabaseQueryBuilder;
   gt: (col: string, val: unknown) => SupabaseQueryBuilder;
   gte: (col: string, val: unknown) => SupabaseQueryBuilder;
+  lte: (col: string, val: unknown) => SupabaseQueryBuilder;
   or: (
     filter: string,
     options?: { foreignTable?: string; referencedTable?: string },
@@ -359,7 +360,7 @@ recipesRouter.get('/recipes', async (req: Request, res: Response) => {
     let query: SupabaseQueryBuilder = supabase
       .from('recipes')
       .select(selectStr, { count: 'exact' }) as unknown as SupabaseQueryBuilder;
-    query = query.eq('status', 'published');
+    query = query.eq('status', 'published').lte('created_at', new Date().toISOString());
     query = applyRecipeFilters(query, method, category, subcategory, matchedIds);
 
     if (rating && method === 'the-best-recipes' && !category) {
@@ -399,6 +400,7 @@ async function getAdjacentRecipe(
     .from('recipes')
     .select('id, title, slug, created_at')
     .eq('status', 'published')
+    .lte('created_at', new Date().toISOString())
     .limit(1);
 
   if (rowType === 'next') {
@@ -661,6 +663,7 @@ recipesRouter.get('/recipes/:slug', async (req: Request, res: Response) => {
       .select(selectStr)
       .eq('slug', cleanSlug)
       .eq('status', 'published')
+      .lte('created_at', new Date().toISOString())
       .maybeSingle();
 
     if (recipeError) throw recipeError;

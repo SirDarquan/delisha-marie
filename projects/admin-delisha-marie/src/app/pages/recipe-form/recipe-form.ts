@@ -697,7 +697,15 @@ export class RecipeFormComponent implements OnInit {
     video: '',
   });
 
-  protected readonly currentStatus = computed(() => this.recipeModel().status);
+  protected readonly currentStatus = computed(() => {
+    const status = this.recipeModel().status;
+    const createdAt = this.originalRecipe()?.createdAt;
+    // const createdAt = this.recipeModel().createdAt;
+    if (status === 'published' && createdAt && new Date(createdAt).getTime() > Date.now()) {
+      return 'scheduled';
+    }
+    return status;
+  });
 
   protected readonly recipeForm = form(
     this.recipeModel,
@@ -1006,7 +1014,7 @@ export class RecipeFormComponent implements OnInit {
 
   private serializeRecipe(
     formValue: RecipeFormModel,
-    status: 'draft' | 'scheduled' | 'published',
+    status: 'draft' | 'published',
   ): Omit<Recipe, 'id'> {
     const ingredients = formValue.ingredients
       ? formValue.ingredients
@@ -1193,7 +1201,7 @@ export class RecipeFormComponent implements OnInit {
     }
 
     const payload: Omit<Recipe, 'id'> = {
-      ...this.serializeRecipe(formValue, status),
+      ...this.serializeRecipe(formValue, status === 'scheduled' ? 'published' : status),
       createdAt,
       updatedAt,
     };

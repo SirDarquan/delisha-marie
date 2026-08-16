@@ -123,7 +123,7 @@ import { RecipeService } from '../../services/recipe.service';
                   </div>
 
                   <div role="cell" class="w-32 px-4 text-sm">
-                    @let stat = recipe.status || 'draft';
+                    @let stat = isScheduled(recipe) ? 'scheduled' : recipe.status || 'draft';
                     <span
                       class="px-2.5 py-1 rounded-full text-xs font-bold tracking-wide capitalize"
                       [class.bg-slate-950]="stat === 'draft'"
@@ -131,9 +131,7 @@ import { RecipeService } from '../../services/recipe.service';
                       [class.bg-orange-500/10]="stat === 'scheduled'"
                       [class.text-orange-400]="stat === 'scheduled'"
                       [class.bg-green-500/10]="stat === 'published'"
-                      [class.text-green-400]="stat === 'published'"
-                      [class.bg-blue-500/10]="stat === 'updated'"
-                      [class.text-blue-400]="stat === 'updated'">
+                      [class.text-green-400]="stat === 'published'">
                       {{ stat }}
                     </span>
                   </div>
@@ -147,9 +145,7 @@ import { RecipeService } from '../../services/recipe.service';
                     <button
                       mat-button
                       [disabled]="
-                        recipe.status === 'draft' ||
-                        recipe.status === 'scheduled' ||
-                        !recipe.newCommentsCount
+                        stat === 'draft' || stat === 'scheduled' || !recipe.newCommentsCount
                       "
                       [routerLink]="['/recipes', recipe.id, 'comments']"
                       [matBadge]="recipe.newCommentsCount || null"
@@ -174,7 +170,7 @@ import { RecipeService } from '../../services/recipe.service';
                       </a>
                       <button
                         mat-icon-button
-                        [disabled]="recipe.status === 'published' || recipe.status === 'updated'"
+                        [disabled]="recipe.status === 'published'"
                         (click)="onDelete(recipe.id)"
                         class="!w-7 !h-7 !p-0 flex items-center justify-center !text-white hover:!text-rose-400 hover:drop-shadow-[0_0_8px_rgba(244,63,94,0.8)] transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:!text-white disabled:hover:drop-shadow-none"
                         aria-label="Delete recipe">
@@ -234,6 +230,14 @@ export class RecipesListComponent implements OnInit {
 
   protected readonly searchTerm = signal<string>('');
   protected readonly highlightedRecipeId = signal<string | number | null>(null);
+
+  protected isScheduled(recipe: Recipe): boolean {
+    return (
+      recipe.status === 'published' &&
+      !!recipe.createdAt &&
+      new Date(recipe.createdAt).getTime() > Date.now()
+    );
+  }
 
   protected readonly recipes = signal<Recipe[]>(this.recipeService.getCachedRecipesList());
   protected readonly isLoading = signal<boolean>(false);
