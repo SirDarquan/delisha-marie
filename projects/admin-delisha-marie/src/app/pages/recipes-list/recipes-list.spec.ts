@@ -74,7 +74,7 @@ describe('RecipesListComponent', () => {
         totalTime: '',
         yield: '',
         author: 'Delisha Marie',
-        status: undefined as unknown as 'published' | 'draft' | 'scheduled',
+        status: undefined as unknown as 'published' | 'draft',
       },
     ];
 

@@ -569,13 +569,13 @@ describe('RecipeFormComponent', () => {
       ...getValidPublishedModel(),
       title: 'Scheduled Recipe',
       slug: 'scheduled-recipe',
-      status: 'scheduled',
+      status: 'published',
     });
 
     await component.saveRequired('scheduled');
 
     expect(updatePayload).toBeTruthy();
-    expect(updatePayload.status).toBe('scheduled');
+    expect(updatePayload.status).toBe('published');
     expect(updatePayload.createdAt).toBeDefined();
     expect(updatePayload.updatedAt).toBeDefined();
     expect(updatePayload.createdAt).toBe(updatePayload.updatedAt);
@@ -1059,9 +1059,9 @@ describe('RecipeFormComponent', () => {
     fixture.detectChanges();
 
     // Trigger keyword add/remove via template
-    const addKeywordBtn = Array.from(fixture.nativeElement.querySelectorAll('button')).find(
-      (b: any) => b.textContent.includes('Add Keyword'),
-    ) as HTMLButtonElement;
+    const addKeywordBtn = Array.from<HTMLButtonElement>(
+      fixture.nativeElement.querySelectorAll('button'),
+    ).find((b) => b.textContent?.includes('Add Keyword')) as HTMLButtonElement;
     if (addKeywordBtn) addKeywordBtn.click();
     fixture.detectChanges();
 
@@ -1070,27 +1070,23 @@ describe('RecipeFormComponent', () => {
       keywordInput.value = 'TestKw';
       keywordInput.dispatchEvent(new Event('input'));
     }
-    const removeKeywordBtn = Array.from(fixture.nativeElement.querySelectorAll('button')).find(
-      (b: any) => b.textContent.includes('close'),
-    ) as HTMLButtonElement;
+    const removeKeywordBtn = Array.from<HTMLButtonElement>(
+      fixture.nativeElement.querySelectorAll('button'),
+    ).find((b) => b.textContent?.includes('close')) as HTMLButtonElement;
     if (removeKeywordBtn) removeKeywordBtn.click();
     fixture.detectChanges();
 
     // Trigger tabs
-    const whereTab = Array.from(fixture.nativeElement.querySelectorAll('button')).find((b: any) =>
-      b.textContent.includes('Where is it'),
-    ) as HTMLButtonElement;
+    const whereTab = Array.from<HTMLButtonElement>(
+      fixture.nativeElement.querySelectorAll('button'),
+    ).find((b) => b.textContent?.includes('Where is it')) as HTMLButtonElement;
     if (whereTab) whereTab.click();
     fixture.detectChanges();
-    const whatTab = Array.from(fixture.nativeElement.querySelectorAll('button')).find((b: any) =>
-      b.textContent.includes('What is it'),
-    ) as HTMLButtonElement;
+    const whatTab = Array.from<HTMLButtonElement>(
+      fixture.nativeElement.querySelectorAll('button'),
+    ).find((b) => b.textContent?.includes('What is it')) as HTMLButtonElement;
     if (whatTab) whatTab.click();
     fixture.detectChanges();
-
-    const buttons = Array.from(
-      fixture.nativeElement.querySelectorAll('button'),
-    ) as HTMLButtonElement[];
 
     // Make valid for schedule
     component['recipeModel'].set({
@@ -1100,17 +1096,17 @@ describe('RecipeFormComponent', () => {
     });
     fixture.detectChanges();
 
-    const saveAsDraftBtn = Array.from(fixture.nativeElement.querySelectorAll('button')).find(
-      (b: any) => b.textContent?.includes('Save as Draft'),
-    ) as HTMLButtonElement;
+    const saveAsDraftBtn = Array.from<HTMLButtonElement>(
+      fixture.nativeElement.querySelectorAll('button'),
+    ).find((b) => b.textContent?.includes('Save as Draft')) as HTMLButtonElement;
     if (saveAsDraftBtn) {
       saveAsDraftBtn.disabled = false; // ensure not disabled for click
       saveAsDraftBtn.click();
     }
 
-    const scheduleBtn = Array.from(fixture.nativeElement.querySelectorAll('button')).find(
-      (b: any) => b.textContent?.includes('Schedule Publication'),
-    ) as HTMLButtonElement;
+    const scheduleBtn = Array.from<HTMLButtonElement>(
+      fixture.nativeElement.querySelectorAll('button'),
+    ).find((b) => b.textContent?.includes('Schedule Publication')) as HTMLButtonElement;
     if (scheduleBtn) {
       scheduleBtn.disabled = false;
       scheduleBtn.click();
@@ -1628,7 +1624,7 @@ describe('RecipeFormComponent', () => {
     });
 
     // Test saveDraft with invalid equipment
-    const snackBarSpy = vi.spyOn((component as any).snackBar, 'open');
+    const snackBarSpy = vi.spyOn(component['snackBar'], 'open');
     await component.saveDraft();
     expect(snackBarSpy).toHaveBeenCalledWith(
       'Please fill in title and image for all added equipment.',

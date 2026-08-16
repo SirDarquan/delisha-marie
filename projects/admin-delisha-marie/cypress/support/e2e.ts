@@ -34,4 +34,24 @@ beforeEach(() => {
       DescopeProjectId: 'mock-descope-project-id',
     },
   }).as('getAppConfig');
+
+  cy.intercept('GET', '/api/categories', {
+    statusCode: 200,
+    body: [],
+  }).as('getCategories');
+
+  cy.intercept('GET', '/api/methods', {
+    statusCode: 200,
+    body: [],
+  }).as('getMethods');
+
+  cy.intercept('GET', '/api/holidays', {
+    statusCode: 200,
+    body: [],
+  }).as('getHolidays');
+
+  cy.intercept('GET', '/api/special-diets', {
+    statusCode: 200,
+    body: [],
+  }).as('getSpecialDiets');
 });
