@@ -53,16 +53,6 @@ import { Recipe } from '../../services/recipe.service';
             <label class="flex items-center gap-2 cursor-pointer group">
               <input
                 type="checkbox"
-                [checked]="showEquipment()"
-                (change)="showEquipment.set(!showEquipment())"
-                class="w-4 h-4 rounded text-[var(--mat-sys-primary)] focus:ring-[var(--mat-sys-primary)]" />
-              <span class="text-sm font-bold group-hover:text-black transition-colors text-gray-700"
-                >Equipment</span
-              >
-            </label>
-            <label class="flex items-center gap-2 cursor-pointer group">
-              <input
-                type="checkbox"
                 [checked]="showNotes()"
                 (change)="showNotes.set(!showNotes())"
                 class="w-4 h-4 rounded text-[var(--mat-sys-primary)] focus:ring-[var(--mat-sys-primary)]" />
@@ -135,18 +125,6 @@ import { Recipe } from '../../services/recipe.service';
               }
             </div>
           </div>
-
-          <!-- Equipment -->
-          @if (showEquipment() && r.equipment && r.equipment.length > 0) {
-            <div class="mb-10">
-              <h2 class="print-heading font-black uppercase tracking-tight mb-4 pb-2">Equipment</h2>
-              <ul class="list-disc pl-6 space-y-2">
-                @for (item of r.equipment; track item) {
-                  <li class="font-bold print-text">{{ item }}</li>
-                }
-              </ul>
-            </div>
-          }
 
           <!-- Ingredients & Instructions Flowing Linearly -->
           <div class="mb-12">
@@ -223,7 +201,6 @@ export class RecipePrint {
   recipe = input<Recipe | null | undefined>(undefined);
 
   showImage = signal(true);
-  showEquipment = signal(false);
   showNotes = signal(true);
   textSize = signal<'smaller' | 'normal' | 'larger'>('normal');
 

@@ -27,6 +27,7 @@ import { RecipeSource } from './recipe-source';
 import { RecipeTags } from './recipe-tags';
 import { extractYouTubeVideoId } from '@dm/library';
 import { useOptimizedContent } from '../../utils/optimized-content';
+import { RecipeEquipment } from '../../components/recipe-equipment/recipe-equipment';
 
 @Component({
   selector: 'dm-recipe-detail',
@@ -45,6 +46,7 @@ import { useOptimizedContent } from '../../utils/optimized-content';
     RecipeMeta,
     RouterLink,
     PinterestHoverDirective,
+    RecipeEquipment,
   ],
   template: `
     <div class="into-the-box pt-12 pb-12">
@@ -134,6 +136,9 @@ import { useOptimizedContent } from '../../utils/optimized-content';
               <div class="order-2 lg:order-none space-y-12 min-w-0 lg:col-start-1 lg:row-start-2">
                 <!-- Premium Recipe Card -->
                 <dml-recipe-card [recipe]="r" />
+
+                <!-- Equipment -->
+                <dm-recipe-equipment [recipeId]="r.id" />
 
                 <!-- Recipe Source -->
                 <dml-recipe-source [recipe]="r" />

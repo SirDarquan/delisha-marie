@@ -97,11 +97,10 @@ export const schemaDynamicPageResolver: ResolveFn<SchemaObject[]> = async (route
       '1024',
     ),
     generateWebSiteSchema(origin, siteName),
+    generateWebPageSchema(url, slug, siteName, description, '', ''),
   );
 
-  if (slug === '') {
-    schema.push(generateWebPageSchema(url, slug, siteName, description, '', ''));
-  } else if (slug === 'about') {
+  if (slug === 'about') {
     schema.push(generateAboutPageSchema(url, siteName, description));
   } else if (slug === 'contact') {
     schema.push(generateContactPageSchema(url, siteName, description));
@@ -416,11 +415,11 @@ export const generateBreadcrumbSchema = (
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
     '@id': `${baseUrl}${slug}#breadcrumb`,
-    itemListElement: items.map((b, index) => ({
+    itemListElement: items.map((b, index, arr) => ({
       '@type': 'ListItem',
       position: index + 1,
       name: b.label,
-      item: b.url ? `${baseUrl}/${b.url.replace(/^\//, '')}` : undefined,
+      item: b.url && b !== arr.at(-1) ? `${baseUrl}/${b.url.replace(/^\//, '')}` : undefined,
     })),
   };
 };

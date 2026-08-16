@@ -12,7 +12,6 @@ import { Sidebar } from '../../components/sidebar/sidebar';
 import { Page, PagesService } from '../../services/pages.service';
 import { ContactForm } from '../../components/contact-form/contact-form';
 import { useOptimizedContent } from '../../utils/optimized-content';
-import { SeoService } from '../../services/seo.service';
 import { ColoredHeaderComponent } from '../../components/colored-header/colored-header';
 
 @Component({
@@ -64,7 +63,6 @@ import { ColoredHeaderComponent } from '../../components/colored-header/colored-
 export class DynamicPage {
   private readonly route = inject(ActivatedRoute);
   private readonly pagesService = inject(PagesService);
-  private readonly seoService = inject(SeoService);
   private readonly _params = toSignal(this.route.params);
 
   private readonly _pageResource = resource({

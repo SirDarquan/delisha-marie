@@ -17,7 +17,7 @@ describe('RecipePrint', () => {
     cookTime: '30 mins',
     totalTime: '45 mins',
     image: 'test-image.jpg',
-    equipment: ['Pan', 'Spatula'],
+
     ingredients: ['1 cup flour', '2 eggs'],
     instructions: ['Mix', 'Bake'],
     notes: ['Delicious note'],
@@ -50,22 +50,6 @@ describe('RecipePrint', () => {
     expect(compiled.textContent).toContain('4 servings');
   });
 
-  it('should toggle equipment visibility via checkbox', () => {
-    fixture.componentRef.setInput('recipe', mockRecipe);
-    fixture.detectChanges();
-
-    const compiled = fixture.nativeElement as HTMLElement;
-    // Equipment is false by default
-    expect(compiled.textContent).not.toContain('Spatula');
-
-    // Toggle it on via checkbox (2nd checkbox)
-    const checkboxes = compiled.querySelectorAll('input[type="checkbox"]');
-    const eqCheckbox = checkboxes[1] as HTMLInputElement;
-    eqCheckbox.dispatchEvent(new Event('change'));
-    fixture.detectChanges();
-    expect(compiled.textContent).toContain('Spatula');
-  });
-
   it('should toggle image visibility via checkbox', () => {
     fixture.componentRef.setInput('recipe', mockRecipe);
     fixture.detectChanges();
@@ -90,9 +74,9 @@ describe('RecipePrint', () => {
     // Notes is true by default
     expect(compiled.textContent).toContain('Delicious note');
 
-    // Toggle it off via checkbox (3rd checkbox)
+    // Toggle it off via checkbox (2nd checkbox now)
     const checkboxes = compiled.querySelectorAll('input[type="checkbox"]');
-    const notesCheckbox = checkboxes[2] as HTMLInputElement;
+    const notesCheckbox = checkboxes[1] as HTMLInputElement;
     notesCheckbox.dispatchEvent(new Event('change'));
     fixture.detectChanges();
     expect(compiled.textContent).not.toContain('Delicious note');

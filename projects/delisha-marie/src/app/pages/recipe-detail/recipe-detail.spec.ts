@@ -16,6 +16,7 @@ describe('RecipeDetail', () => {
     recipes: ReturnType<typeof signal<Recipe[]>>;
     getComments: ReturnType<typeof vi.fn>;
     getRecipeBySlug: ReturnType<typeof vi.fn>;
+    getRecipeEquipment: ReturnType<typeof vi.fn>;
   };
 
   const mockRecipe: Recipe = createMockRecipe({
@@ -62,6 +63,7 @@ describe('RecipeDetail', () => {
       recipes: signal(mockRecipes),
       getComments: vi.fn().mockResolvedValue({ comments: [], total: 0 }),
       getRecipeBySlug: vi.fn().mockResolvedValue(mockRecipe),
+      getRecipeEquipment: vi.fn().mockResolvedValue([]),
     };
 
     const windowMock = {

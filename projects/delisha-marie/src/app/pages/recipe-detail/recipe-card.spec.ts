@@ -29,7 +29,7 @@ describe('RecipeCard', () => {
     category: 'Test Category',
     ingredients: ['Ingredient 1', 'Ingredient 2'],
     instructions: ['Step 1', 'Step 2'],
-    equipment: ['Pan', 'Oven'],
+
     notes: ['Note 1'],
     nutrition: {
       calories: '100',
@@ -143,12 +143,6 @@ describe('RecipeCard', () => {
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.textContent).toContain('100'); // Calories
     expect(compiled.textContent).toContain('1 portion'); // Serving size
-  });
-
-  it('should render equipment if provided', () => {
-    const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.textContent).toContain('Pan');
-    expect(compiled.textContent).toContain('Oven');
   });
 
   it('should render notes if provided', () => {

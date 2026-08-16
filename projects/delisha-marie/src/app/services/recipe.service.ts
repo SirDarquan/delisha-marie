@@ -3,6 +3,14 @@ import type { BaseRecipe, Breadcrumbs, Comment, Nutrition } from '@dm/library';
 import { Api } from './api';
 export type { Comment };
 
+export interface Equipment {
+  id: string;
+  recipeId: string;
+  title: string;
+  image: string;
+  url: string;
+}
+
 export interface Recipe extends BaseRecipe {
   breadcrumbs: Breadcrumbs;
   nutrition: Nutrition;
@@ -96,5 +104,12 @@ export class RecipeService {
     comment: Omit<Comment, 'id' | 'createdAt'> & { alt_email?: string },
   ): Promise<Comment> {
     return this.api.post<Comment>(`/recipes/${comment.recipeId}/comments`, comment);
+  }
+
+  /**
+   * Fetches equipment list for a specific recipe.
+   */
+  getRecipeEquipment(recipeId: string | number): Promise<Equipment[]> {
+    return this.api.get<Equipment[]>(`/recipes/${recipeId}/equipment`);
   }
 }
