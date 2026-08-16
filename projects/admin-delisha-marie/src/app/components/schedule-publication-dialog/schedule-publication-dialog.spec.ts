@@ -142,10 +142,9 @@ describe('SchedulePublicationDialogComponent', () => {
     expect(component.step()).toBe('date');
   });
 
-  it('should proceed to time step if date is selected', async () => {
+  it('should proceed to time step if date is selected', () => {
     component.selectedDate.set(new Date());
     component.nextStep();
-    await delay(200);
     expect(component.step()).toBe('time');
   });
 

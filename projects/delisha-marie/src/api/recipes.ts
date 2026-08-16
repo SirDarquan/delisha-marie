@@ -698,4 +698,27 @@ recipesRouter.get('/recipes/:slug', async (req: Request, res: Response) => {
   }
 });
 
+recipesRouter.get('/recipes/:recipeId/equipment', async (req: Request, res: Response) => {
+  try {
+    const supabase = await getSupabaseClient();
+    const { recipeId } = req.params;
+
+    const { data, error } = await supabase
+      .from('equipment')
+      .select('id, recipe_id, title, url, image')
+      .eq('recipe_id', recipeId)
+      .order('created_at', { ascending: true });
+
+    if (error) {
+      throw error;
+    }
+
+    return res.json(camelCaseKeys(data));
+  } catch (err: unknown) {
+    console.error(err);
+    const msg = err instanceof Error ? err.message : String(err);
+    return res.status(500).json({ error: msg });
+  }
+});
+
 export default recipesRouter;

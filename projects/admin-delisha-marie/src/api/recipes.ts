@@ -441,6 +441,7 @@ recipesRouter.post('/recipes', async (req: AuthRequest, res: Response) => {
     const methodName = req.body.method;
     const holidaysData = req.body.holidays;
     const specialDietsData = req.body.specialDiets;
+    const equipmentData = req.body.equipment;
 
     const dbBody = normalizeDbBody(
       filterRecipeColumns(snakeCaseKeys(req.body as Record<string, unknown>)),
@@ -458,6 +459,7 @@ recipesRouter.post('/recipes', async (req: AuthRequest, res: Response) => {
       methodName,
       holidaysData,
       specialDietsData,
+      equipmentData,
     );
 
     return res.json({
@@ -465,6 +467,7 @@ recipesRouter.post('/recipes', async (req: AuthRequest, res: Response) => {
       category: categoryData,
       holidays: holidaysData || [],
       specialDiets: specialDietsData || [],
+      equipment: equipmentData || [],
     });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
@@ -479,6 +482,7 @@ recipesRouter.put('/recipes/:id', async (req: AuthRequest, res: Response) => {
     const methodName = req.body.method;
     const holidaysData = req.body.holidays;
     const specialDietsData = req.body.specialDiets;
+    const equipmentData = req.body.equipment;
 
     const updateBody = { ...req.body };
     delete updateBody.id;
@@ -518,6 +522,7 @@ recipesRouter.put('/recipes/:id', async (req: AuthRequest, res: Response) => {
       methodName,
       holidaysData,
       specialDietsData,
+      equipmentData,
     );
 
     return res.json({
@@ -525,6 +530,7 @@ recipesRouter.put('/recipes/:id', async (req: AuthRequest, res: Response) => {
       category: categoryData,
       holidays: holidaysData || [],
       specialDiets: specialDietsData || [],
+      equipment: equipmentData || [],
     });
   } catch (err: unknown) {
     console.log('caught error in POST /recipes:', err);
@@ -735,12 +741,14 @@ async function saveAllRecipeRelations(
   methodName: unknown,
   holidays: unknown,
   specialDiets: unknown,
+  equipment: unknown,
 ): Promise<void> {
   const tables = [
     'recipe_categories',
     'recipe_methods',
     'recipe_holidays',
     'recipe_special_diets',
+    'equipment',
   ] as const;
   for (const table of tables) {
     const { error } = await client.from(table).delete().eq('recipe_id', recipeId);
@@ -779,6 +787,17 @@ async function saveAllRecipeRelations(
       'special_diets',
       'diet_id',
     );
+  }
+
+  if (Array.isArray(equipment) && equipment.length > 0) {
+    const equipmentToInsert = equipment.map((eq) => ({
+      recipe_id: recipeId,
+      title: eq.title,
+      url: eq.url,
+      image: eq.image,
+    }));
+    const { error } = await client.from('equipment').insert(equipmentToInsert);
+    if (error) throw error;
   }
 }
 

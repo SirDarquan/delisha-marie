@@ -115,6 +115,13 @@ describe('Sitemap Router API', () => {
             image: null,
             created_at: '2026-07-15T08:00:00.000Z',
           },
+          {
+            slug: 'no-dates',
+            title: 'No Dates',
+            image: null,
+            updated_at: null,
+            created_at: null,
+          },
         ],
         error: null,
       });
@@ -129,6 +136,21 @@ describe('Sitemap Router API', () => {
       expect(res.text).toContain('<image:loc>https://example.com/cake.jpg?a=1&amp;b=2</image:loc>');
       expect(res.text).toContain('<loc>https://custom-domain.com/recipe/simple-bread</loc>');
       expect(res.text).toContain('<lastmod>2026-07-15</lastmod>');
+      expect(res.text).toContain('<loc>https://custom-domain.com/recipe/no-dates</loc>');
+    });
+
+    it('should return empty XML if data array is empty', async () => {
+      mockEq.mockResolvedValueOnce({
+        data: [],
+        error: null,
+      });
+
+      process.env['SITE_URL'] = 'https://custom-domain.com';
+      const res = await request(app).get('/sitemap-recipes.xml');
+
+      expect(res.status).toBe(200);
+      expect(res.headers['content-type']).toContain('application/xml');
+      expect(res.text).not.toContain('<loc>');
     });
 
     it('should handle database exception gracefully', async () => {
