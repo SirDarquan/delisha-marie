@@ -19,6 +19,7 @@ describe('Sitemap Router API', () => {
   let app: express.Express;
   const mockSelect = vi.fn();
   const mockEq = vi.fn();
+  const mockLte = vi.fn();
   const originalEnv = process.env;
 
   beforeEach(() => {
@@ -34,6 +35,7 @@ describe('Sitemap Router API', () => {
 
     mockFrom.mockReturnValue({ select: mockSelect });
     mockSelect.mockReturnValue({ eq: mockEq });
+    mockEq.mockReturnValue({ lte: mockLte });
   });
 
   afterEach(() => {
@@ -101,7 +103,7 @@ describe('Sitemap Router API', () => {
 
   describe('GET /sitemap-recipes.xml', () => {
     it('should return dynamic recipe URLs with image tags and escaped XML', async () => {
-      mockEq.mockResolvedValueOnce({
+      mockLte.mockResolvedValueOnce({
         data: [
           {
             slug: 'chocolate-cake',
@@ -140,7 +142,7 @@ describe('Sitemap Router API', () => {
     });
 
     it('should return empty XML if data array is empty', async () => {
-      mockEq.mockResolvedValueOnce({
+      mockLte.mockResolvedValueOnce({
         data: [],
         error: null,
       });
@@ -154,7 +156,7 @@ describe('Sitemap Router API', () => {
     });
 
     it('should handle database exception gracefully', async () => {
-      mockEq.mockRejectedValueOnce(new Error('Database error'));
+      mockLte.mockRejectedValueOnce(new Error('Database error'));
 
       process.env['SITE_URL'] = 'https://custom-domain.com';
       const res = await request(app).get('/sitemap-recipes.xml');

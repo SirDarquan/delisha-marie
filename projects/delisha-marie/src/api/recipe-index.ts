@@ -73,6 +73,7 @@ async function getCategoriesFromDB(
     .from('recipe_categories')
     .select('categories (name, url), recipes!inner (status, the_best)')
     .eq('recipes.status', 'published')
+    .lte('recipes.created_at', new Date().toISOString())
     .ilike('categories.url', `/${type}%`);
 
   if (type === 'the-best') {
@@ -122,7 +123,8 @@ async function getHolidays(supabase: SupabaseClient) {
   const { data, error } = await supabase
     .from('recipe_holidays')
     .select('holidays (name, slug), recipes!inner (status)')
-    .eq('recipes.status', 'published');
+    .eq('recipes.status', 'published')
+    .lte('recipes.created_at', new Date().toISOString());
 
   if (error) throw error;
 
@@ -145,7 +147,8 @@ async function getSpecialDiets(supabase: SupabaseClient) {
   const { data, error } = await supabase
     .from('recipe_special_diets')
     .select('special_diets (name, slug), recipes!inner (status)')
-    .eq('recipes.status', 'published');
+    .eq('recipes.status', 'published')
+    .lte('recipes.created_at', new Date().toISOString());
 
   if (error) throw error;
 
@@ -168,7 +171,8 @@ async function getCookingMethodsAndList(supabase: SupabaseClient) {
   const { data, error } = await supabase
     .from('recipe_methods')
     .select('methods (name, slug), recipes!inner (status)')
-    .eq('recipes.status', 'published');
+    .eq('recipes.status', 'published')
+    .lte('recipes.created_at', new Date().toISOString());
 
   if (error) throw error;
 
@@ -220,7 +224,8 @@ async function getIngredients(supabase: SupabaseClient) {
   const { data: recipes, error: recipesError } = await supabase
     .from('recipes')
     .select('id')
-    .eq('status', 'published');
+    .eq('status', 'published')
+    .lte('created_at', new Date().toISOString());
 
   if (recipesError) throw recipesError;
 

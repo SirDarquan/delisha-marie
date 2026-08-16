@@ -56,7 +56,7 @@ const mockChain = {
   range: mockRange,
   ilike: mockIlike,
   in: mockIn,
-  then: (resolve: (val: { data: null; error: null }) => void) =>
+  then: (resolve: (val: { data: unknown; error: unknown }) => void) =>
     resolve({ data: null, error: null }),
 };
 
@@ -1523,7 +1523,7 @@ describe('Recipes Router API', () => {
         equipment: [{ title: 'Pan' }],
       };
       mockSingle.mockResolvedValueOnce({ data: { id: 'recipe-14' }, error: null });
-      vi.mocked(mockChain.then).mockImplementationOnce((resolve: any) =>
+      vi.mocked(mockChain.then).mockImplementationOnce((resolve) =>
         resolve({ data: null, error: new Error('Equipment insert failed') }),
       );
 

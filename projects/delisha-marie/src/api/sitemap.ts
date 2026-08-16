@@ -126,7 +126,8 @@ sitemapRouter.get('/sitemap-recipes.xml', async (_req: Request, res: Response): 
     const { data } = await supabase
       .from('recipes')
       .select('slug, image, updated_at, created_at')
-      .eq('status', 'published');
+      .eq('status', 'published')
+      .lte('created_at', new Date().toISOString());
 
     const recipes = data as SitemapRecipe[] | null;
 
