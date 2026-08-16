@@ -166,6 +166,13 @@ describe('Recipes Router API', () => {
     expect(res.status).toBe(200);
   });
 
+  it('should filter by rating for the-best-recipes method with no category', async () => {
+    const res = await request(app)
+      .get('/api/recipes')
+      .query({ method: 'the-best-recipes', rating: 'true' });
+    expect(res.status).toBe(200);
+  });
+
   it('should filter by category for cooking methods', async () => {
     const res = await request(app)
       .get('/api/recipes')
@@ -228,6 +235,14 @@ describe('Recipes Router API', () => {
     expect(res.status).toBe(200);
   });
 
+  it('should handle tag method when subcategory ingredient is not found', async () => {
+    mockIngredientsData = []; // not found
+    const res = await request(app)
+      .get('/api/recipes')
+      .query({ method: 'tag', category: 'fruit', subcategory: 'unknown-sub' });
+    expect(res.status).toBe(200);
+  });
+
   it('should handle tag method when parent ingredient is found but all ingredients fetch returns null', async () => {
     // Return parent ingredient for the first query, but then mockFrom needs to return null for the second query.
     let callCount = 0;
@@ -281,6 +296,7 @@ describe('Recipes Router API', () => {
                 slug: 'minimal',
                 status: 'published',
                 recipe_ingredients: [{ ingredient_id: '1' }],
+                method: 'Old Method',
                 // nested structure to test array and primitive branches of camelCaseKeys:
                 nested_data: {
                   array_field: [1, 2, { deep_key: 'val' }],
@@ -301,7 +317,7 @@ describe('Recipes Router API', () => {
     expect(res.status).toBe(200);
     expect(res.body.items[0].holidays).toEqual([]);
     expect(res.body.items[0].specialDiets).toEqual([]);
-    expect(res.body.items[0].method).toBe('');
+    expect(res.body.items[0].method).toBe('Old Method');
     expect(res.body.items[0].nestedData.arrayField[2].deepKey).toBe('val');
     expect(res.body.items[0].nestedData.primitiveField).toBe('hello');
   });
@@ -1481,6 +1497,70 @@ describe('Recipes Router API', () => {
 
       expect(res.status).toBe(500);
       expect(res.body.error).toBe('String insert crash');
+    });
+  });
+
+  describe('GET /api/recipes/:recipeId/equipment', () => {
+    it('should return equipment for a recipe', async () => {
+      mockFrom.mockImplementation((table: string) => {
+        if (table === 'equipment') {
+          const queryChain: Record<string, unknown> = {
+            select: vi.fn().mockReturnThis(),
+            eq: vi.fn().mockReturnThis(),
+            order: vi.fn().mockResolvedValue({
+              data: [
+                { id: 'eq1', recipe_id: '123', title: 'Pan', url: 'http://pan', image: 'pan.jpg' },
+              ],
+              error: null,
+            }),
+          };
+          return queryChain;
+        }
+        return {};
+      });
+
+      const res = await request(app).get('/api/recipes/123/equipment');
+      expect(res.status).toBe(200);
+      expect(res.body).toHaveLength(1);
+      expect(res.body[0].title).toBe('Pan');
+    });
+
+    it('should return 500 when database query fails for equipment', async () => {
+      mockFrom.mockImplementation((table: string) => {
+        if (table === 'equipment') {
+          const queryChain: Record<string, unknown> = {
+            select: vi.fn().mockReturnThis(),
+            eq: vi.fn().mockReturnThis(),
+            order: vi.fn().mockResolvedValue({
+              data: null,
+              error: new Error('Equipment error'),
+            }),
+          };
+          return queryChain;
+        }
+        return {};
+      });
+
+      const res = await request(app).get('/api/recipes/123/equipment');
+      expect(res.status).toBe(500);
+      expect(res.body.error).toBe('Equipment error');
+    });
+
+    it('should handle non-Error string exceptions in equipment fetching', async () => {
+      mockFrom.mockImplementation((table: string) => {
+        if (table === 'equipment') {
+          return {
+            select: vi.fn().mockImplementation(() => {
+              throw 'Equipment string crash';
+            }),
+          };
+        }
+        return {};
+      });
+
+      const res = await request(app).get('/api/recipes/123/equipment');
+      expect(res.status).toBe(500);
+      expect(res.body.error).toBe('Equipment string crash');
     });
   });
 });

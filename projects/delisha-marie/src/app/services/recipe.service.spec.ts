@@ -91,6 +91,16 @@ describe('RecipeService', () => {
     expect(result.items).toEqual([]);
   });
 
+  it('should handle getRecipes with rating parameter', async () => {
+    const promise = service.getRecipes(1, 10, 'baking', '', '', true);
+    const req = httpMock.expectOne(
+      '/api/recipes?page=1&pageSize=10&method=baking&category=&subcategory=&rating=true',
+    );
+    expect(req.request.method).toBe('GET');
+    req.flush({ items: [], total: 0 });
+    await promise;
+  });
+
   describe('getRecipeBySlug', () => {
     it('should find a recipe by slug', async () => {
       const mockRecipe = { id: 1, slug: 'test-recipe', title: 'Test' } as unknown as Recipe;
@@ -189,6 +199,15 @@ describe('RecipeService', () => {
       expect(result.total).toBe(1);
     });
 
+    it('should fetch comments for a recipe with a specific page', async () => {
+      const promise = service.getComments('1', 2);
+      const req = httpMock.expectOne('/api/recipes/1/comments?page=2');
+      const mockResponse = { comments: [], total: 0 };
+      req.flush(mockResponse);
+      const result = await promise;
+      expect(result).toEqual(mockResponse);
+    });
+
     it('should add a comment via POST request', async () => {
       const newCommentData = {
         recipeId: '1',
@@ -214,6 +233,19 @@ describe('RecipeService', () => {
       expect(result.author).toBe('Tester');
       expect(result.id).toBe('new');
       expect(result.createdAt).toBeDefined();
+    });
+  });
+
+  describe('getRecipeEquipment', () => {
+    it('should fetch equipment for a recipe', async () => {
+      const mockEquipment = [{ id: 'e1', recipeId: '1', title: 'Pan', image: '', url: '' }];
+      const promise = service.getRecipeEquipment('1');
+      const req = httpMock.expectOne('/api/recipes/1/equipment');
+      expect(req.request.method).toBe('GET');
+      req.flush(mockEquipment);
+
+      const result = await promise;
+      expect(result).toEqual(mockEquipment);
     });
   });
 });

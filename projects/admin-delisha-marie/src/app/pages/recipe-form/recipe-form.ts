@@ -12,6 +12,7 @@ import { form, FormField, FormRoot, required } from '@angular/forms/signals';
 import { MatButtonModule } from '@angular/material/button';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatDialog } from '@angular/material/dialog';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
@@ -29,6 +30,7 @@ import { SpecialDietsSelectorComponent } from '../../components/special-diets-se
 import { StoryHtmlEditorComponent } from '../../components/story-html-editor/story-html-editor';
 import { Recipe } from '../../models/recipe.model';
 import { RecipeService } from '../../services/recipe.service';
+import { EquipmentManagerComponent } from '../../components/equipment-manager/equipment-manager';
 
 export interface RecipeFormModel {
   title: string;
@@ -56,7 +58,7 @@ export interface RecipeFormModel {
   cuisine: string;
   course: string;
   keyword: string[];
-  equipment: string;
+  equipment: { title: string; url: string; image: string }[];
   notes: string;
   servingSize: string;
   calories: string;
@@ -88,6 +90,7 @@ export interface RecipeFormModel {
     HolidaysSelectorComponent,
     ImageUploaderComponent,
     StoryHtmlEditorComponent,
+    EquipmentManagerComponent,
   ],
   template: `
     <div class="p-4 md:p-8">
@@ -361,16 +364,10 @@ export interface RecipeFormModel {
                   class="resize-y"></textarea>
               </mat-form-field>
 
-              <mat-form-field appearance="outline" class="w-full md:col-span-2">
-                <mat-label>Equipment (One per line)</mat-label>
-                <textarea
-                  matInput
-                  id="equipment"
-                  [formField]="recipeForm.equipment"
-                  rows="3"
-                  placeholder="Enter equipment..."
-                  class="resize-y"></textarea>
-              </mat-form-field>
+              <div class="md:col-span-2 mb-4">
+                <h4 class="text-sm font-semibold text-white mb-3">Equipment</h4>
+                <app-equipment-manager [formField]="recipeForm.equipment"></app-equipment-manager>
+              </div>
 
               <mat-form-field appearance="outline" class="w-full md:col-span-2">
                 <mat-label>Recipe Notes (One per line)</mat-label>
@@ -647,9 +644,10 @@ export class RecipeFormComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly recipeService = inject(RecipeService);
+  private readonly dialog = inject(MatDialog);
+  private readonly snackBar = inject(MatSnackBar);
 
   protected readonly originalRecipe = signal<Recipe | null>(null);
-  private readonly dialog = inject(MatDialog);
 
   private readonly idToEdit = signal<string | number | null>(null);
 
@@ -684,7 +682,7 @@ export class RecipeFormComponent implements OnInit {
     cuisine: '',
     course: '',
     keyword: [],
-    equipment: '',
+    equipment: [],
     notes: '',
     servingSize: '',
     calories: '',
@@ -907,7 +905,8 @@ export class RecipeFormComponent implements OnInit {
       cuisine: recipe.cuisine || '',
       course: recipe.course || '',
       keyword: recipe.keywords || [],
-      equipment: recipe.equipment ? recipe.equipment.join('\n') : '',
+      equipment: recipe.equipment || [],
+
       notes: recipe.notes ? recipe.notes.join('\n') : '',
       servingSize: recipe.nutrition?.servingSize || '',
       calories: recipe.nutrition?.calories || '',
@@ -1021,12 +1020,6 @@ export class RecipeFormComponent implements OnInit {
           .map((i) => i.trim())
           .filter(Boolean)
       : [];
-    const equipment = formValue.equipment
-      ? formValue.equipment
-          .split('\n')
-          .map((e) => e.trim())
-          .filter(Boolean)
-      : [];
     const notes = formValue.notes
       ? formValue.notes
           .split('\n')
@@ -1101,13 +1094,26 @@ export class RecipeFormComponent implements OnInit {
       course: formValue.course?.trim() || null,
       nutrition,
       keywords,
-      equipment,
+      equipment: formValue.equipment || [],
+
       notes,
       video: extractYouTubeVideoId(formValue.video),
     } as unknown as Omit<Recipe, 'id'>;
   }
 
+  hasInvalidEquipment(): boolean {
+    const eq = this.getFieldValue('equipment') as { title: string; image: string }[];
+    return Array.isArray(eq) && eq.some((item) => !item.title?.trim() || !item.image?.trim());
+  }
+
   async saveDraft(): Promise<void> {
+    if (this.hasInvalidEquipment()) {
+      this.snackBar.open('Please fill in title and image for all added equipment.', 'Close', {
+        duration: 4000,
+      });
+      return;
+    }
+
     const formValue = this.recipeModel();
 
     const createdAt: string | null | undefined = null;
@@ -1136,7 +1142,14 @@ export class RecipeFormComponent implements OnInit {
   }
 
   async openScheduleDialog() {
-    if (this.recipeForm().invalid()) return;
+    if (this.recipeForm().invalid() || this.hasInvalidEquipment()) {
+      if (this.hasInvalidEquipment()) {
+        this.snackBar.open('Please fill in title and image for all added equipment.', 'Close', {
+          duration: 4000,
+        });
+      }
+      return;
+    }
 
     const dialogRef = this.dialog.open(SchedulePublicationDialogComponent, {
       data: { initialDate: this.originalRecipe()?.createdAt },
@@ -1149,7 +1162,12 @@ export class RecipeFormComponent implements OnInit {
   }
 
   async saveRequired(status: 'scheduled' | 'published', scheduledDate?: Date): Promise<void> {
-    if (this.recipeForm().invalid()) {
+    if (this.recipeForm().invalid() || this.hasInvalidEquipment()) {
+      if (this.hasInvalidEquipment()) {
+        this.snackBar.open('Please fill in title and image for all added equipment.', 'Close', {
+          duration: 4000,
+        });
+      }
       return;
     }
     const formValue = this.recipeModel();

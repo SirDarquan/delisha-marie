@@ -281,6 +281,7 @@ export class ImageUploaderComponent implements FormValueControl<string>, OnInit 
   initialHeight = input<string>('');
   initialType = input<string>('');
   recipeSlug = input<string>('');
+  folder = input<string>('');
 
   // Single output payload event to parent form
   imageChange = output<{
@@ -413,7 +414,7 @@ export class ImageUploaderComponent implements FormValueControl<string>, OnInit 
       img.src = objectUrl;
     });
 
-    const serverPath = await this.recipe.upload(file);
+    const serverPath = await this.recipe.upload(file, this.folder());
     if (serverPath === '') {
       this.snackBar.open('Upload failed. Please try again.', 'Close', { duration: 3000 });
       this.removeImage();

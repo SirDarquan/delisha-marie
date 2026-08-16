@@ -29,7 +29,7 @@ describe('Admin Recipe Form Flow', () => {
     cuisine: 'American',
     course: 'Main Course',
     keywords: ['chicken', 'garlic', 'rosemary'],
-    equipment: ['skillet'],
+    equipment: [{ title: 'skillet', url: 'https://amazon.com/skillet', image: 'skillet.jpg' }],
     notes: ['good with potatoes'],
     nutrition: {
       servingSize: '1 breast',
@@ -192,6 +192,7 @@ describe('Admin Recipe Form Flow', () => {
             ],
           ],
         });
+        comp.recipeForm['equipment']().value.set(mockRecipe.equipment);
       }
     });
 
@@ -210,11 +211,6 @@ describe('Admin Recipe Form Flow', () => {
       .should('not.be.disabled')
       .type(mockRecipe.instructions.join('\n'), { force: true });
     cy.get('#instructions').blur();
-
-    cy.get('#equipment')
-      .should('not.be.disabled')
-      .type(mockRecipe.equipment.join('\n'), { force: true });
-    cy.get('#equipment').blur();
 
     cy.get('#notes').should('not.be.disabled').type(mockRecipe.notes.join('\n'), { force: true });
     cy.get('#notes').blur();
@@ -305,6 +301,36 @@ describe('Admin Recipe Form Flow', () => {
 
     cy.get('#title').clear({ force: true }).type('Updated Chicken Title', { force: true });
     cy.get('#title').blur();
+
+    cy.window().then((win: unknown) => {
+      const w = win as {
+        ng?: {
+          getComponent: (el: Element) => {
+            recipeForm: Record<string, () => { value: { set: (val: unknown) => void } }>;
+          };
+        };
+        document: Document;
+      };
+      const el = w.document.querySelector('app-recipe-form');
+      if (el && w.ng) {
+        const comp = w.ng.getComponent(el);
+        comp.recipeForm['image']().value.set(mockRecipe.image);
+        comp.recipeForm['imageWidth']().value.set(mockRecipe.imageWidth);
+        comp.recipeForm['imageHeight']().value.set(mockRecipe.imageHeight);
+        comp.recipeForm['imageType']().value.set(mockRecipe.imageType);
+        comp.recipeForm['method']().value.set(mockRecipe.method);
+        comp.recipeForm['category']().value.set({
+          trails: [
+            [
+              { name: 'Home', url: '/' },
+              { name: 'Recipes', url: '/recipes' },
+              { name: 'Dinner', url: '/recipes/dinner' },
+            ],
+          ],
+        });
+        comp.recipeForm['equipment']().value.set(mockRecipe.equipment);
+      }
+    });
 
     cy.get('button[type="submit"]').click({ force: true });
     cy.wait('@updateRecipe').its('request.body.title').should('eq', 'Updated Chicken Title');

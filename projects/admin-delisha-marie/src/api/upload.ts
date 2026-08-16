@@ -44,11 +44,19 @@ uploadRouter.post('/upload', upload.single('image'), async (req, res) => {
     // Convert to webp in memory using sharp
     const webpBuffer = await sharp(fileBuffer).webp().toBuffer();
 
+    // Determine upload folder
+    let uploadFolder = `/${year}/${month}`;
+    if (req.body.folder) {
+      const customFolder = req.body.folder.replace(/[^a-zA-Z0-9_\-/]/g, ''); // allow alphanumeric, -, _, /
+      // optionally prefix with / if missing
+      uploadFolder = customFolder.startsWith('/') ? customFolder : `/${customFolder}`;
+    }
+
     // Upload directly to ImageKit
     const ikResponse = await imagekit.upload({
       file: webpBuffer,
       fileName: `${basename}.webp`,
-      folder: `/${year}/${month}`,
+      folder: uploadFolder,
       useUniqueFileName: false,
     });
 

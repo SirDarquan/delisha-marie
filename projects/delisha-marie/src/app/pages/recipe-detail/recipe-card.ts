@@ -149,25 +149,6 @@ import { Recipe } from '../../services/recipe.service';
         </button>
       </div>
 
-      <!-- Equipment Section -->
-      @if (recipe().equipment && recipe().equipment!.length > 0) {
-        <section class="mb-10 relative z-10">
-          <div class="flex items-center gap-4 mb-6">
-            <h3 class="text-2xl font-black tracking-tight">Equipment</h3>
-            <div class="h-px flex-1 bg-[var(--mat-sys-outline-variant)] opacity-30"></div>
-          </div>
-          <ul class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            @for (item of recipe().equipment; track item) {
-              <li
-                class="flex items-center gap-3 p-4 rounded-2xl bg-[var(--mat-sys-surface-container-high)] border border-[var(--mat-sys-outline-variant)] hover:border-[var(--mat-sys-primary)] transition-colors">
-                <mat-icon class="text-[var(--mat-sys-primary)] text-sm">construction</mat-icon>
-                <span class="font-bold">{{ item }}</span>
-              </li>
-            }
-          </ul>
-        </section>
-      }
-
       <!-- Ingredients Section -->
       <section class="mb-10 relative z-10">
         <div class="flex items-center gap-4 mb-8">

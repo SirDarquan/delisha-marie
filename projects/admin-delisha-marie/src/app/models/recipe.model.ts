@@ -8,4 +8,5 @@ export interface NavigationLink {
 export interface Recipe extends BaseRecipe {
   status: 'draft' | 'scheduled' | 'published' | 'updated';
   previewToken?: string;
+  equipment?: { title: string; url: string; image: string }[];
 }

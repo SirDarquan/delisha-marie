@@ -71,6 +71,11 @@ describe('Single Recipe Detail View', () => {
       },
     }).as('getRecipeComments');
 
+    cy.intercept('GET', '**/recipes/*/equipment', {
+      statusCode: 200,
+      body: [],
+    }).as('getRecipeEquipment');
+
     cy.visit('/recipe/signature-beef-stew');
     cy.wait('@getRecipeList');
     cy.wait('@getRecipeDetail');
@@ -137,6 +142,7 @@ describe('Single Recipe Detail View', () => {
   });
 
   it('should display submitted user comments and handle empty feedback states', () => {
+    cy.wait('@getRecipeComments');
     // Assert existing comment is rendered
     cy.get('dml-recipe-comments').within(() => {
       cy.get('h2').should('contain.text', 'comment(s)');

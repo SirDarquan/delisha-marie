@@ -4,6 +4,7 @@ import { FormField, FormRoot } from '@angular/forms/signals';
 import { MatDialog } from '@angular/material/dialog';
 import { Subject } from 'rxjs';
 import { By } from '@angular/platform-browser';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CategoryTrails } from '@dm/library';
 import { Recipe } from '../../models/recipe.model';
@@ -51,7 +52,8 @@ describe('RecipeFormComponent', () => {
     cuisine: 'Italian',
     course: 'Dinner',
     keyword: ['key'],
-    equipment: 'equip',
+    equipment: [],
+
     notes: 'note',
     servingSize: '1',
     calories: '100',
@@ -146,6 +148,7 @@ describe('RecipeFormComponent', () => {
         { provide: ActivatedRoute, useValue: fakeActivatedRoute },
         { provide: MatDialog, useValue: fakeDialog },
         { provide: Location, useValue: fakeLocation },
+        { provide: MatSnackBar, useValue: { open: vi.fn() } },
       ],
     }).compileComponents();
   });
@@ -366,7 +369,7 @@ describe('RecipeFormComponent', () => {
       cuisine: 'Italian',
       course: 'Dinner',
       keywords: ['easy', 'quick'],
-      equipment: ['Stand Mixer', 'Baking Sheet'],
+
       notes: ['Serve hot', 'Add cheese'],
       nutrition: {
         servingSize: '1 bowl',
@@ -392,7 +395,7 @@ describe('RecipeFormComponent', () => {
     expect(component['recipeModel']().course).toBe('Dinner');
     expect(component['recipeModel']().author).toBe('Chef Delisha');
     expect(component['recipeModel']().keyword).toEqual(['easy', 'quick']);
-    expect(component['recipeModel']().equipment).toBe('Stand Mixer\nBaking Sheet');
+
     expect(component['recipeModel']().notes).toBe('Serve hot\nAdd cheese');
     expect(component['recipeModel']().servingSize).toBe('1 bowl');
     expect(component['recipeModel']().calories).toBe('300 kcal');
@@ -1010,27 +1013,37 @@ describe('RecipeFormComponent', () => {
 
     const debugEl = fixture.debugElement;
 
-    const categoryBoard = debugEl.query((el) => el.name === 'app-category-board');
+    const categoryBoard = debugEl.query(
+      (el) => el.nativeElement.tagName.toLowerCase() === 'app-category-board',
+    );
     if (categoryBoard) {
       categoryBoard.triggerEventHandler('categoryChange', { trails: [] });
     }
 
-    const methodSelector = debugEl.query((el) => el.name === 'app-cooking-method-selector');
+    const methodSelector = debugEl.query(
+      (el) => el.nativeElement.tagName.toLowerCase() === 'app-cooking-method-selector',
+    );
     if (methodSelector) {
       methodSelector.triggerEventHandler('methodChange', 'Bake');
     }
 
-    const holidaySelector = debugEl.query((el) => el.name === 'app-holidays-selector');
+    const holidaySelector = debugEl.query(
+      (el) => el.nativeElement.tagName.toLowerCase() === 'app-holidays-selector',
+    );
     if (holidaySelector) {
       holidaySelector.triggerEventHandler('holidayChange', 'Easter');
     }
 
-    const dietsSelector = debugEl.query((el) => el.name === 'app-special-diets-selector');
+    const dietsSelector = debugEl.query(
+      (el) => el.nativeElement.tagName.toLowerCase() === 'app-special-diets-selector',
+    );
     if (dietsSelector) {
       dietsSelector.triggerEventHandler('dietsChange', ['Vegan']);
     }
 
-    const imageUploader = debugEl.query((el) => el.name === 'app-image-uploader');
+    const imageUploader = debugEl.query(
+      (el) => el.nativeElement.tagName.toLowerCase() === 'app-image-uploader',
+    );
     if (imageUploader) {
       imageUploader.triggerEventHandler('imageChange', {
         image: 'pasta.png',
@@ -1045,13 +1058,39 @@ describe('RecipeFormComponent', () => {
     component['isInitialized'] = true;
     fixture.detectChanges();
 
+    // Trigger keyword add/remove via template
+    const addKeywordBtn = Array.from(fixture.nativeElement.querySelectorAll('button')).find(
+      (b: any) => b.textContent.includes('Add Keyword'),
+    ) as HTMLButtonElement;
+    if (addKeywordBtn) addKeywordBtn.click();
+    fixture.detectChanges();
+
+    const keywordInput = fixture.nativeElement.querySelector('input[id^="keyword-"]');
+    if (keywordInput) {
+      keywordInput.value = 'TestKw';
+      keywordInput.dispatchEvent(new Event('input'));
+    }
+    const removeKeywordBtn = Array.from(fixture.nativeElement.querySelectorAll('button')).find(
+      (b: any) => b.textContent.includes('close'),
+    ) as HTMLButtonElement;
+    if (removeKeywordBtn) removeKeywordBtn.click();
+    fixture.detectChanges();
+
+    // Trigger tabs
+    const whereTab = Array.from(fixture.nativeElement.querySelectorAll('button')).find((b: any) =>
+      b.textContent.includes('Where is it'),
+    ) as HTMLButtonElement;
+    if (whereTab) whereTab.click();
+    fixture.detectChanges();
+    const whatTab = Array.from(fixture.nativeElement.querySelectorAll('button')).find((b: any) =>
+      b.textContent.includes('What is it'),
+    ) as HTMLButtonElement;
+    if (whatTab) whatTab.click();
+    fixture.detectChanges();
+
     const buttons = Array.from(
       fixture.nativeElement.querySelectorAll('button'),
     ) as HTMLButtonElement[];
-    const saveAsDraftBtn = buttons.find((b) => b.textContent?.includes('Save as Draft'));
-    if (saveAsDraftBtn) {
-      saveAsDraftBtn.click();
-    }
 
     // Make valid for schedule
     component['recipeModel'].set({
@@ -1061,13 +1100,23 @@ describe('RecipeFormComponent', () => {
     });
     fixture.detectChanges();
 
-    const scheduleBtn = buttons.find((b) => b.textContent?.includes('Schedule Publication'));
+    const saveAsDraftBtn = Array.from(fixture.nativeElement.querySelectorAll('button')).find(
+      (b: any) => b.textContent?.includes('Save as Draft'),
+    ) as HTMLButtonElement;
+    if (saveAsDraftBtn) {
+      saveAsDraftBtn.disabled = false; // ensure not disabled for click
+      saveAsDraftBtn.click();
+    }
+
+    const scheduleBtn = Array.from(fixture.nativeElement.querySelectorAll('button')).find(
+      (b: any) => b.textContent?.includes('Schedule Publication'),
+    ) as HTMLButtonElement;
     if (scheduleBtn) {
+      scheduleBtn.disabled = false;
       scheduleBtn.click();
     }
 
     // 3. Click revert / update schedule buttons in scheduled state
-
     component['recipeModel'].set({
       ...component['recipeModel'](),
       title: 'Scheduled',
@@ -1081,6 +1130,7 @@ describe('RecipeFormComponent', () => {
     ) as HTMLButtonElement[];
     const revertBtn = buttons2.find((b) => b.textContent?.includes('Revert to Draft'));
     if (revertBtn) {
+      revertBtn.disabled = false;
       revertBtn.click();
     }
 
@@ -1103,7 +1153,18 @@ describe('RecipeFormComponent', () => {
     ) as HTMLButtonElement[];
     const updatePublishedBtn = buttons3.find((b) => b.textContent?.includes('Update Published'));
     if (updatePublishedBtn) {
+      updatePublishedBtn.disabled = false;
       updatePublishedBtn.click();
+    }
+
+    // Also trigger cancel back button
+    const backBtn = buttons3.find((b) => b.textContent?.includes('Back to Recipes'));
+    if (backBtn) {
+      backBtn.click();
+    }
+    const cancelBtn = buttons3.find((b) => b.textContent?.trim() === 'Cancel');
+    if (cancelBtn) {
+      cancelBtn.click();
     }
 
     // Verify that event bindings updated the model
@@ -1503,7 +1564,7 @@ describe('RecipeFormComponent', () => {
     expect(component['recipeModel']().content).toBe('<p>Updated Content</p>');
   });
 
-  it('should serialize recipe with nutrition, equipment, notes, and theBest category trails', async () => {
+  it('should serialize recipe with nutrition, notes, and theBest category trails', async () => {
     fixture = TestBed.createComponent(RecipeFormComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
@@ -1513,7 +1574,7 @@ describe('RecipeFormComponent', () => {
       title: 'Full Recipe',
       slug: 'full-recipe',
       status: 'draft',
-      equipment: 'Mixer\nBowl',
+
       notes: 'Chill before serving',
       keyword: ['Healthy', 'Quick'],
       servingSize: '1 bowl',
@@ -1553,6 +1614,35 @@ describe('RecipeFormComponent', () => {
     } as unknown as Recipe);
 
     expect(mapped.specialDiets).toEqual(['Vegan', '', 'Gluten-Free']);
+  });
+
+  it('should prevent save/schedule if equipment is invalid', async () => {
+    fixture = TestBed.createComponent(RecipeFormComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+
+    // Make form valid but equipment invalid
+    component['recipeModel'].set({
+      ...getValidPublishedModel(),
+      equipment: [{ title: '', url: '', image: '' }],
+    });
+
+    // Test saveDraft with invalid equipment
+    const snackBarSpy = vi.spyOn((component as any).snackBar, 'open');
+    await component.saveDraft();
+    expect(snackBarSpy).toHaveBeenCalledWith(
+      'Please fill in title and image for all added equipment.',
+      'Close',
+      { duration: 4000 },
+    );
+
+    // Test openScheduleDialog with invalid equipment
+    await component.openScheduleDialog();
+    expect(snackBarSpy).toHaveBeenCalledTimes(2);
+
+    // Test saveRequired with invalid equipment
+    await component.saveRequired('published');
+    expect(snackBarSpy).toHaveBeenCalledTimes(3);
   });
 
   it('should catch error on saveDraft failure', async () => {

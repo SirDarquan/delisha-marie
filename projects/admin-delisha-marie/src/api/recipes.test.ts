@@ -1498,5 +1498,38 @@ describe('Recipes Router API', () => {
         }),
       );
     });
+
+    it('should cover equipment array processing and insert', async () => {
+      const inputRecipe = {
+        title: 'New Salad',
+        equipment: [
+          { title: 'Pan', url: 'http://pan.com', image: 'pan.jpg' },
+          { title: 'Knife', url: 'http://knife.com', image: 'knife.jpg' },
+        ],
+      };
+      mockSingle.mockResolvedValueOnce({ data: { id: 'recipe-13' }, error: null });
+      const res = await request(app).post('/recipes').send(inputRecipe);
+      expect(res.status).toBe(200);
+      expect(mockFrom).toHaveBeenCalledWith('equipment');
+      expect(mockInsert).toHaveBeenCalledWith([
+        { recipe_id: 'recipe-13', title: 'Pan', url: 'http://pan.com', image: 'pan.jpg' },
+        { recipe_id: 'recipe-13', title: 'Knife', url: 'http://knife.com', image: 'knife.jpg' },
+      ]);
+    });
+
+    it('should cover equipment insert error', async () => {
+      const inputRecipe = {
+        title: 'New Salad',
+        equipment: [{ title: 'Pan' }],
+      };
+      mockSingle.mockResolvedValueOnce({ data: { id: 'recipe-14' }, error: null });
+      vi.mocked(mockChain.then).mockImplementationOnce((resolve: any) =>
+        resolve({ data: null, error: new Error('Equipment insert failed') }),
+      );
+
+      const res = await request(app).post('/recipes').send(inputRecipe);
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe('Equipment insert failed');
+    });
   });
 });

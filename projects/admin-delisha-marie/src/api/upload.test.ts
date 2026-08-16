@@ -124,4 +124,48 @@ describe('Upload Router API', () => {
     expect(res.body).toEqual({ error: 'Failed to process image' });
     expect(console.error).toHaveBeenCalled();
   });
+
+  it('should process and upload image successfully with custom folder', async () => {
+    const uploadRouterModule = await import('./upload');
+    app.use('/api', uploadRouterModule.default);
+
+    const fakeBuffer = Buffer.from('fake-webp-data');
+    mockToBuffer.mockResolvedValue(fakeBuffer);
+    mockUpload.mockResolvedValue({ filePath: '/custom-folder/test-image.webp' });
+
+    const res = await request(app)
+      .post('/api/upload')
+      .field('folder', 'custom-folder')
+      .attach('image', Buffer.from('original-data'), 'test-image.png');
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ success: true, files: ['/custom-folder/test-image.webp'] });
+    expect(mockWebp).toHaveBeenCalled();
+    expect(mockUpload).toHaveBeenCalledWith(
+      expect.objectContaining({
+        folder: '/custom-folder',
+      }),
+    );
+  });
+
+  it('should process and upload image successfully with custom folder with leading slash', async () => {
+    const uploadRouterModule = await import('./upload');
+    app.use('/api', uploadRouterModule.default);
+
+    const fakeBuffer = Buffer.from('fake-webp-data');
+    mockToBuffer.mockResolvedValue(fakeBuffer);
+    mockUpload.mockResolvedValue({ filePath: '/custom/folder/test-image.webp' });
+
+    const res = await request(app)
+      .post('/api/upload')
+      .field('folder', '/custom/folder')
+      .attach('image', Buffer.from('original-data'), 'test-image.png');
+
+    expect(res.status).toBe(200);
+    expect(mockUpload).toHaveBeenCalledWith(
+      expect.objectContaining({
+        folder: '/custom/folder',
+      }),
+    );
+  });
 });

@@ -125,6 +125,19 @@ describe('RecipeService', () => {
       const result = await promise;
       expect(result).toEqual(mockRecipes);
     });
+
+    it('should handle zero values and empty string in query parameters', async () => {
+      service = TestBed.inject(RecipeService);
+      httpMock = TestBed.inject(HttpTestingController);
+
+      const promise = service.fetchRecipes(0, 0, '');
+      const req = httpMock.expectOne('/api/recipes?offset=0&limit=0');
+      expect(req.request.method).toBe('GET');
+      req.flush(mockRecipes);
+
+      const result = await promise;
+      expect(result).toEqual(mockRecipes);
+    });
   });
 
   describe('fetchRecipeById', () => {
@@ -282,6 +295,20 @@ describe('RecipeService', () => {
       expect(await promise).toBe('');
     });
 
+    it('should append folder if provided', async () => {
+      service = TestBed.inject(RecipeService);
+      httpMock = TestBed.inject(HttpTestingController);
+
+      const fakeFile = new File([''], 'test.png', { type: 'image/png' });
+      const promise = service.upload(fakeFile, 'test-folder');
+
+      const req = httpMock.expectOne('/api/upload');
+      expect(req.request.body.get('folder')).toBe('test-folder');
+
+      req.flush({ success: true, files: ['/images/test.webp'] });
+      expect(await promise).toBe('/images/test.webp');
+    });
+
     it('should return empty string on API error', async () => {
       service = TestBed.inject(RecipeService);
       httpMock = TestBed.inject(HttpTestingController);
@@ -329,6 +356,8 @@ describe('RecipeService', () => {
       reqHolidays.flush([]);
       const reqDiets = httpMock.expectOne('/api/special-diets');
       reqDiets.flush([]);
+      const reqCats = httpMock.expectOne('/api/categories');
+      reqCats.flush([]);
     });
 
     it('should load methods correctly from API', async () => {
@@ -341,6 +370,7 @@ describe('RecipeService', () => {
     });
 
     it.each([
+      { method: 'loadInitialCategories', url: '/api/categories' },
       { method: 'loadInitialMethods', url: '/api/methods' },
       { method: 'loadInitialHolidays', url: '/api/holidays' },
       { method: 'loadInitialSpecialDiets', url: '/api/special-diets' },
@@ -398,15 +428,36 @@ describe('RecipeService', () => {
   });
 
   describe('Categories Initialization', () => {
-    it('should not update categories if data is null', async () => {
-      httpMock = TestBed.inject(HttpTestingController);
+    beforeEach(() => {
       service = TestBed.inject(RecipeService);
+      httpMock = TestBed.inject(HttpTestingController);
 
+      const reqMethods = httpMock.expectOne('/api/methods');
+      reqMethods.flush([]);
+      const reqHolidays = httpMock.expectOne('/api/holidays');
+      reqHolidays.flush([]);
+      const reqDiets = httpMock.expectOne('/api/special-diets');
+      reqDiets.flush([]);
+      const reqCats = httpMock.expectOne('/api/categories');
+      reqCats.flush([]);
+    });
+
+    it('should load categories correctly from API', async () => {
+      const mockCats = [{ id: '1', name: 'Breakfast', url: 'breakfast' }];
+      service['loadInitialCategories']();
+      const req = httpMock.expectOne('/api/categories');
+      req.flush(mockCats);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      expect(service.categories()).toEqual(mockCats);
+    });
+
+    it('should not update categories if data is null', async () => {
       // Before loading, the categories should be empty
       const initialCount = service.categories().length;
 
-      // The constructor already called loadInitialCategories()
-      // Mock the get call to return null
+      // The constructor already called loadInitialCategories() but we flushed it in beforeEach
+      // Call it again to test the null data branch
+      service['loadInitialCategories']();
       const reqs = httpMock.match('/api/categories');
       reqs.forEach((req) => {
         if (!req.cancelled) {
