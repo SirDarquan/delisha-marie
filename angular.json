@@ -120,7 +120,8 @@
               "buildTarget": "delisha-marie:build:development"
             },
             "e2e": {
-              "buildTarget": "delisha-marie:build-spa:e2e"
+              "buildTarget": "delisha-marie:build-spa:e2e",
+              "port": 4210
             }
           },
           "defaultConfiguration": "development"
@@ -335,7 +336,8 @@
               "buildTarget": "admin-delisha-marie:build:development"
             },
             "e2e": {
-              "buildTarget": "admin-delisha-marie:build-spa:e2e"
+              "buildTarget": "admin-delisha-marie:build-spa:e2e",
+              "port": 4211
             }
           },
           "defaultConfiguration": "development"
