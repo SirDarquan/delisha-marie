@@ -202,8 +202,10 @@ describe('RecipeService', () => {
     it('should fetch comments for a recipe with a specific page', async () => {
       const promise = service.getComments('1', 2);
       const req = httpMock.expectOne('/api/recipes/1/comments?page=2');
-      req.flush({ comments: [], total: 0 });
-      await promise;
+      const mockResponse = { comments: [], total: 0 };
+      req.flush(mockResponse);
+      const result = await promise;
+      expect(result).toEqual(mockResponse);
     });
 
     it('should add a comment via POST request', async () => {
