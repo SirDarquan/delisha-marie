@@ -141,9 +141,11 @@ describe('Upload Router API', () => {
     expect(res.status).toBe(200);
     expect(res.body).toEqual({ success: true, files: ['/custom-folder/test-image.webp'] });
     expect(mockWebp).toHaveBeenCalled();
-    expect(mockUpload).toHaveBeenCalledWith(expect.objectContaining({
-      folder: '/custom-folder'
-    }));
+    expect(mockUpload).toHaveBeenCalledWith(
+      expect.objectContaining({
+        folder: '/custom-folder',
+      }),
+    );
   });
 
   it('should process and upload image successfully with custom folder with leading slash', async () => {
@@ -160,8 +162,10 @@ describe('Upload Router API', () => {
       .attach('image', Buffer.from('original-data'), 'test-image.png');
 
     expect(res.status).toBe(200);
-    expect(mockUpload).toHaveBeenCalledWith(expect.objectContaining({
-      folder: '/custom/folder'
-    }));
+    expect(mockUpload).toHaveBeenCalledWith(
+      expect.objectContaining({
+        folder: '/custom/folder',
+      }),
+    );
   });
 });
