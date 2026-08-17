@@ -100,10 +100,10 @@ import { ColoredHeaderComponent } from '../../components/colored-header/colored-
                 </header>
                 <div class="columns-1 sm:columns-2 md:columns-3 lg:columns-4 gap-x-12">
                   @for (item of [1, 2, 3, 4, 5, 6, 7, 8]; track item) {
-                    <div class="flex flex-col break-inside-avoid mb-2 animate-pulse">
+                    <div class="flex flex-col break-inside-avoid mb-4 gap-4 animate-pulse">
                       <div
-                        class="h-6 w-32 bg-[var(--mat-sys-surface-container-highest)] rounded mb-4 mt-2"></div>
-                      <ul class="list-none p-0 m-0 space-y-3 mb-2">
+                        class="h-6 w-32 bg-[var(--mat-sys-surface-container-highest)] rounded"></div>
+                      <ul class="list-none p-0 m-0 space-y-4">
                         <li class="pl-6">
                           <div
                             class="h-4 w-24 bg-[var(--mat-sys-surface-container-highest)] rounded"></div>
