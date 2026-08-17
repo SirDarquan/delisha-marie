@@ -27,14 +27,14 @@ import { Category } from '../../models/category';
 
           <div class="columns-1 sm:columns-2 md:columns-3 lg:columns-4 gap-x-12">
             @for (item of sortedItems(); track item.name) {
-              <div class="flex flex-col break-inside-avoid mb-2">
+              <div class="flex flex-col break-inside-avoid mb-4 gap-4">
                 <a
                   [routerLink]="item.url"
-                  class="text-[var(--mat-sys-primary)] font-black hover:underline transition-all duration-200 text-xl mb-2 block">
+                  class="text-[var(--mat-sys-primary)] font-black hover:underline transition-all duration-200 text-xl block">
                   {{ item.name }}
                 </a>
                 @if (item.children && item.children.length > 0) {
-                  <ul class="list-none p-0 m-0 space-y-2 mb-2">
+                  <ul class="list-none p-0 m-0 space-y-4">
                     @for (child of item.children; track child.name) {
                       <li>
                         <a

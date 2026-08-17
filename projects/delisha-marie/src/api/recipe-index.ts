@@ -70,32 +70,26 @@ async function getCategoriesFromDB(
   type: 'recipes' | 'the-best' = 'recipes',
 ) {
   let query = supabase
-    .from('recipe_categories')
-    .select('categories (name, url), recipes!inner (status, the_best)')
-    .eq('recipes.status', 'published')
-    .lte('recipes.created_at', new Date().toISOString())
-    .ilike('categories.url', `/${type}%`);
+    .from('categories')
+    .select('name, url, recipe_categories!inner (recipes!inner (status, the_best, created_at))')
+    .eq('recipe_categories.recipes.status', 'published')
+    .lte('recipe_categories.recipes.created_at', new Date().toISOString())
+    .ilike('url', `/${type}%`);
 
   if (type === 'the-best') {
-    query = query.eq('recipes.the_best', true);
+    query = query.eq('recipe_categories.recipes.the_best', true);
   }
 
   const { data, error } = await query;
 
   if (error) throw error;
 
-  const categoriesMap = new Map<string, { name: string; url: string }>();
-  data?.forEach((row: unknown) => {
-    const rowTyped = row as {
-      categories: { name: string | null; url: string | null } | null;
-    } | null;
-    const cat = rowTyped?.categories;
-    if (cat?.name && cat?.url) {
-      categoriesMap.set(cat.url, { name: cat.name, url: cat.url });
-    }
-  });
-
-  return Array.from(categoriesMap.values());
+  return (data || [])
+    .filter((cat: { name?: string | null; url?: string | null }) => cat?.name && cat.url)
+    .map((cat: { name?: string | null; url?: string | null }) => ({
+      name: cat.name as string,
+      url: cat.url as string,
+    }));
 }
 
 async function getFeaturedCategories(supabase: SupabaseClient) {
@@ -121,76 +115,56 @@ async function getCategoriesList(supabase: SupabaseClient): Promise<CategoryItem
 
 async function getHolidays(supabase: SupabaseClient) {
   const { data, error } = await supabase
-    .from('recipe_holidays')
-    .select('holidays (name, slug), recipes!inner (status)')
-    .eq('recipes.status', 'published')
-    .lte('recipes.created_at', new Date().toISOString());
+    .from('holidays')
+    .select('name, slug, recipe_holidays!inner (recipes!inner (status, created_at))')
+    .eq('recipe_holidays.recipes.status', 'published')
+    .lte('recipe_holidays.recipes.created_at', new Date().toISOString());
 
   if (error) throw error;
 
-  const holidaysMap = new Map<string, { name: string; url: string }>();
-  data?.forEach((row: unknown) => {
-    const rowTyped = row as { holidays: { name: string; slug: string } | null } | null;
-    const h = rowTyped?.holidays;
-    if (h?.name && h?.slug) {
-      holidaysMap.set(h.slug, {
-        name: h.name,
-        url: `/holidays/${h.slug}`,
-      });
-    }
-  });
-
-  return Array.from(holidaysMap.values()).sort((a, b) => a.name.localeCompare(b.name));
+  return (data || [])
+    .filter((h: { name?: string | null; slug?: string | null }) => h?.name && h.slug)
+    .map((h: { name?: string | null; slug?: string | null }) => ({
+      name: h.name as string,
+      url: `/holidays/${h.slug as string}`,
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name));
 }
 
 async function getSpecialDiets(supabase: SupabaseClient) {
   const { data, error } = await supabase
-    .from('recipe_special_diets')
-    .select('special_diets (name, slug), recipes!inner (status)')
-    .eq('recipes.status', 'published')
-    .lte('recipes.created_at', new Date().toISOString());
+    .from('special_diets')
+    .select('name, slug, recipe_special_diets!inner (recipes!inner (status, created_at))')
+    .eq('recipe_special_diets.recipes.status', 'published')
+    .lte('recipe_special_diets.recipes.created_at', new Date().toISOString());
 
   if (error) throw error;
 
-  const dietsMap = new Map<string, { name: string; url: string }>();
-  data?.forEach((row: unknown) => {
-    const rowTyped = row as { special_diets: { name: string; slug: string } | null } | null;
-    const d = rowTyped?.special_diets;
-    if (d?.name && d?.slug) {
-      dietsMap.set(d.slug, {
-        name: d.name,
-        url: `/special-diets/${d.slug}`,
-      });
-    }
-  });
-
-  return Array.from(dietsMap.values()).sort((a, b) => a.name.localeCompare(b.name));
+  return (data || [])
+    .filter((d: { name?: string | null; slug?: string | null }) => d?.name && d.slug)
+    .map((d: { name?: string | null; slug?: string | null }) => ({
+      name: d.name as string,
+      url: `/special-diets/${d.slug as string}`,
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name));
 }
 
 async function getCookingMethodsAndList(supabase: SupabaseClient) {
   const { data, error } = await supabase
-    .from('recipe_methods')
-    .select('methods (name, slug), recipes!inner (status)')
-    .eq('recipes.status', 'published')
-    .lte('recipes.created_at', new Date().toISOString());
+    .from('methods')
+    .select('name, slug, recipe_methods!inner (recipes!inner (status, created_at))')
+    .eq('recipe_methods.recipes.status', 'published')
+    .lte('recipe_methods.recipes.created_at', new Date().toISOString());
 
   if (error) throw error;
 
-  const methodsMap = new Map<string, { name: string; slug: string }>();
-  data?.forEach((row: unknown) => {
-    const rowTyped = row as { methods: { name: string; slug: string } | null } | null;
-    const m = rowTyped?.methods;
-    if (m?.name && m?.slug) {
-      methodsMap.set(m.slug, {
-        name: m.name,
-        slug: m.slug,
-      });
-    }
-  });
-
-  const methodsListSorted = Array.from(methodsMap.values()).sort((a, b) =>
-    a.name.localeCompare(b.name),
-  );
+  const methodsListSorted = (data || [])
+    .filter((m: { name?: string | null; slug?: string | null }) => m?.name && m.slug)
+    .map((m: { name?: string | null; slug?: string | null }) => ({
+      name: m.name as string,
+      slug: m.slug as string,
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name));
 
   const cookingMethods = methodsListSorted
     .map((m) => ({
