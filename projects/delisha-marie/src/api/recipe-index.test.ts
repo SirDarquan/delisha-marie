@@ -229,7 +229,7 @@ describe('Recipe Index Router API', () => {
           return {
             eq: () => {
               const getResult = () => {
-                if (table === 'recipe_categories') {
+                if (table === 'categories') {
                   if (shouldFailCategories) {
                     return Promise.resolve({
                       data: null,
@@ -237,12 +237,13 @@ describe('Recipe Index Router API', () => {
                     });
                   }
                   const mockData = mockCategories.map((c) => ({
-                    categories: c ? { name: c.name, url: c.url } : null,
-                    recipes: { status: 'published' },
+                    name: c ? c.name : null,
+                    url: c ? c.url : null,
+                    recipe_categories: [{ recipes: { status: 'published' } }],
                   }));
                   return Promise.resolve({ data: mockData, error: null });
                 }
-                if (table === 'recipe_methods') {
+                if (table === 'methods') {
                   if (shouldFailMethods) {
                     return Promise.resolve({
                       data: null,
@@ -250,12 +251,13 @@ describe('Recipe Index Router API', () => {
                     });
                   }
                   const mockData = mockMethods.map((m) => ({
-                    methods: m ? { name: m.name, slug: m.slug } : null,
-                    recipes: { status: 'published' },
+                    name: m ? m.name : null,
+                    slug: m ? m.slug : null,
+                    recipe_methods: [{ recipes: { status: 'published' } }],
                   }));
                   return Promise.resolve({ data: mockData, error: null });
                 }
-                if (table === 'recipe_holidays') {
+                if (table === 'holidays') {
                   if (shouldFailHolidays) {
                     return Promise.resolve({
                       data: null,
@@ -263,12 +265,13 @@ describe('Recipe Index Router API', () => {
                     });
                   }
                   const mockData = mockHolidays.map((h) => ({
-                    holidays: h ? { name: h.name, slug: h.slug } : null,
-                    recipes: { status: 'published' },
+                    name: h ? h.name : null,
+                    slug: h ? h.slug : null,
+                    recipe_holidays: [{ recipes: { status: 'published' } }],
                   }));
                   return Promise.resolve({ data: mockData, error: null });
                 }
-                if (table === 'recipe_special_diets') {
+                if (table === 'special_diets') {
                   if (shouldFailDiets) {
                     return Promise.resolve({
                       data: null,
@@ -276,8 +279,9 @@ describe('Recipe Index Router API', () => {
                     });
                   }
                   const mockData = mockDiets.map((d) => ({
-                    special_diets: d ? { name: d.name, slug: d.slug } : null,
-                    recipes: { status: 'published' },
+                    name: d ? d.name : null,
+                    slug: d ? d.slug : null,
+                    recipe_special_diets: [{ recipes: { status: 'published' } }],
                   }));
                   return Promise.resolve({ data: mockData, error: null });
                 }
@@ -296,9 +300,9 @@ describe('Recipe Index Router API', () => {
                     if (res.data && Array.isArray(res.data)) {
                       const filteredData = res.data.filter((row: unknown) => {
                         const rowTyped = row as {
-                          categories?: { name: string | null; url: string | null } | null;
+                          url?: string | null;
                         } | null;
-                        const url = rowTyped?.categories?.url;
+                        const url = rowTyped?.url;
                         return url && url.startsWith(filterPrefix);
                       });
                       return { data: filteredData, error: null };
