@@ -77,7 +77,7 @@ export class SnoozeDialogComponent {
   constructor() {
     if (this.data?.snoozed_until) {
       const d = new Date(this.data.snoozed_until);
-      if (!isNaN(d.getTime())) {
+      if (!Number.isNaN(d.getTime())) {
         this.selectedDate = d;
         this.selectedTime = `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
       }

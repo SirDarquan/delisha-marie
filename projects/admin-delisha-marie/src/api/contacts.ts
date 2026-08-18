@@ -5,8 +5,8 @@ const contactsRouter = Router();
 
 contactsRouter.get('/contacts', async (req, res) => {
   try {
-    const page = parseInt(req.query['page'] as string) || 1;
-    const pageSize = parseInt(req.query['pageSize'] as string) || 25;
+    const page = Number.parseInt(req.query['page'] as string) || 1;
+    const pageSize = Number.parseInt(req.query['pageSize'] as string) || 25;
     const start = (page - 1) * pageSize;
     const end = start + pageSize - 1;
     const folder = (req.query['folder'] as string) || 'inbox';
