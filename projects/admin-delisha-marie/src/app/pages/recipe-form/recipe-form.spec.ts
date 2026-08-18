@@ -2,7 +2,7 @@ import { Location } from '@angular/common';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormField, FormRoot } from '@angular/forms/signals';
 import { MatDialog } from '@angular/material/dialog';
-import { Subject } from 'rxjs';
+import { of, Subject } from 'rxjs';
 import { By } from '@angular/platform-browser';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -1773,5 +1773,84 @@ describe('RecipeFormComponent', () => {
     expect(result.nutrition?.servingSize).toBe('');
     expect(result.nutrition?.calories).toBe('');
     expect(result.nutrition?.fat).toBe('5g');
+  });
+
+  it('should run openScheduleDialog with valid equipment and form', async () => {
+    fixture = TestBed.createComponent(RecipeFormComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    component['recipeModel'].set(getValidPublishedModel() as unknown as RecipeFormModel);
+    fixture.detectChanges();
+
+    const futureDate = new Date();
+    (component as unknown as Record<string, unknown>)['dialog'] = {
+      open: vi.fn().mockReturnValue({
+        afterClosed: () => of(futureDate),
+      }),
+    };
+
+    const saveSpy = vi.spyOn(component, 'saveRequired').mockResolvedValue();
+
+    await component.openScheduleDialog();
+
+    expect(
+      (component as unknown as { dialog: { open: typeof vi.fn } }).dialog.open,
+    ).toHaveBeenCalled();
+    expect(saveSpy).toHaveBeenCalledWith('scheduled', futureDate);
+  });
+
+  it('should call updateRecipe when saveRequired is called with scheduledDate', async () => {
+    routeParams['id'] = '1';
+    fixture = TestBed.createComponent(RecipeFormComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    component['recipeModel'].set(getValidPublishedModel() as unknown as RecipeFormModel);
+
+    const scheduledDate = new Date();
+    const updateSpy = vi
+      .spyOn(fakeRecipeService, 'updateRecipe')
+      .mockResolvedValue({} as unknown as Recipe);
+    updateSpy.mockClear();
+    await component.saveRequired('scheduled', scheduledDate);
+
+    expect(updateSpy).toHaveBeenCalledWith(
+      '1',
+      expect.objectContaining({
+        createdAt: scheduledDate.toISOString(),
+        updatedAt: scheduledDate.toISOString(),
+      }),
+    );
+  });
+
+  it('should prompt unsaved changes onCancel and leave when confirmed', async () => {
+    fixture = TestBed.createComponent(RecipeFormComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    component['initialModel'].set(getValidPublishedModel() as unknown as RecipeFormModel);
+    component['recipeModel'].set({
+      ...getValidPublishedModel(),
+      title: 'Dirty Title',
+    } as unknown as RecipeFormModel);
+    fixture.detectChanges();
+    fakeLocation.back.mockClear();
+
+    (component as unknown as Record<string, unknown>)['dialog'] = {
+      open: vi.fn().mockReturnValue({
+        afterClosed: () => of(true),
+      }),
+    };
+
+    component.onCancel();
+
+    expect(
+      (component as unknown as { dialog: { open: typeof vi.fn } }).dialog.open,
+    ).toHaveBeenCalled();
+    expect(fakeLocation.back).toHaveBeenCalled();
   });
 });

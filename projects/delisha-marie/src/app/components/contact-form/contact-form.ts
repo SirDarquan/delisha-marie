@@ -1,5 +1,7 @@
+import { HttpClient } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormField, FormRoot, email, form, required } from '@angular/forms/signals';
+import { firstValueFrom } from 'rxjs';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCard } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -78,6 +80,7 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 })
 export class ContactForm {
   private readonly snackBar = inject(MatSnackBar);
+  private readonly http = inject(HttpClient);
   protected readonly isSubmitting = signal(false);
 
   protected readonly userModel = signal({
@@ -99,9 +102,9 @@ export class ContactForm {
       submission: {
         action: async (fields) => {
           this.isSubmitting.set(true);
-          // const values = fields().value();
+          const values = fields().value();
           try {
-            await new Promise((resolve) => setTimeout(resolve, 1500));
+            await firstValueFrom(this.http.post('/api/contacts', values));
             this.snackBar.open(
               'Message sent successfully! Delisha will get back to you soon.',
               'Close',
@@ -111,6 +114,11 @@ export class ContactForm {
               },
             );
             this.userModel.set({ name: '', email: '', subject: '', message: '' });
+          } catch (error) {
+            console.error('Error submitting contact form:', error);
+            this.snackBar.open('Failed to send message. Please try again later.', 'Close', {
+              duration: 5000,
+            });
           } finally {
             this.isSubmitting.set(false);
             fields().reset({

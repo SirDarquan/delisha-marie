@@ -9,17 +9,13 @@
 :root {
   height: 100%;
   color-scheme: dark;
-  @include mat.theme(
-    (
-      color: (
-        theme-type: dark,
+  @include mat.theme((color: (theme-type: dark,
         primary: mat.$azure-palette,
         tertiary: mat.$blue-palette,
       ),
       typography: Roboto,
       density: 0,
-    )
-  );
+    ));
 }
 
 body {
@@ -49,21 +45,71 @@ body {
   --mat-select-trigger-text-color: #ffffff;
   --mat-select-placeholder-text-color: #94a3b8;
 }
+
 .custom-mat-form-field .mat-mdc-form-field-subscript-wrapper {
   display: none !important;
 }
+
 .custom-mat-form-field .mat-mdc-form-field-flex {
   height: 44px !important;
   align-items: center !important;
 }
+
 .custom-mat-form-field .mat-mdc-select-value {
   color: #ffffff !important;
   font-size: 14px !important;
 }
+
 .custom-mat-form-field .mat-mdc-select-placeholder {
   color: #94a3b8 !important;
   font-size: 14px !important;
 }
+
 .custom-mat-form-field .mat-mdc-select-arrow {
   color: #94a3b8 !important;
+}
+
+/* Admin Dialog Overrides */
+.admin-dialog-panel .mdc-dialog__surface {
+  background-color: #1e293b !important;
+  /* slate-800 */
+  color: #cbd5e1 !important;
+  /* slate-300 */
+  border: 1px solid #334155 !important;
+  /* slate-700 */
+}
+
+.admin-dialog-panel .mat-mdc-dialog-title {
+  color: #f8fafc !important;
+  /* slate-50 */
+}
+
+.admin-dialog-panel .mat-datepicker-toggle button {
+  color: #94a3b8 !important;
+  /* slate-400 */
+}
+
+/* Contacts Paginator Overrides */
+.contacts-paginator .mat-mdc-paginator {
+  background: transparent;
+  color: rgb(148, 163, 184);
+  /* text-slate-400 */
+}
+
+.contacts-paginator .mat-mdc-paginator-container {
+  min-height: auto;
+  padding: 0;
+}
+
+.contacts-paginator .mat-mdc-icon-button {
+  color: rgb(148, 163, 184);
+  transform: scale(0.75);
+}
+
+.contacts-paginator .mat-mdc-icon-button:hover {
+  color: white;
+}
+
+.contacts-paginator .mat-mdc-icon-button[disabled] {
+  opacity: 0.3;
 }

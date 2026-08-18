@@ -31,6 +31,12 @@ import { AuthService } from '../../services/auth.service';
             Recipes
           </a>
           <a
+            routerLink="/contacts"
+            class="text-sm font-semibold text-slate-300 hover:text-purple-400 transition"
+            routerLinkActive="text-purple-400 font-bold">
+            Contacts
+          </a>
+          <a
             routerLink="/pages"
             class="text-sm font-semibold text-slate-300 hover:text-purple-400 transition"
             routerLinkActive="text-purple-400 font-bold">
