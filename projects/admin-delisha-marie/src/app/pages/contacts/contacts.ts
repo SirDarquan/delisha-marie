@@ -99,7 +99,7 @@ import { SnoozeDialogComponent } from './snooze-dialog';
             <mat-checkbox
               [checked]="selectionState() === 'all'"
               [indeterminate]="selectionState() === 'some'"
-              (change)="toggleAll($event.checked)"
+              (change)="$event.checked ? selectAll() : selectNone()"
               class="mr-2">
             </mat-checkbox>
 
@@ -317,7 +317,7 @@ import { SnoozeDialogComponent } from './snooze-dialog';
                     [class]="{ 'opacity-0 group-hover:opacity-100': !isSelected(msg.id) }">
                     <mat-checkbox
                       [checked]="isSelected(msg.id)"
-                      (change)="toggleSelection(msg.id, $event.checked)"
+                      (change)="$event.checked ? selectItem(msg.id) : deselectItem(msg.id)"
                       (click)="$event.stopPropagation()">
                     </mat-checkbox>
                   </div>
@@ -461,7 +461,7 @@ export class ContactsPage implements OnInit {
     this.route.paramMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
       const pageParam = params.get('page');
       if (pageParam) {
-        this.currentPage.set(parseInt(pageParam, 10));
+        this.currentPage.set(Number.parseInt(pageParam, 10));
       } else {
         this.currentPage.set(1);
       }
@@ -492,20 +492,12 @@ export class ContactsPage implements OnInit {
     return this.selectedIds().includes(id);
   }
 
-  protected toggleSelection(id: string, checked: boolean) {
-    if (checked) {
-      this.selectedIds.update((ids) => [...ids, id]);
-    } else {
-      this.selectedIds.update((ids) => ids.filter((i) => i !== id));
-    }
+  protected selectItem(id: string) {
+    this.selectedIds.update((ids) => [...ids, id]);
   }
 
-  protected toggleAll(checked: boolean) {
-    if (checked) {
-      this.selectAll();
-    } else {
-      this.selectNone();
-    }
+  protected deselectItem(id: string) {
+    this.selectedIds.update((ids) => ids.filter((i) => i !== id));
   }
 
   protected selectAll() {
@@ -655,7 +647,7 @@ export class ContactsPage implements OnInit {
     dialogRef.afterClosed().subscribe(async (result: string) => {
       if (result) {
         const date = new Date(result);
-        if (!isNaN(date.getTime())) {
+        if (!Number.isNaN(date.getTime())) {
           await this.applySnooze(date, msg);
         }
       }

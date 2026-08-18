@@ -120,7 +120,11 @@ export class ContactDetail implements OnInit {
   protected readonly isLoading = signal(true);
   protected readonly message = signal<ContactMessage | undefined>(undefined);
 
-  async ngOnInit() {
+  ngOnInit() {
+    this.loadMessage();
+  }
+
+  private async loadMessage() {
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
       const msg = await this.contactService.getMessage(id);
