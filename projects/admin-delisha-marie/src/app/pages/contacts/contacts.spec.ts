@@ -140,7 +140,7 @@ describe('ContactsPage', () => {
   describe('Filtering', () => {
     it('should filter inbox correctly', () => {
       (component as any).currentFolder.set('inbox');
-      expect((component as any).filteredMessages().length).toBe(2);
+      expect((component as any).filteredMessages()).toHaveLength(2);
     });
 
     it('should filter trash correctly', () => {
@@ -149,7 +149,7 @@ describe('ContactsPage', () => {
         { id: '3', deleted_at: new Date().toISOString() },
       ]);
       (component as any).currentFolder.set('trash');
-      expect((component as any).filteredMessages().length).toBe(1);
+      expect((component as any).filteredMessages()).toHaveLength(1);
     });
 
     it('should filter snoozed correctly', () => {
@@ -160,7 +160,7 @@ describe('ContactsPage', () => {
         { id: '3', snoozed_until: futureDate.toISOString() },
       ]);
       (component as any).currentFolder.set('snoozed');
-      expect((component as any).filteredMessages().length).toBe(1);
+      expect((component as any).filteredMessages()).toHaveLength(1);
     });
 
     it('should render trash folder actions', () => {
@@ -189,9 +189,9 @@ describe('ContactsPage', () => {
 
     it('should test selection from template', () => {
       (component as any).selectAll();
-      expect((component as any).selectedIds().length).toBe(2);
+      expect((component as any).selectedIds()).toHaveLength(2);
       (component as any).selectNone();
-      expect((component as any).selectedIds().length).toBe(0);
+      expect((component as any).selectedIds()).toHaveLength(0);
     });
 
     it('should select read and unread', () => {

@@ -163,6 +163,7 @@ describe('ContactService', () => {
       service['_currentFolder'].set('all');
       const allMsg = { ...mockMessage };
       service['_messages'].set([allMsg]);
+      service['_totalCount'].set(1);
 
       const updatedMsg = { ...allMsg, is_read: true };
       const promise = service.updateMessage('1', { is_read: true });
@@ -170,6 +171,7 @@ describe('ContactService', () => {
       req.flush(updatedMsg);
 
       await promise;
+      expect(service.totalCount()).toBe(1);
     });
 
     it('should handle checkVisibility logic for snoozed folder', async () => {
@@ -178,6 +180,7 @@ describe('ContactService', () => {
       futureDate.setDate(futureDate.getDate() + 1);
       const snoozedMsg = { ...mockMessage, snoozed_until: futureDate.toISOString() };
       service['_messages'].set([snoozedMsg]);
+      service['_totalCount'].set(1);
 
       const updatedMsg = { ...snoozedMsg, snoozed_until: null };
       const promise = service.updateMessage('1', { snoozed_until: null });
@@ -185,6 +188,7 @@ describe('ContactService', () => {
       req.flush(updatedMsg);
 
       await promise;
+      expect(service.totalCount()).toBe(0);
     });
   });
 
@@ -200,7 +204,7 @@ describe('ContactService', () => {
 
       await promise;
 
-      expect(service.messages().length).toBe(0);
+      expect(service.messages()).toHaveLength(0);
     });
 
     it('should handle delete error', async () => {
@@ -242,7 +246,7 @@ describe('ContactService', () => {
 
       await promise;
 
-      expect(service.messages().length).toBe(0);
+      expect(service.messages()).toHaveLength(0);
       expect(service.totalCount()).toBe(0);
     });
 

@@ -110,13 +110,6 @@ describe('ContactDetail Component', () => {
     expect(mockRouter.navigate).toHaveBeenCalledWith(['/contacts']);
   });
 
-  it('should not mark unread if message is undefined', async () => {
-    component['message'].set(undefined);
-    await component['markUnread']();
-    expect(mockContactService.updateMessage).not.toHaveBeenCalled();
-    expect(mockRouter.navigate).not.toHaveBeenCalled();
-  });
-
   it('should archive message, navigate, and allow undo', async () => {
     await component['loadMessage']();
     mockContactService.updateMessage.mockClear();
@@ -131,13 +124,6 @@ describe('ContactDetail Component', () => {
     expect(component['snackBar'].open).toHaveBeenCalledWith('Message restored', '', expect.any(Object));
   });
 
-  it('should not archive if message is undefined', async () => {
-    component['message'].set(undefined);
-    await component['archive']();
-    expect(mockContactService.updateMessage).not.toHaveBeenCalled();
-    expect(mockRouter.navigate).not.toHaveBeenCalled();
-  });
-
   it('should snooze message for tomorrow and navigate', async () => {
     await component['loadMessage']();
     mockContactService.updateMessage.mockClear();
@@ -147,13 +133,6 @@ describe('ContactDetail Component', () => {
       expect.objectContaining({ snoozed_until: expect.any(String) })
     );
     expect(mockRouter.navigate).toHaveBeenCalledWith(['/contacts']);
-  });
-
-  it('should not snooze if message is undefined', async () => {
-    component['message'].set(undefined);
-    await component['snooze']();
-    expect(mockContactService.updateMessage).not.toHaveBeenCalled();
-    expect(mockRouter.navigate).not.toHaveBeenCalled();
   });
 
   it('should delete message, navigate, and allow undo', async () => {
@@ -172,9 +151,15 @@ describe('ContactDetail Component', () => {
     expect(component['snackBar'].open).toHaveBeenCalledWith('Message restored', '', expect.any(Object));
   });
 
-  it('should not delete if message is undefined', async () => {
+
+  it.each([
+    'markUnread',
+    'archive',
+    'snooze',
+    'deleteMsg',
+  ])('should not execute %s if message is undefined', async (method) => {
     component['message'].set(undefined);
-    await component['deleteMsg']();
+    await (component as any)[method]();
     expect(mockContactService.updateMessage).not.toHaveBeenCalled();
     expect(mockRouter.navigate).not.toHaveBeenCalled();
   });
