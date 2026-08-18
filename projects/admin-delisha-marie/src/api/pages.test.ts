@@ -48,6 +48,23 @@ describe('Admin Pages Router API', () => {
       expect(res.status).toBe(200);
       expect(res.body).toEqual([{ id: 1, slug: 'about', title: 'About' }]);
     });
+
+    it('should throw error when getting pages fails', async () => {
+      const mockEq = vi.fn().mockResolvedValue({ data: null, error: new Error('DB Error') });
+      const mockOrder = vi.fn().mockReturnValue({
+        eq: mockEq,
+        then: (cb: (res: unknown) => void) => cb({ data: null, error: new Error('DB Error') }),
+      });
+      const mockSelect = vi.fn().mockReturnValue({ order: mockOrder });
+      const mockFrom = vi.fn().mockReturnValue({ select: mockSelect });
+
+      vi.mocked(backendService.getClient).mockReturnValue({
+        from: mockFrom,
+      } as unknown as import('@supabase/supabase-js').SupabaseClient);
+
+      const res = await request(app).get('/api/pages');
+      expect(res.status).toBe(500);
+    });
   });
 
   describe('GET /api/pages/:slug', () => {
@@ -68,6 +85,20 @@ describe('Admin Pages Router API', () => {
 
       expect(res.status).toBe(200);
       expect(res.body).toEqual({ id: 1, slug: 'about', title: 'About', content: '<p>HTML</p>' });
+    });
+
+    it('should throw an error for generic DB error', async () => {
+      const mockSingle = vi.fn().mockResolvedValue({ data: null, error: new Error('DB error') });
+      const mockEq = vi.fn().mockReturnValue({ single: mockSingle });
+      const mockSelect = vi.fn().mockReturnValue({ eq: mockEq });
+      const mockFrom = vi.fn().mockReturnValue({ select: mockSelect });
+
+      vi.mocked(backendService.getClient).mockReturnValue({
+        from: mockFrom,
+      } as unknown as import('@supabase/supabase-js').SupabaseClient);
+
+      const res = await request(app).get('/api/pages/about');
+      expect(res.status).toBe(500);
     });
 
     it('should return 404 if page not found', async () => {
@@ -161,6 +192,60 @@ describe('Admin Pages Router API', () => {
       expect(res.status).toBe(200);
       expect(mockUpdate).toHaveBeenCalled();
       expect(res.body).toEqual({ id: 1, slug: 'about', title: 'About' });
+    });
+
+    it('should throw an error when finding an existing page fails', async () => {
+      const mockMaybeSingle = vi
+        .fn()
+        .mockResolvedValue({ data: null, error: new Error('DB Error') });
+      const mockEqFind = vi.fn().mockReturnValue({ maybeSingle: mockMaybeSingle });
+      const mockSelectFind = vi.fn().mockReturnValue({ eq: mockEqFind });
+
+      vi.mocked(backendService.getClient).mockReturnValue({
+        from: () => ({ select: mockSelectFind }),
+      } as unknown as import('@supabase/supabase-js').SupabaseClient);
+
+      const res = await request(app).put('/api/pages/about').send({ title: 'About' });
+      expect(res.status).toBe(500);
+    });
+
+    it('should throw an error when updating an existing page fails', async () => {
+      const mockSingleUpdate = vi
+        .fn()
+        .mockResolvedValue({ data: null, error: new Error('Update Error') });
+      const mockSelectUpdate = vi.fn().mockReturnValue({ single: mockSingleUpdate });
+      const mockEqUpdate = vi.fn().mockReturnValue({ select: mockSelectUpdate });
+      const mockUpdate = vi.fn().mockReturnValue({ eq: mockEqUpdate });
+
+      const mockMaybeSingle = vi.fn().mockResolvedValue({ data: { id: 1 }, error: null });
+      const mockEqFind = vi.fn().mockReturnValue({ maybeSingle: mockMaybeSingle });
+      const mockSelectFind = vi.fn().mockReturnValue({ eq: mockEqFind });
+
+      vi.mocked(backendService.getClient).mockReturnValue({
+        from: () => ({ select: mockSelectFind, update: mockUpdate }),
+      } as unknown as import('@supabase/supabase-js').SupabaseClient);
+
+      const res = await request(app).put('/api/pages/about').send({ title: 'About' });
+      expect(res.status).toBe(500);
+    });
+
+    it('should throw an error when inserting a new page fails', async () => {
+      const mockSingleInsert = vi
+        .fn()
+        .mockResolvedValue({ data: null, error: new Error('Insert Error') });
+      const mockSelectInsert = vi.fn().mockReturnValue({ single: mockSingleInsert });
+      const mockInsert = vi.fn().mockReturnValue({ select: mockSelectInsert });
+
+      const mockMaybeSingle = vi.fn().mockResolvedValue({ data: null, error: null });
+      const mockEqFind = vi.fn().mockReturnValue({ maybeSingle: mockMaybeSingle });
+      const mockSelectFind = vi.fn().mockReturnValue({ eq: mockEqFind });
+
+      vi.mocked(backendService.getClient).mockReturnValue({
+        from: () => ({ select: mockSelectFind, insert: mockInsert }),
+      } as unknown as import('@supabase/supabase-js').SupabaseClient);
+
+      const res = await request(app).put('/api/pages/about').send({ title: 'About' });
+      expect(res.status).toBe(500);
     });
   });
 });
