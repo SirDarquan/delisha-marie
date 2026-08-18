@@ -3,6 +3,8 @@ import { ContactForm } from './contact-form';
 import { MatSnackBar } from '@angular/material/snack-bar';
 
 import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 
 describe('ContactForm', () => {
   let component: ContactForm;
@@ -16,6 +18,7 @@ describe('ContactForm', () => {
 
     await TestBed.configureTestingModule({
       imports: [ContactForm],
+      providers: [provideHttpClient(), provideHttpClientTesting()],
     })
       .overrideComponent(ContactForm, {
         set: { providers: [{ provide: MatSnackBar, useValue: mockSnackBar }] },
@@ -48,6 +51,11 @@ describe('ContactForm', () => {
 
     // It should immediately be submitting
     expect(component['isSubmitting']()).toBe(true);
+
+    const httpTestingController = TestBed.inject(HttpTestingController);
+    const req = httpTestingController.expectOne('/api/contacts');
+    expect(req.request.method).toEqual('POST');
+    req.flush({ success: true });
 
     // Wait for the async action to complete
     vi.advanceTimersByTime(1500);

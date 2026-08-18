@@ -87,7 +87,7 @@ describe('DynamicPage', () => {
     mockPagesService['getPage'].mockResolvedValue(mockPage);
 
     fixture.detectChanges();
-    await fixture.whenStable();
+    await new Promise((r) => setTimeout(r, 0));
     fixture.detectChanges();
 
     expect(mockPagesService['getPage']).toHaveBeenCalledWith('about');
@@ -98,7 +98,7 @@ describe('DynamicPage', () => {
     mockPagesService['getPage'].mockRejectedValue(new Error('Load Failed'));
 
     fixture.detectChanges();
-    await fixture.whenStable();
+    await new Promise((r) => setTimeout(r, 0));
     fixture.detectChanges();
 
     expect(mockPagesService['getPage']).toHaveBeenCalledWith('about');
@@ -108,7 +108,7 @@ describe('DynamicPage', () => {
   it('should not load a page if slug is missing', async () => {
     routeParams$.next({});
     fixture.detectChanges();
-    await fixture.whenStable();
+    await new Promise((r) => setTimeout(r, 0));
     fixture.detectChanges();
 
     expect(mockPagesService['getPage']).not.toHaveBeenCalled();
@@ -127,7 +127,7 @@ describe('DynamicPage', () => {
     routeParams$.next({ slug: 'contact' });
 
     fixture.detectChanges();
-    await fixture.whenStable();
+    await new Promise((r) => setTimeout(r, 0));
     fixture.detectChanges();
 
     const compiled = fixture.nativeElement as HTMLElement;
