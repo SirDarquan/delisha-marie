@@ -5,6 +5,7 @@ import recipeIndexRouter from './recipe-index';
 import recipesRouter from './recipes';
 import pagesRouter from './pages';
 import searchRouter from './search';
+import contactsRouter from './contacts';
 
 const apiRouter = Router();
 
@@ -17,5 +18,6 @@ apiRouter.use('/api', recipeIndexRouter);
 apiRouter.use('/api', recipesRouter);
 apiRouter.use('/api', pagesRouter);
 apiRouter.use('/api', searchRouter);
+apiRouter.use('/api', contactsRouter);
 
 export default apiRouter;
