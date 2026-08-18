@@ -164,16 +164,23 @@ describe('ContactsPage', () => {
 
   describe('Selection', () => {
     it('should toggle selection of a single item', () => {
-      (component as any).toggleSelection('1', true);
+      (component as any).selectItem('1');
       expect((component as any).selectedIds()).toContain('1');
-      (component as any).toggleSelection('1', false);
+      (component as any).deselectItem('1');
       expect((component as any).selectedIds()).not.toContain('1');
     });
 
-    it('should select all and none', () => {
+    it('should calculate selection state correctly', () => {
+      expect((component as any).selectionState()).toBe('none');
+      (component as any).selectItem('1');
+      expect((component as any).selectionState()).toBe('some');
+      (component as any).selectItem('2');
+      expect((component as any).selectionState()).toBe('all');
+    });
+
+    it('should test selection from template', () => {
       (component as any).selectAll();
       expect((component as any).selectedIds().length).toBe(2);
-
       (component as any).selectNone();
       expect((component as any).selectedIds().length).toBe(0);
     });
@@ -186,12 +193,7 @@ describe('ContactsPage', () => {
       expect((component as any).selectedIds()).toEqual(['1']);
     });
 
-    it('should toggle all', () => {
-      (component as any).toggleAll(true);
-      expect((component as any).selectedIds().length).toBe(2);
-      (component as any).toggleAll(false);
-      expect((component as any).selectedIds().length).toBe(0);
-    });
+
   });
 
   describe('Actions', () => {
