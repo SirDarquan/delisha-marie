@@ -1,3 +1,4 @@
+import { By } from '@angular/platform-browser';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
@@ -42,7 +43,7 @@ describe('SnoozeDialogComponent', () => {
     component.selectedDate = testDate;
     component.selectedTime = '12:30';
 
-    component.save();
+    fixture.debugElement.query(By.css('button[mat-flat-button]')).triggerEventHandler('click', null);
 
     const expectedResult = new Date(testDate);
     expectedResult.setHours(12, 30, 0, 0);
@@ -52,12 +53,12 @@ describe('SnoozeDialogComponent', () => {
 
   it('should not close if date or time is missing', () => {
     component.selectedDate = null;
-    component.save();
+    fixture.debugElement.query(By.css('button[mat-flat-button]')).triggerEventHandler('click', null);
     expect(mockDialogRef.close).not.toHaveBeenCalled();
 
     component.selectedDate = new Date();
     component.selectedTime = '';
-    component.save();
+    fixture.debugElement.query(By.css('button[mat-flat-button]')).triggerEventHandler('click', null);
     expect(mockDialogRef.close).not.toHaveBeenCalled();
   });
 });

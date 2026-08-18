@@ -99,6 +99,15 @@ describe('ContactsPage', () => {
 
     fixture = TestBed.createComponent(ContactsPage);
     component = fixture.componentInstance;
+    
+    vi.spyOn(component['dialog'], 'open').mockReturnValue({
+      afterClosed: () => of(true),
+    } as any);
+
+    vi.spyOn(component['snackBar'], 'open').mockReturnValue({
+      onAction: () => of(true),
+    } as any);
+
     fixture.detectChanges();
   });
 
@@ -206,7 +215,7 @@ describe('ContactsPage', () => {
     it('should delete msg and show snackbar', async () => {
       await (component as any).deleteMsg(mockMessages[0]);
       expect(mockContactService.updateMessage).toHaveBeenCalled();
-      expect(mockSnackBar.open).toHaveBeenCalled();
+      expect(component['snackBar'].open).toHaveBeenCalled();
       // the snackbar onAction is mocked to return of(true) which triggers restore
       // wait a tick
       await new Promise((r) => setTimeout(r, 0));
@@ -215,7 +224,7 @@ describe('ContactsPage', () => {
 
     it('should hard delete msg if confirmed', async () => {
       await (component as any).hardDeleteMsg(mockMessages[0]);
-      expect(mockDialog.open).toHaveBeenCalled();
+      expect(component['dialog'].open).toHaveBeenCalled();
       await new Promise((r) => setTimeout(r, 0));
       expect(mockContactService.deleteMessage).toHaveBeenCalledWith('1');
     });
@@ -241,7 +250,7 @@ describe('ContactsPage', () => {
       (component as any).selectAll();
       await (component as any).bulkArchive();
       expect(mockContactService.bulkUpdate).toHaveBeenCalledWith(['1', '2'], { is_archived: true });
-      expect(mockSnackBar.open).toHaveBeenCalled();
+      expect(component['snackBar'].open).toHaveBeenCalled();
     });
 
     it('should bulk delete', async () => {
@@ -251,43 +260,43 @@ describe('ContactsPage', () => {
         ['1', '2'],
         expect.objectContaining({ deleted_at: expect.any(String) }),
       );
-      expect(mockSnackBar.open).toHaveBeenCalled();
+      expect(component['snackBar'].open).toHaveBeenCalled();
     });
 
     it('should bulk hard delete', async () => {
       (component as any).selectAll();
       await (component as any).bulkHardDelete();
-      expect(mockDialog.open).toHaveBeenCalled();
+      expect(component['dialog'].open).toHaveBeenCalled();
       await new Promise((r) => setTimeout(r, 0));
       expect(mockContactService.bulkDelete).toHaveBeenCalledWith(['1', '2']);
-      expect(mockSnackBar.open).toHaveBeenCalled();
+      expect(component['snackBar'].open).toHaveBeenCalled();
     });
 
     it('should bulk restore', async () => {
       (component as any).selectAll();
       await (component as any).bulkRestore();
       expect(mockContactService.bulkUpdate).toHaveBeenCalledWith(['1', '2'], { deleted_at: null });
-      expect(mockSnackBar.open).toHaveBeenCalled();
+      expect(component['snackBar'].open).toHaveBeenCalled();
     });
 
     it('should empty trash', async () => {
       await (component as any).emptyTrash();
-      expect(mockDialog.open).toHaveBeenCalled();
+      expect(component['dialog'].open).toHaveBeenCalled();
       await new Promise((r) => setTimeout(r, 0));
       expect(mockContactService.emptyTrash).toHaveBeenCalled();
-      expect(mockSnackBar.open).toHaveBeenCalled();
+      expect(component['snackBar'].open).toHaveBeenCalled();
     });
 
     it('should restore msg', async () => {
       await (component as any).restoreMsg(mockMessages[0]);
       expect(mockContactService.updateMessage).toHaveBeenCalledWith('1', { deleted_at: null });
-      expect(mockSnackBar.open).toHaveBeenCalled();
+      expect(component['snackBar'].open).toHaveBeenCalled();
     });
 
     it('should archive', async () => {
       await (component as any).archive(mockMessages[0]);
       expect(mockContactService.updateMessage).toHaveBeenCalledWith('1', { is_archived: true });
-      expect(mockSnackBar.open).toHaveBeenCalled();
+      expect(component['snackBar'].open).toHaveBeenCalled();
     });
 
     it('should toggle read', async () => {
@@ -301,7 +310,7 @@ describe('ContactsPage', () => {
       expect(mockContactService.updateMessage).toHaveBeenCalledWith('1', {
         snoozed_until: futureDate.toISOString(),
       });
-      expect(mockSnackBar.open).toHaveBeenCalled();
+      expect(component['snackBar'].open).toHaveBeenCalled();
     });
 
     it('should apply snooze to multiple messages', async () => {
@@ -311,7 +320,7 @@ describe('ContactsPage', () => {
       expect(mockContactService.bulkUpdate).toHaveBeenCalledWith(['1', '2'], {
         snoozed_until: futureDate.toISOString(),
       });
-      expect(mockSnackBar.open).toHaveBeenCalled();
+      expect(component['snackBar'].open).toHaveBeenCalled();
     });
 
     it('should calculate snooze options', () => {
@@ -322,9 +331,9 @@ describe('ContactsPage', () => {
     });
 
     it('should open snooze dialog', async () => {
-      (mockDialog.open as any).mockReturnValue({ afterClosed: () => of(new Date().toISOString()) });
+      (component['dialog'].open as any).mockReturnValue({ afterClosed: () => of(new Date().toISOString()) });
       await (component as any).openSnoozeDialog(mockMessages[0]);
-      expect(mockDialog.open).toHaveBeenCalled();
+      expect(component['dialog'].open).toHaveBeenCalled();
       await new Promise((r) => setTimeout(r, 0));
       expect(mockContactService.updateMessage).toHaveBeenCalledWith(
         '1',
