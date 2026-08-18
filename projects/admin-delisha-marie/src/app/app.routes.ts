@@ -37,6 +37,21 @@ export const routes: Routes = [
     canActivate: [authGuard],
   },
   {
+    path: 'contacts',
+    canActivate: [authGuard],
+    loadComponent: () => import('./pages/contacts/contacts').then((m) => m.ContactsPage),
+  },
+  {
+    path: 'contacts/page/:page',
+    canActivate: [authGuard],
+    loadComponent: () => import('./pages/contacts/contacts').then((m) => m.ContactsPage),
+  },
+  {
+    path: 'contacts/:id',
+    canActivate: [authGuard],
+    loadComponent: () => import('./pages/contacts/contact-detail').then((m) => m.ContactDetail),
+  },
+  {
     path: 'recipes/:id/comments',
     loadComponent: () =>
       import('./pages/recipe-comments/recipe-comments').then((m) => m.RecipeCommentsComponent),
