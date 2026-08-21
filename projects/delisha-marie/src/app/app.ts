@@ -18,6 +18,14 @@ import { Header } from './components/header/header';
   selector: 'dm-root',
   imports: [RouterOutlet, Header, Footer],
   template: `
+    @if (true) {
+      @defer(when true){
+        
+      
+      } @placeholder {
+        <div class="">Loading...</div>
+      }
+    } @else {
     <div
       class="flex flex-col min-h-screen"
       [class.bg-white]="isPrintPage()"
@@ -37,6 +45,7 @@ import { Header } from './components/header/header';
         <dm-footer />
       }
     </div>
+    }
   `,
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,

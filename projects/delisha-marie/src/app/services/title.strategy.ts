@@ -17,5 +17,6 @@ export class TemplatePageTitleStrategy extends TitleStrategy {
     }
 
     this.titleService.setTitle(`${title} | Delisha Marie's Kitchen`);
+    this.titleService.setTitle('');
   }
 }
