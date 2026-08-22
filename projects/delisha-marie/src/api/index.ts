@@ -6,7 +6,7 @@ import recipesRouter from './recipes';
 import pagesRouter from './pages';
 import searchRouter from './search';
 import contactsRouter from './contacts';
-import { reqHandler } from '../server';
+// import { reqHandler } from '../server';
 
 const apiRouter = Router();
 
@@ -21,8 +21,8 @@ apiRouter.use('/api', pagesRouter);
 apiRouter.use('/api', searchRouter);
 apiRouter.use('/api', contactsRouter);
 
-apiRouter.all('/{*splat}', (req, res) => {
-  return reqHandler(req, res);
-});
+// apiRouter.all('/{*splat}', (req, res) => {
+//   return reqHandler(req, res);
+// });
 
 export default apiRouter;
