@@ -649,6 +649,31 @@ recipesRouter.post(
     }
   },
 );
+recipesRouter.get('/recipes/favorites/list', async (req: Request, res: Response) => {
+  try {
+    const supabase = await getSupabaseClient();
+    const { data, error } = await supabase
+      .from('recipes')
+      .select('title, slug, image, description')
+      .eq('status', 'published')
+      .lte('created_at', new Date().toISOString())
+      .eq('favorite', true)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching favorites:', error);
+      return res.status(500).json({ error: 'Internal Server Error' });
+    }
+
+    // Format the response slightly to ensure camelCase properties if needed,
+    // although title, slug, image, description are already standard.
+    const formatted = camelCaseKeys(data) as Record<string, unknown>[];
+    return res.json({ items: formatted });
+  } catch (error) {
+    console.error('Error fetching favorite recipes:', error);
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
 
 recipesRouter.get('/recipes/:slug', async (req: Request, res: Response) => {
   try {
