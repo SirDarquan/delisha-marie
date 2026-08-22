@@ -152,7 +152,7 @@ export const seoDynamicPageResolver: ResolveFn<SeoContent> = async (route, state
   const origin = document.location.origin;
   const path = state.url.split('?')[0].split('#')[0];
   const siteName = "Delisha Marie's Kitchen";
-  const slug = route.paramMap.get('slug') || undefined;
+  const slug = route.paramMap.get('slug') || route.data?.['slug'] || undefined;
 
   const seoConfig404: SeoContent = {
     title: `Not Found | ${siteName}`,

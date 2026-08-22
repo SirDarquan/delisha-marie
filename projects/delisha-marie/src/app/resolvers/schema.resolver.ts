@@ -85,8 +85,8 @@ export const schemaDynamicPageResolver: ResolveFn<SchemaObject[]> = async (route
   const url = origin + path;
 
   const siteName = 'Delisha Marie';
-  const description = route.data['description'];
-  const slug = route.paramMap.get('slug') || '';
+  const description = route.data?.['description'];
+  const slug = route.paramMap.get('slug') || route.data?.['slug'] || '';
 
   schema.push(
     generateOrganizationSchema(

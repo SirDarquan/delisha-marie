@@ -1,5 +1,3 @@
-import { provideHttpClient } from '@angular/common/http';
-import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { beforeEach, describe, expect, it } from 'vitest';
@@ -51,8 +49,6 @@ describe('RecipeIndex', () => {
       imports: [RecipeIndex],
       providers: [
         provideRouter([]),
-        provideHttpClient(),
-        provideHttpClientTesting(),
         {
           provide: RecipeIndexService,
           useValue: {
@@ -74,6 +70,7 @@ describe('RecipeIndex', () => {
 
     fixture = TestBed.createComponent(RecipeIndex);
     component = fixture.componentInstance;
+    fixture.detectChanges();
     fixture.detectChanges();
     await fixture.whenStable();
     fixture.detectChanges();

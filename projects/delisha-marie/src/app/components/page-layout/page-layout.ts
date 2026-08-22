@@ -5,16 +5,15 @@ import {
   inject,
   computed,
   resource,
+  input,
 } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
-import { ActivatedRoute } from '@angular/router';
-import { Sidebar } from '../../components/sidebar/sidebar';
+import { Sidebar } from '../sidebar/sidebar';
 import { Page, PagesService } from '../../services/pages.service';
 import { useOptimizedContent } from '../../utils/optimized-content';
-import { ColoredHeaderComponent } from '../../components/colored-header/colored-header';
+import { ColoredHeaderComponent } from '../colored-header/colored-header';
 
 @Component({
-  selector: 'dm-dynamic-page',
+  selector: 'dm-page-layout',
   imports: [Sidebar, ColoredHeaderComponent],
   template: `
     <div class="into-the-box py-12">
@@ -26,6 +25,8 @@ import { ColoredHeaderComponent } from '../../components/colored-header/colored-
             <div
               class="story prose prose-invert prose-lg max-w-none leading-relaxed font-serif first-letter:text-6xl first-letter:font-black first-letter:mr-1 first-letter:text-[var(--mat-sys-primary)]"
               [innerHTML]="optimizedContent()"></div>
+
+            <ng-content />
           } @else if (loading()) {
             <div class="animate-pulse space-y-8">
               <div class="h-16 bg-[var(--mat-sys-surface-container-highest)] rounded w-3/4"></div>
@@ -55,14 +56,12 @@ import { ColoredHeaderComponent } from '../../components/colored-header/colored-
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class DynamicPage {
-  private readonly route = inject(ActivatedRoute);
+export class PageLayout {
+  readonly slug = input.required<string>();
   private readonly pagesService = inject(PagesService);
-  private readonly _params = toSignal(this.route.params);
-  private readonly _data = toSignal(this.route.data);
 
   private readonly _pageResource = resource({
-    params: () => (this._params()?.['slug'] || this._data()?.['slug']) as string | undefined,
+    params: () => this.slug(),
     loader: async ({ params: slug }) => {
       if (!slug) return null;
       try {

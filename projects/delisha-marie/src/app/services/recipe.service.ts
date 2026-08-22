@@ -87,6 +87,13 @@ export class RecipeService {
   }
 
   /**
+   * Fetches all favorite recipes.
+   */
+  getFavoriteRecipes(): Promise<{ items: Recipe[] }> {
+    return this.api.get<{ items: Recipe[] }>('/recipes/favorites/list');
+  }
+
+  /**
    * Fetches all comments for a specific recipe.
    */
   getComments(

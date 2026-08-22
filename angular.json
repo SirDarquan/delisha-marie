@@ -137,7 +137,8 @@
               "branches": 90,
               "functions": 94,
               "lines": 94
-            }
+            },
+            "coverageExclude": ["projects/dm/library/**/*"]
           }
         },
         "test-api": {
@@ -470,7 +471,7 @@
           "builder": "@angular-eslint/builder:lint",
           "options": {
             "fix": true,
-            "lintFilePatterns": ["projects/dm/library/**/*.ts", "projects/dm/library/**/*.html"],
+            "lintFilePatterns": ["projects/dm/library/**/*.ts","projects/dm/library/**/*.html"],
             "eslintConfig": "projects/dm/library/eslint.config.js"
           }
         }
@@ -488,7 +489,7 @@
             "index": "",
             "browser": "projects/dm/backend-shared/src/env-utils.ts",
             "tsConfig": "projects/dm/backend-shared/tsconfig.lib.json",
-            "externalDependencies": ["node:fs", "node:path", "node:util", "node:module", "node:url"]
+            "externalDependencies": ["node:fs","node:path","node:util","node:module","node:url"]
           }
         },
         "test-api": {

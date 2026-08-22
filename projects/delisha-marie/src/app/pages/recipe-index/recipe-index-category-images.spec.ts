@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { provideRouter, Router } from '@angular/router';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { FullCategory } from '../../models/category';
 import { RecipeIndexCategoryImages } from './recipe-index-category-images';
@@ -62,5 +62,21 @@ describe('RecipeIndexCategoryImages', () => {
     inputElement.dispatchEvent(new Event('input'));
 
     expect(component.searchControl.value).toBe('Chocolate');
+  });
+
+  it('should navigate to search on valid query', () => {
+    const router = TestBed.inject(Router);
+    vi.spyOn(router, 'navigate');
+    component.searchControl.setValue('  Chocolate  ');
+    component.search();
+    expect(router.navigate).toHaveBeenCalledWith(['/search'], { queryParams: { q: 'Chocolate' } });
+  });
+
+  it('should not navigate on empty query', () => {
+    const router = TestBed.inject(Router);
+    vi.spyOn(router, 'navigate');
+    component.searchControl.setValue('   ');
+    component.search();
+    expect(router.navigate).not.toHaveBeenCalled();
   });
 });

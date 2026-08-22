@@ -30,7 +30,7 @@ describe('SearchPage', () => {
             similarity: 0.99,
           },
         ],
-        total: 1,
+        total: 15,
       }),
       get: vi.fn(),
     };
@@ -80,7 +80,7 @@ describe('SearchPage', () => {
     expect(component.currentPage()).toBe(2);
 
     // Wait for resource to load
-    await fixture.whenStable();
+    await new Promise((resolve) => setTimeout(resolve, 0));
     fixture.detectChanges();
 
     expect(mockApi['post']).toHaveBeenCalledWith('/search', {
@@ -90,13 +90,18 @@ describe('SearchPage', () => {
     });
 
     expect(component.recipes()).toHaveLength(1);
-    expect(component.totalItems()).toBe(1);
+    expect(component.totalItems()).toBe(15);
+
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    fixture.detectChanges();
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.querySelectorAll('a').length).toBeGreaterThan(0);
   });
 
   it('should handle empty query param by returning empty array and not calling api', async () => {
     queryParamsSubject.next({});
     fixture.detectChanges();
-    await fixture.whenStable();
+    await new Promise((resolve) => setTimeout(resolve, 0));
 
     expect(component.recipes()).toHaveLength(0);
     expect(component.totalItems()).toBe(0);
@@ -166,7 +171,7 @@ describe('SearchPage', () => {
     mockApi['post'].mockResolvedValue({ items: [], total: 0 });
     queryParamsSubject.next({ q: 'nomatch' });
     fixture.detectChanges();
-    await fixture.whenStable();
+    await new Promise((resolve) => setTimeout(resolve, 0));
     fixture.detectChanges();
 
     const content = fixture.nativeElement.textContent;
@@ -176,7 +181,7 @@ describe('SearchPage', () => {
   it('should render enter search term message when query is empty', async () => {
     queryParamsSubject.next({});
     fixture.detectChanges();
-    await fixture.whenStable();
+    await new Promise((resolve) => setTimeout(resolve, 0));
     fixture.detectChanges();
 
     const content = fixture.nativeElement.textContent;

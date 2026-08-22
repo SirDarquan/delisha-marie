@@ -87,7 +87,7 @@ describe('RecipeMeta', () => {
     fixture.detectChanges();
 
     // Wait for resource
-    await fixture.whenStable();
+    await new Promise((resolve) => setTimeout(resolve, 0));
     fixture.detectChanges();
 
     const compiled = fixture.nativeElement as HTMLElement;

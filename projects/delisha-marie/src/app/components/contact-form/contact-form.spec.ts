@@ -34,6 +34,17 @@ describe('ContactForm', () => {
     expect(component).toBeTruthy();
   });
 
+  it('should render form fields', () => {
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.querySelector('input[placeholder="Delisha Marie"]')).toBeTruthy();
+    expect(compiled.querySelector('input[placeholder="hello@delishamarie.com"]')).toBeTruthy();
+    expect(compiled.querySelector('input[placeholder="Recipe question"]')).toBeTruthy();
+    expect(
+      compiled.querySelector('textarea[placeholder="Your beautiful message..."]'),
+    ).toBeTruthy();
+    expect(compiled.querySelector('button[type="submit"]')).toBeTruthy();
+  });
+
   it('should submit form successfully', async () => {
     vi.useFakeTimers();
     // Fill the form by updating the bound signal
@@ -73,6 +84,38 @@ describe('ContactForm', () => {
     expect(component['userModel']().email).toBe('');
     expect(component['userModel']().subject).toBe('');
     expect(component['userModel']().message).toBe('');
+
+    vi.useRealTimers();
+  });
+  it('should handle submission failure', async () => {
+    vi.useFakeTimers();
+    component['userModel'].set({
+      name: 'John Doe',
+      email: 'john@example.com',
+      subject: 'Question',
+      message: 'Hello there!',
+    });
+    fixture.detectChanges();
+
+    const { submit } = await import('@angular/forms/signals');
+    submit(component['contactForm']);
+
+    expect(component['isSubmitting']()).toBe(true);
+
+    const httpTestingController = TestBed.inject(HttpTestingController);
+    const req = httpTestingController.expectOne('/api/contacts');
+    req.flush('Error', { status: 500, statusText: 'Server Error' });
+
+    vi.advanceTimersByTime(1500);
+    await Promise.resolve();
+    fixture.detectChanges();
+
+    expect(mockSnackBar['open']).toHaveBeenCalledWith(
+      'Failed to send message. Please try again later.',
+      'Close',
+      { duration: 5000 },
+    );
+    expect(component['isSubmitting']()).toBe(false);
 
     vi.useRealTimers();
   });

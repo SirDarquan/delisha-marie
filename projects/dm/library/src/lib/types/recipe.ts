@@ -55,6 +55,7 @@ export interface BaseRecipe {
   imageHeight?: string;
   imageType?: string;
   theBest?: boolean;
+  favorite?: boolean;
   prepTime: string;
   cookTime: string;
   difficulty: string;
