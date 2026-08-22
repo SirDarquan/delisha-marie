@@ -43,7 +43,9 @@ describe('SnoozeDialogComponent', () => {
     component.selectedDate = testDate;
     component.selectedTime = '12:30';
 
-    fixture.debugElement.query(By.css('button[mat-flat-button]')).triggerEventHandler('click', null);
+    fixture.debugElement
+      .query(By.css('button[mat-flat-button]'))
+      .triggerEventHandler('click', null);
 
     const expectedResult = new Date(testDate);
     expectedResult.setHours(12, 30, 0, 0);
@@ -53,12 +55,16 @@ describe('SnoozeDialogComponent', () => {
 
   it('should not close if date or time is missing', () => {
     component.selectedDate = null;
-    fixture.debugElement.query(By.css('button[mat-flat-button]')).triggerEventHandler('click', null);
+    fixture.debugElement
+      .query(By.css('button[mat-flat-button]'))
+      .triggerEventHandler('click', null);
     expect(mockDialogRef.close).not.toHaveBeenCalled();
 
     component.selectedDate = new Date();
     component.selectedTime = '';
-    fixture.debugElement.query(By.css('button[mat-flat-button]')).triggerEventHandler('click', null);
+    fixture.debugElement
+      .query(By.css('button[mat-flat-button]'))
+      .triggerEventHandler('click', null);
     expect(mockDialogRef.close).not.toHaveBeenCalled();
   });
 });

@@ -2,7 +2,6 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 import { ContactDetail } from './contact-detail';
 import { ContactService, ContactMessage } from '../../services/contact.service';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { ActivatedRoute } from '@angular/router';
 import { Subject } from 'rxjs';
 import { vi } from 'vitest';
@@ -10,9 +9,11 @@ import { vi } from 'vitest';
 describe('ContactDetail Component', () => {
   let component: ContactDetail;
   let fixture: ComponentFixture<ContactDetail>;
-  let mockContactService: any;
-  let mockRouter: any;
-  let mockSnackBar: any;
+  let mockContactService: {
+    getMessage: import('vitest').Mock;
+    updateMessage: import('vitest').Mock;
+  };
+  let mockRouter: { navigate: import('vitest').Mock };
   let snackBarActionSubject: Subject<void>;
 
   const mockMessage: ContactMessage = {
@@ -61,10 +62,12 @@ describe('ContactDetail Component', () => {
 
     fixture = TestBed.createComponent(ContactDetail);
     component = fixture.componentInstance;
-    
+
     vi.spyOn(component['snackBar'], 'open').mockReturnValue({
       onAction: () => snackBarActionSubject.asObservable(),
-    } as any);
+    } as unknown as import('@angular/material/snack-bar').MatSnackBarRef<
+      import('@angular/material/snack-bar').TextOnlySnackBar
+    >);
   });
 
   afterEach(() => {
@@ -113,15 +116,23 @@ describe('ContactDetail Component', () => {
   it('should archive message, navigate, and allow undo', async () => {
     await component['loadMessage']();
     mockContactService.updateMessage.mockClear();
-    
+
     await component['archive']();
     expect(mockContactService.updateMessage).toHaveBeenCalledWith('1', { is_archived: true });
     expect(mockRouter.navigate).toHaveBeenCalledWith(['/contacts']);
-    expect(component['snackBar'].open).toHaveBeenCalledWith('Message archived', 'Undo', expect.any(Object));
+    expect(component['snackBar'].open).toHaveBeenCalledWith(
+      'Message archived',
+      'Undo',
+      expect.any(Object),
+    );
     snackBarActionSubject.next();
     await new Promise((resolve) => setTimeout(resolve, 0));
     expect(mockContactService.updateMessage).toHaveBeenCalledWith('1', { is_archived: false });
-    expect(component['snackBar'].open).toHaveBeenCalledWith('Message restored', '', expect.any(Object));
+    expect(component['snackBar'].open).toHaveBeenCalledWith(
+      'Message restored',
+      '',
+      expect.any(Object),
+    );
   });
 
   it('should snooze message for tomorrow and navigate', async () => {
@@ -130,7 +141,7 @@ describe('ContactDetail Component', () => {
     await component['snooze']();
     expect(mockContactService.updateMessage).toHaveBeenCalledWith(
       '1',
-      expect.objectContaining({ snoozed_until: expect.any(String) })
+      expect.objectContaining({ snoozed_until: expect.any(String) }),
     );
     expect(mockRouter.navigate).toHaveBeenCalledWith(['/contacts']);
   });
@@ -141,26 +152,31 @@ describe('ContactDetail Component', () => {
     await component['deleteMsg']();
     expect(mockContactService.updateMessage).toHaveBeenCalledWith(
       '1',
-      expect.objectContaining({ deleted_at: expect.any(String) })
+      expect.objectContaining({ deleted_at: expect.any(String) }),
     );
     expect(mockRouter.navigate).toHaveBeenCalledWith(['/contacts']);
-    expect(component['snackBar'].open).toHaveBeenCalledWith('Message moved to trash', 'Undo', expect.any(Object));
+    expect(component['snackBar'].open).toHaveBeenCalledWith(
+      'Message moved to trash',
+      'Undo',
+      expect.any(Object),
+    );
     snackBarActionSubject.next();
     await new Promise((resolve) => setTimeout(resolve, 0));
     expect(mockContactService.updateMessage).toHaveBeenCalledWith('1', { deleted_at: null });
-    expect(component['snackBar'].open).toHaveBeenCalledWith('Message restored', '', expect.any(Object));
+    expect(component['snackBar'].open).toHaveBeenCalledWith(
+      'Message restored',
+      '',
+      expect.any(Object),
+    );
   });
 
-
-  it.each([
-    'markUnread',
-    'archive',
-    'snooze',
-    'deleteMsg',
-  ])('should not execute %s if message is undefined', async (method) => {
-    component['message'].set(undefined);
-    await (component as any)[method]();
-    expect(mockContactService.updateMessage).not.toHaveBeenCalled();
-    expect(mockRouter.navigate).not.toHaveBeenCalled();
-  });
+  it.each(['markUnread', 'archive', 'snooze', 'deleteMsg'])(
+    'should not execute %s if message is undefined',
+    async (method) => {
+      component['message'].set(undefined);
+      await (component as unknown as Record<string, () => Promise<void>>)[method]();
+      expect(mockContactService.updateMessage).not.toHaveBeenCalled();
+      expect(mockRouter.navigate).not.toHaveBeenCalled();
+    },
+  );
 });

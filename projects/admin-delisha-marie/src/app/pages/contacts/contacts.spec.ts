@@ -99,7 +99,7 @@ describe('ContactsPage', () => {
 
     fixture = TestBed.createComponent(ContactsPage);
     component = fixture.componentInstance;
-    
+
     vi.spyOn(component['dialog'], 'open').mockReturnValue({
       afterClosed: () => of(true),
     } as any);
@@ -201,8 +201,6 @@ describe('ContactsPage', () => {
       (component as any).selectUnread();
       expect((component as any).selectedIds()).toEqual(['1']);
     });
-
-
   });
 
   describe('Actions', () => {
@@ -331,7 +329,9 @@ describe('ContactsPage', () => {
     });
 
     it('should open snooze dialog', async () => {
-      (component['dialog'].open as any).mockReturnValue({ afterClosed: () => of(new Date().toISOString()) });
+      (component['dialog'].open as any).mockReturnValue({
+        afterClosed: () => of(new Date().toISOString()),
+      });
       await (component as any).openSnoozeDialog(mockMessages[0]);
       expect(component['dialog'].open).toHaveBeenCalled();
       await new Promise((r) => setTimeout(r, 0));
