@@ -486,6 +486,18 @@ describe('schemaResolver', () => {
       expect(result.some((s) => s['@type'] === expectedType)).toBe(true);
     });
 
+    it('should use slug from route data if paramMap missing', async () => {
+      const route = {
+        data: { slug: 'about', description: 'desc' },
+        paramMap: { get: () => null },
+      } as unknown as ActivatedRouteSnapshot;
+      const state = { url: '/about' } as RouterStateSnapshot;
+      const result = (await TestBed.runInInjectionContext(() =>
+        schemaDynamicPageResolver(route, state),
+      )) as Record<string, unknown>[];
+      expect(result.some((s) => s['@type'] === 'AboutPage')).toBe(true);
+    });
+
     it('should handle faq slug and parse html', async () => {
       const route = {
         data: { description: 'desc' },

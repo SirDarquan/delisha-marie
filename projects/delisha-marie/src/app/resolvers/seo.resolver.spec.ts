@@ -414,6 +414,7 @@ describe('Seo Resolvers', () => {
     it('should return 404 SEO if slug missing', async () => {
       const route = {
         paramMap: { get: () => null },
+        data: {},
       } as unknown as ActivatedRouteSnapshot;
 
       const result = await TestBed.runInInjectionContext(() => {
@@ -421,6 +422,34 @@ describe('Seo Resolvers', () => {
       });
 
       expect((result as SeoContent).content).toBe('noindex,nofollow');
+    });
+
+    it('should use slug from route data if paramMap missing', async () => {
+      vi.mocked(dynamicPageService.getPage).mockResolvedValue({
+        id: '1',
+        title: 'Data Slug Page',
+        slug: 'data-slug',
+        description: 'Data Desc',
+        content: 'Content',
+        updated_at: '2026-08-01',
+      });
+
+      const route = {
+        paramMap: { get: () => null },
+        data: { slug: 'data-slug' },
+      } as unknown as ActivatedRouteSnapshot;
+
+      await TestBed.runInInjectionContext(() => {
+        return seoDynamicPageResolver(route, { url: '/page/data-slug' } as RouterStateSnapshot);
+      });
+
+      expect(dynamicPageService.getPage).toHaveBeenCalledWith('data-slug');
+      expect(seoService.setSEO).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: "Data Slug Page | Delisha Marie's Kitchen",
+          description: 'Data Desc',
+        }),
+      );
     });
 
     it('should return 404 SEO if page not found', async () => {
