@@ -1,38 +1,14 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { DynamicPage } from './dynamic-page';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, provideRouter } from '@angular/router';
 import { PagesService, Page } from '../../services/pages.service';
 import { SeoService } from '../../services/seo.service';
 import { BehaviorSubject } from 'rxjs';
-import { Component, Input } from '@angular/core';
 import { IMAGE_LOADER } from '@angular/common';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { Sidebar } from '../../components/sidebar/sidebar';
-import { ContactForm } from '../../components/contact-form/contact-form';
-import { ColoredHeaderComponent } from '../../components/colored-header/colored-header';
 
-@Component({
-  selector: 'dml-sidebar',
-  template: '<div></div>',
-  standalone: true,
-})
-class MockSidebar {}
-
-@Component({
-  selector: 'dm-contact-form',
-  template: '<div class="contact-form-mock"></div>',
-  standalone: true,
-})
-class MockContactForm {}
-
-@Component({
-  selector: 'dm-colored-header',
-  template: '<div></div>',
-  standalone: true,
-})
-class MockColoredHeader {
-  @Input() title!: string;
-}
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 
 describe('DynamicPage', () => {
   let component: DynamicPage;
@@ -40,6 +16,7 @@ describe('DynamicPage', () => {
   let mockPagesService: Record<string, ReturnType<typeof vi.fn>>;
   let mockSeoService: Record<string, ReturnType<typeof vi.fn>>;
   let routeParams$: BehaviorSubject<{ slug?: string }>;
+  let routeData$: BehaviorSubject<Record<string, unknown>>;
 
   beforeEach(async () => {
     mockPagesService = {
@@ -49,24 +26,27 @@ describe('DynamicPage', () => {
       setSeoData: vi.fn(),
     };
     routeParams$ = new BehaviorSubject<{ slug?: string }>({ slug: 'about' });
+    routeData$ = new BehaviorSubject<Record<string, unknown>>({});
 
     await TestBed.configureTestingModule({
       imports: [DynamicPage],
       providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        provideRouter([]),
         {
           provide: ActivatedRoute,
-          useValue: { params: routeParams$ },
+          useValue: {
+            params: routeParams$,
+            data: routeData$,
+            queryParams: new BehaviorSubject({}),
+          },
         },
         { provide: PagesService, useValue: mockPagesService },
         { provide: SeoService, useValue: mockSeoService },
         { provide: IMAGE_LOADER, useValue: (config: { src: string }) => config.src },
       ],
-    })
-      .overrideComponent(DynamicPage, {
-        remove: { imports: [Sidebar, ContactForm, ColoredHeaderComponent] },
-        add: { imports: [MockSidebar, MockContactForm, MockColoredHeader] },
-      })
-      .compileComponents();
+    }).compileComponents();
 
     fixture = TestBed.createComponent(DynamicPage);
     component = fixture.componentInstance;
@@ -87,10 +67,35 @@ describe('DynamicPage', () => {
     mockPagesService['getPage'].mockResolvedValue(mockPage);
 
     fixture.detectChanges();
-    await new Promise((r) => setTimeout(r, 0));
+    await fixture.whenStable();
     fixture.detectChanges();
 
     expect(mockPagesService['getPage']).toHaveBeenCalledWith('about');
+    expect(component['page']()).toEqual(mockPage);
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.innerHTML).toContain('About Content');
+  });
+
+  it('should load a page when slug is in data but not params', async () => {
+    const mockPage: Page = {
+      id: '1',
+      title: 'About Us',
+      slug: 'about-data',
+      content: '<p>About Content</p>',
+      updated_at: '2026-08-01',
+    };
+    mockPagesService['getPage'].mockResolvedValue(mockPage as unknown as Page);
+    routeParams$.next({}); // Emits params without slug
+
+    // Emit the new route data
+    routeData$.next({ slug: 'about-data' });
+
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(mockPagesService['getPage']).toHaveBeenCalledWith('about-data');
     expect(component['page']()).toEqual(mockPage);
   });
 
@@ -98,41 +103,30 @@ describe('DynamicPage', () => {
     mockPagesService['getPage'].mockRejectedValue(new Error('Load Failed'));
 
     fixture.detectChanges();
-    await new Promise((r) => setTimeout(r, 0));
+    await fixture.whenStable();
     fixture.detectChanges();
 
     expect(mockPagesService['getPage']).toHaveBeenCalledWith('about');
     expect(component['page']()).toBeNull();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.innerHTML).toContain('Page Not Found');
   });
 
   it('should not load a page if slug is missing', async () => {
     routeParams$.next({});
     fixture.detectChanges();
-    await new Promise((r) => setTimeout(r, 0));
+    await fixture.whenStable();
     fixture.detectChanges();
 
     expect(mockPagesService['getPage']).not.toHaveBeenCalled();
     expect(component['page']()).toBeNull();
-  });
-
-  it('should show contact form if slug is "contact"', async () => {
-    const mockPage: Page = {
-      id: '2',
-      title: 'Contact Us',
-      slug: 'contact',
-      content: '<p>Contact</p>',
-      updated_at: '2026-08-01',
-    };
-    mockPagesService['getPage'].mockResolvedValue(mockPage);
-    routeParams$.next({ slug: 'contact' });
-
-    fixture.detectChanges();
-    await new Promise((r) => setTimeout(r, 0));
-    fixture.detectChanges();
 
     const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('.contact-form-mock')).toBeTruthy();
+    expect(compiled.innerHTML).toContain('Page Not Found');
   });
+
+  // Removed contact form test as contact form is no longer rendered by dynamic-page
 
   it('should correctly expose loading state', async () => {
     mockPagesService['getPage'].mockReturnValue(new Promise(() => undefined)); // Never resolves
