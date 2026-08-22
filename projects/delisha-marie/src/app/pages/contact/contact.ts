@@ -6,16 +6,15 @@ import {
   computed,
   resource,
 } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
-import { ActivatedRoute } from '@angular/router';
 import { Sidebar } from '../../components/sidebar/sidebar';
 import { Page, PagesService } from '../../services/pages.service';
+import { ContactForm } from '../../components/contact-form/contact-form';
 import { useOptimizedContent } from '../../utils/optimized-content';
 import { ColoredHeaderComponent } from '../../components/colored-header/colored-header';
 
 @Component({
-  selector: 'dm-dynamic-page',
-  imports: [Sidebar, ColoredHeaderComponent],
+  selector: 'dm-contact',
+  imports: [Sidebar, ContactForm, ColoredHeaderComponent],
   template: `
     <div class="into-the-box py-12">
       <div class="flex flex-col lg:flex-row gap-12">
@@ -26,6 +25,8 @@ import { ColoredHeaderComponent } from '../../components/colored-header/colored-
             <div
               class="story prose prose-invert prose-lg max-w-none leading-relaxed font-serif first-letter:text-6xl first-letter:font-black first-letter:mr-1 first-letter:text-[var(--mat-sys-primary)]"
               [innerHTML]="optimizedContent()"></div>
+
+            <dm-contact-form />
           } @else if (loading()) {
             <div class="animate-pulse space-y-8">
               <div class="h-16 bg-[var(--mat-sys-surface-container-highest)] rounded w-3/4"></div>
@@ -34,13 +35,6 @@ import { ColoredHeaderComponent } from '../../components/colored-header/colored-
                 <div class="h-4 bg-[var(--mat-sys-surface-container-highest)] rounded w-5/6"></div>
                 <div class="h-4 bg-[var(--mat-sys-surface-container-highest)] rounded w-4/6"></div>
               </div>
-            </div>
-          } @else {
-            <dm-colored-header title="Page Not Found" />
-            <div class="py-24 space-y-6">
-              <p class="text-lg text-[var(--mat-sys-outline)]">
-                The page you are looking for does not exist or has not been published yet.
-              </p>
             </div>
           }
         </div>
@@ -55,18 +49,13 @@ import { ColoredHeaderComponent } from '../../components/colored-header/colored-
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class DynamicPage {
-  private readonly route = inject(ActivatedRoute);
+export class ContactPage {
   private readonly pagesService = inject(PagesService);
-  private readonly _params = toSignal(this.route.params);
-  private readonly _data = toSignal(this.route.data);
 
   private readonly _pageResource = resource({
-    params: () => (this._params()?.['slug'] || this._data()?.['slug']) as string | undefined,
-    loader: async ({ params: slug }) => {
-      if (!slug) return null;
+    loader: async () => {
       try {
-        return await this.pagesService.getPage(slug);
+        return await this.pagesService.getPage('contact');
       } catch (err) {
         console.error('Failed to load page', err);
         return null;
