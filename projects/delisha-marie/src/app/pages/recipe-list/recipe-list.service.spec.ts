@@ -68,7 +68,7 @@ describe('RecipeListService', () => {
   describe('getInfo', () => {
     it('should return correct SEO metadata', () => {
       const info = service.getInfo({ url: 'recipes', category: 'dinner' });
-      expect(info.title).toBe('Dinner');
+      expect(info.title).toBe("Dinner | Delisha Marie's Kitchen");
       expect(info.description).toContain('delicious dinner recipes');
       expect(info.image).toContain('unsplash.com');
       expect(info.imageWidth).toBe('800');

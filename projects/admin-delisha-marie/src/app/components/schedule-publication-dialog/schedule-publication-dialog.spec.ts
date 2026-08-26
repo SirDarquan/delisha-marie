@@ -288,7 +288,7 @@ describe('SchedulePublicationDialogComponent', () => {
   it('should clear timeouts on destroy', () => {
     const clearTimeoutSpy = vi.spyOn(global, 'clearTimeout');
     component['scrollTimeouts'] = {
-      hour: setTimeout(vi.fn(), 10000) as unknown as ReturnType<typeof setTimeout>,
+      hour: 123 as unknown as ReturnType<typeof setTimeout>,
     };
     component.ngOnDestroy();
     expect(clearTimeoutSpy).toHaveBeenCalled();

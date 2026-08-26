@@ -14,10 +14,10 @@ export class RecipeListService {
     const title = this.getTitle(variables);
 
     return {
-      title,
+      title: `${title} | Delisha Marie's Kitchen`,
       description: `Browse our collection of delicious ${title.toLowerCase()} recipes and culinary ideas.`,
       image:
-        'https://images.unsplash.com/photo-1546271876-af6caec5fae5?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1546271876-af6caec5fae5?auto=format&fit=crop&w=800&q=80', // TODO: Add a proper image for each category
       imageWidth: '800',
       imageHeight: '800',
       imageType: 'image/jpeg',
