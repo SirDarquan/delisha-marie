@@ -6,20 +6,11 @@ import {
 } from '@angular/ssr/node';
 import express from 'express';
 import { join } from 'node:path';
-import apiRouter from './api';
-import configRouter from './api/config';
-import sitemapRouter from './api/sitemap';
-import robotsTxtRouter from './api/robots-txt';
 
 const browserDistFolder = join(import.meta.dirname, '../browser');
 
 const app = express();
 const angularApp = new AngularNodeAppEngine();
-
-app.use(configRouter);
-app.use(robotsTxtRouter);
-app.use(sitemapRouter);
-app.use(apiRouter);
 
 app.use(
   express.static(browserDistFolder, {

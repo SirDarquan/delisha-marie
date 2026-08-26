@@ -34,13 +34,14 @@
     "@angular/ssr": "^22.1.4",
     "@descope/angular-sdk": "^0.27.2",
     "@descope/node-sdk": "^2.6.0",
+    "@imagekit/nodejs": "^7.11.0",
     "@sentry/browser": "^10.69.0",
     "@supabase/supabase-js": "^2.107.0",
+    "@vercel/node": "^7.0.0",
     "change-case": "^5.4.4",
     "cookie-parser": "^1.4.7",
     "express": "^5.2.1",
     "express-rate-limit": "^8.5.2",
-    "imagekit": "^6.0.0",
     "multer": "^2.2.0",
     "ngx-pagination": "^6.0.3",
     "rxjs": "~7.8.0",
@@ -81,7 +82,9 @@
   "allowScripts": {
     "@parcel/watcher@2.5.6": true,
     "cypress@15.18.1": true,
-    "esbuild@0.28.1": true,
+    "esbuild@0.27.0": true,
+    "esbuild@0.27.7": true,
+    "esbuild@0.28.2": true,
     "lmdb@3.5.6": true,
     "msgpackr-extract@3.0.4": true
   }

@@ -1,0 +1,25 @@
+{
+    "rewrites": [
+        {
+            "source": "/config",
+            "destination": "/api/config"
+        },
+        {
+            "source": "/robots.txt",
+            "destination": "/api/robots"
+        },
+        {
+            "source": "/sitemap(.*).xml",
+            "destination": "/api/sitemap"
+        },
+        {
+            "source": "/(.*)",
+            "destination": "/api"
+        }
+    ],
+    "functions": {
+        "api/index.mjs": {
+            "includeFiles": "dist/delisha-marie/**"
+        }
+    }
+}
