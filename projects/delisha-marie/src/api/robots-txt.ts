@@ -1,5 +1,4 @@
-import { Request, Response, Router } from 'express';
-const robotsTxt = Router();
+import { VercelRequest, VercelResponse } from '@vercel/node';
 
 interface Rule {
   userAgent: string | string[];
@@ -12,8 +11,12 @@ interface RobotsTxt {
   sitemap?: string | string[];
 }
 
-robotsTxt.get('/robots.txt', (_req: Request, res: Response): void => {
-  const baseUrl = process.env['SITE_URL'] || '';
+export default function robotsTxt(req: VercelRequest, res: VercelResponse): void {
+  const baseUrl =
+    process.env['SITE_URL'] ||
+    (process.env['VERCEL_PROJECT_PRODUCTION_URL']
+      ? `https://${process.env['VERCEL_PROJECT_PRODUCTION_URL']}`
+      : '');
   const robotsTxt: RobotsTxt = JSON.parse(process.env['ROBOTS_TXT'] || '{}');
   let robots = '# https://www.robotstxt.org/robotstxt.html\n';
 
@@ -48,9 +51,7 @@ robotsTxt.get('/robots.txt', (_req: Request, res: Response): void => {
     }
   }
 
-  res.header('Content-Type', 'text/plain; charset=utf-8');
-  res.header('Cache-Control', 'public, max-age=3600, s-maxage=86400');
+  res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+  res.setHeader('Cache-Control', 'public, max-age=3600, s-maxage=86400');
   res.send(robots);
-});
-
-export default robotsTxt;
+}
