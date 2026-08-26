@@ -1,3 +1,4 @@
+import { createRequestMock } from './test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.hoisted(() => {
@@ -53,14 +54,20 @@ vi.mock('@supabase/supabase-js', () => {
 });
 
 import express from 'express';
-import request from 'supertest';
 import recipesRouter from './recipes';
 import { resetSupabaseClient } from './supabase';
 
 describe('Recipes Router API', () => {
   const app = express();
   app.use(express.json());
-  app.use('/api', recipesRouter);
+  app.use('/api', (req, res, next) => {
+    const parts = req.url.split('?')[0].split('/').filter(Boolean);
+    if (parts[0] === 'recipes') {
+      req.query['slug'] = parts.slice(1);
+    }
+    next();
+  });
+  app.use('/api', recipesRouter as unknown as import('express').RequestHandler);
 
   let shouldFail = false;
   let mockIngredientsData: { id: string; name: string }[] = [];
@@ -128,7 +135,7 @@ describe('Recipes Router API', () => {
   });
 
   it('should fetch recipes with default pagination', async () => {
-    const res = await request(app).get('/api/recipes');
+    const res = await createRequestMock(recipesRouter)().get('/api/recipes');
     expect(res.status).toBe(200);
     expect(res.body.items).toHaveLength(2);
     expect(res.body.total).toBe(2);
@@ -139,56 +146,56 @@ describe('Recipes Router API', () => {
   });
 
   it('should filter by category and subcategory for recipes method', async () => {
-    const res = await request(app)
+    const res = await createRequestMock(recipesRouter)()
       .get('/api/recipes')
       .query({ method: 'recipes', category: 'dinner', subcategory: 'pasta' });
     expect(res.status).toBe(200);
   });
 
   it('should filter by category only for recipes method', async () => {
-    const res = await request(app)
+    const res = await createRequestMock(recipesRouter)()
       .get('/api/recipes')
       .query({ method: 'recipes', category: 'dinner' });
     expect(res.status).toBe(200);
   });
 
   it('should filter by category and subcategory for the-best-recipes method', async () => {
-    const res = await request(app)
+    const res = await createRequestMock(recipesRouter)()
       .get('/api/recipes')
       .query({ method: 'the-best-recipes', category: 'dinner', subcategory: 'pasta' });
     expect(res.status).toBe(200);
   });
 
   it('should filter by category only for the-best-recipes method', async () => {
-    const res = await request(app)
+    const res = await createRequestMock(recipesRouter)()
       .get('/api/recipes')
       .query({ method: 'the-best-recipes', category: 'dinner' });
     expect(res.status).toBe(200);
   });
 
   it('should filter by rating for the-best-recipes method with no category', async () => {
-    const res = await request(app)
+    const res = await createRequestMock(recipesRouter)()
       .get('/api/recipes')
       .query({ method: 'the-best-recipes', rating: 'true' });
     expect(res.status).toBe(200);
   });
 
   it('should filter by category for cooking methods', async () => {
-    const res = await request(app)
+    const res = await createRequestMock(recipesRouter)()
       .get('/api/recipes')
       .query({ method: 'methods', category: 'baking' });
     expect(res.status).toBe(200);
   });
 
   it('should filter by category for special-diets', async () => {
-    const res = await request(app)
+    const res = await createRequestMock(recipesRouter)()
       .get('/api/recipes')
       .query({ method: 'special-diets', category: 'vegan' });
     expect(res.status).toBe(200);
   });
 
   it('should filter by category for holidays', async () => {
-    const res = await request(app)
+    const res = await createRequestMock(recipesRouter)()
       .get('/api/recipes')
       .query({ method: 'holiday', category: 'christmas' });
     expect(res.status).toBe(200);
@@ -196,7 +203,7 @@ describe('Recipes Router API', () => {
 
   it('should filter by category and subcategory for tag method', async () => {
     mockIngredientsData = [{ id: 'ing-1', name: 'Apple' }];
-    const res = await request(app)
+    const res = await createRequestMock(recipesRouter)()
       .get('/api/recipes')
       .query({ method: 'tag', category: 'fruit', subcategory: 'apple' });
     expect(res.status).toBe(200);
@@ -204,24 +211,42 @@ describe('Recipes Router API', () => {
 
   it('should filter by category only for tag method including child ingredients prefix match', async () => {
     mockIngredientsData = [{ id: 'ing-1', name: 'Apple' }];
-    const res = await request(app).get('/api/recipes').query({ method: 'tag', category: 'apple' });
+    const res = await createRequestMock(recipesRouter)()
+      .get('/api/recipes')
+      .query({ method: 'tag', category: 'apple' });
     expect(res.status).toBe(200);
   });
 
+  it('should handle null data for index route', async () => {
+    const res = await createRequestMock(recipesRouter)()
+      .get('/api/recipes')
+      .query({ method: 'null-data' });
+    expect(res.status).toBe(200);
+  });
+  it('should handle null data for adjacent recipes', async () => {
+    const res = await createRequestMock(recipesRouter)().get('/api/recipes/r-null-adjacent');
+    expect(res.status).toBe(200);
+  });
+  it('should handle null data for equipment', async () => {
+    const res = await createRequestMock(recipesRouter)().get(
+      '/api/recipes/123/equipment?nullData=1',
+    );
+    expect(res.status).toBe(200);
+  });
   it('should return 500 when database query fails', async () => {
     shouldFail = true;
-    const res = await request(app).get('/api/recipes');
+    const res = await createRequestMock(recipesRouter)().get('/api/recipes');
     expect(res.status).toBe(500);
     expect(res.body.error).toBe('Query failed');
   });
 
   it('should filter by special-diet (singular) and holidays (plural)', async () => {
-    const res1 = await request(app)
+    const res1 = await createRequestMock(recipesRouter)()
       .get('/api/recipes')
       .query({ method: 'special-diet', category: 'vegan' });
     expect(res1.status).toBe(200);
 
-    const res2 = await request(app)
+    const res2 = await createRequestMock(recipesRouter)()
       .get('/api/recipes')
       .query({ method: 'holidays', category: 'christmas' });
     expect(res2.status).toBe(200);
@@ -229,7 +254,7 @@ describe('Recipes Router API', () => {
 
   it('should handle tag method when category ingredient is not found', async () => {
     mockIngredientsData = []; // not found
-    const res = await request(app)
+    const res = await createRequestMock(recipesRouter)()
       .get('/api/recipes')
       .query({ method: 'tag', category: 'unknown-tag' });
     expect(res.status).toBe(200);
@@ -237,7 +262,7 @@ describe('Recipes Router API', () => {
 
   it('should handle tag method when subcategory ingredient is not found', async () => {
     mockIngredientsData = []; // not found
-    const res = await request(app)
+    const res = await createRequestMock(recipesRouter)()
       .get('/api/recipes')
       .query({ method: 'tag', category: 'fruit', subcategory: 'unknown-sub' });
     expect(res.status).toBe(200);
@@ -276,7 +301,9 @@ describe('Recipes Router API', () => {
       };
     });
 
-    const res = await request(app).get('/api/recipes').query({ method: 'tag', category: 'apple' });
+    const res = await createRequestMock(recipesRouter)()
+      .get('/api/recipes')
+      .query({ method: 'tag', category: 'apple' });
     expect(res.status).toBe(200);
   });
 
@@ -313,7 +340,7 @@ describe('Recipes Router API', () => {
       };
     });
 
-    const res = await request(app).get('/api/recipes');
+    const res = await createRequestMock(recipesRouter)().get('/api/recipes');
     expect(res.status).toBe(200);
     expect(res.body.items[0].holidays).toEqual([]);
     expect(res.body.items[0].specialDiets).toEqual([]);
@@ -326,7 +353,7 @@ describe('Recipes Router API', () => {
     mockFrom.mockImplementation(() => {
       throw 'String exception';
     });
-    const res = await request(app).get('/api/recipes');
+    const res = await createRequestMock(recipesRouter)().get('/api/recipes');
     expect(res.status).toBe(500);
     expect(res.body.error).toBe('String exception');
   });
@@ -340,7 +367,7 @@ describe('Recipes Router API', () => {
     resetSupabaseClient();
 
     try {
-      const res = await request(app).get('/api/recipes');
+      const res = await createRequestMock(recipesRouter)().get('/api/recipes');
       expect(res.status).toBe(500);
       expect(res.body.error).toContain('Supabase URL and Key are required');
     } finally {
@@ -367,7 +394,7 @@ describe('Recipes Router API', () => {
       };
     });
 
-    const res = await request(app)
+    const res = await createRequestMock(recipesRouter)()
       .get('/api/recipes')
       .query({ category: 'apple', method: 'nonexistent' });
     expect(res.status).toBe(200);
@@ -454,7 +481,7 @@ describe('Recipes Router API', () => {
         };
       });
 
-      const res = await request(app).get('/api/recipes/r1');
+      const res = await createRequestMock(recipesRouter)().get('/api/recipes/r1');
 
       expect(res.status).toBe(200);
       expect(res.body.id).toBe('1');
@@ -494,7 +521,7 @@ describe('Recipes Router API', () => {
         };
       });
 
-      const res = await request(app).get('/api/recipes/nonexistent');
+      const res = await createRequestMock(recipesRouter)().get('/api/recipes/nonexistent');
       expect(res.status).toBe(200);
       expect(res.body).toBeNull();
     });
@@ -512,7 +539,7 @@ describe('Recipes Router API', () => {
         };
       });
 
-      const res = await request(app).get('/api/recipes/error');
+      const res = await createRequestMock(recipesRouter)().get('/api/recipes/error');
       expect(res.status).toBe(500);
       expect(res.body.error).toBe('Query error');
     });
@@ -572,7 +599,7 @@ describe('Recipes Router API', () => {
         };
       });
 
-      const res = await request(app).get('/api/recipes/r2');
+      const res = await createRequestMock(recipesRouter)().get('/api/recipes/r2');
       expect(res.status).toBe(200);
       expect(res.body.breadcrumbs.items[0]).toEqual([
         { label: 'Home', url: '/' },
@@ -635,7 +662,7 @@ describe('Recipes Router API', () => {
         };
       });
 
-      const res = await request(app).get('/api/recipes/r4');
+      const res = await createRequestMock(recipesRouter)().get('/api/recipes/r4');
       expect(res.status).toBe(200);
       expect(res.body.breadcrumbs.items[0]).toEqual([
         { label: 'Home', url: '/' },
@@ -701,7 +728,7 @@ describe('Recipes Router API', () => {
         };
       });
 
-      const res = await request(app).get('/api/recipes/r5');
+      const res = await createRequestMock(recipesRouter)().get('/api/recipes/r5');
       expect(res.status).toBe(200);
       expect(res.body.breadcrumbs.items[0]).toEqual([
         { label: 'Home', url: '/' },
@@ -720,7 +747,7 @@ describe('Recipes Router API', () => {
       resetSupabaseClient();
 
       try {
-        const res = await request(app).get('/api/recipes/r1');
+        const res = await createRequestMock(recipesRouter)().get('/api/recipes/r1');
         expect(res.status).toBe(500);
         expect(res.body.error).toContain('Supabase URL and Key are required');
       } finally {
@@ -755,7 +782,7 @@ describe('Recipes Router API', () => {
         };
       });
 
-      const res = await request(app).get('/api/recipes/r3');
+      const res = await createRequestMock(recipesRouter)().get('/api/recipes/r3');
       expect(res.status).toBe(200);
       expect(res.body.breadcrumbs.items[0]).toEqual([
         { label: 'Home', url: '/' },
@@ -801,7 +828,7 @@ describe('Recipes Router API', () => {
         };
       });
 
-      const res = await request(app).get('/api/recipes/r1');
+      const res = await createRequestMock(recipesRouter)().get('/api/recipes/r1');
       expect(res.status).toBe(500);
       expect(res.body.error).toBe('Cats error');
     });
@@ -838,7 +865,7 @@ describe('Recipes Router API', () => {
         };
       });
 
-      const res = await request(app).get('/api/recipes/r1');
+      const res = await createRequestMock(recipesRouter)().get('/api/recipes/r1');
       expect(res.status).toBe(500);
       expect(res.body.error).toBe('Adjacent query error');
     });
@@ -898,7 +925,7 @@ describe('Recipes Router API', () => {
         return {};
       });
 
-      const res = await request(app).get('/api/recipes/123/comments');
+      const res = await createRequestMock(recipesRouter)().get('/api/recipes/123/comments');
       expect(res.status).toBe(200);
       expect(res.body.total).toBe(60);
       expect(res.body.comments).toHaveLength(51);
@@ -925,7 +952,7 @@ describe('Recipes Router API', () => {
         return {};
       });
 
-      const res = await request(app).get('/api/recipes/123/comments');
+      const res = await createRequestMock(recipesRouter)().get('/api/recipes/123/comments');
       expect(res.status).toBe(500);
       expect(res.body.error).toBe('Db error');
     });
@@ -952,7 +979,7 @@ describe('Recipes Router API', () => {
         return {};
       });
 
-      const res = await request(app).get('/api/recipes/123/comments');
+      const res = await createRequestMock(recipesRouter)().get('/api/recipes/123/comments');
       expect(res.status).toBe(200);
       expect(res.body.total).toBe(0);
       expect(res.body.comments).toEqual([]);
@@ -999,7 +1026,7 @@ describe('Recipes Router API', () => {
         return {};
       });
 
-      const res = await request(app).get('/api/recipes/123/comments?page=1');
+      const res = await createRequestMock(recipesRouter)().get('/api/recipes/123/comments?page=1');
       expect(res.status).toBe(200);
       expect(res.body.total).toBe(60);
       expect(res.body.comments).toHaveLength(10);
@@ -1018,7 +1045,7 @@ describe('Recipes Router API', () => {
         return {};
       });
 
-      const res = await request(app).get('/api/recipes/123/comments');
+      const res = await createRequestMock(recipesRouter)().get('/api/recipes/123/comments');
       expect(res.status).toBe(500);
       expect(res.body.error).toBe('String database crash');
     });
@@ -1051,7 +1078,7 @@ describe('Recipes Router API', () => {
         return {};
       });
 
-      const res = await request(app).get('/api/recipes/123/comments');
+      const res = await createRequestMock(recipesRouter)().get('/api/recipes/123/comments');
       expect(res.status).toBe(500);
       expect(res.body.error).toBe('Fetch comments failed');
     });
@@ -1083,7 +1110,7 @@ describe('Recipes Router API', () => {
         return {};
       });
 
-      const res = await request(app).get('/api/recipes/123/comments');
+      const res = await createRequestMock(recipesRouter)().get('/api/recipes/123/comments');
       expect(res.status).toBe(200);
       expect(res.body.comments).toEqual([]);
     });
@@ -1121,7 +1148,7 @@ describe('Recipes Router API', () => {
         return {};
       });
 
-      const res = await request(app).get('/api/recipes/123/comments');
+      const res = await createRequestMock(recipesRouter)().get('/api/recipes/123/comments');
       expect(res.status).toBe(500);
       expect(res.body.error).toBe('Replies query failed');
     });
@@ -1157,7 +1184,7 @@ describe('Recipes Router API', () => {
         return {};
       });
 
-      const res = await request(app).get('/api/recipes/123/comments');
+      const res = await createRequestMock(recipesRouter)().get('/api/recipes/123/comments');
       expect(res.status).toBe(200);
       expect(res.body.comments).toHaveLength(1);
     });
@@ -1195,7 +1222,7 @@ describe('Recipes Router API', () => {
         return {};
       });
 
-      const res = await request(app).post('/api/recipes/123/comments').send({
+      const res = await createRequestMock(recipesRouter)().post('/api/recipes/123/comments').send({
         author: 'Tester',
         email: 'tester@example.com',
         content: 'Awesome!',
@@ -1208,7 +1235,7 @@ describe('Recipes Router API', () => {
     });
 
     it('should return 400 if required fields are missing', async () => {
-      const res = await request(app).post('/api/recipes/123/comments').send({
+      const res = await createRequestMock(recipesRouter)().post('/api/recipes/123/comments').send({
         author: 'Tester',
       });
 
@@ -1233,7 +1260,7 @@ describe('Recipes Router API', () => {
         return { select: vi.fn() };
       });
 
-      const res = await request(app).post('/api/recipes/123/comments').send({
+      const res = await createRequestMock(recipesRouter)().post('/api/recipes/123/comments').send({
         author: 'Bob',
         email: 'bob@example.com',
         content: 'Cool!',
@@ -1266,7 +1293,7 @@ describe('Recipes Router API', () => {
         return {};
       });
 
-      const res = await request(app).post('/api/recipes/123/comments').send({
+      const res = await createRequestMock(recipesRouter)().post('/api/recipes/123/comments').send({
         author: 'Bob',
         email: 'bob@example.com',
         content: 'Cool!',
@@ -1301,7 +1328,7 @@ describe('Recipes Router API', () => {
         return {};
       });
 
-      const res = await request(app).post('/api/recipes/123/comments').send({
+      const res = await createRequestMock(recipesRouter)().post('/api/recipes/123/comments').send({
         author: 'Bob',
         email: 'bob@example.com',
         content: 'Cool!',
@@ -1333,7 +1360,7 @@ describe('Recipes Router API', () => {
         return {};
       });
 
-      const res = await request(app).post('/api/recipes/123/comments').send({
+      const res = await createRequestMock(recipesRouter)().post('/api/recipes/123/comments').send({
         author: 'Tester',
         email: 'tester@example.com',
         content: 'Awesome!',
@@ -1377,7 +1404,7 @@ describe('Recipes Router API', () => {
         return {};
       });
 
-      const res = await request(app).post('/api/recipes/123/comments').send({
+      const res = await createRequestMock(recipesRouter)().post('/api/recipes/123/comments').send({
         author: 'Tester',
         email: 'tester@example.com',
         content: 'Awesome reply!',
@@ -1412,7 +1439,7 @@ describe('Recipes Router API', () => {
         return {};
       });
 
-      const res = await request(app).post('/api/recipes/123/comments').send({
+      const res = await createRequestMock(recipesRouter)().post('/api/recipes/123/comments').send({
         author: 'SpamBot',
         email: 'spam@bot.com',
         content: 'Buy this!',
@@ -1458,7 +1485,7 @@ describe('Recipes Router API', () => {
         return {};
       });
 
-      const res = await request(app).post('/api/recipes/123/comments').send({
+      const res = await createRequestMock(recipesRouter)().post('/api/recipes/123/comments').send({
         author: 'Tester',
         email: 'tester@example.com',
         content: 'Awesome!',
@@ -1489,7 +1516,7 @@ describe('Recipes Router API', () => {
         return {};
       });
 
-      const res = await request(app).post('/api/recipes/123/comments').send({
+      const res = await createRequestMock(recipesRouter)().post('/api/recipes/123/comments').send({
         author: 'Tester',
         email: 'tester@example.com',
         content: 'Awesome!',
@@ -1519,7 +1546,7 @@ describe('Recipes Router API', () => {
         return {};
       });
 
-      const res = await request(app).get('/api/recipes/123/equipment');
+      const res = await createRequestMock(recipesRouter)().get('/api/recipes/123/equipment');
       expect(res.status).toBe(200);
       expect(res.body).toHaveLength(1);
       expect(res.body[0].title).toBe('Pan');
@@ -1541,7 +1568,7 @@ describe('Recipes Router API', () => {
         return {};
       });
 
-      const res = await request(app).get('/api/recipes/123/equipment');
+      const res = await createRequestMock(recipesRouter)().get('/api/recipes/123/equipment');
       expect(res.status).toBe(500);
       expect(res.body.error).toBe('Equipment error');
     });
@@ -1558,7 +1585,7 @@ describe('Recipes Router API', () => {
         return {};
       });
 
-      const res = await request(app).get('/api/recipes/123/equipment');
+      const res = await createRequestMock(recipesRouter)().get('/api/recipes/123/equipment');
       expect(res.status).toBe(500);
       expect(res.body.error).toBe('Equipment string crash');
     });

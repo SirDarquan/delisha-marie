@@ -1,3 +1,4 @@
+import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.hoisted(() => {
@@ -19,16 +20,14 @@ vi.mock('@supabase/supabase-js', () => {
   };
 });
 
-import express from 'express';
-import request from 'supertest';
+import { createRequestMock } from './test-utils';
 import searchRouter from './search';
 import { resetSupabaseClient } from './supabase';
 
 vi.spyOn(console, 'error').mockImplementation(vi.fn());
 
-const app = express();
-app.use(express.json());
-app.use('/api', searchRouter);
+const request = createRequestMock(searchRouter);
+const app = null;
 
 describe('Search Router API', () => {
   beforeEach(() => {
@@ -119,6 +118,24 @@ describe('Search Router API', () => {
       expect(res.status).toBe(200);
       expect(res.body.items).toEqual([]);
       expect(res.body.total).toBe(0);
+    });
+
+    it('should return 400 if req.body is missing entirely', async () => {
+      const res = await request(app).post('/api/search').send();
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe('Query is required');
+    });
+
+    it('should handle undefined req.body', async () => {
+      const req = { method: 'POST', body: null };
+      const res = { status: vi.fn().mockReturnThis(), json: vi.fn() };
+      await searchRouter(req as unknown as VercelRequest, res as unknown as VercelResponse);
+      expect(res.status).toHaveBeenCalledWith(400);
+    });
+    it('should return 405 if method is not POST', async () => {
+      const res = await request(app).get('/api/search');
+      expect(res.status).toBe(405);
+      expect(res.body.error).toBe('Method not allowed');
     });
   });
 });

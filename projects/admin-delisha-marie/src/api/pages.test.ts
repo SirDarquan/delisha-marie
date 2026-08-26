@@ -31,11 +31,12 @@ describe('Admin Pages Router API', () => {
       const mockEq = vi
         .fn()
         .mockResolvedValue({ data: [{ id: 1, slug: 'about', title: 'About' }], error: null });
-      const mockOrder = vi.fn().mockReturnValue({
-        eq: mockEq,
-        then: (cb: (res: unknown) => void) =>
-          cb({ data: [{ id: 1, slug: 'about', title: 'About' }], error: null }),
-      });
+      const mockOrder = vi.fn().mockReturnValue(
+        Object.defineProperty({ eq: mockEq }, 'then', {
+          value: (cb: (res: unknown) => void) =>
+            cb({ data: [{ id: 1, slug: 'about', title: 'About' }], error: null }),
+        }),
+      );
       const mockSelect = vi.fn().mockReturnValue({ order: mockOrder });
       const mockFrom = vi.fn().mockReturnValue({ select: mockSelect });
 
@@ -51,10 +52,11 @@ describe('Admin Pages Router API', () => {
 
     it('should throw error when getting pages fails', async () => {
       const mockEq = vi.fn().mockResolvedValue({ data: null, error: new Error('DB Error') });
-      const mockOrder = vi.fn().mockReturnValue({
-        eq: mockEq,
-        then: (cb: (res: unknown) => void) => cb({ data: null, error: new Error('DB Error') }),
-      });
+      const mockOrder = vi.fn().mockReturnValue(
+        Object.defineProperty({ eq: mockEq }, 'then', {
+          value: (cb: (res: unknown) => void) => cb({ data: null, error: new Error('DB Error') }),
+        }),
+      );
       const mockSelect = vi.fn().mockReturnValue({ order: mockOrder });
       const mockFrom = vi.fn().mockReturnValue({ select: mockSelect });
 

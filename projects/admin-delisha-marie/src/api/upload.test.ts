@@ -5,18 +5,21 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 // Hoist mock functions
 const mocks = vi.hoisted(() => {
   const mockUpload = vi.fn();
-  const mockToBuffer = vi.fn();
+  const mockToBuffer = vi.fn().mockResolvedValue(Buffer.from('test'));
   const mockWebp = vi.fn(() => ({ toBuffer: mockToBuffer }));
-  return { mockUpload, mockToBuffer, mockWebp };
+  const mockWriteFileSync = vi.fn();
+  return { mockUpload, mockToBuffer, mockWebp, mockWriteFileSync };
 });
 
 const { mockUpload, mockToBuffer, mockWebp } = mocks;
 
 // Mock ImageKit
-vi.mock('imagekit', () => {
+vi.mock('@imagekit/nodejs', () => {
   return {
     default: class {
-      upload = mocks.mockUpload;
+      files = {
+        upload: mocks.mockUpload,
+      };
     },
   };
 });
@@ -38,9 +41,11 @@ vi.mock('node:fs', () => {
     default: {
       existsSync: mockExistsSync,
       mkdirSync: mockMkdirSync,
+      writeFileSync: mocks.mockWriteFileSync,
     },
     existsSync: mockExistsSync,
     mkdirSync: mockMkdirSync,
+    writeFileSync: mocks.mockWriteFileSync,
   };
 });
 
@@ -55,7 +60,6 @@ describe('Upload Router API', () => {
     // We need to re-import the router to evaluate the top-level code again if we change mock return values
     // But since it's top-level, it only runs once unless we isolate modules.
     // We can use vi.resetModules() to test the top-level branch.
-    vi.spyOn(console, 'error').mockImplementation(vi.fn());
   });
 
   it('should create directory if it does not exist on module load', async () => {
@@ -162,6 +166,7 @@ describe('Upload Router API', () => {
       .attach('image', Buffer.from('original-data'), 'test-image.png');
 
     expect(res.status).toBe(200);
+    expect(res.body).toEqual({ success: true, files: ['/custom/folder/test-image.webp'] });
     expect(mockUpload).toHaveBeenCalledWith(
       expect.objectContaining({
         folder: '/custom/folder',

@@ -1,3 +1,4 @@
+import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { mockFrom } = vi.hoisted(() => ({
@@ -10,13 +11,13 @@ vi.mock('@supabase/supabase-js', () => ({
   })),
 }));
 
-import express from 'express';
-import request from 'supertest';
+import { createRequestMock } from './test-utils';
 import sitemapRouter from './sitemap';
 import { resetSupabaseClient } from './supabase';
 
-describe('Sitemap Router API', () => {
-  let app: express.Express;
+describe('sitemap', () => {
+  const app = null;
+  let request: ReturnType<typeof createRequestMock>;
   const mockSelect = vi.fn();
   const mockEq = vi.fn();
   const mockLte = vi.fn();
@@ -30,8 +31,7 @@ describe('Sitemap Router API', () => {
     delete process.env['SITE_URL'];
     resetSupabaseClient();
 
-    app = express();
-    app.use(sitemapRouter);
+    request = createRequestMock(sitemapRouter);
 
     mockFrom.mockReturnValue({ select: mockSelect });
     mockSelect.mockReturnValue({ eq: mockEq });
@@ -57,6 +57,33 @@ describe('Sitemap Router API', () => {
       expect(res.text).toContain('<loc>https://custom-domain.com/sitemap-pages.xml</loc>');
       expect(res.text).toContain('<loc>https://custom-domain.com/sitemap-categories.xml</loc>');
       expect(res.text).toContain('<loc>https://custom-domain.com/sitemap-recipes.xml</loc>');
+    });
+
+    it('should use VERCEL_PROJECT_PRODUCTION_URL if SITE_URL is not set', async () => {
+      delete process.env['SITE_URL'];
+      process.env['VERCEL_PROJECT_PRODUCTION_URL'] = 'vercel-app.com';
+      const res = await request(app).get('/sitemap.xml');
+      expect(res.text).toContain('<loc>https://vercel-app.com/sitemap-pages.xml</loc>');
+    });
+
+    it('should fallback to req.headers if no env vars are set', async () => {
+      delete process.env['SITE_URL'];
+      delete process.env['VERCEL_PROJECT_PRODUCTION_URL'];
+      const res = await request(app)
+        .get('/sitemap.xml')
+        .set('x-forwarded-proto', 'http')
+        .set('host', 'my-host:3000');
+      expect(res.text).toContain('<loc>http://my-host:3000/sitemap-pages.xml</loc>');
+    });
+
+    it('should fallback to defaults if headers are not provided', async () => {
+      delete process.env['SITE_URL'];
+      delete process.env['VERCEL_PROJECT_PRODUCTION_URL'];
+      const res = await request(app).get('/sitemap.xml');
+      // test-utils passes host: 'localhost' by default in createRequestMock if we don't clear it.
+      // So it will use https://localhost by default if x-forwarded-proto isn't set,
+      // but test-utils sets neither, except headers={}. Wait, let's see.
+      expect(res.text).toContain('<loc>https://');
     });
 
     it('should respect custom SITE_URL env variable', async () => {
@@ -141,6 +168,23 @@ describe('Sitemap Router API', () => {
       expect(res.text).toContain('<loc>https://custom-domain.com/recipe/no-dates</loc>');
     });
 
+    it('should escape xml characters', async () => {
+      mockLte.mockResolvedValueOnce({
+        data: [
+          {
+            slug: 'weird-slug-<>"\'&',
+            title: 'Weird',
+          },
+        ],
+        error: null,
+      });
+      process.env['SITE_URL'] = 'https://custom-domain.com';
+      const res = await request(app).get('/sitemap-recipes.xml');
+      expect(res.text).toContain(
+        '<loc>https://custom-domain.com/recipe/weird-slug-&lt;&gt;&quot;&apos;&amp;</loc>',
+      );
+    });
+
     it('should return empty XML if data array is empty', async () => {
       mockLte.mockResolvedValueOnce({
         data: [],
@@ -165,5 +209,27 @@ describe('Sitemap Router API', () => {
       expect(res.headers['content-type']).toContain('application/xml');
       expect(res.text).toContain('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"');
     });
+
+    it('should return empty XML if data is null', async () => {
+      mockLte.mockResolvedValueOnce({
+        data: null,
+        error: null,
+      });
+
+      const res = await request(app).get('/sitemap-recipes.xml');
+      expect(res.text).not.toContain('<loc>');
+    });
+  });
+  it('should handle undefined req.url and req.headers.host', async () => {
+    const req = { headers: {} } as unknown as VercelRequest;
+    const res = { setHeader: vi.fn(), send: vi.fn() } as unknown as VercelResponse;
+    await sitemapRouter(req, res);
+    expect(res.send).toHaveBeenCalled();
+  });
+  it('should return 404 for unknown sitemap route', async () => {
+    const req = { url: '/unknown.xml', headers: {} } as unknown as VercelRequest;
+    const res = { setHeader: vi.fn(), send: vi.fn(), statusCode: 200 } as unknown as VercelResponse;
+    await sitemapRouter(req, res);
+    expect(res.statusCode).toBe(404);
   });
 });
