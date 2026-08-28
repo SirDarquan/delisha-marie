@@ -53,5 +53,5 @@ export default function robotsTxt(req: VercelRequest, res: VercelResponse): void
 
   res.setHeader('Content-Type', 'text/plain; charset=utf-8');
   res.setHeader('Cache-Control', 'public, max-age=3600, s-maxage=86400');
-  res.send(robots);
+  res.status(200).send(robots);
 }

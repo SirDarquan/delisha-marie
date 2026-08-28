@@ -46,22 +46,22 @@ describe('vercelAbsoluteUrlInterceptor', () => {
     req.flush({});
   });
 
-  it('should use VERCEL_PROJECT_PRODUCTION_URL if available', () => {
+  it('should use VERCEL_URL if available', () => {
     (window as unknown as { process?: { env: Record<string, string | undefined> } }).process!.env[
-      'VERCEL_PROJECT_PRODUCTION_URL'
-    ] = 'prod-domain.vercel.app';
+      'VERCEL_URL'
+    ] = 'preview-domain.vercel.app';
     httpClient.get('/api/test2').subscribe();
-    const req = httpMock.expectOne('https://prod-domain.vercel.app/api/test2');
+    const req = httpMock.expectOne('https://preview-domain.vercel.app/api/test2');
     expect(req.request.method).toBe('GET');
     req.flush({});
   });
 
-  it('should use VERCEL_URL if production url is not available', () => {
+  it('should fallback to VERCEL_PROJECT_PRODUCTION_URL if VERCEL_URL is not available', () => {
     (window as unknown as { process?: { env: Record<string, string | undefined> } }).process!.env[
-      'VERCEL_URL'
-    ] = 'preview-domain.vercel.app';
+      'VERCEL_PROJECT_PRODUCTION_URL'
+    ] = 'prod-domain.vercel.app';
     httpClient.get('/api/test3').subscribe();
-    const req = httpMock.expectOne('https://preview-domain.vercel.app/api/test3');
+    const req = httpMock.expectOne('https://prod-domain.vercel.app/api/test3');
     expect(req.request.method).toBe('GET');
     req.flush({});
   });

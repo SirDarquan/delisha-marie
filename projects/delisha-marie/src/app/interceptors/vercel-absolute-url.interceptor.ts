@@ -16,7 +16,7 @@ export const vercelAbsoluteUrlInterceptor: HttpInterceptorFn = (
       env = (window as unknown as { process?: { env: Record<string, string> } }).process?.env || {};
     }
 
-    const host = env['VERCEL_PROJECT_PRODUCTION_URL'] || env['VERCEL_URL'] || 'localhost:3000';
+    const host = env['VERCEL_URL'] || env['VERCEL_PROJECT_PRODUCTION_URL'] || 'localhost:3000';
     const protocol = host.includes('localhost') ? 'http' : 'https';
 
     let newReq = req.clone({ url: `${protocol}://${host}${req.url}` });

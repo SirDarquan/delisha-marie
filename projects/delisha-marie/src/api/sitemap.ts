@@ -177,7 +177,7 @@ export default async function sitemap(req: VercelRequest, res: VercelResponse): 
   if (handler) {
     const baseUrl = getBaseUrl(req);
     const xmlContent = await handler.generate(baseUrl);
-    res.send(xmlContent);
+    res.status(200).send(xmlContent);
   } else {
     res.statusCode = 404;
     res.send('Not Found');
