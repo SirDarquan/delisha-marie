@@ -1,18 +1,7 @@
-import { Router, Request, Response } from 'express';
+import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { camelCase } from 'change-case';
 import { getSupabaseClient } from './supabase';
-import { rateLimit } from 'express-rate-limit';
 import type { SupabaseClient } from '@supabase/supabase-js';
-
-const recipesRouter = Router();
-
-const commentsLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: process.env['NODE_ENV'] === 'production' ? 5 : 100, // Limit each IP to 5 requests per windowMs (100 for dev/test)
-  message: { error: 'Too many comments from this IP, please try again after 15 minutes' },
-  standardHeaders: true,
-  legacyHeaders: false,
-});
 
 function camelCaseKeys(obj: unknown): unknown {
   if (Array.isArray(obj)) {
@@ -339,7 +328,7 @@ function formatDbRecipes(data: DbRecipe[]): FormattedRecipe[] {
   });
 }
 
-recipesRouter.get('/recipes', async (req: Request, res: Response) => {
+async function handleGetRecipes(req: VercelRequest, res: VercelResponse) {
   try {
     const supabase = await getSupabaseClient();
 
@@ -389,7 +378,7 @@ recipesRouter.get('/recipes', async (req: Request, res: Response) => {
     const msg = err instanceof Error ? err.message : String(err);
     return res.status(500).json({ error: msg });
   }
-});
+}
 
 async function getAdjacentRecipe(
   supabase: SupabaseClient,
@@ -470,10 +459,9 @@ async function getBreadcrumbs(
   return { main: mainIndex, items: breadcrumbItems };
 }
 
-recipesRouter.get('/recipes/:recipeId/comments', async (req: Request, res: Response) => {
+async function handleGetComments(req: VercelRequest, res: VercelResponse, recipeId: string) {
   try {
     const supabase = await getSupabaseClient();
-    const { recipeId } = req.params as { recipeId: string };
     const pageVal = req.query['page'];
 
     // First count exact total top-level comments for this recipe
@@ -541,7 +529,7 @@ recipesRouter.get('/recipes/:recipeId/comments', async (req: Request, res: Respo
     const msg = err instanceof Error ? err.message : String(err);
     return res.status(500).json({ error: msg });
   }
-});
+}
 
 function isDomainBlocked(
   website: string | undefined,
@@ -553,78 +541,35 @@ function isDomainBlocked(
   return blockedDomains.some((domain) => domain && websiteLower.includes(domain));
 }
 
-recipesRouter.post(
-  '/recipes/:recipeId/comments',
-  commentsLimiter,
-  async (req: Request, res: Response) => {
-    try {
-      const supabase = await getSupabaseClient();
-      const { recipeId } = req.params as { recipeId: string };
-      const { author, email, content, rating, website, parentId, alt_email } = req.body;
+async function handlePostComments(req: VercelRequest, res: VercelResponse, recipeId: string) {
+  try {
+    const supabase = await getSupabaseClient();
+    const { author, email, content, rating, website, parentId, alt_email } = req.body;
+    if (!author || !email || !content) {
+      return res.status(400).json({ error: 'Name, email, and content are required' });
+    }
 
-      if (!author || !email || !content) {
-        return res.status(400).json({ error: 'Name, email, and content are required' });
-      }
+    const { data: settingsData } = await supabase
+      .from('site_settings')
+      .select('key, value')
+      .in('key', ['require_comment_approval', 'blocked_domains', 'comment_new_cutoff_seconds']);
 
-      const { data: settingsData } = await supabase
-        .from('site_settings')
-        .select('key, value')
-        .in('key', ['require_comment_approval', 'blocked_domains', 'comment_new_cutoff_seconds']);
+    const settings =
+      settingsData?.reduce(
+        (acc, curr) => {
+          acc[curr.key] = curr.value;
+          return acc;
+        },
+        {} as Record<string, string>,
+      ) || {};
 
-      const settings =
-        settingsData?.reduce(
-          (acc, curr) => {
-            acc[curr.key] = curr.value;
-            return acc;
-          },
-          {} as Record<string, string>,
-        ) || {};
+    if (isDomainBlocked(website, settings['blocked_domains'])) {
+      return res.status(400).json({ error: 'Sorry, you cannot link to this website.' });
+    }
 
-      if (isDomainBlocked(website, settings['blocked_domains'])) {
-        return res.status(400).json({ error: 'Sorry, you cannot link to this website.' });
-      }
-
-      if (alt_email) {
-        // Honeypot tripped: save to spam_comments for research
-        const spamObj = {
-          recipe_id: recipeId,
-          author,
-          email,
-          content,
-          rating: rating ?? null,
-          website: website || null,
-          parent_id: parentId || null,
-          trap_triggered: 'alt_email',
-          trap_value: alt_email,
-        };
-
-        await supabase.from('spam_comments').insert([spamObj]);
-
-        // Silently succeed
-        return res.status(201).json({
-          id: 'bot-' + Date.now(),
-          recipeId,
-          author,
-          email,
-          content,
-          website: website || null,
-          parentId: parentId || null,
-          createdAt: new Date().toISOString(),
-        });
-      }
-
-      const requireApproval = settings['require_comment_approval'] === 'true';
-      const status = requireApproval ? 'pending' : 'approved';
-      const { data: recipe } = await supabase
-        .from('recipes')
-        .select('*')
-        .eq('id', recipeId)
-        .single();
-      const isNew =
-        Date.now() <
-        Number(recipe.created_at) + Number(settings['comment_new_cutoff_seconds']) * 1000;
-
-      const insertObj = {
+    if (alt_email) {
+      // Honeypot tripped: save to spam_comments for research
+      const spamObj = {
         recipe_id: recipeId,
         author,
         email,
@@ -632,24 +577,58 @@ recipesRouter.post(
         rating: rating ?? null,
         website: website || null,
         parent_id: parentId || null,
-        status,
-        is_new: isNew,
+        trap_triggered: 'alt_email',
+        trap_value: alt_email,
       };
 
-      const { data, error } = await supabase.from('comments').insert([insertObj]).select().single();
+      await supabase.from('spam_comments').insert([spamObj]);
 
-      if (error) throw error;
-
-      const camelCased = camelCaseKeys(data);
-      return res.status(201).json(camelCased);
-    } catch (err: unknown) {
-      console.error(err);
-      const msg = err instanceof Error ? err.message : String(err);
-      return res.status(500).json({ error: msg });
+      // Silently succeed
+      return res.status(201).json({
+        id: 'bot-' + Date.now(),
+        recipeId,
+        author,
+        email,
+        content,
+        website: website || null,
+        parentId: parentId || null,
+        createdAt: new Date().toISOString(),
+      });
     }
-  },
-);
-recipesRouter.get('/recipes/favorites/list', async (req: Request, res: Response) => {
+
+    const requireApproval = settings['require_comment_approval'] === 'true';
+    const status = requireApproval ? 'pending' : 'approved';
+    const { data: recipe } = await supabase.from('recipes').select('*').eq('id', recipeId).single();
+    const isNew =
+      Date.now() <
+      Number(recipe.created_at) + Number(settings['comment_new_cutoff_seconds']) * 1000;
+
+    const insertObj = {
+      recipe_id: recipeId,
+      author,
+      email,
+      content,
+      rating: rating ?? null,
+      website: website || null,
+      parent_id: parentId || null,
+      status,
+      is_new: isNew,
+    };
+
+    const { data, error } = await supabase.from('comments').insert([insertObj]).select().single();
+
+    if (error) throw error;
+
+    const camelCased = camelCaseKeys(data);
+    return res.status(201).json(camelCased);
+  } catch (err: unknown) {
+    console.error(err);
+    const msg = err instanceof Error ? err.message : String(err);
+    return res.status(500).json({ error: msg });
+  }
+}
+
+async function handleGetFavorites(req: VercelRequest, res: VercelResponse) {
   try {
     const supabase = await getSupabaseClient();
     const { data, error } = await supabase
@@ -673,12 +652,11 @@ recipesRouter.get('/recipes/favorites/list', async (req: Request, res: Response)
     console.error('Error fetching favorite recipes:', error);
     return res.status(500).json({ error: 'Internal Server Error' });
   }
-});
+}
 
-recipesRouter.get('/recipes/:slug', async (req: Request, res: Response) => {
+async function handleGetBySlug(req: VercelRequest, res: VercelResponse, slug: string) {
   try {
     const supabase = await getSupabaseClient();
-    const { slug } = req.params as { slug: string };
     const cleanSlug = slug.replace(/^\/?recipe\//, '').replace(/^\//, '');
 
     // Get recipe
@@ -691,11 +669,12 @@ recipesRouter.get('/recipes/:slug', async (req: Request, res: Response) => {
       .lte('created_at', new Date().toISOString())
       .maybeSingle();
 
-    if (recipeError) throw recipeError;
+    if (recipeError) {
+      throw recipeError;
+    }
     if (!recipeDataRaw) {
       return res.json(null);
     }
-
     const recipeData = recipeDataRaw as unknown as DbRecipe;
 
     // Format fields (reuse formatDbRecipes helper)
@@ -724,12 +703,35 @@ recipesRouter.get('/recipes/:slug', async (req: Request, res: Response) => {
     const msg = err instanceof Error ? err.message : String(err);
     return res.status(500).json({ error: msg });
   }
-});
+}
 
-recipesRouter.get('/recipes/:recipeId/equipment', async (req: Request, res: Response) => {
+async function handleGetTitle(req: VercelRequest, res: VercelResponse, slug: string) {
   try {
     const supabase = await getSupabaseClient();
-    const { recipeId } = req.params;
+    const cleanSlug = slug.replace(/^\/?recipe\//, '').replace(/^\//, '');
+
+    const { data, error } = await supabase
+      .from('recipes')
+      .select('title')
+      .eq('slug', cleanSlug)
+      .eq('status', 'published')
+      .lte('created_at', new Date().toISOString())
+      .maybeSingle();
+
+    if (error) {
+      throw error;
+    }
+
+    return res.json(camelCaseKeys(data));
+  } catch (err: unknown) {
+    console.error(err);
+    const msg = err instanceof Error ? err.message : String(err);
+    return res.status(500).json({ error: msg });
+  }
+}
+async function handleGetEquipment(req: VercelRequest, res: VercelResponse, recipeId: string) {
+  try {
+    const supabase = await getSupabaseClient();
 
     const { data, error } = await supabase
       .from('equipment')
@@ -747,6 +749,78 @@ recipesRouter.get('/recipes/:recipeId/equipment', async (req: Request, res: Resp
     const msg = err instanceof Error ? err.message : String(err);
     return res.status(500).json({ error: msg });
   }
-});
+}
 
-export default recipesRouter;
+interface IRecipeRoute {
+  pattern: RegExp;
+  method: string;
+  handler: (req: VercelRequest, res: VercelResponse, match: RegExpExecArray) => Promise<unknown>;
+}
+
+const routes: IRecipeRoute[] = [
+  {
+    pattern: /^\/$/,
+    method: 'GET',
+    handler: (req, res) => handleGetRecipes(req, res),
+  },
+  {
+    pattern: /^\/favorites\/list$/,
+    method: 'GET',
+    handler: (req, res) => handleGetFavorites(req, res),
+  },
+  {
+    pattern: /^\/([^/]+)\/comments$/,
+    method: 'GET',
+    handler: /* eslint-disable-line @typescript-eslint/no-explicit-any */ (req, res, match: any) =>
+      handleGetComments(req, res, match[1]),
+  },
+  {
+    pattern: /^\/([^/]+)\/comments$/,
+    method: 'POST',
+    handler: /* eslint-disable-line @typescript-eslint/no-explicit-any */ (req, res, match: any) =>
+      handlePostComments(req, res, match[1]),
+  },
+  {
+    pattern: /^\/([^/]+)\/equipment$/,
+    method: 'GET',
+    handler: /* eslint-disable-line @typescript-eslint/no-explicit-any */ (req, res, match: any) =>
+      handleGetEquipment(req, res, match[1]),
+  },
+  {
+    pattern: /^\/([^/]+)\/title$/,
+    method: 'GET',
+    handler: /* eslint-disable-line @typescript-eslint/no-explicit-any */ (req, res, match: any) =>
+      handleGetTitle(req, res, match[1]),
+  },
+  {
+    pattern: /^\/([^/]+)$/,
+    method: 'GET',
+    handler: /* eslint-disable-line @typescript-eslint/no-explicit-any */ (req, res, match: any) =>
+      handleGetBySlug(req, res, match[1]),
+  },
+];
+
+export default async function recipesHandler(req: VercelRequest, res: VercelResponse) {
+  let pathname = '/';
+  const slug = req.query['slug'];
+  if (slug) {
+    const slugArr = Array.isArray(slug) ? slug : [slug];
+    pathname = '/' + slugArr.join('/');
+  }
+
+  try {
+    for (const route of routes) {
+      if (req.method === route.method) {
+        const match = route.pattern.exec(pathname);
+        if (match) {
+          return await route.handler(req, res, match);
+        }
+      }
+    }
+    return res.status(404).json({ error: 'Not found', pathname, method: req.method });
+  } catch (err: unknown) {
+    console.error(err);
+    const msg = err instanceof Error ? err.message : String(err);
+    return res.status(500).json({ error: msg });
+  }
+}

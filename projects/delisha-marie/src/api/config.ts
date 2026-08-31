@@ -1,6 +1,4 @@
-import { Request, Response, Router } from 'express';
-
-const configRouter = Router();
+import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 export interface AppConfig {
   GoogleTagManager: {
@@ -40,8 +38,10 @@ const appConfig: AppConfig = {
   },
 };
 
-configRouter.get('/config', (req: Request, res: Response) => {
-  res.json(appConfig);
-});
+export default async function configHandler(req: VercelRequest, res: VercelResponse) {
+  if (req.method !== 'GET') {
+    return res.status(404).json({ error: 'Not found' });
+  }
 
-export default configRouter;
+  return res.json(appConfig);
+}

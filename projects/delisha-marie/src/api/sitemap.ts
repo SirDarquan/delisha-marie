@@ -1,7 +1,5 @@
-import { Request, Response, Router } from 'express';
+import { VercelRequest, VercelResponse } from '@vercel/node';
 import { getSupabaseClient } from './supabase';
-
-const sitemapRouter = Router();
 
 interface SitemapRecipe {
   slug: string;
@@ -20,19 +18,28 @@ function escapeXml(unsafe: string): string {
     .replaceAll("'", '&apos;');
 }
 
-function getBaseUrl(): string {
-  return process.env['SITE_URL'] || '';
+function getBaseUrl(req: VercelRequest): string {
+  if (process.env['SITE_URL']) {
+    return process.env['SITE_URL'];
+  }
+  if (process.env['VERCEL_PROJECT_PRODUCTION_URL']) {
+    return `https://${process.env['VERCEL_PROJECT_PRODUCTION_URL']}`;
+  }
+  const proto = req.headers['x-forwarded-proto'] || 'https';
+  const host = req.headers['host'] || 'localhost';
+  return `${proto}://${host}`;
 }
 
-/**
- * 1. MASTER SITEMAP INDEX ("Sitemap of Sitemaps")
- * GET /sitemap.xml
- */
-sitemapRouter.get('/sitemap.xml', (_req: Request, res: Response): void => {
-  const baseUrl = getBaseUrl();
-  const today = new Date().toISOString().split('T')[0];
+// 1. Define the Interface
+interface ISitemap {
+  generate(baseUrl: string): Promise<string> | string;
+}
 
-  const xmlContent = `<?xml version="1.0" encoding="UTF-8"?>
+// 2. Concrete Strategy: Master Sitemap
+class MasterSitemap implements ISitemap {
+  generate(baseUrl: string): string {
+    const today = new Date().toISOString().split('T')[0];
+    return `<?xml version="1.0" encoding="UTF-8"?>
 <sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <sitemap>
     <loc>${baseUrl}/sitemap-pages.xml</loc>
@@ -47,30 +54,22 @@ sitemapRouter.get('/sitemap.xml', (_req: Request, res: Response): void => {
     <lastmod>${today}</lastmod>
   </sitemap>
 </sitemapindex>`;
+  }
+}
+// 2. Concrete Strategy: Static Pages
+class PagesSitemap implements ISitemap {
+  generate(baseUrl: string): string {
+    const pages = [
+      { url: '/', changefreq: 'weekly', priority: '1.0' },
+      { url: '/recipe-index', changefreq: 'weekly', priority: '0.9' },
+      { url: '/search', changefreq: 'weekly', priority: '0.7' },
+      { url: '/faq', changefreq: 'monthly', priority: '0.6' },
+      { url: '/about', changefreq: 'monthly', priority: '0.6' },
+      { url: '/contact', changefreq: 'monthly', priority: '0.5' },
+      { url: '/privacy-policy', changefreq: 'yearly', priority: '0.3' },
+    ];
 
-  res.header('Content-Type', 'application/xml; charset=utf-8');
-  res.header('Cache-Control', 'public, max-age=3600, s-maxage=86400');
-  res.send(xmlContent);
-});
-
-/**
- * 2. STATIC PAGES SITEMAP
- * GET /sitemap-pages.xml
- */
-sitemapRouter.get('/sitemap-pages.xml', (_req: Request, res: Response): void => {
-  const baseUrl = getBaseUrl();
-  const pages = [
-    { url: '/', changefreq: 'weekly', priority: '1.0' },
-    { url: '/recipe-index', changefreq: 'weekly', priority: '0.9' },
-    { url: '/search', changefreq: 'weekly', priority: '0.7' },
-    { url: '/faq', changefreq: 'monthly', priority: '0.6' },
-    { url: '/about', changefreq: 'monthly', priority: '0.6' },
-    { url: '/contact', changefreq: 'monthly', priority: '0.5' },
-    { url: '/privacy-policy', changefreq: 'yearly', priority: '0.3' },
-  ];
-
-  const xmlContent = `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    return `<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${pages
   .map(
     (page) => `  <url>
@@ -81,21 +80,14 @@ ${pages
   )
   .join('\n')}
 </urlset>`;
+  }
+}
 
-  res.header('Content-Type', 'application/xml; charset=utf-8');
-  res.header('Cache-Control', 'public, max-age=3600, s-maxage=86400');
-  res.send(xmlContent);
-});
-
-/**
- * 3. CATEGORY HUBS SITEMAP
- * GET /sitemap-categories.xml
- */
-sitemapRouter.get('/sitemap-categories.xml', (_req: Request, res: Response): void => {
-  const baseUrl = getBaseUrl();
-  const categories = ['/recipes', '/methods', '/holidays', '/special-diets', '/the-best-recipes'];
-
-  const xmlContent = `<?xml version="1.0" encoding="UTF-8"?>
+// 2. Concrete Strategy: Categories
+class CategoriesSitemap implements ISitemap {
+  generate(baseUrl: string): string {
+    const categories = ['/recipes', '/methods', '/holidays', '/special-diets', '/the-best-recipes'];
+    return `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${categories
   .map(
@@ -107,67 +99,86 @@ ${categories
   )
   .join('\n')}
 </urlset>`;
-
-  res.header('Content-Type', 'application/xml; charset=utf-8');
-  res.header('Cache-Control', 'public, max-age=3600, s-maxage=86400');
-  res.send(xmlContent);
-});
-
+  }
+}
 /**
  * 4. DYNAMIC RECIPES SITEMAP (+ Google Image Extensions)
  * GET /sitemap-recipes.xml
  */
-sitemapRouter.get('/sitemap-recipes.xml', async (_req: Request, res: Response): Promise<void> => {
-  const baseUrl = getBaseUrl();
-  let recipesXml = '';
+// 2. Concrete Strategy: Recipes
+class RecipesSitemap implements ISitemap {
+  async generate(baseUrl: string): Promise<string> {
+    let recipesXml = '';
 
-  try {
-    const supabase = await getSupabaseClient();
-    const { data } = await supabase
-      .from('recipes')
-      .select('slug, image, updated_at, created_at')
-      .eq('status', 'published')
-      .lte('created_at', new Date().toISOString());
+    try {
+      const supabase = await getSupabaseClient();
+      const { data } = await supabase
+        .from('recipes')
+        .select('slug, image, updated_at, created_at')
+        .eq('status', 'published')
+        .lte('created_at', new Date().toISOString());
 
-    const recipes = data as SitemapRecipe[] | null;
+      const recipes = data as SitemapRecipe[] | null;
 
-    if (recipes && recipes.length > 0) {
-      recipesXml = recipes
-        .map((recipe: SitemapRecipe) => {
-          const loc = `${baseUrl}/recipe/${escapeXml(recipe.slug)}`;
-          const lastmodDate = recipe.updated_at || recipe.created_at || new Date().toISOString();
-          const lastmod = lastmodDate.split('T')[0];
+      if (recipes && recipes.length > 0) {
+        recipesXml = recipes
+          .map((recipe: SitemapRecipe) => {
+            const loc = `${baseUrl}/recipe/${escapeXml(recipe.slug)}`;
+            const lastmodDate = recipe.updated_at || recipe.created_at || new Date().toISOString();
+            const lastmod = lastmodDate.split('T')[0];
 
-          let imageTag = '';
-          if (recipe.image) {
-            imageTag = `
-    <image:image>
+            let imageTag = '';
+            if (recipe.image) {
+              imageTag = `    <image:image>
       <image:loc>${escapeXml(recipe.image)}</image:loc>
     </image:image>`;
-          }
+            }
 
-          return `  <url>
+            return `  <url>
     <loc>${loc}</loc>
     <lastmod>${lastmod}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>${imageTag}
   </url>`;
-        })
-        .join('\n');
+          })
+          .join('\n');
+      }
+    } catch {
+      // Fallback if database query fails
     }
-  } catch {
-    // Fallback if database query fails
-  }
 
-  const xmlContent = `<?xml version="1.0" encoding="UTF-8"?>
+    return `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
         xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
 ${recipesXml}
 </urlset>`;
+  }
+}
 
-  res.header('Content-Type', 'application/xml; charset=utf-8');
-  res.header('Cache-Control', 'public, max-age=3600, s-maxage=86400');
-  res.send(xmlContent);
-});
+// 3. The Router Dictionary ("Switch")
+const sitemapRoutes: Record<string, ISitemap> = {
+  '/sitemap.xml': new MasterSitemap(),
+  '/sitemap-pages.xml': new PagesSitemap(),
+  '/sitemap-categories.xml': new CategoriesSitemap(),
+  '/sitemap-recipes.xml': new RecipesSitemap(),
+};
 
-export default sitemapRouter;
+// 4. The Main Handler
+export default async function sitemap(req: VercelRequest, res: VercelResponse): Promise<void> {
+  const url = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`);
+  const pathname = url.pathname;
+
+  res.setHeader('Content-Type', 'application/xml; charset=utf-8');
+  res.setHeader('Cache-Control', 'public, max-age=3600, s-maxage=86400');
+
+  const handler = sitemapRoutes[pathname];
+
+  if (handler) {
+    const baseUrl = getBaseUrl(req);
+    const xmlContent = await handler.generate(baseUrl);
+    res.status(200).send(xmlContent);
+  } else {
+    res.statusCode = 404;
+    res.send('Not Found');
+  }
+}

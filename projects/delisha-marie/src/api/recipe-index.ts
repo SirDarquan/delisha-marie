@@ -1,8 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { Request, Response, Router } from 'express';
+import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { getSupabaseClient } from './supabase';
-
-const recipeIndexRouter = Router();
 
 interface CategoryItem {
   name: string;
@@ -270,7 +268,13 @@ async function getBestRecipes(supabase: SupabaseClient): Promise<CategoryItem[]>
   return buildCategoryHierarchyFromParts(categories, 'the-best-recipes');
 }
 
-recipeIndexRouter.get('/recipe-index', async (req: Request, res: Response) => {
+export default async function recipeIndexHandler(req: VercelRequest, res: VercelResponse) {
+  const url = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`);
+  const pathname = url.pathname.replace(/^\/api/, '');
+
+  if (pathname !== '/recipe-index') {
+    return res.status(404).json({ error: 'Not found' });
+  }
   try {
     const supabase = await getSupabaseClient();
 
@@ -309,6 +313,4 @@ recipeIndexRouter.get('/recipe-index', async (req: Request, res: Response) => {
     const msg = err instanceof Error ? err.message : String(err);
     return res.status(500).json({ error: msg });
   }
-});
-
-export default recipeIndexRouter;
+}

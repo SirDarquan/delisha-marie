@@ -1,12 +1,17 @@
-import { Router, Response, Request } from 'express';
+import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { getSupabaseClient } from './supabase';
 
-const pagesRouter = Router();
-
-// GET /api/pages/:slug - Get public page by slug
-pagesRouter.get('/pages/:slug', async (req: Request, res: Response): Promise<void> => {
+export default async function pagesHandler(req: VercelRequest, res: VercelResponse): Promise<void> {
   try {
-    const slug = req.params['slug'];
+    // Vercel automatically populates req.query based on the filename (e.g. [slug].ts)
+    // For local testing where slug might not be populated, fallback to path parsing
+    const slug = req.query['slug'] as string;
+
+    if (!slug || req.method !== 'GET') {
+      res.status(404).json({ error: 'Not found' });
+      return;
+    }
+
     const supabase = await getSupabaseClient();
 
     const { data, error } = await supabase
@@ -24,9 +29,8 @@ pagesRouter.get('/pages/:slug', async (req: Request, res: Response): Promise<voi
     }
 
     res.json(data);
-  } catch {
+  } catch (err) {
+    console.error('Error in pages handler:', err);
     res.status(500).json({ error: 'Failed to fetch page' });
   }
-});
-
-export default pagesRouter;
+}

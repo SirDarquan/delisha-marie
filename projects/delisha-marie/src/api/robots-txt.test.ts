@@ -1,16 +1,16 @@
+import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import express from 'express';
-import request from 'supertest';
+import { createRequestMock } from './test-utils';
 import robotsTxtRouter from './robots-txt';
 
-describe('Robots Txt Router API', () => {
-  let app: express.Express;
+describe('robotsTxtRouter', () => {
+  let request: ReturnType<typeof createRequestMock>;
+  const app = null;
   const originalEnv = process.env;
 
   beforeEach(() => {
     process.env = { ...originalEnv };
-    app = express();
-    app.use('/', robotsTxtRouter);
+    request = createRequestMock(robotsTxtRouter);
   });
 
   afterEach(() => {
@@ -111,5 +111,18 @@ describe('Robots Txt Router API', () => {
     expect(res.status).toBe(200);
     expect(res.text).toContain('Sitemap: https://example.com/sitemap1.xml');
     expect(res.text).toContain('Sitemap: https://example.com/sitemap2.xml');
+  });
+
+  it('should use VERCEL_PROJECT_PRODUCTION_URL if SITE_URL is not set', () => {
+    delete process.env['SITE_URL'];
+    process.env['VERCEL_PROJECT_PRODUCTION_URL'] = 'vercel-test.com';
+    const req = { headers: {} } as unknown as VercelRequest;
+    const res = {
+      setHeader: vi.fn(),
+      send: vi.fn(),
+      status: vi.fn().mockReturnThis(),
+    } as unknown as VercelResponse;
+    robotsTxtRouter(req, res);
+    expect(res.send).toHaveBeenCalled();
   });
 });

@@ -1,15 +1,19 @@
+import { VercelRequest, VercelResponse } from '@vercel/node';
 import { getSupabaseClient } from './supabase';
-import { Router, Request, Response } from 'express';
 
-const searchRouter = Router();
+export default async function search(req: VercelRequest, res: VercelResponse): Promise<void> {
+  if (req.method !== 'POST') {
+    res.status(405).json({ error: 'Method not allowed' });
+    return;
+  }
 
-searchRouter.post('/search', async (req: Request, res: Response) => {
   try {
     const supabase = await getSupabaseClient();
-    const { query, page = 1, pageSize = 12 } = req.body;
+    const { query, page = 1, pageSize = 12 } = req.body || {};
 
     if (!query) {
-      return res.status(400).json({ error: 'Query is required' });
+      res.status(400).json({ error: 'Query is required' });
+      return;
     }
 
     const { data, error } = await supabase.functions.invoke('search-recipes', {
@@ -27,15 +31,13 @@ searchRouter.post('/search', async (req: Request, res: Response) => {
       return rCopy;
     });
 
-    return res.json({
+    res.status(200).json({
       items,
       total: data.total || 0,
     });
   } catch (err: unknown) {
     console.error(err);
     const msg = err instanceof Error ? err.message : String(err);
-    return res.status(500).json({ error: msg });
+    res.status(500).json({ error: msg });
   }
-});
-
-export default searchRouter;
+}
