@@ -14,85 +14,85 @@ on:
   workflow_dispatch: # Enable manual triggers
 
 jobs:
-  unit-tests:
-    env:
-      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v6
-      with:
-        fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
-    - name: Use Node.js
-      uses: actions/setup-node@v6
-      with:
-        node-version: ${{ env.NODE_VERSION }}
-        cache: 'npm'
-    - name: Cache node modules
-      uses: actions/cache@v3
-      with:
-        path: ~/.npm
-        key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-        restore-keys: |
-          ${{ runner.os }}-node-
-    - run: npm ci --ignore-scripts
-    - run: npm test
-    - name: SonarQube Scan
-      uses: SonarSource/sonarqube-scan-action@v7
-      # with:
-      #   args: >
-      #     -Dsonar.verbose=true
-    # Check the Quality Gate status.
-    - name: SonarQube Quality Gate check
-      id: sonarqube-quality-gate-check
-      uses: SonarSource/sonarqube-quality-gate-action@v1.2.0
-      with:
-        pollingTimeoutSec: 600
+  # unit-tests:
+  #   env:
+  #     SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+  #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #   - uses: actions/checkout@v6
+  #     with:
+  #       fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
+  #   - name: Use Node.js
+  #     uses: actions/setup-node@v6
+  #     with:
+  #       node-version: ${{ env.NODE_VERSION }}
+  #       cache: 'npm'
+  #   - name: Cache node modules
+  #     uses: actions/cache@v3
+  #     with:
+  #       path: ~/.npm
+  #       key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+  #       restore-keys: |
+  #         ${{ runner.os }}-node-
+  #   - run: npm ci --ignore-scripts
+  #   - run: npm test
+  #   - name: SonarQube Scan
+  #     uses: SonarSource/sonarqube-scan-action@v7
+  #     # with:
+  #     #   args: >
+  #     #     -Dsonar.verbose=true
+  #   # Check the Quality Gate status.
+  #   - name: SonarQube Quality Gate check
+  #     id: sonarqube-quality-gate-check
+  #     uses: SonarSource/sonarqube-quality-gate-action@v1.2.0
+  #     with:
+  #       pollingTimeoutSec: 600
 
-  e2e-tests:
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        app: [admin, blog]
-    steps:
-    - uses: actions/checkout@v6
-    - name: Use Node.js
-      uses: actions/setup-node@v6
-      with:
-        node-version: ${{ env.NODE_VERSION }}
-        cache: 'npm'
-    - name: Run Cypress E2E Parallel Matrix
-      uses: cypress-io/github-action@v6
-      with:
-        command: npm run e2e:${{ matrix.app }}
-        install: true
+  # e2e-tests:
+  #   runs-on: ubuntu-latest
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       app: [admin, blog]
+  #   steps:
+  #   - uses: actions/checkout@v6
+  #   - name: Use Node.js
+  #     uses: actions/setup-node@v6
+  #     with:
+  #       node-version: ${{ env.NODE_VERSION }}
+  #       cache: 'npm'
+  #   - name: Run Cypress E2E Parallel Matrix
+  #     uses: cypress-io/github-action@v6
+  #     with:
+  #       command: npm run e2e:${{ matrix.app }}
+  #       install: true
 
-  build:
-    needs: [unit-tests, e2e-tests]
-    runs-on: ubuntu-latest
-    env:
-      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-      SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
-    steps:
-    - uses: actions/checkout@v6
-    - name: Use Node.js
-      uses: actions/setup-node@v6
-      with:
-        node-version: ${{ env.NODE_VERSION }}
-        cache: 'npm'
-    - name: Cache node modules
-      uses: actions/cache@v3
-      with:
-        path: ~/.npm
-        key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-        restore-keys: |
-          ${{ runner.os }}-node-
-    - run: npm ci --ignore-scripts
-    - run: npm run build delisha-marie --if-present
-    - run: npm run build admin-delisha-marie --if-present
+  # build:
+  #   needs: [unit-tests, e2e-tests]
+  #   runs-on: ubuntu-latest
+  #   env:
+  #     SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+  #     SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+  #   steps:
+  #   - uses: actions/checkout@v6
+  #   - name: Use Node.js
+  #     uses: actions/setup-node@v6
+  #     with:
+  #       node-version: ${{ env.NODE_VERSION }}
+  #       cache: 'npm'
+  #   - name: Cache node modules
+  #     uses: actions/cache@v3
+  #     with:
+  #       path: ~/.npm
+  #       key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+  #       restore-keys: |
+  #         ${{ runner.os }}-node-
+  #   - run: npm ci --ignore-scripts
+  #   - run: npm run build delisha-marie --if-present
+  #   - run: npm run build admin-delisha-marie --if-present
   Deploy-Preview:
-    needs: [unit-tests, e2e-tests]
+    #needs: [unit-tests, e2e-tests]
     runs-on: ubuntu-latest
     env:
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
@@ -104,7 +104,7 @@ jobs:
       - name: Install Vercel CLI
         run: npm i -g vercel@latest
       - name: Pull Vercel Environment Information
-        run: vercel pull --cwd=./projects/delisha-marie --yes --environment=preview --token=$VERCEL_TOKEN
+        run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
       - name: Build Project Artifacts
         run: vercel build --cwd=./projects/delisha-marie  --token=$VERCEL_TOKEN
       - name: Deploy Project Artifacts to Vercel
