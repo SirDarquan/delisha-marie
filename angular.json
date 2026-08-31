@@ -45,8 +45,9 @@
             "security": {
               "allowedHosts": [
                 "localhost",
-                "delisha-marie-644709001057.northamerica-south1.run.app",
-                "*.run.app"
+                "127.0.0.1",
+                "[::1]",
+                "*.vercel.app"
               ]
             },
             "ssr": {
