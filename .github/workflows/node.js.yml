@@ -98,14 +98,14 @@ jobs:
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
       VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-      PROJECT: "projects/delisha-marie"
+      PROJECT: "./projects/delisha-marie"
     steps:
       - uses: actions/checkout@v6
       - name: Install Vercel CLI
         run: npm i -g vercel@latest
       - name: Pull Vercel Environment Information
-        run: vercel pull --cwd $PROJECT --yes --environment=preview --token=$VERCEL_TOKEN
+        run: vercel pull --cwd=./projects/delisha-marie --yes --environment=preview --token=$VERCEL_TOKEN
       - name: Build Project Artifacts
-        run: vercel build --cwd $PROJECT  --token=$VERCEL_TOKEN
+        run: vercel build --cwd=./projects/delisha-marie  --token=$VERCEL_TOKEN
       - name: Deploy Project Artifacts to Vercel
-        run: vercel deploy --cwd $PROJECT --prebuilt --token=$VERCEL_TOKEN
+        run: vercel deploy --cwd=./projects/delisha-marie --prebuilt --token=$VERCEL_TOKEN
