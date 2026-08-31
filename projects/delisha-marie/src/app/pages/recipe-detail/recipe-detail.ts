@@ -13,11 +13,14 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { DomSanitizer } from '@angular/platform-browser';
 import { RouterLink } from '@angular/router';
+import { extractYouTubeVideoId } from '@dm/library';
 import { BreadcrumbItem, Breadcrumbs } from '../../components/breadcrumbs/breadcrumbs';
+import { RecipeEquipment } from '../../components/recipe-equipment/recipe-equipment';
 import { Sidebar } from '../../components/sidebar/sidebar';
 import { SidebarQuickView } from '../../components/sidebar/sidebar-quick-view';
 import { PinterestHoverDirective } from '../../directives/pinterest-hover.directive';
 import { Recipe } from '../../services/recipe.service';
+import { useOptimizedContent } from '../../utils/optimized-content';
 import { RecipeCard } from './recipe-card';
 import { RecipeComments } from './recipe-comments';
 import { RecipeHero } from './recipe-hero';
@@ -25,9 +28,6 @@ import { RecipeMeta } from './recipe-meta';
 import { RecipeNavigation } from './recipe-navigation';
 import { RecipeSource } from './recipe-source';
 import { RecipeTags } from './recipe-tags';
-import { extractYouTubeVideoId } from '@dm/library';
-import { useOptimizedContent } from '../../utils/optimized-content';
-import { RecipeEquipment } from '../../components/recipe-equipment/recipe-equipment';
 
 @Component({
   selector: 'dm-recipe-detail',
@@ -159,22 +159,27 @@ import { RecipeEquipment } from '../../components/recipe-equipment/recipe-equipm
           </div>
         </article>
       } @else {
-        <div class="py-40 text-center max-w-xl mx-auto">
-          <mat-icon class="text-9xl h-auto w-auto opacity-10 mb-8 text-[var(--mat-sys-primary)]"
-            >search_off</mat-icon
-          >
-          <h2 class="text-5xl font-black tracking-tighter mb-4">Recipe not found</h2>
+        <div class="flex flex-col lg:flex-row gap-12">
+          <div class="py-40 text-center max-w-xl mx-auto">
+            <mat-icon class="text-9xl h-auto w-auto opacity-10 mb-8 text-[var(--mat-sys-primary)]">
+              search_off
+            </mat-icon>
+            <h2 class="text-5xl font-black tracking-tighter mb-4">Recipe not found</h2>
 
-          <p class="text-xl text-[var(--mat-sys-on-surface-variant)] mb-12 font-medium">
-            Sorry, the culinary masterpiece you're looking for seems to have vanished from our
-            kitchen.
-          </p>
-          <a
-            mat-flat-button
-            routerLink="/recipe-index"
-            class="h-14 px-10 rounded-full text-lg font-bold">
-            Back to Recipe Index
-          </a>
+            <p class="text-xl text-[var(--mat-sys-on-surface-variant)] mb-12 font-medium">
+              Sorry, the culinary masterpiece you're looking for seems to have vanished from our
+              kitchen.
+            </p>
+            <a
+              mat-flat-button
+              routerLink="/recipe-index"
+              class="h-14 px-10 rounded-full text-lg font-bold">
+              Back to Recipe Index
+            </a>
+          </div>
+          <aside class="lg:w-1/3 w-full">
+            <dml-sidebar />
+          </aside>
         </div>
       }
     </div>
@@ -187,10 +192,6 @@ export class RecipeDetail {
   recipe = input<Recipe | null | undefined>(undefined);
 
   page = input<string>();
-
-  test = computed(() => {
-    console.log();
-  });
 
   commentCountOverride = signal<number | null>(null);
 

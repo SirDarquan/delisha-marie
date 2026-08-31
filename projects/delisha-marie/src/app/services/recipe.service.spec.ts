@@ -23,39 +23,6 @@ describe('RecipeService', () => {
 
   it('should be created', async () => {
     expect(service).toBeTruthy();
-    // Read the signal to trigger the resource loader
-    service.recipes();
-    TestBed.flushEffects();
-    const req = httpMock.expectOne('/api/recipes');
-    req.flush({ items: [], total: 0 });
-  });
-
-  it('should fetch recipes', async () => {
-    const mockRecipes = [
-      {
-        id: 1,
-        title: 'Test Recipe',
-        image: 'test.png',
-        description: 'Test',
-        prepTime: '10m',
-        category: 'Testing',
-        rating: 5,
-        difficulty: 'Easy',
-      },
-    ];
-
-    // Trigger loader
-    service.recipes();
-    TestBed.flushEffects();
-
-    const req = httpMock.expectOne('/api/recipes');
-    expect(req.request.method).toBe('GET');
-    req.flush({ items: mockRecipes, total: mockRecipes.length });
-
-    // Wait for the Promise from the mock response to resolve and update the resource
-    await new Promise((resolve) => setTimeout(resolve, 0));
-
-    expect(service.recipes()).toEqual(mockRecipes);
   });
 
   it('should fetch paginated recipes via getRecipes', async () => {

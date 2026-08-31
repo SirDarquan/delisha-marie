@@ -1,4 +1,4 @@
-import { Injectable, computed, inject, resource } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import type { BaseRecipe, Breadcrumbs, Comment, Nutrition } from '@dm/library';
 import { Api } from './api';
 export type { Comment };
@@ -42,16 +42,6 @@ export class RecipeService {
   private readonly recipeCache = new Map<string, Promise<Recipe | null>>();
 
   /**
-   * Modern signal-native resource for fetching all recipes.
-   * Completely eliminates 'from', 'Observable', and 'toSignal'.
-   */
-  private readonly _recipesResource = resource({
-    loader: () => this.api.get<{ items: Recipe[]; total: number }>('/recipes'),
-  });
-
-  readonly recipes = computed(() => this._recipesResource.value()?.items || []);
-
-  /**
    * Fetches a single recipe by its slug.
    */
   getRecipeBySlug(slug: string): Promise<Recipe | null> {
@@ -70,6 +60,9 @@ export class RecipeService {
     return cached;
   }
 
+  getTitle(slug: string): Promise<string | null> {
+    return this.api.get<string | null>(`/recipe/${slug}/title`).catch(() => null);
+  }
   /**
    * Fetches a paginated slice of recipes.
    * Now returns a Promise directly by leveraging the Api server's firstValueFrom pattern.

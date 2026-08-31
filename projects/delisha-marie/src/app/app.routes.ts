@@ -41,15 +41,6 @@ export const routes: Routes = [
       keywords: ['recipe index', 'food categories', 'delisha marie masterlist'],
     },
   },
-  {
-    path: 'contact',
-    loadComponent: () => import('./pages/contact/contact').then((m) => m.ContactPage),
-    title: dynamicPageResolver,
-    resolve: { seo: seoDynamicPageResolver, schema: schemaDynamicPageResolver },
-    data: {
-      slug: 'contact',
-    },
-  },
   // Top-level Collection Routes
   ...[
     'recipes',

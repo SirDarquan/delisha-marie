@@ -6,6 +6,7 @@ import { Recipe, RecipeService } from '../services/recipe.service';
 export const recipeResolver: ResolveFn<Recipe | null> = (route) => {
   const slug = route.paramMap.get('slug');
   if (!slug) return null;
+
   return inject(RecipeService).getRecipeBySlug(slug);
 };
 
@@ -23,6 +24,6 @@ export const recipeTitleResolver: ResolveFn<string> = (route) => {
   if (!slug) return 'Recipe Not Found';
 
   return inject(RecipeService)
-    .getRecipeBySlug(slug)
-    .then((r) => r?.title || 'Recipe Not Found');
+    .getTitle(slug)
+    .then((title) => title! || 'Recipe Not Found');
 };
