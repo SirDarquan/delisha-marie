@@ -1,3 +1,3 @@
-import searchHandler from '../src/api/search';
+import searchHandler from '../../serverless/src/api/search';
 
 export default searchHandler;

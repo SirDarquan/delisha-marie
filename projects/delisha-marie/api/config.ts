@@ -1,3 +1,3 @@
-import configHandler from '../src/api/config';
+import configHandler from '../../serverless/src/api/config';
 
 export default configHandler;

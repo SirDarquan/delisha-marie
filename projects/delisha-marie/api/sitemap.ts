@@ -1,3 +1,3 @@
-import sitemapHandler from '../src/api/sitemap';
+import sitemapHandler from '../../serverless/src/api/sitemap';
 
 export default sitemapHandler;

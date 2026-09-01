@@ -1,3 +1,3 @@
-import pageHandler from '../src/api/pages';
+import pageHandler from '../../serverless/src/api/pages';
 
 export default pageHandler;

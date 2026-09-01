@@ -2,8 +2,17 @@
   "compilerOptions": {
     "module": "CommonJS",
     "moduleResolution": "node",
-    "target": "ES2022",
+    "target": "esnext",
     "esModuleInterop": true,
-    "strict": true
+    "strict": true,
+    "noImplicitAny": true,
+    "noImplicitThis": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "strictBindCallApply": true,
+    "strictPropertyInitialization": true,
+    "alwaysStrict": true,
+    "lib": ["esnext"],
+    "types":["node"]
   }
 }

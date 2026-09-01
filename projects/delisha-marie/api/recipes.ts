@@ -1,3 +1,3 @@
-import recipesHandler from '../src/api/recipes';
+import recipesHandler from '../../serverless/src/api/recipes';
 
 export default recipesHandler;

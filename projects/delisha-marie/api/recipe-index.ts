@@ -1,3 +1,3 @@
-import recipeIndexHandler from '../src/api/recipe-index';
+import recipeIndexHandler from '../../serverless/src/api/recipe-index';
 
 export default recipeIndexHandler;
