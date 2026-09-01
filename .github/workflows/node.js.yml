@@ -106,6 +106,6 @@ jobs:
       - name: Pull Vercel Environment Information
         run: vercel pull --yes --environment=preview --token=$VERCEL_TOKEN --debug
       - name: Build Project Artifacts
-        run: vercel build --cwd=./projects/delisha-marie  --token=$VERCEL_TOKEN
+        run: vercel build --token=$VERCEL_TOKEN
       - name: Deploy Project Artifacts to Vercel
-        run: vercel deploy --cwd=./projects/delisha-marie --prebuilt --token=$VERCEL_TOKEN
+        run: vercel deploy --prebuilt --token=$VERCEL_TOKEN
