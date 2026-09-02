@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { PLATFORM_ID } from '@angular/core';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { HttpClient, provideHttpClient, withInterceptors } from '@angular/common/http';
 import { vercelAbsoluteUrlInterceptor } from './vercel-absolute-url';
@@ -13,6 +14,7 @@ describe('vercelAbsoluteUrlInterceptor', () => {
       providers: [
         provideHttpClient(withInterceptors([vercelAbsoluteUrlInterceptor])),
         provideHttpClientTesting(),
+        { provide: PLATFORM_ID, useValue: 'server' },
       ],
     });
 
@@ -41,7 +43,7 @@ describe('vercelAbsoluteUrlInterceptor', () => {
 
   it('should make relative /api/ requests absolute using localhost by default', () => {
     httpClient.get('/api/test').subscribe();
-    const req = httpMock.expectOne('http://localhost:3000/api/test');
+    const req = httpMock.expectOne('http://localhost:4200/api/test');
     expect(req.request.method).toBe('GET');
     req.flush({});
   });
@@ -70,7 +72,7 @@ describe('vercelAbsoluteUrlInterceptor', () => {
     httpClient
       .get('/api/test-header', { headers: { host: 'localhost:4000', 'other-header': 'value' } })
       .subscribe();
-    const req = httpMock.expectOne('http://localhost:3000/api/test-header');
+    const req = httpMock.expectOne('http://localhost:4200/api/test-header');
     expect(req.request.headers.has('host')).toBe(false);
     expect(req.request.headers.get('other-header')).toBe('value');
     req.flush({});
