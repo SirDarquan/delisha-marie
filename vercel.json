@@ -18,7 +18,7 @@
     },
     {
       "source": "/api/pages/(.*)",
-      "destination": "/api/pages?slug=$1"
+      "destination": "/api/pages?slug=$1" 
     }
   ]
 }
