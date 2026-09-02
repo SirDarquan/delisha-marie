@@ -276,6 +276,9 @@ export default async function recipeIndexHandler(req: VercelRequest, res: Vercel
     return res.status(404).json({ error: 'Not found' });
   }
   try {
+    if (req.method === 'GET') {
+      res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate=86400');
+    }
     const supabase = await getSupabaseClient();
 
     const [

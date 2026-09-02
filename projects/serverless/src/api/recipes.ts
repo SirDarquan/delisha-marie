@@ -809,6 +809,9 @@ export default async function recipesHandler(req: VercelRequest, res: VercelResp
   }
 
   try {
+    if (req.method === 'GET') {
+      res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate=86400');
+    }
     for (const route of routes) {
       if (req.method === route.method) {
         const match = route.pattern.exec(pathname);

@@ -3,6 +3,9 @@ import { getSupabaseClient } from './supabase';
 
 export default async function pagesHandler(req: VercelRequest, res: VercelResponse): Promise<void> {
   try {
+    if (req.method === 'GET') {
+      res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate=86400');
+    }
     // Vercel automatically populates req.query based on the filename (e.g. [slug].ts)
     // For local testing where slug might not be populated, fallback to path parsing
     const slug = req.query['slug'] as string;
