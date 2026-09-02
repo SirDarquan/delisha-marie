@@ -13,6 +13,7 @@
     "strictPropertyInitialization": true,
     "alwaysStrict": true,
     "lib": ["esnext"],
-    "types":["node"]
+    "types":["node"],
+    "ignoreDeprecations": "6.0"
   }
 }

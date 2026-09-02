@@ -8,7 +8,7 @@
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "npm run test:app && npm run test:api",
-    "test:api": "ng run delisha-marie:test-api --coverage && ng run admin-delisha-marie:test-api --coverage && ng run @dm/backend-shared:test-api --coverage",
+    "test:api": "ng run serverless:test-api --coverage && ng run admin-delisha-marie:test-api --coverage && ng run @dm/backend-shared:test-api --coverage",
     "test:app": "ng test --coverage",
     "test:all": "npm run lint && npm run test:app && npm run test:api && npm run e2e",
     "e2e": "npm run e2e:blog && npm run e2e:admin",

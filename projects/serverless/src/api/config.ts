@@ -41,9 +41,10 @@ const appConfig: AppConfig = {
 const configHandler = async (req: VercelRequest, res: VercelResponse) => {
   if (req.method !== 'GET') {
     res.status(404).json({ error: 'Not found' });
+    return;
   }
 
   res.status(200).json(appConfig);
-}
+};
 
 export default configHandler;
