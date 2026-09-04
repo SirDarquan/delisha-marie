@@ -82,20 +82,18 @@ describe('RecipeService', () => {
     });
 
     it('should normalize slugs for comparison', async () => {
-      const mockRecipe = { id: 1, slug: '/recipe/test-recipe', title: 'Test' } as unknown as Recipe;
+      const mockRecipe = { id: 1, slug: '/recipe/test-slug', title: 'Test' } as unknown as Recipe;
 
-      // Test with leading slash and prefix
-      const promise1 = service.getRecipeBySlug('test-recipe');
-      const req1 = httpMock.expectOne('/api/recipes/test-recipe');
+      // First request with full slug
+      const promise1 = service.getRecipeBySlug('/recipe/test-slug');
+      const req1 = httpMock.expectOne('/api/recipes/test-slug');
       req1.flush(mockRecipe);
       const result1 = await promise1;
       expect(result1).toEqual(mockRecipe);
 
-      // Test with full slug
-      (service as unknown as { recipeCache: Map<string, unknown> }).recipeCache.clear();
-      const promise2 = service.getRecipeBySlug('/recipe/test-recipe');
-      const req2 = httpMock.expectOne('/api/recipes/test-recipe');
-      req2.flush(mockRecipe);
+      // Second request with clean slug should hit cache
+      const promise2 = service.getRecipeBySlug('test-slug');
+      httpMock.expectNone('/api/recipes/test-slug');
       const result2 = await promise2;
       expect(result2).toEqual(mockRecipe);
     });
@@ -111,40 +109,40 @@ describe('RecipeService', () => {
     it('should return null on error', async () => {
       const promise = service.getRecipeBySlug('error');
       const req = httpMock.expectOne('/api/recipes/error');
-      req.error(new ErrorEvent('Network error'));
+      req.error(new ProgressEvent('Network error'));
       const result = await promise;
       expect(result).toBeNull();
     });
 
-    it('should cache consecutive requests for the same slug and clear them after 5 seconds', async () => {
-      vi.useFakeTimers();
+    it('should clear cache after 5 seconds for getRecipeBySlug', async () => {
+      const origSetTimeout = window.setTimeout;
+      let interceptedCb: ((...args: unknown[]) => void) | null = null;
+      window.setTimeout = function (cb: (...args: unknown[]) => void, ms?: number) {
+        if (ms === 5000) {
+          interceptedCb = cb;
+        }
+        return origSetTimeout.call(window, cb, ms);
+      } as unknown as typeof window.setTimeout;
+
       try {
-        const mockRecipe = { id: 1, slug: 'cached-recipe', title: 'Cached' } as unknown as Recipe;
+        const mockRecipe = { id: 1, slug: 'test-slug', title: 'Test' } as unknown as Recipe;
 
-        // First request - goes to API
-        const promise1 = service.getRecipeBySlug('cached-recipe');
-        const req = httpMock.expectOne('/api/recipes/cached-recipe');
-        req.flush(mockRecipe);
-        const result1 = await promise1;
-        expect(result1).toEqual(mockRecipe);
+        const promise1 = service.getRecipeBySlug('test-slug');
+        httpMock.expectOne('/api/recipes/test-slug').flush(mockRecipe);
+        await promise1;
 
-        // Second request - hits cache (no new API call)
-        const promise2 = service.getRecipeBySlug('cached-recipe');
-        httpMock.expectNone('/api/recipes/cached-recipe');
-        const result2 = await promise2;
-        expect(result2).toEqual(mockRecipe);
+        if (interceptedCb as unknown) {
+          (interceptedCb as unknown as () => void)();
+        }
 
-        // Advance timers by 5 seconds to trigger eviction
-        vi.advanceTimersByTime(5000);
-
-        // Third request - cache is cleared, should trigger new API call
-        const promise3 = service.getRecipeBySlug('cached-recipe');
-        const req2 = httpMock.expectOne('/api/recipes/cached-recipe');
-        req2.flush(mockRecipe);
-        const result3 = await promise3;
-        expect(result3).toEqual(mockRecipe);
+        // Use bracket notation to access private property without "any"
+        expect(
+          (service as unknown as { recipeCache: Map<string, unknown> }).recipeCache.has(
+            'test-slug',
+          ),
+        ).toBe(false);
       } finally {
-        vi.useRealTimers();
+        window.setTimeout = origSetTimeout;
       }
     });
   });
@@ -213,6 +211,78 @@ describe('RecipeService', () => {
 
       const result = await promise;
       expect(result).toEqual(mockEquipment);
+    });
+  });
+
+  describe('getTitle', () => {
+    it('should fetch the title for a recipe', async () => {
+      const promise = service.getTitle('test-recipe');
+      const req = httpMock.expectOne('/api/recipes/test-recipe/title');
+      expect(req.request.method).toBe('GET');
+      req.flush({ title: 'Test Title' });
+      const result = await promise;
+      expect(result).toBe('Test Title');
+    });
+
+    it('should return null on error', async () => {
+      const promise = service.getTitle('error-recipe');
+      const req = httpMock.expectOne('/api/recipes/error-recipe/title');
+      req.error(new ProgressEvent('error'));
+      const result = await promise;
+      expect(result).toBeNull();
+    });
+  });
+
+  describe('getFavoriteRecipes', () => {
+    it('should fetch favorite recipes', async () => {
+      const mockFavorites = { items: [{ id: 1, title: 'Fave 1' } as unknown as Recipe] };
+      const promise = service.getFavoriteRecipes();
+      const req = httpMock.expectOne('/api/recipes/favorites/list');
+      expect(req.request.method).toBe('GET');
+      req.flush(mockFavorites);
+      const result = await promise;
+      expect(result).toEqual(mockFavorites);
+    });
+  });
+
+  describe('getRecipes caching', () => {
+    it('should return cached promise if within 5 minutes', async () => {
+      const promise1 = service.getRecipes(1, 10, 'baking');
+      const req = httpMock.expectOne(
+        '/api/recipes?page=1&pageSize=10&method=baking&category=&subcategory=&rating=',
+      );
+      req.flush({ items: [], total: 0 });
+      await promise1;
+
+      // Make a second call without modifying anything, should hit cache
+      const promise2 = service.getRecipes(1, 10, 'baking');
+      httpMock.expectNone(
+        '/api/recipes?page=1&pageSize=10&method=baking&category=&subcategory=&rating=',
+      );
+
+      const result2 = await promise2;
+      expect(result2).toEqual({ items: [], total: 0 });
+    });
+
+    it('should remove cache on error', async () => {
+      const promise = service.getRecipes(3, 10, 'baking');
+      const req = httpMock.expectOne(
+        '/api/recipes?page=3&pageSize=10&method=baking&category=&subcategory=&rating=',
+      );
+      req.error(new ProgressEvent('error'));
+
+      try {
+        await promise;
+      } catch (e) {
+        expect(e).toBeTruthy();
+      }
+
+      const promise2 = service.getRecipes(3, 10, 'baking');
+      const req2 = httpMock.expectOne(
+        '/api/recipes?page=3&pageSize=10&method=baking&category=&subcategory=&rating=',
+      );
+      req2.flush({ items: [], total: 0 });
+      await promise2;
     });
   });
 });
