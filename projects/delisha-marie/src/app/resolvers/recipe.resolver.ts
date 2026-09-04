@@ -25,5 +25,5 @@ export const recipeTitleResolver: ResolveFn<string> = (route) => {
 
   return inject(RecipeService)
     .getTitle(slug)
-    .then((title) => title! || 'Recipe Not Found');
+    .then((title) => title || 'Recipe Not Found');
 };

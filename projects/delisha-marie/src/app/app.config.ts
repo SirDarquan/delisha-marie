@@ -8,11 +8,7 @@ import {
   provideExperimentalWebMcpTools,
   provideZonelessChangeDetection,
 } from '@angular/core';
-import {
-  provideClientHydration,
-  withEventReplay,
-  withNoIncrementalHydration,
-} from '@angular/platform-browser';
+import { provideClientHydration, withEventReplay } from '@angular/platform-browser';
 import { provideRouter, withComponentInputBinding, withInMemoryScrolling } from '@angular/router';
 import { PluginRegistry } from '@dm/library';
 import { routes } from './app.routes';
@@ -35,7 +31,7 @@ export const appConfig: ApplicationConfig = {
       }),
     ),
     provideTitleStrategy(TemplatePageTitleStrategy),
-    provideClientHydration(withEventReplay(), withNoIncrementalHydration()),
+    provideClientHydration(withEventReplay()),
     provideHttpClient(withInterceptors([])),
     provideExperimentalWebMcpTools(withRecipes()),
     provideImageKitLoader('https://ik.imagekit.io/delishamarie'),
