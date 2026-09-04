@@ -58,6 +58,7 @@ interface FormattedRecipe {
 }
 
 function getSelectString(method: string, category: string): string {
+  const labels = 'title,description,slug,image';
   if (!category) {
     return `
       *,
@@ -77,7 +78,7 @@ function getSelectString(method: string, category: string): string {
   }
   if (method === 'recipes' || method === 'the-best-recipes') {
     return `
-      *,
+      ${labels},
       recipe_categories!inner (
         categories!inner (id, name, url)
       ),
@@ -94,7 +95,7 @@ function getSelectString(method: string, category: string): string {
   }
   if (method === 'methods') {
     return `
-      *,
+      ${labels},
       recipe_categories (
         categories (id, name, url)
       ),
@@ -111,7 +112,7 @@ function getSelectString(method: string, category: string): string {
   }
   if (method === 'special-diets' || method === 'special-diet') {
     return `
-      *,
+      ${labels},
       recipe_categories (
         categories (id, name, url)
       ),
@@ -128,7 +129,7 @@ function getSelectString(method: string, category: string): string {
   }
   if (method === 'holiday' || method === 'holidays') {
     return `
-      *,
+      ${labels},
       recipe_categories (
         categories (id, name, url)
       ),
@@ -145,7 +146,7 @@ function getSelectString(method: string, category: string): string {
   }
   if (method === 'tag') {
     return `
-      *,
+      ${labels},
       recipe_categories (
         categories (id, name, url)
       ),
@@ -328,10 +329,10 @@ function formatDbRecipes(data: DbRecipe[]): FormattedRecipe[] {
   });
 }
 
+const listCache = new Map<string, { timestamp: number; data: unknown }>();
+
 async function handleGetRecipes(req: VercelRequest, res: VercelResponse) {
   try {
-    const supabase = await getSupabaseClient();
-
     const page = Number.parseInt(req.query['page'] as string, 10) || 1;
     const pageSize = Number.parseInt(req.query['pageSize'] as string, 10) || 12;
     const method = (req.query['method'] as string) || 'recipes';
@@ -339,6 +340,17 @@ async function handleGetRecipes(req: VercelRequest, res: VercelResponse) {
     const subcategory = (req.query['subcategory'] as string) || '';
     const rating = (req.query['rating'] as string) === 'true';
 
+    const cacheKey = `list_v2_${page}_${pageSize}_${method}_${category}_${subcategory}_${rating}`;
+    const cached = listCache.get(cacheKey);
+    if (
+      process.env['NODE_ENV'] !== 'test' &&
+      cached &&
+      Date.now() - cached.timestamp < 1000 * 60 * 5
+    ) {
+      return res.json(cached.data);
+    }
+
+    const supabase = await getSupabaseClient();
     let matchedIds: string[] = [];
     if (category && method === 'tag') {
       matchedIds = await getTagMatchedIds(supabase, category, subcategory);
@@ -346,9 +358,10 @@ async function handleGetRecipes(req: VercelRequest, res: VercelResponse) {
 
     const selectStr = getSelectString(method, category);
 
+    // 1. Data Query (no count, so it's fast to get the 12 items)
     let query: SupabaseQueryBuilder = supabase
       .from('recipes')
-      .select(selectStr, { count: 'exact' }) as unknown as SupabaseQueryBuilder;
+      .select(selectStr) as unknown as SupabaseQueryBuilder;
     query = query.eq('status', 'published').lte('created_at', new Date().toISOString());
     query = applyRecipeFilters(query, method, category, subcategory, matchedIds);
 
@@ -360,22 +373,45 @@ async function handleGetRecipes(req: VercelRequest, res: VercelResponse) {
     const end = start + pageSize - 1;
     query = query.order('created_at', { ascending: false }).range(start, end);
 
-    const { data, error, count } = (await query) as {
-      data: unknown;
-      error: unknown;
-      count: number | null;
-    };
-    if (error) throw error;
+    // 2. Count Query (estimated, head: true, extremely fast)
+    let countQuery: SupabaseQueryBuilder = supabase
+      .from('recipes')
+      .select(selectStr, { count: 'estimated', head: true }) as unknown as SupabaseQueryBuilder;
+    countQuery = countQuery.eq('status', 'published').lte('created_at', new Date().toISOString());
+    countQuery = applyRecipeFilters(countQuery, method, category, subcategory, matchedIds);
+
+    if (rating && method === 'the-best-recipes' && !category) {
+      countQuery = countQuery.gte('rating_count', 4.5);
+    }
+
+    const [dataRes, countRes] = await Promise.all([
+      query as unknown as Promise<{ data: unknown; error: unknown }>,
+      countQuery as unknown as Promise<{ count: number | null; error: unknown }>,
+    ]);
+
+    if (dataRes.error) throw dataRes.error;
+    if (countRes.error) throw countRes.error;
+
+    const data = dataRes.data;
+    const count = countRes.count;
 
     const formatted = formatDbRecipes((data || []) as unknown as DbRecipe[]);
 
-    return res.json({
+    const result = {
       items: formatted,
       total: count || 0,
-    });
+    };
+    listCache.set(cacheKey, { timestamp: Date.now(), data: result });
+
+    return res.json(result);
   } catch (err: unknown) {
-    console.error(err);
-    const msg = err instanceof Error ? err.message : String(err);
+    console.error('API ERROR IN GET RECIPES:', err);
+    let msg = String(err);
+    if (err instanceof Error) {
+      msg = err.message;
+    } else if (typeof err === 'object' && err !== null) {
+      msg = JSON.stringify(err);
+    }
     return res.status(500).json({ error: msg });
   }
 }
@@ -810,7 +846,10 @@ export default async function recipesHandler(req: VercelRequest, res: VercelResp
 
   try {
     if (req.method === 'GET') {
-      res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate=86400');
+      res.setHeader(
+        'Cache-Control',
+        'public, max-age=0, s-maxage=60, stale-while-revalidate=86400',
+      );
     }
     for (const route of routes) {
       if (req.method === route.method) {
@@ -826,4 +865,8 @@ export default async function recipesHandler(req: VercelRequest, res: VercelResp
     const msg = err instanceof Error ? err.message : String(err);
     return res.status(500).json({ error: msg });
   }
+}
+
+export function clearRecipesCache() {
+  listCache.clear();
 }

@@ -268,6 +268,9 @@ async function getBestRecipes(supabase: SupabaseClient): Promise<CategoryItem[]>
   return buildCategoryHierarchyFromParts(categories, 'the-best-recipes');
 }
 
+let cachedIndexData: unknown = null;
+let cacheTimestamp = 0;
+
 export default async function recipeIndexHandler(req: VercelRequest, res: VercelResponse) {
   const url = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`);
   const pathname = url.pathname.replace(/^\/api/, '');
@@ -277,8 +280,21 @@ export default async function recipeIndexHandler(req: VercelRequest, res: Vercel
   }
   try {
     if (req.method === 'GET') {
-      res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate=86400');
+      res.setHeader(
+        'Cache-Control',
+        'public, max-age=0, s-maxage=60, stale-while-revalidate=86400',
+      );
     }
+
+    // Serve from Node memory cache if less than 60 seconds old
+    if (
+      process.env['NODE_ENV'] !== 'test' &&
+      cachedIndexData &&
+      Date.now() - cacheTimestamp < 60000
+    ) {
+      return res.json(cachedIndexData);
+    }
+
     const supabase = await getSupabaseClient();
 
     const [
@@ -301,7 +317,7 @@ export default async function recipeIndexHandler(req: VercelRequest, res: Vercel
 
     const { cookingMethods, methodsList } = methodsResult;
 
-    return res.json({
+    const responseData = {
       featuredCategories,
       cookingMethods,
       categoriesList,
@@ -310,10 +326,20 @@ export default async function recipeIndexHandler(req: VercelRequest, res: Vercel
       specialDiets,
       bestRecipes,
       ingredients,
-    });
+    };
+
+    cachedIndexData = responseData;
+    cacheTimestamp = Date.now();
+
+    return res.json(responseData);
   } catch (err: unknown) {
     console.error(err);
     const msg = err instanceof Error ? err.message : String(err);
     return res.status(500).json({ error: msg });
   }
+}
+
+export function clearRecipeIndexCache() {
+  cachedIndexData = null;
+  cacheTimestamp = 0;
 }

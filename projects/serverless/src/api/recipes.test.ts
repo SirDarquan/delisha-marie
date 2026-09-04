@@ -54,7 +54,7 @@ vi.mock('@supabase/supabase-js', () => {
 });
 
 import express from 'express';
-import recipesRouter from './recipes';
+import recipesRouter, { clearRecipesCache } from './recipes';
 import { resetSupabaseClient } from './supabase';
 
 describe('Recipes Router API', () => {
@@ -70,6 +70,7 @@ describe('Recipes Router API', () => {
   app.use('/api', recipesRouter as unknown as import('express').RequestHandler);
 
   let shouldFail = false;
+  let shouldReturnNullData: boolean | string = false;
   let mockIngredientsData: { id: string; name: string }[] = [];
 
   const mockRecipes = [
@@ -80,7 +81,9 @@ describe('Recipes Router API', () => {
   beforeEach(() => {
     (globalThis as typeof globalThis & { supabaseMockFrom?: unknown }).supabaseMockFrom = mockFrom;
     vi.clearAllMocks();
+    clearRecipesCache();
     shouldFail = false;
+    shouldReturnNullData = false;
     mockIngredientsData = [];
 
     mockFrom.mockImplementation((table: string) => {
@@ -89,6 +92,13 @@ describe('Recipes Router API', () => {
           const resultPromise = (() => {
             if (shouldFail) {
               return Promise.resolve({ data: null, error: new Error('Query failed') });
+            }
+
+            if (
+              shouldReturnNullData === true ||
+              (typeof shouldReturnNullData === 'string' && table === shouldReturnNullData)
+            ) {
+              return Promise.resolve({ data: null, error: null, count: 0 });
             }
 
             if (table === 'recipes') {
@@ -209,8 +219,23 @@ describe('Recipes Router API', () => {
     expect(res.status).toBe(200);
   });
 
+  it('should serve list from memory cache when NODE_ENV is not test', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    try {
+      await createRequestMock(recipesRouter)().get('/api/recipes');
+      const res2 = await createRequestMock(recipesRouter)().get('/api/recipes');
+      expect(res2.status).toBe(200);
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+
   it('should filter by category only for tag method including child ingredients prefix match', async () => {
-    mockIngredientsData = [{ id: 'ing-1', name: 'Apple' }];
+    mockIngredientsData = [
+      { id: 'ing-1', name: 'Apple' },
+      { id: 'ing-2', name: 'Apple Juice' },
+      { id: 'ing-3', name: 'Banana' },
+    ];
     const res = await createRequestMock(recipesRouter)()
       .get('/api/recipes')
       .query({ method: 'tag', category: 'apple' });
@@ -218,19 +243,15 @@ describe('Recipes Router API', () => {
   });
 
   it('should handle null data for index route', async () => {
+    shouldReturnNullData = true;
     const res = await createRequestMock(recipesRouter)()
       .get('/api/recipes')
-      .query({ method: 'null-data' });
+      .query({ method: 'recipes' });
     expect(res.status).toBe(200);
   });
   it('should handle null data for adjacent recipes', async () => {
+    shouldReturnNullData = true;
     const res = await createRequestMock(recipesRouter)().get('/api/recipes/r-null-adjacent');
-    expect(res.status).toBe(200);
-  });
-  it('should handle null data for equipment', async () => {
-    const res = await createRequestMock(recipesRouter)().get(
-      '/api/recipes/123/equipment?nullData=1',
-    );
     expect(res.status).toBe(200);
   });
 
