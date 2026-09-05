@@ -37,7 +37,6 @@
     "@descope/node-sdk": "^2.6.0",
     "@sentry/browser": "^10.69.0",
     "@supabase/supabase-js": "^2.107.0",
-    "change-case": "^5.4.4",
     "cookie-parser": "^1.4.7",
     "express": "^5.2.1",
     "express-rate-limit": "^8.5.2",
