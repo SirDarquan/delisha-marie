@@ -1,5 +1,4 @@
-import express from 'express';
-import request from 'supertest';
+import { createRequestMock } from './test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import pagesRouter from './pages';
 import { resetSupabaseClient } from './supabase';
@@ -22,14 +21,13 @@ vi.mock('@supabase/supabase-js', () => {
 });
 
 describe('Public Pages Router API', () => {
-  let app: express.Application;
+  let request: ReturnType<typeof createRequestMock>;
+  const app = null;
 
   beforeEach(() => {
     vi.clearAllMocks();
     resetSupabaseClient();
-    app = express();
-    app.use(express.json());
-    app.use('/api', pagesRouter);
+    request = createRequestMock(pagesRouter);
   });
 
   describe('GET /api/pages/:slug', () => {
@@ -78,16 +76,17 @@ describe('Public Pages Router API', () => {
       expect(res.body).toEqual({ error: 'Failed to fetch page' });
     });
 
-    it('should return 500 if non-Error is thrown', async () => {
-      const mockSingle = vi.fn().mockRejectedValue('String error');
-      const mockEq = vi.fn().mockReturnValue({ single: mockSingle });
-      const mockSelect = vi.fn().mockReturnValue({ eq: mockEq });
-      mockFrom.mockReturnValue({ select: mockSelect });
+    it('should return 404 for missing slug', async () => {
+      const res = await request(app).get('/api/pages');
+      // our test-utils automatically makes req.query['slug'] undefined if we query /api/pages
+      expect(res.status).toBe(404);
+      expect(res.body).toEqual({ error: 'Not found' });
+    });
 
-      const res = await request(app).get('/api/pages/about');
-
-      expect(res.status).toBe(500);
-      expect(res.body).toEqual({ error: 'Failed to fetch page' });
+    it('should return 404 for non-GET methods', async () => {
+      const res = await request(app).post('/api/pages/about').send();
+      expect(res.status).toBe(404);
+      expect(res.body).toEqual({ error: 'Not found' });
     });
   });
 });

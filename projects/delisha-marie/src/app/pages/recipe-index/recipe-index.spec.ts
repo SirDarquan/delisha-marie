@@ -1,16 +1,24 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import {
+  ComponentFixture,
+  TestBed,
+  DeferBlockBehavior,
+  DeferBlockState,
+} from '@angular/core/testing';
+import { signal } from '@angular/core';
 import { provideRouter } from '@angular/router';
-import { beforeEach, describe, expect, it } from 'vitest';
 import { RecipeIndex } from './recipe-index';
 import { RecipeIndexService } from './recipe-index.service';
 
-import { FullCategory } from '../../models/category';
+import { FullCategory, RecipeIndexResponse } from '../../models/category';
 
 describe('RecipeIndex', () => {
   let component: RecipeIndex;
   let fixture: ComponentFixture<RecipeIndex>;
+  const mockIsLoadingSignal = signal<boolean>(false);
+  const mockDataSignal = signal<RecipeIndexResponse | null>(null);
 
   beforeEach(async () => {
+    mockIsLoadingSignal.set(false);
     const mockCategories: FullCategory[] = [
       { name: 'Appetizers', image: 'test.png', url: '/test' },
       { name: 'Breakfast', image: 'test.png', url: '/test' },
@@ -42,27 +50,35 @@ describe('RecipeIndex', () => {
           },
         ],
       },
-      { name: 'The Best Baked', url: '/the-best-recipes/the-best-baked' },
+      { name: 'The Best Baked', url: '/the-best-baked' },
     ];
 
+    const mockData = {
+      featuredCategories: mockCategories,
+      cookingMethods: mockMethods,
+      holidays: mockMethods,
+      specialDiets: mockMethods,
+      bestRecipes: mockBestRecipes,
+      categoriesList: mockMethods,
+      methodsList: mockMethods,
+      ingredients: [],
+    };
+
+    mockDataSignal.set(mockData);
+
     await TestBed.configureTestingModule({
+      deferBlockBehavior: DeferBlockBehavior.Playthrough,
       imports: [RecipeIndex],
       providers: [
         provideRouter([]),
         {
           provide: RecipeIndexService,
           useValue: {
-            getData: () =>
-              Promise.resolve({
-                featuredCategories: mockCategories,
-                cookingMethods: mockMethods,
-                holidays: mockMethods,
-                specialDiets: mockMethods,
-                bestRecipes: mockBestRecipes,
-                categoriesList: mockMethods,
-                methodsList: mockMethods,
-                ingredients: [],
-              }),
+            getData: () => Promise.resolve(mockData),
+            indexResource: {
+              value: mockDataSignal,
+              isLoading: mockIsLoadingSignal,
+            },
           },
         },
       ],
@@ -97,7 +113,12 @@ describe('RecipeIndex', () => {
     expect(compiled.querySelector('dm-recipe-index-method-images')).toBeTruthy();
   });
 
-  it('should render other discovery sections', () => {
+  it('should render other discovery sections', async () => {
+    const deferBlocks = await fixture.getDeferBlocks();
+    for (const block of deferBlocks) {
+      await block.render(DeferBlockState.Complete);
+    }
+    fixture.detectChanges();
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.querySelector('#holidays-title')).toBeTruthy();
     expect(compiled.querySelector('#diets-title')).toBeTruthy();
@@ -122,7 +143,12 @@ describe('RecipeIndex', () => {
     );
   });
 
-  it('should render section headers correctly via link list components', () => {
+  it('should render section headers correctly via link list components', async () => {
+    const deferBlocks = await fixture.getDeferBlocks();
+    for (const block of deferBlocks) {
+      await block.render(DeferBlockState.Complete);
+    }
+    fixture.detectChanges();
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.querySelector('#category-list-title')).toBeTruthy();
     expect(compiled.querySelector('#methods-list-title')).toBeTruthy();
@@ -132,13 +158,55 @@ describe('RecipeIndex', () => {
     await fixture.whenStable();
     fixture.detectChanges();
     const bestRecipes = component.bestRecipes();
+
+    expect(bestRecipes.length).toBe(2);
     expect(bestRecipes[0].name).toBe('The Best Air Fryer');
     expect(bestRecipes[0].url).toBe('/the-best-recipes/the-best-air-fryer');
-
-    // Verify recursion via public signal
     expect(bestRecipes[0].children?.[0].name).toBe('The Best Chicken');
     expect(bestRecipes[0].children?.[0].url).toBe(
       '/the-best-recipes/the-best-air-fryer/the-best-chicken',
     );
-  }, 15000);
+  });
+
+  it('should correctly handle categories with no children for "The Best"', () => {
+    const bestRecipes = component.bestRecipes();
+    expect(bestRecipes[1].name).toBe('The Best Baked');
+    expect(bestRecipes[1].url).toBe('/the-best-baked');
+    expect(bestRecipes[1].children).toBeUndefined();
+  });
+
+  it('should render skeleton loader when isLoading is true', () => {
+    mockIsLoadingSignal.set(true);
+    fixture.detectChanges();
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.querySelector('.animate-pulse')).toBeTruthy();
+  });
+
+  it('should handle undefined data gracefully with fallback empty arrays', () => {
+    mockIsLoadingSignal.set(true);
+    mockDataSignal.set(undefined as unknown as RecipeIndexResponse);
+    fixture.detectChanges();
+    expect(component.featuredCategories()).toEqual([]);
+    expect(component.featuredMethods()).toEqual([]);
+    expect(component.categoriesList()).toEqual([]);
+    expect(component.methodsList()).toEqual([]);
+    expect(component.holidays()).toEqual([]);
+    expect(component.specialDiets()).toEqual([]);
+    expect(component.ingredients()).toEqual([]);
+    expect(component.bestRecipes()).toEqual([]);
+  });
+
+  it('should handle empty object data gracefully with fallback empty arrays', () => {
+    mockDataSignal.set({} as RecipeIndexResponse);
+    fixture.detectChanges();
+
+    expect(component.featuredCategories()).toEqual([]);
+    expect(component.featuredMethods()).toEqual([]);
+    expect(component.categoriesList()).toEqual([]);
+    expect(component.methodsList()).toEqual([]);
+    expect(component.holidays()).toEqual([]);
+    expect(component.specialDiets()).toEqual([]);
+    expect(component.ingredients()).toEqual([]);
+    expect(component.bestRecipes()).toEqual([]);
+  });
 });

@@ -138,4 +138,10 @@ describe('Recipe Index Page', () => {
         .and('have.attr', 'href', '/tag/apple-cider');
     });
   });
+  it('should resolve @defer boundary for link lists and remove placeholder', () => {
+    // The link lists are loaded within a @defer (on idle) block.
+    // Ensure that the component renders and the placeholder is removed.
+    cy.get('dm-recipe-index-link-list').should('have.length', 5);
+    cy.get('.h-\\[1000px\\]').should('not.exist'); // The placeholder class should not exist
+  });
 });

@@ -41,6 +41,7 @@ import { FullCategory } from '../../models/category';
                     [ngSrc]="cat.image"
                     [alt]="cat.name"
                     fill
+                    priority
                     class="object-cover group-hover:scale-110 transition-transform duration-700"
                     sizes="(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 12.5vw" />
                   <div

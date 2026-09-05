@@ -23,7 +23,7 @@ export const seoResolver: ResolveFn<Partial<SeoContent>> = (route, state) => {
   const seoConfig: SeoContent = {
     title: `${title} | ${siteName}`,
     description: data.description || '',
-    url: url,
+    url,
     siteName: siteName,
     keywords: data.keywords,
     image: data.image ? `${origin}${data.image}` : '',
@@ -97,11 +97,12 @@ export const seoRecipeResolver: ResolveFn<SeoContent> = async (route, state) => 
   const path = state.url.split('?')[0].split('#')[0];
   const siteName = "Delisha Marie's Kitchen";
   const slug = route.paramMap.get('slug') || undefined;
+  const url = `${origin}${path}`;
 
   const seoConfig404: SeoContent = {
-    title: `Not Found | ${siteName}`,
+    title: `Recipe Not Found | ${siteName}`,
     description: '',
-    url: '',
+    url,
     siteName: siteName,
     keywords: [],
     image: '',
@@ -120,12 +121,11 @@ export const seoRecipeResolver: ResolveFn<SeoContent> = async (route, state) => 
     seoService.setSEO(seoConfig404);
     return seoConfig404;
   }
-  const urls = `${origin}${path}`;
 
   const seoConfig: SeoContent = {
     title: `${recipe.title} | ${siteName}`,
     description: recipe.description || '',
-    url: urls,
+    url,
     siteName: siteName,
     keywords: recipe.keywords,
     image: recipe.image ? `${origin}${recipe.image}` : '',
@@ -153,11 +153,12 @@ export const seoDynamicPageResolver: ResolveFn<SeoContent> = async (route, state
   const path = state.url.split('?')[0].split('#')[0];
   const siteName = "Delisha Marie's Kitchen";
   const slug = route.paramMap.get('slug') || route.data?.['slug'] || undefined;
+  const url = `${origin}${path}`;
 
   const seoConfig404: SeoContent = {
     title: `Not Found | ${siteName}`,
     description: '',
-    url: '',
+    url,
     siteName: siteName,
     keywords: [],
     image: '',
@@ -174,12 +175,11 @@ export const seoDynamicPageResolver: ResolveFn<SeoContent> = async (route, state
   if (!page) {
     return seoConfig404;
   }
-  const urls = `${origin}${path}`;
 
   const seoConfig: SeoContent = {
     title: `${page.title} | ${siteName}`,
     description: page.description || '',
-    url: urls,
+    url,
     siteName: siteName,
     keywords: page.keywords,
     image: '',

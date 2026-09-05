@@ -36,6 +36,12 @@
   "files": [],
   "references": [
     {
+      "path": "./projects/serverless/tsconfig.json"
+    },
+    {
+      "path": "./projects/serverless/tsconfig.spec.json"
+    },
+    {
       "path": "./projects/delisha-marie/tsconfig.app.json"
     },
     {

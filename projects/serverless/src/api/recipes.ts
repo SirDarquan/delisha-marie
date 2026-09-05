@@ -1,32 +1,6 @@
-import { Router, Request, Response } from 'express';
-import { camelCase } from 'change-case';
+import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { getSupabaseClient } from './supabase';
-import { rateLimit } from 'express-rate-limit';
 import type { SupabaseClient } from '@supabase/supabase-js';
-
-const recipesRouter = Router();
-
-const commentsLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: process.env['NODE_ENV'] === 'production' ? 5 : 100, // Limit each IP to 5 requests per windowMs (100 for dev/test)
-  message: { error: 'Too many comments from this IP, please try again after 15 minutes' },
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-
-function camelCaseKeys(obj: unknown): unknown {
-  if (Array.isArray(obj)) {
-    return obj.map((item) => camelCaseKeys(item));
-  } else if (obj !== null && typeof obj === 'object') {
-    return Object.fromEntries(
-      Object.entries(obj).map(([k, v]) => {
-        const val = typeof v === 'object' && v !== null ? camelCaseKeys(v) : v;
-        return [camelCase(k), val];
-      }),
-    );
-  }
-  return obj;
-}
 
 interface CategoryInfo {
   id: string;
@@ -69,6 +43,7 @@ interface FormattedRecipe {
 }
 
 function getSelectString(method: string, category: string): string {
+  const labels = 'title,description,slug,image';
   if (!category) {
     return `
       *,
@@ -88,7 +63,7 @@ function getSelectString(method: string, category: string): string {
   }
   if (method === 'recipes' || method === 'the-best-recipes') {
     return `
-      *,
+      ${labels},
       recipe_categories!inner (
         categories!inner (id, name, url)
       ),
@@ -105,7 +80,7 @@ function getSelectString(method: string, category: string): string {
   }
   if (method === 'methods') {
     return `
-      *,
+      ${labels},
       recipe_categories (
         categories (id, name, url)
       ),
@@ -122,7 +97,7 @@ function getSelectString(method: string, category: string): string {
   }
   if (method === 'special-diets' || method === 'special-diet') {
     return `
-      *,
+      ${labels},
       recipe_categories (
         categories (id, name, url)
       ),
@@ -139,7 +114,7 @@ function getSelectString(method: string, category: string): string {
   }
   if (method === 'holiday' || method === 'holidays') {
     return `
-      *,
+      ${labels},
       recipe_categories (
         categories (id, name, url)
       ),
@@ -156,7 +131,7 @@ function getSelectString(method: string, category: string): string {
   }
   if (method === 'tag') {
     return `
-      *,
+      ${labels},
       recipe_categories (
         categories (id, name, url)
       ),
@@ -331,18 +306,18 @@ function formatDbRecipes(data: DbRecipe[]): FormattedRecipe[] {
     }
 
     return {
-      ...(camelCaseKeys(cleanRecipe) as Record<string, unknown>),
+      ...cleanRecipe,
       holidays,
-      specialDiets,
+      special_diets: specialDiets,
       method: methodVal,
     } as unknown as FormattedRecipe;
   });
 }
 
-recipesRouter.get('/recipes', async (req: Request, res: Response) => {
-  try {
-    const supabase = await getSupabaseClient();
+const listCache = new Map<string, { timestamp: number; data: unknown }>();
 
+async function handleGetRecipes(req: VercelRequest, res: VercelResponse) {
+  try {
     const page = Number.parseInt(req.query['page'] as string, 10) || 1;
     const pageSize = Number.parseInt(req.query['pageSize'] as string, 10) || 12;
     const method = (req.query['method'] as string) || 'recipes';
@@ -350,6 +325,18 @@ recipesRouter.get('/recipes', async (req: Request, res: Response) => {
     const subcategory = (req.query['subcategory'] as string) || '';
     const rating = (req.query['rating'] as string) === 'true';
 
+    const cacheKey = `list_v2_${page}_${pageSize}_${method}_${category}_${subcategory}_${rating}`;
+    const cached = listCache.get(cacheKey);
+    if (
+      process.env['NODE_ENV'] !== 'test' &&
+      cached &&
+      Date.now() - cached.timestamp < 1000 * 60 * 5
+    ) {
+      res.json(cached.data);
+      return;
+    }
+
+    const supabase = await getSupabaseClient();
     let matchedIds: string[] = [];
     if (category && method === 'tag') {
       matchedIds = await getTagMatchedIds(supabase, category, subcategory);
@@ -357,9 +344,10 @@ recipesRouter.get('/recipes', async (req: Request, res: Response) => {
 
     const selectStr = getSelectString(method, category);
 
+    // 1. Data Query (no count, so it's fast to get the 12 items)
     let query: SupabaseQueryBuilder = supabase
       .from('recipes')
-      .select(selectStr, { count: 'exact' }) as unknown as SupabaseQueryBuilder;
+      .select(selectStr) as unknown as SupabaseQueryBuilder;
     query = query.eq('status', 'published').lte('created_at', new Date().toISOString());
     query = applyRecipeFilters(query, method, category, subcategory, matchedIds);
 
@@ -371,25 +359,48 @@ recipesRouter.get('/recipes', async (req: Request, res: Response) => {
     const end = start + pageSize - 1;
     query = query.order('created_at', { ascending: false }).range(start, end);
 
-    const { data, error, count } = (await query) as {
-      data: unknown;
-      error: unknown;
-      count: number | null;
-    };
-    if (error) throw error;
+    // 2. Count Query (estimated, head: true, extremely fast)
+    let countQuery: SupabaseQueryBuilder = supabase
+      .from('recipes')
+      .select(selectStr, { count: 'estimated', head: true }) as unknown as SupabaseQueryBuilder;
+    countQuery = countQuery.eq('status', 'published').lte('created_at', new Date().toISOString());
+    countQuery = applyRecipeFilters(countQuery, method, category, subcategory, matchedIds);
+
+    if (rating && method === 'the-best-recipes' && !category) {
+      countQuery = countQuery.gte('rating_count', 4.5);
+    }
+
+    const [dataRes, countRes] = await Promise.all([
+      query as unknown as Promise<{ data: unknown; error: unknown }>,
+      countQuery as unknown as Promise<{ count: number | null; error: unknown }>,
+    ]);
+
+    if (dataRes.error) throw dataRes.error;
+    if (countRes.error) throw countRes.error;
+
+    const data = dataRes.data;
+    const count = countRes.count;
 
     const formatted = formatDbRecipes((data || []) as unknown as DbRecipe[]);
 
-    return res.json({
+    const result = {
       items: formatted,
       total: count || 0,
-    });
+    };
+    listCache.set(cacheKey, { timestamp: Date.now(), data: result });
+
+    res.json(result);
   } catch (err: unknown) {
-    console.error(err);
-    const msg = err instanceof Error ? err.message : String(err);
-    return res.status(500).json({ error: msg });
+    console.error('API ERROR IN GET RECIPES:', err);
+    let msg = String(err);
+    if (err instanceof Error) {
+      msg = err.message;
+    } else if (typeof err === 'object' && err !== null) {
+      msg = JSON.stringify(err);
+    }
+    res.status(500).json({ error: msg });
   }
-});
+}
 
 async function getAdjacentRecipe(
   supabase: SupabaseClient,
@@ -440,8 +451,8 @@ async function getBreadcrumbs(
   const breadcrumbItems: { label: string; url?: string }[][] = [];
 
   if (categories.length === 0) {
-    const mainLabel = formatted.theBest ? 'The Best Recipes' : 'Recipes';
-    const mainUrl = formatted.theBest ? '/the-best-recipes' : '/recipes';
+    const mainLabel = formatted.the_best ? 'The Best Recipes' : 'Recipes';
+    const mainUrl = formatted.the_best ? '/the-best-recipes' : '/recipes';
     breadcrumbItems.push([
       { label: 'Home', url: '/' },
       { label: mainLabel, url: mainUrl },
@@ -463,17 +474,16 @@ async function getBreadcrumbs(
     ]);
   });
 
-  const prefixUrl = formatted.theBest ? '/the-best-recipes' : '/recipes';
+  const prefixUrl = formatted.the_best ? '/the-best-recipes' : '/recipes';
   let mainIndex = breadcrumbItems.findIndex((trail) => trail[1].url === prefixUrl);
   if (mainIndex === -1) mainIndex = 0;
 
   return { main: mainIndex, items: breadcrumbItems };
 }
 
-recipesRouter.get('/recipes/:recipeId/comments', async (req: Request, res: Response) => {
+async function handleGetComments(req: VercelRequest, res: VercelResponse, recipeId: string) {
   try {
     const supabase = await getSupabaseClient();
-    const { recipeId } = req.params as { recipeId: string };
     const pageVal = req.query['page'];
 
     // First count exact total top-level comments for this recipe
@@ -530,18 +540,17 @@ recipesRouter.get('/recipes/:recipeId/comments', async (req: Request, res: Respo
 
     // Combine and camelCase keys
     const combined = [...topLevelComments, ...replies];
-    const camelCased = camelCaseKeys(combined) as unknown[];
 
-    return res.json({
-      comments: camelCased,
+    res.json({
+      comments: combined,
       total: total,
     });
   } catch (err: unknown) {
     console.error(err);
     const msg = err instanceof Error ? err.message : String(err);
-    return res.status(500).json({ error: msg });
+    res.status(500).json({ error: msg });
   }
-});
+}
 
 function isDomainBlocked(
   website: string | undefined,
@@ -553,78 +562,37 @@ function isDomainBlocked(
   return blockedDomains.some((domain) => domain && websiteLower.includes(domain));
 }
 
-recipesRouter.post(
-  '/recipes/:recipeId/comments',
-  commentsLimiter,
-  async (req: Request, res: Response) => {
-    try {
-      const supabase = await getSupabaseClient();
-      const { recipeId } = req.params as { recipeId: string };
-      const { author, email, content, rating, website, parentId, alt_email } = req.body;
+async function handlePostComments(req: VercelRequest, res: VercelResponse, recipeId: string) {
+  try {
+    const supabase = await getSupabaseClient();
+    const { author, email, content, rating, website, parentId, alt_email } = req.body;
+    if (!author || !email || !content) {
+      res.status(400).json({ error: 'Name, email, and content are required' });
+      return;
+    }
 
-      if (!author || !email || !content) {
-        return res.status(400).json({ error: 'Name, email, and content are required' });
-      }
+    const { data: settingsData } = await supabase
+      .from('site_settings')
+      .select('key, value')
+      .in('key', ['require_comment_approval', 'blocked_domains', 'comment_new_cutoff_seconds']);
 
-      const { data: settingsData } = await supabase
-        .from('site_settings')
-        .select('key, value')
-        .in('key', ['require_comment_approval', 'blocked_domains', 'comment_new_cutoff_seconds']);
+    const settings =
+      settingsData?.reduce(
+        (acc, curr) => {
+          acc[curr.key] = curr.value;
+          return acc;
+        },
+        {} as Record<string, string>,
+      ) || {};
 
-      const settings =
-        settingsData?.reduce(
-          (acc, curr) => {
-            acc[curr.key] = curr.value;
-            return acc;
-          },
-          {} as Record<string, string>,
-        ) || {};
+    if (isDomainBlocked(website, settings['blocked_domains'])) {
+      res.status(400).json({ error: 'Sorry, you cannot link to this website.' });
+      return;
+    }
 
-      if (isDomainBlocked(website, settings['blocked_domains'])) {
-        return res.status(400).json({ error: 'Sorry, you cannot link to this website.' });
-      }
-
-      if (alt_email) {
-        // Honeypot tripped: save to spam_comments for research
-        const spamObj = {
-          recipe_id: recipeId,
-          author,
-          email,
-          content,
-          rating: rating ?? null,
-          website: website || null,
-          parent_id: parentId || null,
-          trap_triggered: 'alt_email',
-          trap_value: alt_email,
-        };
-
-        await supabase.from('spam_comments').insert([spamObj]);
-
-        // Silently succeed
-        return res.status(201).json({
-          id: 'bot-' + Date.now(),
-          recipeId,
-          author,
-          email,
-          content,
-          website: website || null,
-          parentId: parentId || null,
-          createdAt: new Date().toISOString(),
-        });
-      }
-
-      const requireApproval = settings['require_comment_approval'] === 'true';
-      const status = requireApproval ? 'pending' : 'approved';
-      const { data: recipe } = await supabase
-        .from('recipes')
-        .select('*')
-        .eq('id', recipeId)
-        .single();
-      const isNew =
-        Date.now() <
-        Number(recipe.created_at) + Number(settings['comment_new_cutoff_seconds']) * 1000;
-
-      const insertObj = {
+    if (alt_email) {
+      // Honeypot tripped: save to spam_comments for research
+      const spamObj = {
         recipe_id: recipeId,
         author,
         email,
@@ -632,24 +600,58 @@ recipesRouter.post(
         rating: rating ?? null,
         website: website || null,
         parent_id: parentId || null,
-        status,
-        is_new: isNew,
+        trap_triggered: 'alt_email',
+        trap_value: alt_email,
       };
 
-      const { data, error } = await supabase.from('comments').insert([insertObj]).select().single();
+      await supabase.from('spam_comments').insert([spamObj]);
 
-      if (error) throw error;
-
-      const camelCased = camelCaseKeys(data);
-      return res.status(201).json(camelCased);
-    } catch (err: unknown) {
-      console.error(err);
-      const msg = err instanceof Error ? err.message : String(err);
-      return res.status(500).json({ error: msg });
+      // Silently succeed
+      res.status(201).json({
+        id: 'bot-' + Date.now(),
+        recipeId,
+        author,
+        email,
+        content,
+        website: website || null,
+        parentId: parentId || null,
+        createdAt: new Date().toISOString(),
+      });
+      return;
     }
-  },
-);
-recipesRouter.get('/recipes/favorites/list', async (req: Request, res: Response) => {
+
+    const requireApproval = settings['require_comment_approval'] === 'true';
+    const status = requireApproval ? 'pending' : 'approved';
+    const { data: recipe } = await supabase.from('recipes').select('*').eq('id', recipeId).single();
+    const isNew =
+      Date.now() <
+      Number(recipe.created_at) + Number(settings['comment_new_cutoff_seconds']) * 1000;
+
+    const insertObj = {
+      recipe_id: recipeId,
+      author,
+      email,
+      content,
+      rating: rating ?? null,
+      website: website || null,
+      parent_id: parentId || null,
+      status,
+      is_new: isNew,
+    };
+
+    const { data, error } = await supabase.from('comments').insert([insertObj]).select().single();
+
+    if (error) throw error;
+
+    res.status(201).json(data);
+  } catch (err: unknown) {
+    console.error(err);
+    const msg = err instanceof Error ? err.message : String(err);
+    res.status(500).json({ error: msg });
+  }
+}
+
+async function handleGetFavorites(req: VercelRequest, res: VercelResponse) {
   try {
     const supabase = await getSupabaseClient();
     const { data, error } = await supabase
@@ -662,23 +664,19 @@ recipesRouter.get('/recipes/favorites/list', async (req: Request, res: Response)
 
     if (error) {
       console.error('Error fetching favorites:', error);
-      return res.status(500).json({ error: 'Internal Server Error' });
+      res.status(500).json({ error: 'Internal Server Error' });
+      return;
     }
-
-    // Format the response slightly to ensure camelCase properties if needed,
-    // although title, slug, image, description are already standard.
-    const formatted = camelCaseKeys(data) as Record<string, unknown>[];
-    return res.json({ items: formatted });
+    res.json({ items: data });
   } catch (error) {
     console.error('Error fetching favorite recipes:', error);
-    return res.status(500).json({ error: 'Internal Server Error' });
+    res.status(500).json({ error: 'Internal Server Error' });
   }
-});
+}
 
-recipesRouter.get('/recipes/:slug', async (req: Request, res: Response) => {
+async function handleGetBySlug(req: VercelRequest, res: VercelResponse, slug: string) {
   try {
     const supabase = await getSupabaseClient();
-    const { slug } = req.params as { slug: string };
     const cleanSlug = slug.replace(/^\/?recipe\//, '').replace(/^\//, '');
 
     // Get recipe
@@ -691,11 +689,13 @@ recipesRouter.get('/recipes/:slug', async (req: Request, res: Response) => {
       .lte('created_at', new Date().toISOString())
       .maybeSingle();
 
-    if (recipeError) throw recipeError;
-    if (!recipeDataRaw) {
-      return res.json(null);
+    if (recipeError) {
+      throw recipeError;
     }
-
+    if (!recipeDataRaw) {
+      res.json(null);
+      return;
+    }
     const recipeData = recipeDataRaw as unknown as DbRecipe;
 
     // Format fields (reuse formatDbRecipes helper)
@@ -718,18 +718,41 @@ recipesRouter.get('/recipes/:slug', async (req: Request, res: Response) => {
       next,
     };
 
-    return res.json(formatted);
+    res.json(formatted);
   } catch (err: unknown) {
     console.error(err);
     const msg = err instanceof Error ? err.message : String(err);
-    return res.status(500).json({ error: msg });
+    res.status(500).json({ error: msg });
   }
-});
+}
 
-recipesRouter.get('/recipes/:recipeId/equipment', async (req: Request, res: Response) => {
+async function handleGetTitle(req: VercelRequest, res: VercelResponse, slug: string) {
   try {
     const supabase = await getSupabaseClient();
-    const { recipeId } = req.params;
+    const cleanSlug = slug.replace(/^\/?recipe\//, '').replace(/^\//, '');
+
+    const { data, error } = await supabase
+      .from('recipes')
+      .select('title')
+      .eq('slug', cleanSlug)
+      .eq('status', 'published')
+      .lte('created_at', new Date().toISOString())
+      .maybeSingle();
+
+    if (error) {
+      throw error;
+    }
+
+    res.json(data);
+  } catch (err: unknown) {
+    console.error(err);
+    const msg = err instanceof Error ? err.message : String(err);
+    res.status(500).json({ error: msg });
+  }
+}
+async function handleGetEquipment(req: VercelRequest, res: VercelResponse, recipeId: string) {
+  try {
+    const supabase = await getSupabaseClient();
 
     const { data, error } = await supabase
       .from('equipment')
@@ -741,12 +764,97 @@ recipesRouter.get('/recipes/:recipeId/equipment', async (req: Request, res: Resp
       throw error;
     }
 
-    return res.json(camelCaseKeys(data));
+    res.json(data);
   } catch (err: unknown) {
     console.error(err);
     const msg = err instanceof Error ? err.message : String(err);
-    return res.status(500).json({ error: msg });
+    res.status(500).json({ error: msg });
   }
-});
+}
 
-export default recipesRouter;
+interface IRecipeRoute {
+  pattern: RegExp;
+  method: string;
+  handler: (req: VercelRequest, res: VercelResponse, match: RegExpExecArray) => Promise<unknown>;
+}
+
+const routes: IRecipeRoute[] = [
+  {
+    pattern: /^\/$/,
+    method: 'GET',
+    handler: (req, res) => handleGetRecipes(req, res),
+  },
+  {
+    pattern: /^\/favorites\/list$/,
+    method: 'GET',
+    handler: (req, res) => handleGetFavorites(req, res),
+  },
+  {
+    pattern: /^\/([^/]+)\/comments$/,
+    method: 'GET',
+    handler: /* eslint-disable-line @typescript-eslint/no-explicit-any */ (req, res, match: any) =>
+      handleGetComments(req, res, match[1]),
+  },
+  {
+    pattern: /^\/([^/]+)\/comments$/,
+    method: 'POST',
+    handler: /* eslint-disable-line @typescript-eslint/no-explicit-any */ (req, res, match: any) =>
+      handlePostComments(req, res, match[1]),
+  },
+  {
+    pattern: /^\/([^/]+)\/equipment$/,
+    method: 'GET',
+    handler: /* eslint-disable-line @typescript-eslint/no-explicit-any */ (req, res, match: any) =>
+      handleGetEquipment(req, res, match[1]),
+  },
+  {
+    pattern: /^\/([^/]+)\/title$/,
+    method: 'GET',
+    handler: /* eslint-disable-line @typescript-eslint/no-explicit-any */ (req, res, match: any) =>
+      handleGetTitle(req, res, match[1]),
+  },
+  {
+    pattern: /^\/([^/]+)$/,
+    method: 'GET',
+    handler: /* eslint-disable-line @typescript-eslint/no-explicit-any */ (req, res, match: any) =>
+      handleGetBySlug(req, res, match[1]),
+  },
+];
+
+const recipesHandler = async (req: VercelRequest, res: VercelResponse) => {
+  let pathname = '/';
+  const slug = req.query['slug'];
+  if (slug) {
+    const slugArr = Array.isArray(slug) ? slug : [slug];
+    pathname = '/' + slugArr.join('/');
+  }
+
+  try {
+    if (req.method === 'GET') {
+      res.setHeader(
+        'Cache-Control',
+        'public, max-age=0, s-maxage=60, stale-while-revalidate=86400',
+      );
+    }
+    for (const route of routes) {
+      if (req.method === route.method) {
+        const match = route.pattern.exec(pathname);
+        if (match) {
+          await route.handler(req, res, match);
+          return;
+        }
+      }
+    }
+    res.status(404).json({ error: 'Not found', pathname, method: req.method });
+  } catch (err: unknown) {
+    console.error(err);
+    const msg = err instanceof Error ? err.message : String(err);
+    res.status(500).json({ error: msg });
+  }
+};
+
+export default recipesHandler;
+
+export function clearRecipesCache() {
+  listCache.clear();
+}

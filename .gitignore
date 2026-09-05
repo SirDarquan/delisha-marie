@@ -45,8 +45,9 @@ Thumbs.db
 
 .antigravity/
 .agents/
-.env
+.env*
 
 # cypress angular supabase
 skills-lock.json
 cypress/
+.vercel

@@ -2,13 +2,13 @@ import { CommonModule, NgOptimizedImage } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
+  DOCUMENT,
   ViewEncapsulation,
   inject,
   input,
 } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { WINDOW } from '../../services/global-tokens';
 import { Recipe } from '../../services/recipe.service';
 
 @Component({
@@ -90,11 +90,13 @@ import { Recipe } from '../../services/recipe.service';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SidebarQuickView {
-  private readonly window = inject(WINDOW);
+  private readonly document = inject(DOCUMENT);
   recipe = input.required<Recipe>();
 
   scrollToElement(elementId: string) {
-    const element = this.window.document.getElementById(elementId);
+    const window = this.document.defaultView;
+    if (!window) return;
+    const element = window.document.getElementById(elementId);
     element?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 }

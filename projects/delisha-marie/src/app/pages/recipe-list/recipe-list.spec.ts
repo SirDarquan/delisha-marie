@@ -1,8 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, provideRouter, Router } from '@angular/router';
 import { Subject } from 'rxjs';
-import { beforeEach, describe, expect, it, Mock, vi } from 'vitest';
-import { WINDOW } from '../../services/global-tokens';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { DOCUMENT } from '@angular/common';
 import { Recipe, RecipeService } from '../../services/recipe.service';
 import { createMockRecipe } from '../../utils/test-recipe';
 import { RecipeIndexService } from '../recipe-index/recipe-index.service';
@@ -12,7 +12,6 @@ describe('RecipeList', () => {
   let component: RecipeList;
   let fixture: ComponentFixture<RecipeList>;
   let router: Router;
-  let windowMock: { scrollTo: Mock };
   let paramsSubject: Subject<Record<string, string>>;
 
   const mockRecipes: Recipe[] = [
@@ -70,7 +69,6 @@ describe('RecipeList', () => {
   };
 
   beforeEach(async () => {
-    windowMock = { scrollTo: vi.fn() };
     paramsSubject = new Subject<Record<string, string>>();
 
     await TestBed.configureTestingModule({
@@ -79,7 +77,6 @@ describe('RecipeList', () => {
         provideRouter([]),
         { provide: RecipeService, useValue: recipeServiceMock },
         { provide: RecipeIndexService, useValue: recipeIndexServiceMock },
-        { provide: WINDOW, useValue: windowMock },
         {
           provide: ActivatedRoute,
           useValue: {
@@ -202,10 +199,15 @@ describe('RecipeList', () => {
     fixture.detectChanges();
     await fixture.whenStable();
 
+    const document = TestBed.inject(DOCUMENT);
+    const scrollToSpy = vi.spyOn(document.defaultView!, 'scrollTo').mockImplementation(function () {
+      return;
+    });
+
     component.onPageChange(2);
 
     expect(router.navigateByUrl).toHaveBeenCalledWith('/recipes/page/2');
-    expect(windowMock.scrollTo).toHaveBeenCalledWith({ top: 0, behavior: 'smooth' });
+    expect(scrollToSpy).toHaveBeenCalledWith({ top: 0, behavior: 'smooth' });
   });
 
   it('should return correct base path', async () => {
@@ -454,5 +456,138 @@ describe('RecipeList', () => {
     } finally {
       Array.prototype.at = originalAt;
     }
+  });
+
+  it('should compute rootType correctly for holidays', async () => {
+    Object.defineProperty(router, 'url', { value: '/holidays' });
+    paramsSubject.next({});
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(component.rootType()).toBe('Holidays');
+  });
+
+  it('should match category using includes if endsWith fails', async () => {
+    recipeIndexServiceMock.getData.mockResolvedValueOnce({
+      categoriesList: [
+        {
+          name: 'Desserts',
+          url: '/recipes/desserts/something-else',
+          children: [{ name: 'Cakes', url: '/recipes/desserts/something-else/cakes' }],
+        },
+      ],
+      methodsList: [],
+      holidays: [],
+      specialDiets: [],
+      bestRecipes: [],
+      ingredients: [],
+    });
+    fixture = TestBed.createComponent(RecipeList);
+    component = fixture.componentInstance;
+    Object.defineProperty(router, 'url', { value: '/recipes' });
+    paramsSubject.next({ category: 'desserts' });
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const subcats = component.subCategories();
+    expect(subcats).toHaveLength(1);
+    expect(subcats[0].name).toBe('Cakes');
+  });
+
+  it('should return empty array if catSlug is present but list is undefined', async () => {
+    recipeIndexServiceMock.getData.mockResolvedValueOnce(
+      {} as unknown as {
+        categoriesList: [];
+        methodsList: [];
+        holidays: [];
+        specialDiets: [];
+        bestRecipes: [];
+        ingredients: [];
+      },
+    );
+    fixture = TestBed.createComponent(RecipeList);
+    component = fixture.componentInstance;
+    Object.defineProperty(router, 'url', { value: '/recipes' });
+    paramsSubject.next({ category: 'desserts' });
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(component.subCategories()).toEqual([]);
+  });
+
+  it('should return empty array if current category has no children', async () => {
+    recipeIndexServiceMock.getData.mockResolvedValueOnce({
+      categoriesList: [
+        {
+          name: 'Desserts',
+          url: '/recipes/desserts',
+        },
+      ],
+      methodsList: [],
+      holidays: [],
+      specialDiets: [],
+      bestRecipes: [],
+      ingredients: [],
+    });
+    fixture = TestBed.createComponent(RecipeList);
+    component = fixture.componentInstance;
+    Object.defineProperty(router, 'url', { value: '/recipes' });
+    paramsSubject.next({ category: 'desserts' });
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(component.subCategories()).toEqual([]);
+  });
+
+  it('should return empty recipes and 0 totalItems if resource value is falsy', async () => {
+    recipeServiceMock.getRecipes.mockResolvedValueOnce(null);
+    fixture = TestBed.createComponent(RecipeList);
+    component = fixture.componentInstance;
+    Object.defineProperty(router, 'url', { value: '/recipes' });
+    paramsSubject.next({});
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(component.recipes()).toEqual([]);
+    expect(component.totalItems()).toBe(0);
+    expect(component.totalPages()).toBe(0);
+  });
+
+  it('should unslugify category and subcategory in displayTitle', async () => {
+    Object.defineProperty(router, 'url', { value: '/recipes' });
+    paramsSubject.next({ category: 'some-category' });
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(component.displayTitle()).toBe('Some Category');
+
+    paramsSubject.next({ category: 'some-category', subcategory: 'some-sub-category' });
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(component.displayTitle()).toBe('Some Sub Category');
+  });
+
+  it('should compute breadcrumbs with category and page > 1', async () => {
+    Object.defineProperty(router, 'url', { value: '/recipes/desserts/page/2' });
+    paramsSubject.next({ category: 'desserts', page: '2' });
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const breadcrumbs = component.breadcrumbItems();
+    expect(breadcrumbs).toHaveLength(4);
+    expect(breadcrumbs[2].label).toBe('Desserts');
+    expect(breadcrumbs[2].url).toBe('/recipes/desserts');
+    expect(breadcrumbs[3].label).toBe('Page 2');
+  });
+
+  it('should call recipeService with correct parameters', async () => {
+    Object.defineProperty(router, 'url', { value: '/recipes' });
+    paramsSubject.next({ category: 'desserts', subcategory: 'cakes', page: '2' });
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(recipeServiceMock.getRecipes).toHaveBeenCalledWith(
+      2,
+      12,
+      'recipes',
+      'desserts',
+      'cakes',
+    );
+  });
+
+  it('should reflect isLoading state from resource', async () => {
+    expect(component.isLoading()).toBe(false);
   });
 });

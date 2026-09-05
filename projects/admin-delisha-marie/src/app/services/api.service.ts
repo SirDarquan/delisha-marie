@@ -1,6 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { lastValueFrom } from 'rxjs';
+import { camelCaseKeys } from '@dm/library';
+import { lastValueFrom, map } from 'rxjs';
 
 @Injectable({
   providedIn: 'root',
@@ -18,7 +19,11 @@ export class ApiService {
   }
 
   get<T>(url: string, options?: { headers?: unknown; params?: unknown }): Promise<T> {
-    return lastValueFrom(this.http.get<T>(this.formatUrl(url), this.getOptions(options)));
+    return lastValueFrom(
+      this.http
+        .get<T>(this.formatUrl(url), this.getOptions(options))
+        .pipe(map((data) => camelCaseKeys(data))),
+    );
   }
 
   post<T>(
@@ -26,7 +31,11 @@ export class ApiService {
     body: unknown,
     options?: { headers?: unknown; params?: unknown },
   ): Promise<T> {
-    return lastValueFrom(this.http.post<T>(this.formatUrl(url), body, this.getOptions(options)));
+    return lastValueFrom(
+      this.http
+        .post<T>(this.formatUrl(url), body, this.getOptions(options))
+        .pipe(map((data) => camelCaseKeys(data))),
+    );
   }
 
   put<T>(
@@ -34,10 +43,18 @@ export class ApiService {
     body: unknown,
     options?: { headers?: unknown; params?: unknown },
   ): Promise<T> {
-    return lastValueFrom(this.http.put<T>(this.formatUrl(url), body, this.getOptions(options)));
+    return lastValueFrom(
+      this.http
+        .put<T>(this.formatUrl(url), body, this.getOptions(options))
+        .pipe(map((data) => camelCaseKeys(data))),
+    );
   }
 
   delete<T>(url: string, options?: { headers?: unknown; params?: unknown }): Promise<T> {
-    return lastValueFrom(this.http.delete<T>(this.formatUrl(url), this.getOptions(options)));
+    return lastValueFrom(
+      this.http
+        .delete<T>(this.formatUrl(url), this.getOptions(options))
+        .pipe(map((data) => camelCaseKeys(data))),
+    );
   }
 }

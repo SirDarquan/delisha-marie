@@ -20,6 +20,7 @@ describe('Recipe Resolvers', () => {
           provide: RecipeService,
           useValue: {
             getRecipeBySlug: vi.fn().mockResolvedValue({ title: 'Mock Recipe' } as Recipe),
+            getTitle: vi.fn().mockResolvedValue('Mock Recipe'),
           },
         },
       ],
@@ -109,7 +110,7 @@ describe('Recipe Resolvers', () => {
     });
 
     it('should return default title if recipe has no title or is null', async () => {
-      vi.mocked(recipeService.getRecipeBySlug).mockResolvedValueOnce(null);
+      vi.mocked(recipeService.getTitle).mockResolvedValueOnce(null);
       const route = {
         paramMap: { get: vi.fn().mockReturnValue('test-slug') },
       } as unknown as ActivatedRouteSnapshot;

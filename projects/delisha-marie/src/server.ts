@@ -1,25 +1,23 @@
 import {
   AngularNodeAppEngine,
   createNodeRequestHandler,
-  isMainModule,
   writeResponseToNodeResponse,
 } from '@angular/ssr/node';
 import express from 'express';
 import { join } from 'node:path';
-import apiRouter from './api';
-import configRouter from './api/config';
-import sitemapRouter from './api/sitemap';
-import robotsTxtRouter from './api/robots-txt';
 
 const browserDistFolder = join(import.meta.dirname, '../browser');
 
 const app = express();
-const angularApp = new AngularNodeAppEngine();
-
-app.use(configRouter);
-app.use(robotsTxtRouter);
-app.use(sitemapRouter);
-app.use(apiRouter);
+const angularApp = new AngularNodeAppEngine({
+  allowedHosts: ['localhost', '127.0.0.1', '[::1]', '*.vercel.app'],
+  trustProxyHeaders: [
+    'x-forwarded-port',
+    'x-forwarded-proto',
+    'x-forwarded-host',
+    'x-forwarded-for',
+  ],
+});
 
 app.use(
   express.static(browserDistFolder, {
@@ -35,26 +33,23 @@ app.use(
 app.use((req, res, next) => {
   angularApp
     .handle(req)
-    .then((response) => (response ? writeResponseToNodeResponse(response, res) : next()))
+    .then((response) => {
+      if (response) {
+        // Cache SSR HTML responses on Vercel Edge for fast page loads
+        res.setHeader(
+          'Cache-Control',
+          'public, max-age=0, s-maxage=60, stale-while-revalidate=86400',
+        );
+        writeResponseToNodeResponse(response, res);
+      } else {
+        next();
+      }
+    })
     .catch(next);
 });
-
-/**
- * Start the server if this module is the main entry point, or it is ran via PM2.
- * The server listens on the port defined by the `PORT` environment variable, or defaults to 4000.
- */
-if (isMainModule(import.meta.url) || process.env['pm_id']) {
-  const port = process.env['PORT'] || 4000;
-  app.listen(port, (error) => {
-    if (error) {
-      throw error;
-    }
-
-    console.log(`Node Express server listening on http://localhost:${port}`);
-  });
-}
 
 /**
  * Request handler used by the Angular CLI (for dev-server and during build) or Firebase Cloud Functions.
  */
 export const reqHandler = createNodeRequestHandler(app);
+export default app;

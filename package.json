@@ -4,10 +4,11 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
+    "start:vercel": "npx vercel dev projects/delisha-marie -l 4200",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "npm run test:app && npm run test:api",
-    "test:api": "ng run delisha-marie:test-api --coverage && ng run admin-delisha-marie:test-api --coverage && ng run @dm/backend-shared:test-api --coverage",
+    "test:api": "ng run serverless:test-api --coverage && ng run admin-delisha-marie:test-api --coverage && ng run @dm/backend-shared:test-api --coverage",
     "test:app": "ng test --coverage",
     "test:all": "npm run lint && npm run test:app && npm run test:api && npm run e2e",
     "e2e": "npm run e2e:blog && npm run e2e:admin",
@@ -62,6 +63,7 @@
     "@types/multer": "^2.2.0",
     "@types/node": "^20.17.19",
     "@types/supertest": "^7.2.0",
+    "@vercel/node": "^9.0.1",
     "@vitest/coverage-v8": "^4.1.6",
     "angular-eslint": "22.1.0",
     "concurrently": "^10.0.3",
@@ -81,7 +83,9 @@
   "allowScripts": {
     "@parcel/watcher@2.5.6": true,
     "cypress@15.18.1": true,
-    "esbuild@0.28.1": true,
+    "esbuild@0.27.0": true,
+    "esbuild@0.27.7": true,
+    "esbuild@0.28.2": true,
     "lmdb@3.5.6": true,
     "msgpackr-extract@3.0.4": true
   }

@@ -1,4 +1,4 @@
-import { Injectable, computed, inject, resource } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import type { BaseRecipe, Breadcrumbs, Comment, Nutrition } from '@dm/library';
 import { Api } from './api';
 export type { Comment };
@@ -42,16 +42,6 @@ export class RecipeService {
   private readonly recipeCache = new Map<string, Promise<Recipe | null>>();
 
   /**
-   * Modern signal-native resource for fetching all recipes.
-   * Completely eliminates 'from', 'Observable', and 'toSignal'.
-   */
-  private readonly _recipesResource = resource({
-    loader: () => this.api.get<{ items: Recipe[]; total: number }>('/recipes'),
-  });
-
-  readonly recipes = computed(() => this._recipesResource.value()?.items || []);
-
-  /**
    * Fetches a single recipe by its slug.
    */
   getRecipeBySlug(slug: string): Promise<Recipe | null> {
@@ -70,9 +60,21 @@ export class RecipeService {
     return cached;
   }
 
+  async getTitle(slug: string): Promise<string | null> {
+    return this.api
+      .get<{ title: string | null }>(`/recipes/${slug}/title`)
+      .then((res) => res.title)
+      .catch(() => null);
+  }
+  private readonly getRecipesCache = new Map<
+    string,
+    { timestamp: number; promise: Promise<{ items: Recipe[]; total: number }> }
+  >();
+
   /**
    * Fetches a paginated slice of recipes.
    * Now returns a Promise directly by leveraging the Api server's firstValueFrom pattern.
+   * Caches the result in-memory for 5 minutes to make client-side SPA navigation instant.
    */
   getRecipes(
     page: number,
@@ -83,7 +85,19 @@ export class RecipeService {
     rating?: boolean,
   ): Promise<{ items: Recipe[]; total: number }> {
     const url = `/recipes?page=${page}&pageSize=${pageSize}&method=${method}&category=${category || ''}&subcategory=${subcategory || ''}&rating=${rating || ''}`;
-    return this.api.get<{ items: Recipe[]; total: number }>(url);
+
+    const cached = this.getRecipesCache.get(url);
+    if (cached && Date.now() - cached.timestamp < 300000) {
+      // 5 minutes
+      return cached.promise;
+    }
+
+    const promise = this.api.get<{ items: Recipe[]; total: number }>(url).catch((err) => {
+      this.getRecipesCache.delete(url);
+      throw err;
+    });
+    this.getRecipesCache.set(url, { timestamp: Date.now(), promise });
+    return promise;
   }
 
   /**

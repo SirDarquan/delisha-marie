@@ -1,16 +1,17 @@
-import { Router } from 'express';
+import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { getSupabaseClient } from './supabase';
 
-const contactsRouter = Router();
-
-contactsRouter.post('/contacts', async (req, res) => {
+export default async function contactsHandler(req: VercelRequest, res: VercelResponse) {
   try {
-    const { name, email, subject, message } = req.body;
+    // In Vercel, the route is already matched by the filename.
+    if (req.method !== 'POST') {
+      return res.status(404).json({ error: 'Not found' });
+    }
 
+    const { name, email, subject, message } = req.body || {};
     if (!name || !email || !message) {
       return res.status(400).json({ error: 'Name, email, and message are required' });
     }
-
     const supabase = await getSupabaseClient();
     const { data, error } = await supabase
       .from('contacts')
@@ -35,6 +36,4 @@ contactsRouter.post('/contacts', async (req, res) => {
     console.error('Unexpected error in POST /contacts:', err);
     return res.status(500).json({ error: 'Internal server error' });
   }
-});
-
-export default contactsRouter;
+}

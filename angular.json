@@ -45,8 +45,9 @@
             "security": {
               "allowedHosts": [
                 "localhost",
-                "delisha-marie-644709001057.northamerica-south1.run.app",
-                "*.run.app"
+                "127.0.0.1",
+                "[::1]",
+                "*.vercel.app"
               ]
             },
             "ssr": {
@@ -55,6 +56,7 @@
           },
           "configurations": {
             "production": {
+              "baseHref": "/kitchen",
               "budgets": [
                 {
                   "type": "initial",
@@ -130,7 +132,7 @@
           "builder": "@angular/build:unit-test",
           "options": {
             "coverageReporters": ["lcov"],
-            "exclude": ["projects/delisha-marie/src/api/**/*.test.ts"],
+            "exclude": ["../../projects/serverless/src/api/**/*.test.ts"],
             "watch": false,
             "coverageThresholds": {
               "statements": 94,
@@ -141,22 +143,7 @@
             "coverageExclude": ["projects/dm/library/**/*"]
           }
         },
-        "test-api": {
-          "builder": "@angular/build:unit-test",
-          "options": {
-            "coverageReporters": ["lcov"],
-            "include": ["projects/delisha-marie/src/api/**/*.test.ts"],
-            "watch": false,
-            "runnerConfig": "projects/delisha-marie/src/api/vitest.config.ts",
-            "coverageExclude": ["projects/dm/library/**/*"],
-            "coverageThresholds": {
-              "statements": 95,
-              "branches": 95,
-              "functions": 95,
-              "lines": 95
-            }
-          }
-        },
+
         "lint": {
           "builder": "@angular-eslint/builder:lint",
           "options": {
@@ -473,6 +460,37 @@
             "fix": true,
             "lintFilePatterns": ["projects/dm/library/**/*.ts","projects/dm/library/**/*.html"],
             "eslintConfig": "projects/dm/library/eslint.config.js"
+          }
+        }
+      }
+    },
+    "serverless": {
+      "projectType": "library",
+      "root": "projects/serverless",
+      "sourceRoot": "projects/serverless/src",
+      "architect": {
+        "test-api": {
+          "builder": "@angular/build:unit-test",
+          "options": {
+            "buildTarget": "delisha-marie:build",
+            "coverageReporters": ["lcov"],
+            "include": ["projects/serverless/src/api/**/*.test.ts"],
+            "watch": false,
+            "tsConfig": "projects/serverless/tsconfig.spec.json",
+            "runnerConfig": "projects/serverless/src/api/vitest.config.ts",
+            "coverageThresholds": {
+              "statements": 95,
+              "branches": 95,
+              "functions": 95,
+              "lines": 95
+            }
+          }
+        },
+        "lint": {
+          "builder": "@angular-eslint/builder:lint",
+          "options": {
+            "fix": true,
+            "lintFilePatterns": ["projects/serverless/**/*.ts"]
           }
         }
       }

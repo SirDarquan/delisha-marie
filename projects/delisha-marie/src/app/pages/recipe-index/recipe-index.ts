@@ -4,7 +4,6 @@ import {
   ViewEncapsulation,
   computed,
   inject,
-  resource,
   signal,
 } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
@@ -130,39 +129,48 @@ import { ColoredHeaderComponent } from '../../components/colored-header/colored-
         <dm-recipe-index-method-images [methods]="featuredMethods()" />
 
         <!-- Full Link Index Sections -->
-        <section class="space-y-4">
-          <dm-recipe-index-link-list
-            [items]="categoriesList()"
-            titlePrefix="Recipes By"
-            titleHighlight="Category"
-            titleId="category-list-title" />
+        @defer (on idle) {
+          <section class="space-y-4">
+            <dm-recipe-index-link-list
+              [items]="categoriesList()"
+              titlePrefix="Recipes By"
+              titleHighlight="Category"
+              titleId="category-list-title" />
 
-          <dm-recipe-index-link-list
-            [items]="methodsList()"
-            titlePrefix="Recipes By"
-            titleHighlight="Method"
-            titleId="methods-list-title" />
+            <dm-recipe-index-link-list
+              [items]="methodsList()"
+              titlePrefix="Recipes By"
+              titleHighlight="Method"
+              titleId="methods-list-title" />
 
-          <dm-recipe-index-link-list
-            [items]="holidays()"
-            titlePrefix="Recipes By"
-            titleHighlight="Holiday"
-            titleId="holidays-title" />
+            <dm-recipe-index-link-list
+              [items]="holidays()"
+              titlePrefix="Recipes By"
+              titleHighlight="Holiday"
+              titleId="holidays-title" />
 
-          <dm-recipe-index-link-list
-            [items]="specialDiets()"
-            titlePrefix="Special"
-            titleHighlight="Diets"
-            titleId="diets-title" />
+            <dm-recipe-index-link-list
+              [items]="specialDiets()"
+              titlePrefix="Special"
+              titleHighlight="Diets"
+              titleId="diets-title" />
 
-          <dm-recipe-index-link-list
-            [items]="bestRecipes()"
-            titlePrefix="The Best"
-            titleHighlight="Recipes"
-            titleId="best-recipes-title" />
+            <dm-recipe-index-link-list
+              [items]="bestRecipes()"
+              titlePrefix="The Best"
+              titleHighlight="Recipes"
+              titleId="best-recipes-title" />
 
-          <dm-recipe-index-ingredients [ingredients]="ingredients()" />
-        </section>
+            <dm-recipe-index-ingredients [ingredients]="ingredients()" />
+          </section>
+        } @placeholder {
+          <div class="h-[1000px] flex items-center justify-center opacity-50">
+            <div class="animate-pulse flex flex-col space-y-4 items-center">
+              <div class="h-8 w-64 bg-[var(--mat-sys-surface-container-highest)] rounded"></div>
+              <div class="h-4 w-48 bg-[var(--mat-sys-surface-container-highest)] rounded"></div>
+            </div>
+          </div>
+        }
       }
       <!-- Newsletter CTA -->
       <footer
@@ -193,13 +201,8 @@ import { ColoredHeaderComponent } from '../../components/colored-header/colored-
 export class RecipeIndex {
   private readonly service = inject(RecipeIndexService);
 
-  // Using resource() to fetch the Promise-based index data reactively.
-  private readonly _indexResource = resource({
-    loader: () => this.service.getData(),
-  });
-
-  private readonly _data = computed(() => this._indexResource.value());
-  readonly isLoading = computed(() => this._indexResource.isLoading());
+  private readonly _data = computed(() => this.service.indexResource.value());
+  readonly isLoading = computed(() => this.service.indexResource.isLoading());
 
   readonly featuredCategories = computed(() => this._data()?.featuredCategories || []);
   readonly featuredMethods = computed(() => this._data()?.cookingMethods || []);

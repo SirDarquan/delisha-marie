@@ -1,7 +1,6 @@
 import { IMAGE_LOADER, ImageLoaderConfig, NgOptimizedImage } from '@angular/common';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { WINDOW } from '../../services/global-tokens';
+import { beforeEach, describe, expect, it, vi, afterEach } from 'vitest';
 import { Recipe } from '../../services/recipe.service';
 import { createMockRecipe } from '../../utils/test-recipe';
 import { SidebarQuickView } from './sidebar-quick-view';
@@ -10,11 +9,6 @@ import { By } from '@angular/platform-browser';
 describe('SidebarQuickView', () => {
   let component: SidebarQuickView;
   let fixture: ComponentFixture<SidebarQuickView>;
-  let mockWindow: {
-    document: {
-      getElementById: ReturnType<typeof vi.fn>;
-    };
-  };
 
   const mockRecipe: Recipe = createMockRecipe({
     id: '1',
@@ -31,16 +25,9 @@ describe('SidebarQuickView', () => {
   });
 
   beforeEach(async () => {
-    mockWindow = {
-      document: {
-        getElementById: vi.fn(),
-      },
-    };
-
     await TestBed.configureTestingModule({
       imports: [SidebarQuickView, NgOptimizedImage],
       providers: [
-        { provide: WINDOW, useValue: mockWindow },
         {
           provide: IMAGE_LOADER,
           useValue: (config: ImageLoaderConfig) => config.src,
@@ -52,6 +39,10 @@ describe('SidebarQuickView', () => {
     component = fixture.componentInstance;
     fixture.componentRef.setInput('recipe', mockRecipe);
     fixture.detectChanges();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   it('should create', () => {
@@ -68,11 +59,13 @@ describe('SidebarQuickView', () => {
 
   it('should scroll to recipe card on button click', () => {
     const mockElement = { scrollIntoView: vi.fn() };
-    mockWindow.document.getElementById.mockReturnValue(mockElement);
+    const spy = vi
+      .spyOn(document, 'getElementById')
+      .mockReturnValue(mockElement as unknown as HTMLElement);
 
     component.scrollToElement('recipe-card');
 
-    expect(mockWindow.document.getElementById).toHaveBeenCalledWith('recipe-card');
+    expect(spy).toHaveBeenCalledWith('recipe-card');
     expect(mockElement.scrollIntoView).toHaveBeenCalledWith({
       behavior: 'smooth',
       block: 'start',
@@ -80,17 +73,19 @@ describe('SidebarQuickView', () => {
   });
 
   it('should not throw error if recipe-card element is not found', () => {
-    mockWindow.document.getElementById.mockReturnValue(null);
+    vi.spyOn(document, 'getElementById').mockReturnValue(null);
     expect(() => component.scrollToElement('recipe-card')).not.toThrow();
   });
 
   it('should trigger scrollToElement on button click', () => {
     const mockElement = { scrollIntoView: vi.fn() };
-    mockWindow.document.getElementById.mockReturnValue(mockElement);
+    const spy = vi
+      .spyOn(document, 'getElementById')
+      .mockReturnValue(mockElement as unknown as HTMLElement);
 
     const button = fixture.debugElement.query(By.css('button'));
     button.triggerEventHandler('click', null);
 
-    expect(mockWindow.document.getElementById).toHaveBeenCalledWith('recipe-card');
+    expect(spy).toHaveBeenCalledWith('recipe-card');
   });
 });

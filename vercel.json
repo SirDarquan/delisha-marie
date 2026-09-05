@@ -1,0 +1,24 @@
+{
+  "rewrites": [
+    {
+      "source": "/config",
+      "destination": "/api/config"
+    },
+    {
+      "source": "/robots.txt",
+      "destination": "/api/robots"
+    },
+    {
+      "source": "/sitemap(.*).xml",
+      "destination": "/api/sitemap"
+    },
+    {
+      "source": "/api/recipes/(.*)",
+      "destination": "/api/recipes?slug=$1"
+    },
+    {
+      "source": "/api/pages/(.*)",
+      "destination": "/api/pages?slug=$1" 
+    }
+  ]
+}

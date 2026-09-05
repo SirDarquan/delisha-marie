@@ -1,8 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { Request, Response, Router } from 'express';
+import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { getSupabaseClient } from './supabase';
-
-const recipeIndexRouter = Router();
 
 interface CategoryItem {
   name: string;
@@ -179,7 +177,7 @@ async function getCookingMethodsAndList(supabase: SupabaseClient) {
     url: `/methods/${m.slug}`,
   }));
 
-  return { cookingMethods, methodsList };
+  return { cooking_methods: cookingMethods, methodsList };
 }
 
 async function getIngredients(supabase: SupabaseClient) {
@@ -270,8 +268,33 @@ async function getBestRecipes(supabase: SupabaseClient): Promise<CategoryItem[]>
   return buildCategoryHierarchyFromParts(categories, 'the-best-recipes');
 }
 
-recipeIndexRouter.get('/recipe-index', async (req: Request, res: Response) => {
+let cachedIndexData: unknown = null;
+let cacheTimestamp = 0;
+
+export default async function recipeIndexHandler(req: VercelRequest, res: VercelResponse) {
+  const url = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`);
+  const pathname = url.pathname.replace(/^\/api/, '');
+
+  if (pathname !== '/recipe-index') {
+    return res.status(404).json({ error: 'Not found' });
+  }
   try {
+    if (req.method === 'GET') {
+      res.setHeader(
+        'Cache-Control',
+        'public, max-age=0, s-maxage=60, stale-while-revalidate=86400',
+      );
+    }
+
+    // Serve from Node memory cache if less than 60 seconds old
+    if (
+      process.env['NODE_ENV'] !== 'test' &&
+      cachedIndexData &&
+      Date.now() - cacheTimestamp < 60000
+    ) {
+      return res.json(cachedIndexData);
+    }
+
     const supabase = await getSupabaseClient();
 
     const [
@@ -292,23 +315,31 @@ recipeIndexRouter.get('/recipe-index', async (req: Request, res: Response) => {
       getBestRecipes(supabase),
     ]);
 
-    const { cookingMethods, methodsList } = methodsResult;
+    const { cooking_methods: cookingMethods, methodsList } = methodsResult;
 
-    return res.json({
+    const responseData = {
       featuredCategories,
-      cookingMethods,
+      cooking_methods: cookingMethods,
       categoriesList,
       methodsList,
       holidays,
-      specialDiets,
+      special_diets: specialDiets,
       bestRecipes,
       ingredients,
-    });
+    };
+
+    cachedIndexData = responseData;
+    cacheTimestamp = Date.now();
+
+    return res.json(responseData);
   } catch (err: unknown) {
     console.error(err);
     const msg = err instanceof Error ? err.message : String(err);
     return res.status(500).json({ error: msg });
   }
-});
+}
 
-export default recipeIndexRouter;
+export function clearRecipeIndexCache() {
+  cachedIndexData = null;
+  cacheTimestamp = 0;
+}

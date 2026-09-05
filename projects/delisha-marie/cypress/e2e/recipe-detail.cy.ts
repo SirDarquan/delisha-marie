@@ -77,7 +77,6 @@ describe('Single Recipe Detail View', () => {
     }).as('getRecipeEquipment');
 
     cy.visit('/recipe/signature-beef-stew');
-    cy.wait('@getRecipeList');
     cy.wait('@getRecipeDetail');
   });
 

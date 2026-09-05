@@ -2,6 +2,7 @@ import { CommonModule, NgOptimizedImage } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
+  DOCUMENT,
   ViewEncapsulation,
   computed,
   inject,
@@ -16,7 +17,6 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { NgxPaginationModule } from 'ngx-pagination';
 import { BreadcrumbItem, Breadcrumbs } from '../../components/breadcrumbs/breadcrumbs';
 import { RefineBy, RefineByItem } from '../../components/refine-by/refine-by';
-import { WINDOW } from '../../services/global-tokens';
 import { RecipeService } from '../../services/recipe.service';
 import { deslugify } from '@dm/library';
 import { RecipeIndexService } from '../recipe-index/recipe-index.service';
@@ -71,7 +71,8 @@ import { ColoredHeaderComponent } from '../../components/colored-header/colored-
             recipe of recipes()
               | paginate
                 : { itemsPerPage: pageSize, currentPage: currentPage(), totalItems: totalItems() };
-            track recipe.id
+            track recipe.slug || $index;
+            let i = $index
           ) {
             <a [routerLink]="['/recipe', recipe.slug]" class="block no-underline text-inherit">
               <mat-card
@@ -81,6 +82,7 @@ import { ColoredHeaderComponent } from '../../components/colored-header/colored-
                     [ngSrc]="recipe.image"
                     width="400"
                     height="300"
+                    [priority]="i < 8"
                     [alt]="recipe.title"
                     class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
                   <div
@@ -130,7 +132,7 @@ export class RecipeList {
   private readonly router = inject(Router);
   private readonly recipeService = inject(RecipeService);
   private readonly indexService = inject(RecipeIndexService);
-  private readonly window = inject(WINDOW);
+  private readonly document = inject(DOCUMENT);
 
   private readonly _params = toSignal(this.route.params);
 
@@ -230,8 +232,8 @@ export class RecipeList {
     const sub = this.subCategorySlug();
     const cat = this.categorySlug();
 
-    if (sub) return this.unslugify(sub);
-    if (cat) return this.unslugify(cat);
+    if (sub) return deslugify(sub);
+    if (cat) return deslugify(cat);
     return this.rootType();
   });
 
@@ -250,13 +252,13 @@ export class RecipeList {
     });
 
     if (cat) {
-      const catLabel = this.unslugify(cat);
+      const catLabel = deslugify(cat);
       const catUrl = sub ? this.basePath().split('/').slice(0, -1).join('/') : undefined;
       items.push({ label: catLabel, url: catUrl });
     }
 
     if (sub) {
-      items.push({ label: this.unslugify(sub) });
+      items.push({ label: deslugify(sub) });
     }
 
     const page = this.currentPage();
@@ -273,15 +275,12 @@ export class RecipeList {
 
   onPageChange(p: number): void {
     this.router.navigateByUrl(this.getPageUrl(p));
-    this.window.scrollTo({ top: 0, behavior: 'smooth' });
+    const window = this.document.defaultView;
+    window?.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   getPageUrl(p: number): string {
     const base = this.basePath();
     return p === 1 ? base : `${base}/page/${p}`;
-  }
-
-  private unslugify(slug: string): string {
-    return deslugify(slug);
   }
 }
