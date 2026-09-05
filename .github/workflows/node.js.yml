@@ -92,7 +92,7 @@ jobs:
     - run: npm run build delisha-marie --if-present
     - run: npm run build admin-delisha-marie --if-present
   Deploy-Preview:
-    #needs: [unit-tests, e2e-tests]
+    needs: [unit-tests, e2e-tests]
     runs-on: ubuntu-latest
     env:
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
