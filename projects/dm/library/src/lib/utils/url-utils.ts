@@ -150,3 +150,23 @@ export function extractYouTubeVideoId(url: string | null | undefined): string | 
   const match = regex.exec(url);
   return match ? match[1] : url.trim();
 }
+
+export function toCamelCase(str: string): string {
+  return str.replace(/([-_][a-z])/gi, ($1) => {
+    return $1.toUpperCase().replace('-', '').replace('_', '');
+  });
+}
+
+export function camelCaseKeys<T>(obj: T): T {
+  if (Array.isArray(obj)) {
+    return obj.map((item) => camelCaseKeys(item)) as unknown as T;
+  } else if (obj !== null && typeof obj === 'object') {
+    return Object.fromEntries(
+      Object.entries(obj).map(([k, v]) => {
+        const val = typeof v === 'object' && v !== null ? camelCaseKeys(v) : v;
+        return [toCamelCase(k), val];
+      }),
+    ) as unknown as T;
+  }
+  return obj;
+}
