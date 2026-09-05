@@ -104,14 +104,14 @@ export class AuthService {
     try {
       const resp = await this.api.post<{
         success?: boolean;
-        session?: { access_token: string };
+        session?: { accessToken: string };
         user?: AdminUser;
       }>('/auth/signup', {
         email: user.email.trim(),
         password: user.password,
         username: user.username.trim(),
       });
-      if (resp.session?.access_token && resp.user) {
+      if (resp.session?.accessToken && resp.user) {
         this.setSession(resp.user);
       }
       return true;
@@ -123,7 +123,7 @@ export class AuthService {
 
   async login(username: string, pinOrPassword: string): Promise<boolean> {
     try {
-      const resp = await this.api.post<{ session?: { access_token: string }; user?: AdminUser }>(
+      const resp = await this.api.post<{ session?: { accessToken: string }; user?: AdminUser }>(
         '/auth/login',
         {
           username: username.trim(),
@@ -131,7 +131,7 @@ export class AuthService {
         },
       );
 
-      if (resp.session?.access_token && resp.user) {
+      if (resp.session?.accessToken && resp.user) {
         this.setSession(resp.user);
         return true;
       }
@@ -189,7 +189,7 @@ export class AuthService {
         success: boolean;
         isNewUser?: boolean;
         descopeToken?: string;
-        session?: { access_token: string };
+        session?: { accessToken: string };
         user?: AdminUser;
       }>('/auth/descope/verify-oauth', {
         email,
@@ -243,7 +243,7 @@ export class AuthService {
         success: boolean;
         isNewUser?: boolean;
         descopeToken?: string;
-        session?: { access_token: string };
+        session?: { accessToken: string };
         user?: AdminUser;
       }>('/auth/descope/verify-otp', {
         email: email.trim(),
@@ -276,7 +276,7 @@ export class AuthService {
     try {
       const resp = await this.api.post<{
         success: boolean;
-        session?: { access_token: string };
+        session?: { accessToken: string };
         user?: AdminUser;
       }>('/auth/descope/register', {
         email: email.trim(),
@@ -285,7 +285,7 @@ export class AuthService {
         lastName: lastName.trim(),
         displayName: displayName.trim(),
       });
-      if (resp.success && resp.session?.access_token && resp.user) {
+      if (resp.success && resp.session?.accessToken && resp.user) {
         this.setSession(resp.user);
         return true;
       }
@@ -308,7 +308,7 @@ export class AuthService {
       success: boolean;
       isNewUser?: boolean;
       descopeToken?: string;
-      session?: { access_token: string };
+      session?: { accessToken: string };
       user?: AdminUser;
     },
   ): boolean {
@@ -318,7 +318,7 @@ export class AuthService {
         this._descopeEmail.set(email);
         this._isNewUserFlag.set(true);
         return true;
-      } else if (resp.session?.access_token && resp.user) {
+      } else if (resp.session?.accessToken && resp.user) {
         this._isNewUserFlag.set(false);
         this.setSession(resp.user);
         return true;

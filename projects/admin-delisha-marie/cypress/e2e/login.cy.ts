@@ -49,10 +49,10 @@ describe('Admin Login Page', () => {
         },
       }).as('postVerifyOtp');
 
-      cy.intercept('GET', '**/api/recipes*', {
+      cy.intercept('GET', '**/api/home*', {
         statusCode: 200,
-        body: [],
-      }).as('getRecipes');
+        body: { totalRecipes: 0, recentRecipes: [] },
+      }).as('getHome');
 
       // 1. Enter email
       cy.get('#login-email').type('sirda@example.com');
@@ -107,10 +107,10 @@ describe('Admin Login Page', () => {
         },
       }).as('postRegister');
 
-      cy.intercept('GET', '**/api/recipes*', {
+      cy.intercept('GET', '**/api/home*', {
         statusCode: 200,
-        body: [],
-      }).as('getRecipes');
+        body: { totalRecipes: 0, recentRecipes: [] },
+      }).as('getHome');
 
       // 1. Enter email
       cy.get('#login-email').type('new@example.com');
@@ -156,10 +156,10 @@ describe('Admin Login Page', () => {
         },
       }).as('getCurrentUserAuthenticated');
 
-      cy.intercept('GET', '**/api/recipes*', {
+      cy.intercept('GET', '**/api/home*', {
         statusCode: 200,
-        body: [],
-      }).as('getRecipes');
+        body: { totalRecipes: 0, recentRecipes: [] },
+      }).as('getHome');
 
       cy.visit('/login');
       cy.location('pathname', { timeout: 10000 }).should('eq', '/');

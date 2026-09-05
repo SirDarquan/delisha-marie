@@ -1,6 +1,7 @@
 import { HttpClient } from '@angular/common/http';
-import { Injectable, inject, TransferState, makeStateKey } from '@angular/core';
-import { lastValueFrom, tap } from 'rxjs';
+import { Injectable, TransferState, inject, makeStateKey } from '@angular/core';
+import { camelCaseKeys } from '@dm/library';
+import { lastValueFrom, map, tap } from 'rxjs';
 
 /**
  * A modern, Promise-based API service.
@@ -31,7 +32,10 @@ export class Api {
     }
 
     return lastValueFrom(
-      this.http.get<T>(normalized, options).pipe(tap((data) => this.transferState.set(key, data))),
+      this.http.get<T>(normalized, options).pipe(
+        map((data) => camelCaseKeys(data)),
+        tap((data) => this.transferState.set(key, data)),
+      ),
     );
   }
 
@@ -39,6 +43,10 @@ export class Api {
    * Generic POST request returning the last emission as a Promise.
    */
   post<T>(url: string, body: unknown, options?: Record<string, unknown>): Promise<T> {
-    return lastValueFrom(this.http.post<T>(this.normalizeUrl(url), body, options));
+    return lastValueFrom(
+      this.http
+        .post<T>(this.normalizeUrl(url), body, options)
+        .pipe(map((data) => camelCaseKeys(data))),
+    );
   }
 }

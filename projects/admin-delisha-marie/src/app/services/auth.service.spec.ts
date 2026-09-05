@@ -133,7 +133,7 @@ describe('AuthService', () => {
     apiMock.post.mockResolvedValue({
       success: true,
       user: mockUser,
-      session: { access_token: 'token123' },
+      session: { accessToken: 'token123' },
     });
 
     const success = await service.login('johndoe', 'ComplexPassword123!');
@@ -154,7 +154,7 @@ describe('AuthService', () => {
     apiMock.post.mockResolvedValue({
       success: true,
       user: mockUser,
-      session: { access_token: 'token123' },
+      session: { accessToken: 'token123' },
     });
 
     await service.login('johndoe', '123');
@@ -187,7 +187,7 @@ describe('AuthService', () => {
     const mockUser = { username: 'johndoe', email: 'john@example.com' };
     apiMock.post.mockResolvedValue({
       success: true,
-      session: { access_token: 'token123' },
+      session: { accessToken: 'token123' },
       user: mockUser,
     });
     const success = await service.verifyOtp('john@example.com', '123456');
@@ -213,7 +213,7 @@ describe('AuthService', () => {
     const mockUser = { username: 'johndoe', email: 'john@example.com' };
     apiMock.post.mockResolvedValue({
       success: true,
-      session: { access_token: 'token123' },
+      session: { accessToken: 'token123' },
       user: mockUser,
     });
     const success = await service.registerDescope(
@@ -310,7 +310,7 @@ describe('AuthService', () => {
       apiMock.post.mockResolvedValue({
         success: true,
         isNewUser: false,
-        session: { access_token: 'supabase-token' },
+        session: { accessToken: 'supabase-token' },
         user: { email: 'existing@e.com' },
       });
 
@@ -483,7 +483,7 @@ describe('AuthService', () => {
       const mockUser = { username: 'john', email: 'john@e.com' };
       apiMock.post.mockResolvedValue({
         success: true,
-        session: { access_token: 't' },
+        session: { accessToken: 't' },
         user: mockUser,
       });
       const res = await service.signUp(mockUser);
@@ -718,7 +718,7 @@ describe('AuthService', () => {
       apiMock.post.mockResolvedValue({
         success: true,
         isNewUser: false,
-        session: { access_token: 'token' },
+        session: { accessToken: 'token' },
         // user is missing
       });
       const res = await service.verifyOtp('john@e.com', '123456');
