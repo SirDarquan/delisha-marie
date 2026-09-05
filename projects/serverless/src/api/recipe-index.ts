@@ -177,7 +177,7 @@ async function getCookingMethodsAndList(supabase: SupabaseClient) {
     url: `/methods/${m.slug}`,
   }));
 
-  return { cookingMethods, methodsList };
+  return { cooking_methods: cookingMethods, methodsList };
 }
 
 async function getIngredients(supabase: SupabaseClient) {
@@ -315,15 +315,15 @@ export default async function recipeIndexHandler(req: VercelRequest, res: Vercel
       getBestRecipes(supabase),
     ]);
 
-    const { cookingMethods, methodsList } = methodsResult;
+    const { cooking_methods: cookingMethods, methodsList } = methodsResult;
 
     const responseData = {
       featuredCategories,
-      cookingMethods,
+      cooking_methods: cookingMethods,
       categoriesList,
       methodsList,
       holidays,
-      specialDiets,
+      special_diets: specialDiets,
       bestRecipes,
       ingredients,
     };

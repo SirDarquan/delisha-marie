@@ -21,20 +21,20 @@ export interface MockResponseBody {
     title: string;
     status: string;
     holidays: unknown[];
-    specialDiets: unknown[];
+    special_diets: unknown[];
     method: string;
-    nestedData: {
-      arrayField: { deepKey: string }[];
-      primitiveField: string;
+    nested_data: {
+      array_field: { deep_key: string }[];
+      primitive_field: string;
     };
   }[];
   total: number;
   id: string;
-  recipeId: string;
+  recipe_id: string;
   author: string;
   rating: number;
   website: string;
-  parentId: string;
+  parent_id: string;
   status: string;
   comments: { id: string }[];
   GoogleTagManager: unknown;
@@ -53,9 +53,9 @@ export interface MockResponseBody {
     next: { title: string; slug: string };
   };
   categoriesList: IndexItem[];
-  cookingMethods: IndexItem[];
+  cooking_methods: IndexItem[];
   holidays: IndexItem[];
-  specialDiets: IndexItem[];
+  special_diets: IndexItem[];
   bestRecipes: IndexItem[];
   ingredients: IndexItem[];
   [key: number]: { title: string };

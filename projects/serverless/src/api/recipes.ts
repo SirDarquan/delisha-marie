@@ -1,21 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { camelCase } from 'change-case';
 import { getSupabaseClient } from './supabase';
 import type { SupabaseClient } from '@supabase/supabase-js';
-
-function camelCaseKeys(obj: unknown): unknown {
-  if (Array.isArray(obj)) {
-    return obj.map((item) => camelCaseKeys(item));
-  } else if (obj !== null && typeof obj === 'object') {
-    return Object.fromEntries(
-      Object.entries(obj).map(([k, v]) => {
-        const val = typeof v === 'object' && v !== null ? camelCaseKeys(v) : v;
-        return [camelCase(k), val];
-      }),
-    );
-  }
-  return obj;
-}
 
 interface CategoryInfo {
   id: string;
@@ -321,9 +306,9 @@ function formatDbRecipes(data: DbRecipe[]): FormattedRecipe[] {
     }
 
     return {
-      ...(camelCaseKeys(cleanRecipe) as Record<string, unknown>),
+      ...cleanRecipe,
       holidays,
-      specialDiets,
+      special_diets: specialDiets,
       method: methodVal,
     } as unknown as FormattedRecipe;
   });
@@ -347,7 +332,8 @@ async function handleGetRecipes(req: VercelRequest, res: VercelResponse) {
       cached &&
       Date.now() - cached.timestamp < 1000 * 60 * 5
     ) {
-      return res.json(cached.data);
+      res.json(cached.data);
+      return;
     }
 
     const supabase = await getSupabaseClient();
@@ -403,7 +389,7 @@ async function handleGetRecipes(req: VercelRequest, res: VercelResponse) {
     };
     listCache.set(cacheKey, { timestamp: Date.now(), data: result });
 
-    return res.json(result);
+    res.json(result);
   } catch (err: unknown) {
     console.error('API ERROR IN GET RECIPES:', err);
     let msg = String(err);
@@ -412,7 +398,7 @@ async function handleGetRecipes(req: VercelRequest, res: VercelResponse) {
     } else if (typeof err === 'object' && err !== null) {
       msg = JSON.stringify(err);
     }
-    return res.status(500).json({ error: msg });
+    res.status(500).json({ error: msg });
   }
 }
 
@@ -465,8 +451,8 @@ async function getBreadcrumbs(
   const breadcrumbItems: { label: string; url?: string }[][] = [];
 
   if (categories.length === 0) {
-    const mainLabel = formatted.theBest ? 'The Best Recipes' : 'Recipes';
-    const mainUrl = formatted.theBest ? '/the-best-recipes' : '/recipes';
+    const mainLabel = formatted.the_best ? 'The Best Recipes' : 'Recipes';
+    const mainUrl = formatted.the_best ? '/the-best-recipes' : '/recipes';
     breadcrumbItems.push([
       { label: 'Home', url: '/' },
       { label: mainLabel, url: mainUrl },
@@ -488,7 +474,7 @@ async function getBreadcrumbs(
     ]);
   });
 
-  const prefixUrl = formatted.theBest ? '/the-best-recipes' : '/recipes';
+  const prefixUrl = formatted.the_best ? '/the-best-recipes' : '/recipes';
   let mainIndex = breadcrumbItems.findIndex((trail) => trail[1].url === prefixUrl);
   if (mainIndex === -1) mainIndex = 0;
 
@@ -554,16 +540,15 @@ async function handleGetComments(req: VercelRequest, res: VercelResponse, recipe
 
     // Combine and camelCase keys
     const combined = [...topLevelComments, ...replies];
-    const camelCased = camelCaseKeys(combined) as unknown[];
 
-    return res.json({
-      comments: camelCased,
+    res.json({
+      comments: combined,
       total: total,
     });
   } catch (err: unknown) {
     console.error(err);
     const msg = err instanceof Error ? err.message : String(err);
-    return res.status(500).json({ error: msg });
+    res.status(500).json({ error: msg });
   }
 }
 
@@ -582,7 +567,8 @@ async function handlePostComments(req: VercelRequest, res: VercelResponse, recip
     const supabase = await getSupabaseClient();
     const { author, email, content, rating, website, parentId, alt_email } = req.body;
     if (!author || !email || !content) {
-      return res.status(400).json({ error: 'Name, email, and content are required' });
+      res.status(400).json({ error: 'Name, email, and content are required' });
+      return;
     }
 
     const { data: settingsData } = await supabase
@@ -600,7 +586,8 @@ async function handlePostComments(req: VercelRequest, res: VercelResponse, recip
       ) || {};
 
     if (isDomainBlocked(website, settings['blocked_domains'])) {
-      return res.status(400).json({ error: 'Sorry, you cannot link to this website.' });
+      res.status(400).json({ error: 'Sorry, you cannot link to this website.' });
+      return;
     }
 
     if (alt_email) {
@@ -620,7 +607,7 @@ async function handlePostComments(req: VercelRequest, res: VercelResponse, recip
       await supabase.from('spam_comments').insert([spamObj]);
 
       // Silently succeed
-      return res.status(201).json({
+      res.status(201).json({
         id: 'bot-' + Date.now(),
         recipeId,
         author,
@@ -630,6 +617,7 @@ async function handlePostComments(req: VercelRequest, res: VercelResponse, recip
         parentId: parentId || null,
         createdAt: new Date().toISOString(),
       });
+      return;
     }
 
     const requireApproval = settings['require_comment_approval'] === 'true';
@@ -655,12 +643,11 @@ async function handlePostComments(req: VercelRequest, res: VercelResponse, recip
 
     if (error) throw error;
 
-    const camelCased = camelCaseKeys(data);
-    return res.status(201).json(camelCased);
+    res.status(201).json(data);
   } catch (err: unknown) {
     console.error(err);
     const msg = err instanceof Error ? err.message : String(err);
-    return res.status(500).json({ error: msg });
+    res.status(500).json({ error: msg });
   }
 }
 
@@ -677,16 +664,13 @@ async function handleGetFavorites(req: VercelRequest, res: VercelResponse) {
 
     if (error) {
       console.error('Error fetching favorites:', error);
-      return res.status(500).json({ error: 'Internal Server Error' });
+      res.status(500).json({ error: 'Internal Server Error' });
+      return;
     }
-
-    // Format the response slightly to ensure camelCase properties if needed,
-    // although title, slug, image, description are already standard.
-    const formatted = camelCaseKeys(data) as Record<string, unknown>[];
-    return res.json({ items: formatted });
+    res.json({ items: data });
   } catch (error) {
     console.error('Error fetching favorite recipes:', error);
-    return res.status(500).json({ error: 'Internal Server Error' });
+    res.status(500).json({ error: 'Internal Server Error' });
   }
 }
 
@@ -709,7 +693,8 @@ async function handleGetBySlug(req: VercelRequest, res: VercelResponse, slug: st
       throw recipeError;
     }
     if (!recipeDataRaw) {
-      return res.json(null);
+      res.json(null);
+      return;
     }
     const recipeData = recipeDataRaw as unknown as DbRecipe;
 
@@ -733,11 +718,11 @@ async function handleGetBySlug(req: VercelRequest, res: VercelResponse, slug: st
       next,
     };
 
-    return res.json(formatted);
+    res.json(formatted);
   } catch (err: unknown) {
     console.error(err);
     const msg = err instanceof Error ? err.message : String(err);
-    return res.status(500).json({ error: msg });
+    res.status(500).json({ error: msg });
   }
 }
 
@@ -758,11 +743,11 @@ async function handleGetTitle(req: VercelRequest, res: VercelResponse, slug: str
       throw error;
     }
 
-    return res.json(camelCaseKeys(data));
+    res.json(data);
   } catch (err: unknown) {
     console.error(err);
     const msg = err instanceof Error ? err.message : String(err);
-    return res.status(500).json({ error: msg });
+    res.status(500).json({ error: msg });
   }
 }
 async function handleGetEquipment(req: VercelRequest, res: VercelResponse, recipeId: string) {
@@ -779,11 +764,11 @@ async function handleGetEquipment(req: VercelRequest, res: VercelResponse, recip
       throw error;
     }
 
-    return res.json(camelCaseKeys(data));
+    res.json(data);
   } catch (err: unknown) {
     console.error(err);
     const msg = err instanceof Error ? err.message : String(err);
-    return res.status(500).json({ error: msg });
+    res.status(500).json({ error: msg });
   }
 }
 
@@ -836,7 +821,7 @@ const routes: IRecipeRoute[] = [
   },
 ];
 
-export default async function recipesHandler(req: VercelRequest, res: VercelResponse) {
+const recipesHandler = async (req: VercelRequest, res: VercelResponse) => {
   let pathname = '/';
   const slug = req.query['slug'];
   if (slug) {
@@ -855,17 +840,20 @@ export default async function recipesHandler(req: VercelRequest, res: VercelResp
       if (req.method === route.method) {
         const match = route.pattern.exec(pathname);
         if (match) {
-          return await route.handler(req, res, match);
+          await route.handler(req, res, match);
+          return;
         }
       }
     }
-    return res.status(404).json({ error: 'Not found', pathname, method: req.method });
+    res.status(404).json({ error: 'Not found', pathname, method: req.method });
   } catch (err: unknown) {
     console.error(err);
     const msg = err instanceof Error ? err.message : String(err);
-    return res.status(500).json({ error: msg });
+    res.status(500).json({ error: msg });
   }
-}
+};
+
+export default recipesHandler;
 
 export function clearRecipesCache() {
   listCache.clear();

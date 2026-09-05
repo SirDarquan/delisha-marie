@@ -152,7 +152,7 @@ describe('Recipes Router API', () => {
     expect(res.body.items[0].title).toBe('Recipe 1');
     expect(res.body.items[0].method).toBe('Baking');
     expect(res.body.items[0].holidays).toEqual(['Christmas']);
-    expect(res.body.items[0].specialDiets).toEqual(['Vegan']);
+    expect(res.body.items[0].special_diets).toEqual(['Vegan']);
   });
 
   it('should filter by category and subcategory for recipes method', async () => {
@@ -365,10 +365,10 @@ describe('Recipes Router API', () => {
     const res = await createRequestMock(recipesRouter)().get('/api/recipes');
     expect(res.status).toBe(200);
     expect(res.body.items[0].holidays).toEqual([]);
-    expect(res.body.items[0].specialDiets).toEqual([]);
+    expect(res.body.items[0].special_diets).toEqual([]);
     expect(res.body.items[0].method).toBe('Old Method');
-    expect(res.body.items[0].nestedData.arrayField[2].deepKey).toBe('val');
-    expect(res.body.items[0].nestedData.primitiveField).toBe('hello');
+    expect(res.body.items[0].nested_data.array_field[2].deep_key).toBe('val');
+    expect(res.body.items[0].nested_data.primitive_field).toBe('hello');
   });
 
   it('should return 500 and handle non-Error string exceptions', async () => {
@@ -1339,7 +1339,7 @@ describe('Recipes Router API', () => {
 
       expect(res.status).toBe(201);
       expect(res.body.id).toBe('new');
-      expect(res.body.recipeId).toBe('123');
+      expect(res.body.recipe_id).toBe('123');
       expect(res.body.author).toBe('Tester');
     });
 
@@ -1526,7 +1526,7 @@ describe('Recipes Router API', () => {
       expect(res.body.id).toBe('new-reply');
       expect(res.body.rating).toBe(5);
       expect(res.body.website).toBe('https://tester.com');
-      expect(res.body.parentId).toBe('c1');
+      expect(res.body.parent_id).toBe('c1');
     });
 
     it('should silently return 201 if honeypot (alt_email) is filled', async () => {

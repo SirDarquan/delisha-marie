@@ -384,9 +384,9 @@ describe('Recipe Index Router API', () => {
       expect(categoryList[2].children).toBeUndefined(); // Main Dishes has no subcategory level 4 breadcrumbs in mockup
 
       // Verify cooking methods
-      expect(res.body.cookingMethods).toHaveLength(2);
-      expect(res.body.cookingMethods[0].name).toBe('Air Fryer');
-      expect(res.body.cookingMethods[1].name).toBe('Baking');
+      expect(res.body.cooking_methods).toHaveLength(2);
+      expect(res.body.cooking_methods[0].name).toBe('Air Fryer');
+      expect(res.body.cooking_methods[1].name).toBe('Baking');
 
       // Verify holidays
       expect(res.body.holidays).toHaveLength(2);
@@ -394,9 +394,9 @@ describe('Recipe Index Router API', () => {
       expect(res.body.holidays[1].name).toBe('Thanksgiving');
 
       // Verify special diets
-      expect(res.body.specialDiets).toHaveLength(2);
-      expect(res.body.specialDiets[0].name).toBe('Gluten Free');
-      expect(res.body.specialDiets[1].name).toBe('Vegan');
+      expect(res.body.special_diets).toHaveLength(2);
+      expect(res.body.special_diets[0].name).toBe('Gluten Free');
+      expect(res.body.special_diets[1].name).toBe('Vegan');
 
       // Verify best recipes
       const theBest = res.body.bestRecipes;
@@ -481,9 +481,9 @@ describe('Recipe Index Router API', () => {
 
       const res = await createRequestMock(recipeIndexRouter)().get('/api/recipe-index');
       expect(res.status).toBe(200);
-      expect(res.body.cookingMethods).toEqual([]);
+      expect(res.body.cooking_methods).toEqual([]);
       expect(res.body.holidays).toEqual([]);
-      expect(res.body.specialDiets).toEqual([]);
+      expect(res.body.special_diets).toEqual([]);
       expect(res.body.ingredients).toEqual([]);
     });
   });
