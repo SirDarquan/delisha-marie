@@ -1,10 +1,11 @@
 import { NgOptimizedImage } from '@angular/common';
 import { ChangeDetectionStrategy, Component, input, ViewEncapsulation } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
+import { RouterLink } from '@angular/router';
 
 @Component({
   selector: 'dm-author-bio',
-  imports: [NgOptimizedImage, MatButtonModule],
+  imports: [NgOptimizedImage, MatButtonModule, RouterLink],
   template: `
     <section
       [class]="
@@ -48,15 +49,16 @@ import { MatButtonModule } from '@angular/material/button';
           I'm a passionate home cook and food stylist dedicated to making elegant, simple recipes
           that anyone can master. Welcome to my kitchen!
         </p>
-        <button
+        <a
           mat-stroked-button
+          routerLink="/about"
           [class]="
             layout() === 'vertical'
               ? 'rounded-full px-8 font-bold'
               : 'rounded-full px-8 py-6 text-lg font-bold'
           ">
           My Story
-        </button>
+        </a>
       </div>
     </section>
   `,
