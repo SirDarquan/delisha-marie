@@ -222,12 +222,13 @@ describe('RecipeComments', () => {
     expect(compiled.textContent).toContain('Reply content');
   });
 
-  it('should trigger reply mode when Reply button is clicked', () => {
+  it('should trigger reply mode when Reply button is clicked', async () => {
     const replyBtn = fixture.debugElement.query(By.css('button[mat-stroked-button]'));
     if (replyBtn) {
       replyBtn.triggerEventHandler('click', null);
       fixture.detectChanges();
       expect(component.replyTo()).toBeTruthy();
+      await new Promise((resolve) => setTimeout(resolve, 60));
     }
   });
 
@@ -236,13 +237,14 @@ describe('RecipeComments', () => {
     expect(component['commentForm'].rating().value()).toBe(4);
   });
 
-  it('should manage replyTo state', () => {
+  it('should manage replyTo state', async () => {
     const comment = mockComments[0];
     component.replyToComment(comment);
     expect(component.replyTo()).toEqual(comment);
 
     component.cancelReply();
     expect(component.replyTo()).toBeNull();
+    await new Promise((resolve) => setTimeout(resolve, 60));
   });
 
   it('should submit a comment and scroll to the comments section', async () => {
