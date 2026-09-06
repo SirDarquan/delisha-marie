@@ -7,6 +7,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { FeaturedRecipes } from '../../components/featured-recipes/featured-recipes';
 import { TopRatedRecipes } from '../../components/top-rated-recipes/top-rated-recipes';
 import { AuthorBio } from '../../components/sidebar/author-bio';
+import { RouterLink } from '@angular/router';
 
 @Component({
   selector: 'dm-home',
@@ -20,6 +21,7 @@ import { AuthorBio } from '../../components/sidebar/author-bio';
     FeaturedRecipes,
     TopRatedRecipes,
     AuthorBio,
+    RouterLink,
   ],
   template: `
     <div class="space-y-16">

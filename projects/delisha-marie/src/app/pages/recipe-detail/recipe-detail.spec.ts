@@ -251,18 +251,15 @@ describe('RecipeDetail', () => {
     testEl.getBoundingClientRect = () => ({ top: 200 }) as DOMRect;
     doc.body.appendChild(testEl);
 
-    vi.useFakeTimers();
     try {
       const newFixture = TestBed.createComponent(RecipeDetail);
       newFixture.componentRef.setInput('recipe', mockRecipe);
       newFixture.detectChanges();
 
-      // No whenStable with fakeTimers
-      vi.advanceTimersByTime(150);
+      await new Promise((r) => setTimeout(r, 150));
 
       expect(scrollToSpy).toHaveBeenCalledWith({ top: 180, behavior: 'smooth' });
     } finally {
-      vi.useRealTimers();
       window.location.hash = originalHash;
       Object.defineProperty(window, 'scrollY', { value: originalScrollY, configurable: true });
       scrollToSpy.mockRestore();
