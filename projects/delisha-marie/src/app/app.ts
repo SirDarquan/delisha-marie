@@ -14,9 +14,11 @@ import { filter } from 'rxjs';
 import { Footer } from './components/footer/footer';
 import { Header } from './components/header/header';
 
+import { Newsletter } from './components/newsletter/newsletter';
+
 @Component({
   selector: 'dm-root',
-  imports: [RouterOutlet, Header, Footer],
+  imports: [RouterOutlet, Header, Footer, Newsletter],
   template: `
     <div
       class="flex flex-col min-h-screen"
@@ -34,7 +36,10 @@ import { Header } from './components/header/header';
         <router-outlet />
       </main>
       @if (!isPrintPage()) {
-        <dm-footer />
+        <div class="mt-16">
+          <dm-newsletter />
+          <dm-footer />
+        </div>
       }
     </div>
   `,

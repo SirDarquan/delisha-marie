@@ -17,7 +17,7 @@ import { extractYouTubeVideoId } from '@dm/library';
 import { BreadcrumbItem, Breadcrumbs } from '../../components/breadcrumbs/breadcrumbs';
 import { RecipeEquipment } from '../../components/recipe-equipment/recipe-equipment';
 import { Sidebar } from '../../components/sidebar/sidebar';
-import { SidebarQuickView } from '../../components/sidebar/sidebar-quick-view';
+import { SidebarQuickView } from './sidebar-quick-view';
 import { PinterestHoverDirective } from '../../directives/pinterest-hover.directive';
 import { Recipe } from '../../services/recipe.service';
 import { useOptimizedContent } from '../../utils/optimized-content';
