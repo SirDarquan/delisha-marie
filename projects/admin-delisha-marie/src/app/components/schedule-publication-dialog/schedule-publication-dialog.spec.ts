@@ -54,6 +54,7 @@ describe('SchedulePublicationDialogComponent', () => {
   });
 
   it('should cover time step template events', async () => {
+    vi.spyOn(component, 'syncScrollPositions').mockImplementation(vi.fn());
     component.selectedDate.set(new Date());
     component.step.set('time');
     fixture.detectChanges();
@@ -106,6 +107,7 @@ describe('SchedulePublicationDialogComponent', () => {
     okBtn.triggerEventHandler('click', null);
     expect(component.step()).toBe('confirm');
     component.ngOnDestroy();
+    await new Promise((r) => setTimeout(r, 200));
   }, 20000);
 
   it('should cover confirm step template events', () => {
