@@ -27,7 +27,7 @@ describe('Sidebar', () => {
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.querySelector('dm-author-bio')).toBeTruthy();
     expect(compiled.querySelector('dm-sidebar-search')).toBeTruthy();
-    expect(compiled.querySelector('dm-sidebar-newsletter')).toBeTruthy();
+    expect(compiled.querySelector('dm-newsletter')).toBeTruthy();
   });
 
   it('should project content', () => {

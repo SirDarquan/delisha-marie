@@ -6,7 +6,7 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatIconModule } from '@angular/material/icon';
 import { FeaturedRecipes } from '../../components/featured-recipes/featured-recipes';
 import { TopRatedRecipes } from '../../components/top-rated-recipes/top-rated-recipes';
-import { AuthorBio } from '../../components/sidebar/author-bio';
+import { AuthorBio } from '../../components/author-bio/author-bio';
 import { RouterLink } from '@angular/router';
 
 @Component({

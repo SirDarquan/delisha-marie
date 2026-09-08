@@ -1,17 +1,16 @@
-import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
-import { AuthorBio } from './author-bio';
-import { SidebarNewsletter } from './sidebar-newsletter';
+import { AuthorBio } from '../author-bio/author-bio';
 import { SidebarSearch } from './sidebar-search';
+import { Newsletter } from '../newsletter/newsletter';
 
 @Component({
   selector: 'dml-sidebar',
-  imports: [CommonModule, AuthorBio, SidebarSearch, SidebarNewsletter],
+  imports: [AuthorBio, SidebarSearch, Newsletter],
   template: `
     <div class="flex flex-col gap-8 h-full">
       <dm-author-bio picture="/delisha_marie_profile.png" />
       <dm-sidebar-search />
-      <dm-sidebar-newsletter />
+      <dm-newsletter layout="box" />
       <ng-content />
     </div>
   `,
