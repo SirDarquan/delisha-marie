@@ -54,7 +54,9 @@ describe('SchedulePublicationDialogComponent', () => {
   });
 
   it('should cover time step template events', async () => {
-    vi.spyOn(component, 'syncScrollPositions').mockImplementation(vi.fn());
+    vi.spyOn(component, 'syncScrollPositions').mockImplementation(() => {
+      // do nothing
+    });
     component.selectedDate.set(new Date());
     component.step.set('time');
     fixture.detectChanges();

@@ -67,4 +67,25 @@ describe('Header', () => {
 
     expect(themeServiceMock.toggle).toHaveBeenCalled();
   });
+
+  it('should render nested submenus when menuLinks has children', () => {
+    const fixture = TestBed.createComponent(Header);
+    const component = fixture.componentInstance;
+
+    Object.defineProperty(component, 'menuLinks', {
+      value: [
+        {
+          label: 'ParentItem',
+          children: [{ label: 'ChildItem', path: '/child' }],
+        },
+      ],
+    });
+
+    fixture.detectChanges();
+    const compiled = fixture.nativeElement as HTMLElement;
+
+    // Desktop parent button should have drop down arrow
+    expect(compiled.textContent).toContain('ParentItem');
+    expect(compiled.textContent).toContain('arrow_drop_down');
+  });
 });

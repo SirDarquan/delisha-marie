@@ -1,4 +1,10 @@
-import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DOCUMENT,
+  inject,
+  ViewEncapsulation,
+} from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 @Component({
@@ -22,7 +28,7 @@ import { RouterLink } from '@angular/router';
             Home
           </a>
           <a
-            routerLink="/recipes"
+            routerLink="/recipe-index"
             class="text-[var(--mat-sys-on-surface-variant)] hover:text-[var(--mat-sys-primary)] text-sm font-medium transition-colors no-underline">
             Recipes
           </a>
@@ -58,10 +64,13 @@ import { RouterLink } from '@angular/router';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Footer {
+  private readonly document = inject(DOCUMENT);
+
   readonly year = new Date().getFullYear();
 
   scrollToTop(event: Event): void {
+    const window = this.document.defaultView;
     event.preventDefault();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window?.scrollTo({ top: 0, behavior: 'smooth' });
   }
 }
