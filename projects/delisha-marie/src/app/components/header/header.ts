@@ -3,6 +3,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatToolbarModule } from '@angular/material/toolbar';
+import { MatMenuModule } from '@angular/material/menu';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { ThemeService } from '../../services/theme.service';
 
@@ -15,6 +16,7 @@ import { ThemeService } from '../../services/theme.service';
     MatButtonModule,
     MatIconModule,
     MatSlideToggleModule,
+    MatMenuModule,
   ],
 
   host: {
@@ -39,27 +41,32 @@ import { ThemeService } from '../../services/theme.service';
       </a>
 
       <div class="hidden md:flex items-center gap-6">
-        <a
-          mat-button
-          routerLink="/recipe-index"
-          routerLinkActive="!text-[var(--mat-sys-primary)]"
-          class="text-lg font-medium">
-          Recipes
-        </a>
-        <a
-          mat-button
-          routerLink="/about"
-          routerLinkActive="!text-[var(--mat-sys-primary)]"
-          class="text-lg font-medium">
-          About
-        </a>
-        <a
-          mat-button
-          routerLink="/contact"
-          routerLinkActive="!text-[var(--mat-sys-primary)]"
-          class="text-lg font-medium">
-          Contact
-        </a>
+        @for (link of menuLinks; track link.label) {
+          @if (link.children) {
+            <button mat-button [matMenuTriggerFor]="desktopSub" class="text-lg font-medium">
+              {{ link.label }}
+              <mat-icon class="!mr-0">arrow_drop_down</mat-icon>
+            </button>
+            <mat-menu #desktopSub="matMenu">
+              @for (child of link.children; track child.label) {
+                <a
+                  mat-menu-item
+                  [routerLink]="child.path"
+                  routerLinkActive="!text-[var(--mat-sys-primary)]">
+                  <span>{{ child.label }}</span>
+                </a>
+              }
+            </mat-menu>
+          } @else {
+            <a
+              mat-button
+              [routerLink]="link.path"
+              routerLinkActive="!text-[var(--mat-sys-primary)]"
+              class="text-lg font-medium">
+              {{ link.label }}
+            </a>
+          }
+        }
 
         <div class="flex items-center gap-2 ml-4">
           <mat-slide-toggle
@@ -88,9 +95,36 @@ import { ThemeService } from '../../services/theme.service';
             </mat-icon>
           </span>
         </mat-slide-toggle>
-        <button mat-icon-button>
+        <button mat-icon-button [matMenuTriggerFor]="mobileMenu">
           <mat-icon>menu</mat-icon>
         </button>
+
+        <mat-menu #mobileMenu="matMenu">
+          @for (link of menuLinks; track link.label) {
+            @if (link.children) {
+              <button mat-menu-item [matMenuTriggerFor]="mobileSub">
+                <span>{{ link.label }}</span>
+              </button>
+              <mat-menu #mobileSub="matMenu">
+                @for (child of link.children; track child.label) {
+                  <a
+                    mat-menu-item
+                    [routerLink]="child.path"
+                    routerLinkActive="!text-[var(--mat-sys-primary)]">
+                    <span>{{ child.label }}</span>
+                  </a>
+                }
+              </mat-menu>
+            } @else {
+              <a
+                mat-menu-item
+                [routerLink]="link.path"
+                routerLinkActive="!text-[var(--mat-sys-primary)]">
+                <span>{{ link.label }}</span>
+              </a>
+            }
+          }
+        </mat-menu>
       </div>
     </mat-toolbar>
   `,
@@ -99,4 +133,15 @@ import { ThemeService } from '../../services/theme.service';
 })
 export class Header {
   protected readonly themeService = inject(ThemeService);
+
+  // Note: Add a `children` array to any item to automatically generate a dropdown!
+  protected readonly menuLinks: {
+    label: string;
+    path?: string;
+    children?: { label: string; path: string }[];
+  }[] = [
+    { path: '/recipe-index', label: 'Recipes' },
+    { path: '/about', label: 'About' },
+    { path: '/contact', label: 'Contact' },
+  ];
 }
