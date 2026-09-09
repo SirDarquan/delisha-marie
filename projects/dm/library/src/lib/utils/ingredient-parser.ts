@@ -128,7 +128,7 @@ export function parseIngredientName(raw: string | null | undefined): string | nu
   }
 
   // 1. Remove text in parentheses (e.g., "(15 oz)")
-  let text = raw.replace(/\([^)]*\)/g, ' ');
+  let text = raw.replace(/\([^()]*\)/g, ' ');
 
   // 2. Discard everything after comma, semicolon, or dash
   text = text.split(/,| - | – |;/)[0] || '';
@@ -137,10 +137,10 @@ export function parseIngredientName(raw: string | null | undefined): string | nu
   text = text.toLowerCase().trim();
 
   // 4. Remove leading quantities, fractions, numbers (without unneeded escape characters)
-  text = text.replace(/^[0-9.\-/½¼¾⅓⅔⅛⅜⅝⅞\s]+/g, '').trim();
+  text = text.replace(/^[0-9.\-/½¼¾⅓⅔⅛⅜⅝⅞\s]+/, '').trim();
 
   // 5. Remove units of measurement (with optional "of")
-  const unitRegex = new RegExp(String.raw`^(${UNITS.join('|')})\b(?:\s+of)?(?:\s+|$)`, 'i');
+  const unitRegex = new RegExp(String.raw`^(${UNITS.join('|')})\b(?:\s+of\b)?\s*`, 'i');
   text = text.replace(unitRegex, '').trim();
 
   // 6. Remove leading size modifiers (e.g. "large eggs" -> "eggs")
