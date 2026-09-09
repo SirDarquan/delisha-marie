@@ -9,4 +9,5 @@ export interface Recipe extends BaseRecipe {
   status: 'draft' | 'published';
   previewToken?: string;
   equipment?: { title: string; url: string; image: string }[];
+  searchIngredients?: string[];
 }

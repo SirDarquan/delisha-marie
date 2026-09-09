@@ -18,7 +18,13 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { ActivatedRoute, Router } from '@angular/router';
-import { BaseTrail, CategoryTrails, extractYouTubeVideoId } from '@dm/library';
+import {
+  BaseTrail,
+  CategoryTrails,
+  extractYouTubeVideoId,
+  parseIngredientName,
+  capitalizeIngredient,
+} from '@dm/library';
 import { CategoryBoardComponent } from '../../components/category-board/category-board';
 import { ConfirmDialogComponent } from '../../components/confirm-dialog/confirm-dialog';
 import { SchedulePublicationDialogComponent } from '../../components/schedule-publication-dialog/schedule-publication-dialog';
@@ -31,6 +37,7 @@ import { StoryHtmlEditorComponent } from '../../components/story-html-editor/sto
 import { Recipe } from '../../models/recipe.model';
 import { RecipeService } from '../../services/recipe.service';
 import { EquipmentManagerComponent } from '../../components/equipment-manager/equipment-manager';
+import { SearchIngredientsComponent } from '../../components/search-ingredients/search-ingredients';
 
 export interface RecipeFormModel {
   title: string;
@@ -71,6 +78,7 @@ export interface RecipeFormModel {
   cholesterol: string;
   saturatedFat: string;
   video: string;
+  searchIngredients: string[];
 }
 
 @Component({
@@ -91,6 +99,7 @@ export interface RecipeFormModel {
     ImageUploaderComponent,
     StoryHtmlEditorComponent,
     EquipmentManagerComponent,
+    SearchIngredientsComponent,
   ],
   template: `
     <div class="p-4 md:p-8">
@@ -352,6 +361,13 @@ export interface RecipeFormModel {
                   placeholder="Enter ingredients..."
                   class="resize-y"></textarea>
               </mat-form-field>
+
+              <div class="md:col-span-2 mb-2">
+                <app-search-ingredients
+                  [formField]="recipeForm.searchIngredients"
+                  (autoDetect)="onAutoDetectIngredients()">
+                </app-search-ingredients>
+              </div>
 
               <mat-form-field appearance="outline" class="w-full md:col-span-2">
                 <mat-label>Instructions (One per line)</mat-label>
@@ -695,6 +711,7 @@ export class RecipeFormComponent implements OnInit {
     cholesterol: '',
     saturatedFat: '',
     video: '',
+    searchIngredients: [],
   });
 
   protected readonly currentStatus = computed(() => {
@@ -904,8 +921,12 @@ export class RecipeFormComponent implements OnInit {
       imageType: recipe.imageType || '',
       description: recipe.description || '',
       content: recipe.content || '',
-      ingredients: recipe.ingredients ? recipe.ingredients.join('\n') : '',
-      instructions: recipe.instructions ? recipe.instructions.join('\n') : '',
+      ingredients: Array.isArray(recipe.ingredients)
+        ? recipe.ingredients.join('\n')
+        : recipe.ingredients || '',
+      instructions: Array.isArray(recipe.instructions)
+        ? recipe.instructions.join('\n')
+        : recipe.instructions || '',
       method: recipe.method || '',
       theBest: recipe.theBest || false,
       holidays: holidayStr,
@@ -915,7 +936,7 @@ export class RecipeFormComponent implements OnInit {
       keyword: recipe.keywords || [],
       equipment: recipe.equipment || [],
 
-      notes: recipe.notes ? recipe.notes.join('\n') : '',
+      notes: Array.isArray(recipe.notes) ? recipe.notes.join('\n') : (recipe.notes ?? ''),
       servingSize: recipe.nutrition?.servingSize || '',
       calories: recipe.nutrition?.calories || '',
       fat: recipe.nutrition?.fat || '',
@@ -927,7 +948,48 @@ export class RecipeFormComponent implements OnInit {
       cholesterol: recipe.nutrition?.cholesterol || '',
       saturatedFat: recipe.nutrition?.saturatedFat || '',
       video: recipe.video || '',
+      searchIngredients: recipe.searchIngredients || [],
     };
+  }
+
+  onAutoDetectIngredients(): void {
+    const rawText = this.recipeModel().ingredients || '';
+    if (!rawText.trim()) return;
+
+    const lines = rawText.split('\n');
+    const detected: string[] = [];
+
+    for (const line of lines) {
+      const parsed = parseIngredientName(line);
+      if (parsed) {
+        const capitalized = capitalizeIngredient(parsed);
+        if (!detected.includes(capitalized)) {
+          detected.push(capitalized);
+        }
+      }
+    }
+
+    this.recipeModel.update((model) => {
+      const current = model.searchIngredients || [];
+      const merged = [...current];
+      for (const item of detected) {
+        if (!merged.some((m) => m.toLowerCase() === item.toLowerCase())) {
+          merged.push(item);
+        }
+      }
+      return {
+        ...model,
+        searchIngredients: merged,
+      };
+    });
+
+    const formObj = this.recipeForm as unknown as Record<
+      string,
+      () => { value: { set: (v: unknown) => void } }
+    >;
+    if (typeof formObj['searchIngredients'] === 'function') {
+      formObj['searchIngredients']().value.set(this.recipeModel().searchIngredients);
+    }
   }
 
   onCategoryChanged(c: CategoryTrails): void {
@@ -1039,6 +1101,9 @@ export class RecipeFormComponent implements OnInit {
       : [];
     const holidays = formValue.holidays ? [formValue.holidays] : [];
     const specialDiets = formValue.specialDiets || [];
+    const searchIngredients = formValue.searchIngredients
+      ? formValue.searchIngredients.map((s) => s.trim()).filter(Boolean)
+      : [];
 
     const nutrition =
       formValue.servingSize ||
@@ -1106,6 +1171,7 @@ export class RecipeFormComponent implements OnInit {
 
       notes,
       video: extractYouTubeVideoId(formValue.video),
+      searchIngredients,
     } as unknown as Omit<Recipe, 'id'>;
   }
 
