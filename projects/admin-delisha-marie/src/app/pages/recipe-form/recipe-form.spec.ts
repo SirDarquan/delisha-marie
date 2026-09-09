@@ -66,6 +66,7 @@ describe('RecipeFormComponent', () => {
     cholesterol: '5',
     saturatedFat: '1',
     video: '',
+    searchIngredients: [] as string[],
   });
 
   let mockRecipeById: Recipe | null = null;
@@ -1852,5 +1853,81 @@ describe('RecipeFormComponent', () => {
       (component as unknown as { dialog: { open: typeof vi.fn } }).dialog.open,
     ).toHaveBeenCalled();
     expect(fakeLocation.back).toHaveBeenCalled();
+  });
+
+  describe('searchIngredients & onAutoDetectIngredients', () => {
+    beforeEach(async () => {
+      fixture = TestBed.createComponent(RecipeFormComponent);
+      component = fixture.componentInstance;
+      fixture.detectChanges();
+      await fixture.whenStable();
+    });
+
+    it('should auto-detect ingredients from ingredients textarea', () => {
+      component['recipeModel'].set({
+        ...getValidPublishedModel(),
+        ingredients: '1 pound of catfish\n1 cup of ginger\n2 tbsp olive oil',
+        searchIngredients: ['Existing Tag'],
+      } as unknown as RecipeFormModel);
+
+      component.onAutoDetectIngredients();
+
+      expect(component['recipeModel']().searchIngredients).toEqual([
+        'Existing Tag',
+        'Catfish',
+        'Ginger',
+        'Olive Oil',
+      ]);
+    });
+
+    it('should not duplicate already existing tags during auto-detect', () => {
+      component['recipeModel'].set({
+        ...getValidPublishedModel(),
+        ingredients: '1 pound of catfish\n2 catfish',
+        searchIngredients: ['Catfish'],
+      } as unknown as RecipeFormModel);
+
+      component.onAutoDetectIngredients();
+
+      expect(component['recipeModel']().searchIngredients).toEqual(['Catfish']);
+    });
+
+    it('should do nothing if ingredients textarea is empty', () => {
+      component['recipeModel'].set({
+        ...getValidPublishedModel(),
+        ingredients: '   ',
+        searchIngredients: ['Existing Tag'],
+      } as unknown as RecipeFormModel);
+
+      component.onAutoDetectIngredients();
+
+      expect(component['recipeModel']().searchIngredients).toEqual(['Existing Tag']);
+    });
+
+    it('should include searchIngredients in serializeRecipe', () => {
+      const model = {
+        ...getValidPublishedModel(),
+        searchIngredients: ['Catfish', 'Ginger', '   '],
+      } as unknown as RecipeFormModel;
+
+      const serialized = component['serializeRecipe'](model, 'published');
+      expect((serialized as unknown as { searchIngredients: string[] }).searchIngredients).toEqual([
+        'Catfish',
+        'Ginger',
+      ]);
+    });
+
+    it('should map searchIngredients in mapRecipeToForm', () => {
+      const mockRecipe = {
+        ...getValidPublishedModel(),
+        ingredients: ['1 pound of catfish'],
+        instructions: ['Cook it'],
+        notes: ['Delicious'],
+        searchIngredients: ['Catfish', 'Ginger'],
+      } as unknown as Recipe;
+
+      const mapped = component['mapRecipeToForm'](mockRecipe);
+      expect(mapped.searchIngredients).toEqual(['Catfish', 'Ginger']);
+    });
   });
 });

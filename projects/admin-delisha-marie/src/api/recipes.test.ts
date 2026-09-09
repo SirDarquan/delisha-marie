@@ -766,6 +766,7 @@ describe('Recipes Router API', () => {
           { categories: { name: 'Holiday', url: '/recipes/holiday' } },
           { categories: { name: 'The Best Baking', url: '/the-best-recipes/the-best-baking' } },
         ],
+        recipe_ingredients: [{ ingredients: { name: 'Catfish' } }],
       };
 
       mockSingle.mockResolvedValue({ data: mockRecipe, error: null });
@@ -773,6 +774,7 @@ describe('Recipes Router API', () => {
       const res = await request(app).get('/recipes/123').set('Authorization', 'Bearer valid-token');
 
       expect(res.status).toBe(200);
+      expect(res.body.searchIngredients).toEqual(['Catfish']);
       expect(res.body).toMatchObject({
         id: '123',
         title: 'Test Recipe',
@@ -873,6 +875,7 @@ describe('Recipes Router API', () => {
         method: 'Baking',
         holidays: ['Christmas'],
         specialDiets: ['Vegan'],
+        searchIngredients: ['Catfish'],
       };
       const createdRecipe = {
         id: 'recipe-3',
@@ -894,12 +897,15 @@ describe('Recipes Router API', () => {
 
       mockMaybeSingle.mockResolvedValueOnce({ data: { id: 'diet-1' }, error: null }); // Diet find
 
+      mockMaybeSingle.mockResolvedValueOnce({ data: { id: 'ing-1' }, error: null }); // Ingredient find
+
       const res = await request(app).post('/recipes').send(inputRecipe);
 
       expect(res.status).toBe(200);
       expect(res.body.title).toBe('New Salad');
       expect(res.body.category).toEqual(inputRecipe.category);
       expect(res.body.nutrition).toEqual({ caloriesCount: 100 });
+      expect(res.body.searchIngredients).toEqual(['Catfish']);
     });
 
     it('should return 400 when recipe creation fails', async () => {
@@ -928,6 +934,7 @@ describe('Recipes Router API', () => {
         method: 'Baking',
         holidays: ['Christmas'],
         specialDiets: ['Vegan'],
+        searchIngredients: ['Ginger'],
       };
       const updatedRecipe = {
         id: 'recipe-3',
@@ -951,10 +958,14 @@ describe('Recipes Router API', () => {
       // Mock special diet find diet
       mockMaybeSingle.mockResolvedValueOnce({ data: { id: 'diet-1' }, error: null });
 
+      // Mock search ingredient find
+      mockMaybeSingle.mockResolvedValueOnce({ data: { id: 'ing-2' }, error: null });
+
       const res = await request(app).put('/recipes/recipe-3').send(updateData);
 
       expect(res.status).toBe(200);
       expect(res.body.title).toBe('Updated Salad');
+      expect(res.body.searchIngredients).toEqual(['Ginger']);
     });
 
     it('should return 400 if update does not find the recipe', async () => {
@@ -982,6 +993,7 @@ describe('Recipes Router API', () => {
         method: 'Baking',
         holidays: ['Christmas'],
         specialDiets: ['Vegan'],
+        ingredients: ['1 pound of catfish'],
       };
       const existingRecipe = { id: 'recipe-3', title: 'Existing Recipe' };
 
@@ -1003,10 +1015,14 @@ describe('Recipes Router API', () => {
       // Mock special diet find diet
       mockMaybeSingle.mockResolvedValueOnce({ data: { id: 'diet-1' }, error: null });
 
+      // Mock raw ingredient fallback find
+      mockMaybeSingle.mockResolvedValueOnce({ data: { id: 'ing-3' }, error: null });
+
       const res = await request(app).put('/recipes/recipe-3').send(updateData);
 
       expect(res.status).toBe(200);
       expect(res.body.title).toBe('Existing Recipe');
+      expect(res.body.searchIngredients).toEqual(['Catfish']);
     });
 
     it('should return 400 when recipe update fails', async () => {
