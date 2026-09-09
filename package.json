@@ -44,7 +44,7 @@
     "express": "^5.2.1",
     "express-rate-limit": "^8.5.2",
     "imagekit": "^6.0.0",
-    "multer": "^2.2.0",
+    "multer": "^2.3.0",
     "ngx-pagination": "^6.0.3",
     "rxjs": "~7.8.0",
     "sharp": "^0.35.3",
