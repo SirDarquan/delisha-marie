@@ -7,7 +7,7 @@ import { Api } from './api';
 export class NewsletterService {
   private readonly api = inject(Api);
 
-  async subscribe(email: string, provider = 'none'): Promise<void> {
-    return this.api.post('/subscriber', { email, provider });
+  async subscribe(email: string, provider = 'sender'): Promise<void> {
+    return this.api.post('/subscriber', { email, automation: true, provider });
   }
 }
