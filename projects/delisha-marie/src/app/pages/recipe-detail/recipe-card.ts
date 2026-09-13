@@ -95,7 +95,7 @@ import { Recipe } from '../../services/recipe.service';
           <div class="flex items-center gap-2">
             @if (recipe().rating && recipe().rating! > 0) {
               <dml-stars [rating]="recipe().rating!" />
-              <span class="rating-text text-xs font-bold">({{ recipe().ratingCount || 0 }})</span>
+              <span class="rating-text text-xs font-bold">({{ recipe().reviewCount || 0 }})</span>
             } @else {
               <a
                 [routerLink]="recipe().slug"
