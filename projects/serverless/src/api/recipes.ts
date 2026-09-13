@@ -1,6 +1,7 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { getSupabaseClient } from './supabase';
 import type { SupabaseClient } from '@supabase/supabase-js';
+import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { checkBotId } from 'botid/server';
+import { getSupabaseClient } from './supabase';
 
 interface CategoryInfo {
   id: string;
@@ -202,44 +203,13 @@ async function getTagMatchedIds(
   return matchedIds;
 }
 
-interface SupabaseQueryBuilder {
-  eq: (col: string, val: unknown) => SupabaseQueryBuilder;
-  gt: (col: string, val: unknown) => SupabaseQueryBuilder;
-  gte: (col: string, val: unknown) => SupabaseQueryBuilder;
-  lte: (col: string, val: unknown) => SupabaseQueryBuilder;
-  or: (
-    filter: string,
-    options?: { foreignTable?: string; referencedTable?: string },
-  ) => SupabaseQueryBuilder;
-  in: (col: string, vals: unknown[]) => SupabaseQueryBuilder;
-  order: (
-    col: string,
-    options?: {
-      ascending?: boolean;
-      nullsFirst?: boolean;
-      foreignTable?: string;
-      referencedTable?: string;
-    },
-  ) => SupabaseQueryBuilder;
-  range: (
-    from: number,
-    to: number,
-    options?: { foreignTable?: string; referencedTable?: string },
-  ) => SupabaseQueryBuilder;
-  then: (
-    onfulfilled?: ((value: unknown) => unknown) | null,
-    onrejected?: ((reason: unknown) => unknown) | null,
-  ) => Promise<unknown>;
-  [key: string]: unknown;
-}
-
-function applyRecipeFilters(
-  query: SupabaseQueryBuilder,
-  method: string,
-  category: string,
-  subcategory: string,
-  matchedIds: string[],
-): SupabaseQueryBuilder {
+function applyRecipeFilters<
+  T extends {
+    eq(column: string, value: unknown): T;
+    or(filters: string, options?: { foreignTable?: string }): T;
+    in(column: string, values: unknown[]): T;
+  },
+>(query: T, method: string, category: string, subcategory: string, matchedIds: string[]): T {
   if (method === 'the-best-recipes') {
     query = query.eq('the_best', true);
   }
@@ -345,9 +315,7 @@ async function handleGetRecipes(req: VercelRequest, res: VercelResponse) {
     const selectStr = getSelectString(method, category);
 
     // 1. Data Query (no count, so it's fast to get the 12 items)
-    let query: SupabaseQueryBuilder = supabase
-      .from('recipes')
-      .select(selectStr) as unknown as SupabaseQueryBuilder;
+    let query = supabase.from('recipes').select(selectStr, { count: 'exact' });
     query = query.eq('status', 'published').lte('created_at', new Date().toISOString());
     query = applyRecipeFilters(query, method, category, subcategory, matchedIds);
 
@@ -359,27 +327,9 @@ async function handleGetRecipes(req: VercelRequest, res: VercelResponse) {
     const end = start + pageSize - 1;
     query = query.order('created_at', { ascending: false }).range(start, end);
 
-    // 2. Count Query (estimated, head: true, extremely fast)
-    let countQuery: SupabaseQueryBuilder = supabase
-      .from('recipes')
-      .select(selectStr, { count: 'estimated', head: true }) as unknown as SupabaseQueryBuilder;
-    countQuery = countQuery.eq('status', 'published').lte('created_at', new Date().toISOString());
-    countQuery = applyRecipeFilters(countQuery, method, category, subcategory, matchedIds);
+    const { data, count, error } = await query;
 
-    if (rating && method === 'the-best-recipes' && !category) {
-      countQuery = countQuery.gte('rating_count', 4.5);
-    }
-
-    const [dataRes, countRes] = await Promise.all([
-      query as unknown as Promise<{ data: unknown; error: unknown }>,
-      countQuery as unknown as Promise<{ count: number | null; error: unknown }>,
-    ]);
-
-    if (dataRes.error) throw dataRes.error;
-    if (countRes.error) throw countRes.error;
-
-    const data = dataRes.data;
-    const count = countRes.count;
+    if (error) throw error;
 
     const formatted = formatDbRecipes((data || []) as unknown as DbRecipe[]);
 
@@ -562,7 +512,12 @@ function isDomainBlocked(
   return blockedDomains.some((domain) => domain && websiteLower.includes(domain));
 }
 
-async function handlePostComments(req: VercelRequest, res: VercelResponse, recipeId: string) {
+async function handlePostComments(
+  req: VercelRequest,
+  res: VercelResponse,
+  recipeId: string,
+  isBot = false,
+) {
   try {
     const supabase = await getSupabaseClient();
     const { author, email, content, rating, website, parentId, alt_email } = req.body;
@@ -590,7 +545,7 @@ async function handlePostComments(req: VercelRequest, res: VercelResponse, recip
       return;
     }
 
-    if (alt_email) {
+    if (isBot) {
       // Honeypot tripped: save to spam_comments for research
       const spamObj = {
         recipe_id: recipeId,
@@ -697,7 +652,6 @@ async function handleGetBySlug(req: VercelRequest, res: VercelResponse, slug: st
       return;
     }
     const recipeData = recipeDataRaw as unknown as DbRecipe;
-
     // Format fields (reuse formatDbRecipes helper)
     const [formatted] = formatDbRecipes([recipeData]);
 
@@ -792,32 +746,33 @@ const routes: IRecipeRoute[] = [
   {
     pattern: /^\/([^/]+)\/comments$/,
     method: 'GET',
-    handler: /* eslint-disable-line @typescript-eslint/no-explicit-any */ (req, res, match: any) =>
-      handleGetComments(req, res, match[1]),
+    handler: (req, res, match: RegExpExecArray) => handleGetComments(req, res, match[1]),
   },
   {
     pattern: /^\/([^/]+)\/comments$/,
     method: 'POST',
-    handler: /* eslint-disable-line @typescript-eslint/no-explicit-any */ (req, res, match: any) =>
-      handlePostComments(req, res, match[1]),
+    handler: (req, res, match: RegExpExecArray) =>
+      checkBotId()
+        .then((verification) => {
+          const isBot = !!req.body.alt_email || verification.isBot;
+          return handlePostComments(req, res, match[1], isBot);
+        })
+        .catch((error) => console.error(error)),
   },
   {
     pattern: /^\/([^/]+)\/equipment$/,
     method: 'GET',
-    handler: /* eslint-disable-line @typescript-eslint/no-explicit-any */ (req, res, match: any) =>
-      handleGetEquipment(req, res, match[1]),
+    handler: (req, res, match: RegExpExecArray) => handleGetEquipment(req, res, match[1]),
   },
   {
     pattern: /^\/([^/]+)\/title$/,
     method: 'GET',
-    handler: /* eslint-disable-line @typescript-eslint/no-explicit-any */ (req, res, match: any) =>
-      handleGetTitle(req, res, match[1]),
+    handler: (req, res, match: RegExpExecArray) => handleGetTitle(req, res, match[1]),
   },
   {
     pattern: /^\/([^/]+)$/,
     method: 'GET',
-    handler: /* eslint-disable-line @typescript-eslint/no-explicit-any */ (req, res, match: any) =>
-      handleGetBySlug(req, res, match[1]),
+    handler: (req, res, match: RegExpExecArray) => handleGetBySlug(req, res, match[1]),
   },
 ];
 

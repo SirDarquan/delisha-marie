@@ -1533,7 +1533,7 @@ describe('Recipes Router API', () => {
       mockFrom.mockImplementation((table: string) => {
         if (table === 'spam_comments') {
           return {
-            insert: vi.fn().mockReturnThis(),
+            insert: vi.fn().mockResolvedValue({ error: null }),
           };
         }
         if (table === 'site_settings') {
@@ -1555,6 +1555,7 @@ describe('Recipes Router API', () => {
         alt_email: 'spambot@bot.com',
       });
 
+      expect(res.body.error).toBeUndefined();
       expect(res.status).toBe(201);
       expect(res.body.id).toMatch(/^bot-/);
       expect(res.body.author).toBe('SpamBot');
