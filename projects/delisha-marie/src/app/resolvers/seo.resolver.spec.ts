@@ -1,4 +1,4 @@
-import { DOCUMENT } from '@angular/common';
+import { DOCUMENT, APP_BASE_HREF } from '@angular/common';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -48,6 +48,7 @@ describe('Seo Resolvers', () => {
           useValue: { getPage: vi.fn().mockResolvedValue(null) },
         },
         { provide: DOCUMENT, useValue: mockDocument },
+        { provide: APP_BASE_HREF, useValue: '/' },
       ],
     });
 
