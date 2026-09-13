@@ -1,14 +1,15 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { checkBotId } from 'botid/server';
 
 type ProviderHandler = (
   req: VercelRequest,
   res: VercelResponse,
   email: string,
-  trigger_automation: boolean,
+  automation: boolean,
 ) => Promise<VercelResponse>;
 
 const providerRouter: Record<string, ProviderHandler> = {
-  sender: async (req, res, email, trigger_automation) => {
+  sender: async (req, res, email, automation) => {
     const token = process.env.SENDER_API_TOKEN;
     if (!token) {
       console.error('Missing SENDER_API_TOKEN');
@@ -23,7 +24,10 @@ const providerRouter: Record<string, ProviderHandler> = {
     };
     const body = {
       email,
-      trigger_automation,
+      groups: [
+        'e97Q3x', //New subscribers
+      ],
+      trigger_automation: automation,
     };
 
     const response = await fetch(url, {
@@ -39,6 +43,7 @@ const providerRouter: Record<string, ProviderHandler> = {
     }
 
     const data = await response.json();
+
     return res.status(200).json(data);
   },
   none: async (req, res) => {
@@ -53,7 +58,13 @@ const subscriberHandler = async (req: VercelRequest, res: VercelResponse) => {
       return res.status(404).json({ error: 'Not found' });
     }
 
-    const { email, trigger_automation, provider } = req.body || {};
+    const verification = await checkBotId();
+    if (verification.isBot) {
+      const routeHandler = providerRouter['none'];
+      return await routeHandler(req, res, 'none', false);
+    }
+
+    const { email, automation, provider } = req.body || {};
 
     if (!email) {
       return res.status(400).json({ error: 'Email is required' });
@@ -64,7 +75,7 @@ const subscriberHandler = async (req: VercelRequest, res: VercelResponse) => {
       return res.status(400).json({ error: 'Unsupported provider' });
     }
 
-    return await routeHandler(req, res, email, trigger_automation);
+    return await routeHandler(req, res, email, automation);
   } catch (err) {
     console.error('Unexpected error in POST /subscriber:', err);
     return res.status(500).json({ error: 'Internal server error' });

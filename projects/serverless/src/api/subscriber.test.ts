@@ -77,7 +77,7 @@ describe('POST /subscriber', () => {
 
     const req = {
       method: 'POST',
-      body: { email: 'test@example.com', provider: 'sender', trigger_automation: true },
+      body: { email: 'test@example.com', provider: 'sender', automation: true },
     } as unknown as import('@vercel/node').VercelRequest;
     const res = {
       status: vi.fn().mockReturnThis(),
@@ -93,7 +93,11 @@ describe('POST /subscriber', () => {
         'Content-Type': 'application/json',
         Accept: 'application/json',
       },
-      body: JSON.stringify({ email: 'test@example.com', trigger_automation: true }),
+      body: JSON.stringify({
+        email: 'test@example.com',
+        groups: ['e97Q3x'],
+        trigger_automation: true,
+      }),
     });
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.json).toHaveBeenCalledWith({ success: true });

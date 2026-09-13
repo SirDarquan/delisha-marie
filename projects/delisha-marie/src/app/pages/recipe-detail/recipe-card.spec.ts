@@ -114,7 +114,7 @@ describe('RecipeCard', () => {
   });
 
   it('should render stars and count when rating exists', () => {
-    fixture.componentRef.setInput('recipe', { ...mockRecipe, rating: 4.5, ratingCount: 12 });
+    fixture.componentRef.setInput('recipe', { ...mockRecipe, rating: 4.5, reviewCount: 12 });
     fixture.detectChanges();
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.querySelector('dml-stars')).toBeTruthy();
@@ -157,8 +157,8 @@ describe('RecipeCard', () => {
     expect(compiled.textContent).not.toContain('Nutritional Information');
   });
 
-  it('should handle rating with missing ratingCount', () => {
-    fixture.componentRef.setInput('recipe', { ...mockRecipe, rating: 5, ratingCount: undefined });
+  it('should handle rating with missing reviewCount', () => {
+    fixture.componentRef.setInput('recipe', { ...mockRecipe, rating: 5, reviewCount: undefined });
     fixture.detectChanges();
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.querySelector('.rating-text')?.textContent).toContain('(0)');
