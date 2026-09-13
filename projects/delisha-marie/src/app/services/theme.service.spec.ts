@@ -1,7 +1,6 @@
 import { PLATFORM_ID } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { WINDOW } from './global-tokens';
 import { ThemeService } from './theme.service';
 
 if (typeof localStorage === 'undefined') {
@@ -116,11 +115,7 @@ describe('ThemeService', () => {
     beforeEach(() => {
       TestBed.resetTestingModule();
       TestBed.configureTestingModule({
-        providers: [
-          ThemeService,
-          { provide: PLATFORM_ID, useValue: 'server' },
-          { provide: WINDOW, useValue: {} },
-        ],
+        providers: [ThemeService, { provide: PLATFORM_ID, useValue: 'server' }],
       });
     });
 

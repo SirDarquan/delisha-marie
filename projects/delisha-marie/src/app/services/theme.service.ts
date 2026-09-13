@@ -1,13 +1,11 @@
 import { DOCUMENT, isPlatformBrowser } from '@angular/common';
 import { effect, inject, Injectable, PLATFORM_ID, signal } from '@angular/core';
-import { WINDOW } from './global-tokens';
 
 @Injectable({
   providedIn: 'root',
 })
 export class ThemeService {
   readonly platformId = inject(PLATFORM_ID);
-  readonly window = inject(WINDOW);
   readonly document = inject(DOCUMENT);
 
   // Signal to track the current theme
@@ -18,7 +16,9 @@ export class ThemeService {
     if (isPlatformBrowser(this.platformId)) {
       const dark = this.isDark();
       this.document.documentElement.classList.toggle('dark-theme', dark);
-      localStorage.setItem('theme', dark ? 'dark' : 'light');
+      const window = this.document.defaultView;
+      if (!window) return;
+      window.localStorage?.setItem('theme', dark ? 'dark' : 'light');
     }
   });
 
@@ -28,9 +28,12 @@ export class ThemeService {
 
   private getInitialTheme(): boolean {
     if (isPlatformBrowser(this.platformId)) {
-      const saved = localStorage.getItem('theme');
+      const window = this.document.defaultView;
+      if (!window) return false;
+      const saved = window.localStorage?.getItem('theme');
       if (saved) return saved === 'dark';
-      return this.window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const media = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
+      return media ? media.matches : false;
     }
     return false;
   }
