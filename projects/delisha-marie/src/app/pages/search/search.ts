@@ -116,7 +116,7 @@ interface SearchFormValue {
                           currentPage: currentPage(),
                           totalItems: totalItems(),
                         };
-                  track recipe.id
+                  track $index
                 ) {
                   <a
                     [routerLink]="['/recipe', recipe.slug]"
@@ -127,7 +127,7 @@ interface SearchFormValue {
                         class="aspect-video w-full overflow-hidden bg-[var(--mat-sys-surface-container)] relative">
                         <img
                           [ngSrc]="recipe.image"
-                          priority
+                          [priority]="$index <= 5"
                           fill
                           [alt]="recipe.title"
                           class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />

@@ -3,6 +3,16 @@ import type { BaseRecipe, Breadcrumbs, Comment, Nutrition } from '@dm/library';
 import { Api } from './api';
 export type { Comment };
 
+export interface PaginatedComments {
+  comments: Comment[];
+  total: number;
+  stats?: {
+    reviewCount: number;
+    ratingCount: number;
+    rating: number;
+  };
+}
+
 export interface Equipment {
   id: string;
   recipeId: string;
@@ -113,9 +123,19 @@ export class RecipeService {
   getComments(
     recipeId: string | number,
     page?: number,
-  ): Promise<{ comments: Comment[]; total: number }> {
-    const url = `/recipes/${recipeId}/comments?page=${page || ''}`;
-    return this.api.get<{ comments: Comment[]; total: number }>(url);
+    limit?: number,
+  ): Promise<PaginatedComments> {
+    const maxLimit = limit ? `&limit=${limit}` : '';
+    const url = `/recipes/${recipeId}/comments?page=${page || ''}${maxLimit}`;
+    return this.api.get<PaginatedComments>(url);
+  }
+
+  /**
+   * Fetches 6 top comments for a specific recipe.
+   */
+  getTopComments(slug: string): Promise<Comment[]> {
+    const url = `/recipes/${slug}/comments/top`;
+    return this.api.get<Comment[]>(url);
   }
 
   /**

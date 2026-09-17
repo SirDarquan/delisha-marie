@@ -33,6 +33,8 @@ export interface MockResponseBody {
   recipe_id: string;
   author: string;
   rating: number;
+  reviewCount: number;
+  ratingCount: number;
   website: string;
   parent_id: string;
   status: string;
