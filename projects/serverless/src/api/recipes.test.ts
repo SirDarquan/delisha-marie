@@ -6,9 +6,10 @@ vi.hoisted(() => {
   process.env['SUPABASE_KEY'] = 'test-key';
 });
 
-const { mockFrom, mockInvoke } = vi.hoisted(() => ({
+const { mockFrom, mockInvoke, mockRpc } = vi.hoisted(() => ({
   mockFrom: vi.fn(),
   mockInvoke: vi.fn(),
+  mockRpc: vi.fn(),
 }));
 
 vi.mock('@supabase/supabase-js', () => {
@@ -49,6 +50,7 @@ vi.mock('@supabase/supabase-js', () => {
       functions: {
         invoke: mockInvoke,
       },
+      rpc: (...args: unknown[]) => wrapQueryChain(mockRpc(...args)),
     })),
   };
 });
@@ -85,6 +87,18 @@ describe('Recipes Router API', () => {
     shouldFail = false;
     shouldReturnNullData = false;
     mockIngredientsData = [];
+    mockRpc.mockImplementation((rpcName: string) => {
+      if (rpcName === 'get_top_rated_recipes') {
+        const activeMockFrom =
+          (globalThis as typeof globalThis & { supabaseMockFrom?: (table: string) => unknown })
+            .supabaseMockFrom || mockFrom;
+        return activeMockFrom('recipes');
+      }
+      return Promise.resolve({
+        data: [{ review_count: 0, rating_count: 0, average_rating: 0 }],
+        error: null,
+      });
+    });
 
     mockFrom.mockImplementation((table: string) => {
       return {
@@ -183,11 +197,25 @@ describe('Recipes Router API', () => {
     expect(res.status).toBe(200);
   });
 
-  it('should filter by rating for the-best-recipes method with no category', async () => {
+  it('should filter by rating for the-best-recipes method with no category (valid data)', async () => {
     const res = await createRequestMock(recipesRouter)()
       .get('/api/recipes')
       .query({ method: 'the-best-recipes', rating: 'true' });
     expect(res.status).toBe(200);
+    expect(mockRpc).toHaveBeenCalledWith(
+      'get_top_rated_recipes',
+      { min_rating: 4.5 },
+      { count: 'exact' },
+    );
+  });
+
+  it('should filter by rating for the-best-recipes method with no category (RPC error)', async () => {
+    shouldFail = true;
+    const res = await createRequestMock(recipesRouter)()
+      .get('/api/recipes')
+      .query({ method: 'the-best-recipes', rating: 'true' });
+    expect(res.status).toBe(500);
+    expect(res.body.error).toBe('Query failed');
   });
 
   it('should filter by category for cooking methods', async () => {
@@ -508,7 +536,7 @@ describe('Recipes Router API', () => {
       expect(res.status).toBe(200);
       expect(res.body.id).toBe('1');
       expect(res.body.title).toBe('Recipe 1');
-      expect(res.body.rating).toBe(5);
+      expect(res.body.rating).toBe(0);
       expect(res.body.comments).toEqual([]);
       expect(res.body.breadcrumbs.main).toBe(0);
       expect(res.body.breadcrumbs.items).toHaveLength(2);
@@ -564,6 +592,106 @@ describe('Recipes Router API', () => {
       const res = await createRequestMock(recipesRouter)().get('/api/recipes/error');
       expect(res.status).toBe(500);
       expect(res.body.error).toBe('Query error');
+    });
+
+    it('should handle RPC error in getRecipeStats gracefully', async () => {
+      mockRpc.mockReturnValueOnce(Promise.resolve({ data: null, error: new Error('RPC Error') }));
+      mockFrom.mockImplementation(() => {
+        return {
+          select: () => {
+            const queryChain = {
+              eq: () => queryChain,
+              in: () => queryChain,
+              order: () => queryChain,
+              limit: () => queryChain,
+              gt: () => queryChain,
+              lt: () => queryChain,
+              maybeSingle: () =>
+                Promise.resolve({
+                  data: { id: '1', slug: 'r1', status: 'published' },
+                  error: null,
+                }),
+              then: (onfulfilled?: (value: unknown) => unknown) => {
+                return Promise.resolve({ data: [], error: null }).then(onfulfilled);
+              },
+            };
+            return queryChain;
+          },
+        };
+      });
+
+      const res = await createRequestMock(recipesRouter)().get('/api/recipes/r1');
+      expect(res.status).toBe(200);
+      expect(res.body.rating).toBe(0);
+    });
+
+    it('should handle invalid RPC data in getRecipeStats gracefully', async () => {
+      mockRpc.mockReturnValueOnce(Promise.resolve({ data: null, error: null }));
+      mockFrom.mockImplementation(() => {
+        return {
+          select: () => {
+            const queryChain = {
+              eq: () => queryChain,
+              in: () => queryChain,
+              order: () => queryChain,
+              limit: () => queryChain,
+              gt: () => queryChain,
+              lt: () => queryChain,
+              maybeSingle: () =>
+                Promise.resolve({
+                  data: { id: '1', slug: 'r1', status: 'published' },
+                  error: null,
+                }),
+              then: (onfulfilled?: (value: unknown) => unknown) => {
+                return Promise.resolve({ data: [], error: null }).then(onfulfilled);
+              },
+            };
+            return queryChain;
+          },
+        };
+      });
+
+      const res = await createRequestMock(recipesRouter)().get('/api/recipes/r1');
+      expect(res.status).toBe(200);
+      expect(res.body.rating).toBe(0);
+    });
+
+    it('should handle valid RPC data in getRecipeStats with values', async () => {
+      mockRpc.mockReturnValueOnce(
+        Promise.resolve({
+          data: [{ review_count: 10, rating_count: 5, average_rating: 4.8 }],
+          error: null,
+        }),
+      );
+      mockFrom.mockImplementation(() => {
+        return {
+          select: () => {
+            const queryChain = {
+              eq: () => queryChain,
+              in: () => queryChain,
+              order: () => queryChain,
+              limit: () => queryChain,
+              gt: () => queryChain,
+              lt: () => queryChain,
+              maybeSingle: () =>
+                Promise.resolve({
+                  data: { id: '1', slug: 'r1', status: 'published' },
+                  error: null,
+                }),
+              then: (onfulfilled?: (value: unknown) => unknown) => {
+                return Promise.resolve({ data: [], error: null }).then(onfulfilled);
+              },
+            };
+            return queryChain;
+          },
+        };
+      });
+
+      const res = await createRequestMock(recipesRouter)().get('/api/recipes/r1');
+      expect(res.status).toBe(200);
+      expect(res.body.rating).toBe(4.8);
+      expect(res.body.reviewCount).toBe(10);
+      expect(res.body.ratingCount).toBe(5);
     });
 
     it('should handle category deslugification fallback and theBest prefix checks', async () => {
@@ -978,6 +1106,113 @@ describe('Recipes Router API', () => {
     const res = await createRequestMock(recipesRouter)().get('/api/recipes/r1');
     expect(res.status).toBe(500);
     expect(res.body.error).toBe('Adjacent query error');
+  });
+
+  describe('GET /api/recipes/:slug/comments/top', () => {
+    it('should return top 6 comments for a valid recipe', async () => {
+      const mockTopComments = Array.from({ length: 6 }, (_, i) => ({
+        id: `c${i + 1}`,
+        recipe_id: 'recipe-uuid-1',
+        parent_id: null,
+        rating: 5,
+        content: `Top Comment ${i + 1}`,
+        recipes: { slug: 'test-recipe' },
+      }));
+
+      mockFrom.mockImplementation((table: string) => {
+        if (table === 'comments') {
+          const queryChain: Record<string, unknown> = {
+            select: () => queryChain,
+            eq: () => queryChain,
+            is: () => queryChain,
+            not: () => queryChain,
+            order: () => queryChain,
+            limit: () => Promise.resolve({ data: mockTopComments, error: null }),
+            then: (onfulfilled?: (value: unknown) => unknown) =>
+              Promise.resolve({ data: mockTopComments, error: null }).then(onfulfilled),
+          };
+          return queryChain;
+        }
+        return {};
+      });
+
+      const res = await createRequestMock(recipesRouter)().get(
+        '/api/recipes/test-recipe/comments/top',
+      );
+      expect(res.status).toBe(200);
+      expect(res.body as unknown as unknown[]).toHaveLength(6);
+      expect((res.body as unknown as { id: string }[])[0].id).toBe('c1');
+      expect((res.body as unknown as { recipes?: unknown }[])[0].recipes).toBeUndefined(); // Should be stripped
+    });
+
+    it('should handle comments database error', async () => {
+      mockFrom.mockImplementation((table: string) => {
+        if (table === 'comments') {
+          const queryChain: Record<string, unknown> = {
+            select: () => queryChain,
+            eq: () => queryChain,
+            is: () => queryChain,
+            not: () => queryChain,
+            order: () => queryChain,
+            limit: () => Promise.resolve({ data: null, error: new Error('Comments fail') }),
+            then: (onfulfilled?: (value: unknown) => unknown) =>
+              Promise.resolve({ data: null, error: new Error('Comments fail') }).then(onfulfilled),
+          };
+          return queryChain;
+        }
+        return {};
+      });
+
+      const res = await createRequestMock(recipesRouter)().get('/api/recipes/error/comments/top');
+      expect(res.status).toBe(500);
+      expect(res.body.error).toBe('Comments fail');
+    });
+
+    it('should handle comments database string error', async () => {
+      mockFrom.mockImplementation((table: string) => {
+        if (table === 'comments') {
+          const queryChain: Record<string, unknown> = {
+            select: () => queryChain,
+            eq: () => queryChain,
+            is: () => queryChain,
+            not: () => queryChain,
+            order: () => queryChain,
+            limit: () => Promise.resolve({ data: null, error: 'String fail' }),
+            then: (onfulfilled?: (value: unknown) => unknown) =>
+              Promise.resolve({ data: null, error: 'String fail' }).then(onfulfilled),
+          };
+          return queryChain;
+        }
+        return {};
+      });
+
+      const res = await createRequestMock(recipesRouter)().get('/api/recipes/error/comments/top');
+      expect(res.status).toBe(500);
+      expect(res.body.error).toBe('String fail');
+    });
+
+    it('should return empty array if no comments found or recipe missing', async () => {
+      mockFrom.mockImplementation((table: string) => {
+        if (table === 'comments') {
+          const queryChain: Record<string, unknown> = {
+            select: () => queryChain,
+            eq: () => queryChain,
+            is: () => queryChain,
+            not: () => queryChain,
+            order: () => queryChain,
+            limit: () => Promise.resolve({ data: null, error: null }),
+            then: (onfulfilled?: (value: unknown) => unknown) =>
+              Promise.resolve({ data: null, error: null }).then(onfulfilled),
+          };
+          return queryChain;
+        }
+        return {};
+      });
+
+      const res = await createRequestMock(recipesRouter)().get('/api/recipes/valid/comments/top');
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual([]);
+    });
   });
 
   describe('GET /api/recipes/:recipeId/comments', () => {

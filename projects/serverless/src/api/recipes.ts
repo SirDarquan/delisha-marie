@@ -3,6 +3,27 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { checkBotId } from 'botid/server';
 import { getSupabaseClient } from './supabase';
 
+function camelCaseKeys(obj: unknown): unknown {
+  if (Array.isArray(obj)) {
+    return obj.map((v) => camelCaseKeys(v));
+  } else if (
+    obj !== null &&
+    obj !== undefined &&
+    typeof obj === 'object' &&
+    obj.constructor === Object
+  ) {
+    return Object.keys(obj as Record<string, unknown>).reduce(
+      (result, key) => {
+        const camelKey = key.replace(/_([a-z])/g, (g) => g[1].toUpperCase());
+        result[camelKey] = camelCaseKeys((obj as Record<string, unknown>)[key]);
+        return result;
+      },
+      {} as Record<string, unknown>,
+    );
+  }
+  return obj;
+}
+
 interface CategoryInfo {
   id: string;
   name: string;
@@ -44,10 +65,10 @@ interface FormattedRecipe {
 }
 
 function getSelectString(method: string, category: string): string {
-  const labels = 'title,description,slug,image';
+  const labels = 'id,title,description,slug,image';
   if (!category) {
     return `
-      *,
+      ${labels},status,created_at,the_best,
       recipe_categories (
         categories (id, name, url)
       ),
@@ -315,13 +336,18 @@ async function handleGetRecipes(req: VercelRequest, res: VercelResponse) {
     const selectStr = getSelectString(method, category);
 
     // 1. Data Query (no count, so it's fast to get the 12 items)
-    let query = supabase.from('recipes').select(selectStr, { count: 'exact' });
+    let query;
+    if (rating && method === 'the-best-recipes' && !category) {
+      // If we are looking for top-rated, use the RPC that returns SETOF recipes so we don't hit URL limits
+      query = supabase
+        .rpc('get_top_rated_recipes', { min_rating: 4.5 }, { count: 'exact' })
+        .select(selectStr);
+    } else {
+      query = supabase.from('recipes').select(selectStr, { count: 'exact' });
+    }
+
     query = query.eq('status', 'published').lte('created_at', new Date().toISOString());
     query = applyRecipeFilters(query, method, category, subcategory, matchedIds);
-
-    if (rating && method === 'the-best-recipes' && !category) {
-      query = query.gte('rating_count', 4.5);
-    }
 
     const start = (page - 1) * pageSize;
     const end = start + pageSize - 1;
@@ -332,6 +358,17 @@ async function handleGetRecipes(req: VercelRequest, res: VercelResponse) {
     if (error) throw error;
 
     const formatted = formatDbRecipes((data || []) as unknown as DbRecipe[]);
+
+    if (rating && formatted.length > 0) {
+      await Promise.all(
+        formatted.map(async (recipe) => {
+          const stats = await getRecipeStats(supabase, recipe.id);
+          recipe.reviewCount = stats.reviewCount;
+          recipe.ratingCount = stats.ratingCount;
+          recipe.rating = stats.rating;
+        }),
+      );
+    }
 
     const result = {
       items: formatted,
@@ -431,6 +468,40 @@ async function getBreadcrumbs(
   return { main: mainIndex, items: breadcrumbItems };
 }
 
+async function handleGetTopComments(req: VercelRequest, res: VercelResponse, slug: string) {
+  try {
+    const supabase = await getSupabaseClient();
+    const cleanSlug = slug.replace(/^\/?recipe\//, '').replace(/^\//, '');
+
+    const { data, error } = await supabase
+      .from('comments')
+      .select('author, content, rating, created_at, recipes!inner(slug)')
+      .eq('recipes.slug', cleanSlug)
+      .eq('status', 'approved')
+      .is('parent_id', null)
+      .order('created_at', { ascending: false })
+      .limit(6);
+
+    if (error) throw error;
+
+    // Remove the joined recipes object to keep the response clean
+    const cleanedData = data
+      ? data.map((item) => {
+          const rest = { ...item };
+          if ('recipes' in rest) {
+            delete (rest as Record<string, unknown>)['recipes'];
+          }
+          return rest;
+        })
+      : [];
+    res.json(cleanedData);
+  } catch (err: unknown) {
+    console.error(err);
+    const msg = err instanceof Error ? err.message : String(err);
+    res.status(500).json({ error: msg });
+  }
+}
+
 async function handleGetComments(req: VercelRequest, res: VercelResponse, recipeId: string) {
   try {
     const supabase = await getSupabaseClient();
@@ -490,10 +561,14 @@ async function handleGetComments(req: VercelRequest, res: VercelResponse, recipe
 
     // Combine and camelCase keys
     const combined = [...topLevelComments, ...replies];
+    const formatted = combined.map((c) => camelCaseKeys(c));
+
+    const stats = await getRecipeStats(supabase, recipeId);
 
     res.json({
-      comments: combined,
-      total: total,
+      comments: formatted,
+      total,
+      stats,
     });
   } catch (err: unknown) {
     console.error(err);
@@ -598,6 +673,8 @@ async function handlePostComments(
 
     if (error) throw error;
 
+    listCache.clear();
+
     res.status(201).json(data);
   } catch (err: unknown) {
     console.error(err);
@@ -629,6 +706,28 @@ async function handleGetFavorites(req: VercelRequest, res: VercelResponse) {
   }
 }
 
+async function getRecipeStats(
+  supabase: SupabaseClient,
+  recipeId: string,
+): Promise<{ reviewCount: number; ratingCount: number; rating: number }> {
+  const { data, error } = await supabase.rpc('get_recipe_stats_agg', { recipe_uuid: recipeId });
+
+  if (error) {
+    console.error('Error fetching recipe stats:', error);
+    return { reviewCount: 0, ratingCount: 0, rating: 0 };
+  }
+  let stats = [];
+  // The RPC function should return exactly one row with these three numeric fields
+  if (data && Array.isArray(data) && data.length > 0) {
+    stats = data[0];
+  }
+  return {
+    reviewCount: stats.review_count || 0,
+    ratingCount: stats.rating_count || 0,
+    rating: stats.average_rating || 0,
+  };
+}
+
 async function handleGetBySlug(req: VercelRequest, res: VercelResponse, slug: string) {
   try {
     const supabase = await getSupabaseClient();
@@ -657,13 +756,13 @@ async function handleGetBySlug(req: VercelRequest, res: VercelResponse, slug: st
 
     // Populate comments rating & review structure defaults
     formatted.comments = [];
-    formatted.rating = 5;
 
-    // Fetch breadcrumbs and adjacent sibling navigation in parallel
-    const [breadcrumbsObj, prev, next] = await Promise.all([
+    // Fetch breadcrumbs, adjacent sibling navigation, and stats in parallel
+    const [breadcrumbsObj, prev, next, stats] = await Promise.all([
       getBreadcrumbs(supabase, recipeData.id, formatted),
       getAdjacentRecipe(supabase, recipeData.id, 'prev'),
       getAdjacentRecipe(supabase, recipeData.id, 'next'),
+      getRecipeStats(supabase, recipeData.id),
     ]);
 
     formatted.breadcrumbs = breadcrumbsObj;
@@ -671,6 +770,9 @@ async function handleGetBySlug(req: VercelRequest, res: VercelResponse, slug: st
       prev,
       next,
     };
+    formatted.reviewCount = stats.reviewCount;
+    formatted.ratingCount = stats.ratingCount;
+    formatted.rating = stats.rating;
 
     res.json(formatted);
   } catch (err: unknown) {
@@ -742,6 +844,11 @@ const routes: IRecipeRoute[] = [
     pattern: /^\/favorites\/list$/,
     method: 'GET',
     handler: (req, res) => handleGetFavorites(req, res),
+  },
+  {
+    pattern: /^\/([^/]+)\/comments\/top$/,
+    method: 'GET',
+    handler: (req, res, match: RegExpExecArray) => handleGetTopComments(req, res, match[1]),
   },
   {
     pattern: /^\/([^/]+)\/comments$/,
