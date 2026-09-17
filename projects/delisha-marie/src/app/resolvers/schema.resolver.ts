@@ -109,22 +109,11 @@ export const schemaDynamicPageResolver: ResolveFn<SchemaObject[]> = async (route
   } else if (slug === 'faq') {
     const pageService = inject(PagesService);
     const page = await pageService.getPage('faq');
-    if (!page) return schema;
-    const parsedFaqs: { question: string; answer: string }[] = [];
-    const regex = /<h2[^>]*>(.*?)<\/h2>([\s\S]*?)(?=<h2|$)/gi;
-    let match;
-    while ((match = regex.exec(page.content)) !== null) {
-      const question = match[1].replace(/<[^>]*>/g, '').trim();
-      const answer = match[2]
-        .replace(/<[^>]*>/g, ' ')
-        .replace(/\s+/g, ' ')
-        .trim();
-      if (question && answer) {
-        parsedFaqs.push({ question, answer });
+    if (page) {
+      const parsedFaqs = parseFaqContent(page.content);
+      if (parsedFaqs.length > 0) {
+        schema.push(generateFAQPageSchema(url, siteName, parsedFaqs));
       }
-    }
-    if (parsedFaqs.length > 0) {
-      schema.push(generateFAQPageSchema(url, siteName, parsedFaqs));
     }
   }
 
@@ -660,6 +649,27 @@ const convertToIso8601Duration = (duration: string): string => {
 
   return '';
 };
+/**
+ * Parses FAQ HTML content into Question/Answer pairs.
+ */
+export const parseFaqContent = (content: string): { question: string; answer: string }[] => {
+  const parsedFaqs: { question: string; answer: string }[] = [];
+  const sections = content.split(/<h2[^>]*>/i);
+  for (let i = 1; i < sections.length; i++) {
+    const section = sections[i];
+    const endH2Idx = section.toLowerCase().indexOf('</h2>');
+    if (endH2Idx === -1) continue;
+
+    const question = section.substring(0, endH2Idx).replace(/<[^>]*>/g, '').trim();
+    const answer = section.substring(endH2Idx + 5).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+      
+    if (question && answer) {
+      parsedFaqs.push({ question, answer });
+    }
+  }
+  return parsedFaqs;
+};
+
 /**
  * Generates breadcrumbs for list pages or other static pages.
  */
