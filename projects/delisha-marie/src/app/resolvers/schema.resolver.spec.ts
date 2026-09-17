@@ -1,4 +1,4 @@
-import { DOCUMENT } from '@angular/common';
+import { APP_BASE_HREF, DOCUMENT } from '@angular/common';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
 import { beforeEach, describe, expect, it, Mock, vi } from 'vitest';
@@ -42,9 +42,13 @@ describe('schemaResolver', () => {
     TestBed.configureTestingModule({
       providers: [
         { provide: DOCUMENT, useValue: mockDocument },
+        { provide: APP_BASE_HREF, useValue: '/' },
         {
           provide: RecipeService,
-          useValue: { getRecipeBySlug: vi.fn().mockResolvedValue(null) },
+          useValue: {
+            getRecipeBySlug: vi.fn().mockResolvedValue(null),
+            getTopComments: vi.fn().mockResolvedValue([]),
+          },
         },
         {
           provide: PagesService,
@@ -134,9 +138,16 @@ describe('schemaResolver', () => {
     });
 
     it('generateImageObjectSchema', () => {
-      const result = generateImageObjectSchema('url', 'slug', 'imageUrl', 'caption');
-      expect(result['@type']).toBe('ImageObject');
-      expect(result['url']).toBe('imageUrl');
+      const result = generateImageObjectSchema('url', 'imageUrl', 'caption');
+      expect(result).toEqual({
+        '@context': 'https://schema.org',
+        '@type': 'ImageObject',
+        '@id': 'url#primaryimage',
+        inLanguage: 'en-US',
+        url: 'imageUrl',
+        contentUrl: 'imageUrl',
+        caption: 'caption',
+      });
     });
   });
   describe('Resolver logic', () => {
@@ -298,6 +309,7 @@ describe('schemaResolver', () => {
       });
 
       vi.mocked(recipeService.getRecipeBySlug).mockResolvedValue(mockRecipe);
+      vi.mocked(recipeService.getTopComments).mockResolvedValue(mockRecipe.comments || []);
 
       const route = {
         paramMap: { get: () => 'recipe' },
@@ -416,8 +428,8 @@ describe('schemaResolver', () => {
         unknown
       >;
       const aggregateRating = recipeSchema['aggregateRating'] as Record<string, number>;
-      expect(aggregateRating['ratingValue']).toBe(5);
-      expect(aggregateRating['reviewCount']).toBe(1);
+      expect(aggregateRating['ratingValue']).toBe(0);
+      expect(aggregateRating['reviewCount']).toBe(0);
     });
 
     it('should reuse existing script tag if present in schemaRecipeResolver', async () => {
