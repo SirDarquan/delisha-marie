@@ -503,8 +503,7 @@ export const generateArticleSchema = (
     headline: recipe.title,
     datePublished: recipe.createdAt,
     dateModified: recipe.updatedAt,
-    wordCount: recipe.content
-      .replaceAll(/<[^>]*>/g, '')
+    wordCount: stripHtml(recipe.content)
       .split(/\s+/)
       .filter((w) => w.length > 0).length, // Count the words
     commentCount: recipe.reviewCount, // Count the comments
@@ -649,6 +648,28 @@ const convertToIso8601Duration = (duration: string): string => {
 
   return '';
 };
+
+/**
+ * Strip HTML tags from a string linearly to avoid regex backtracking.
+ */
+export const stripHtml = (html: string, replaceWith = ''): string => {
+  if (!html) return '';
+  let result = '';
+  let inTag = false;
+  for (const element of html) {
+    const char = element;
+    if (char === '<') {
+      inTag = true;
+    } else if (char === '>') {
+      inTag = false;
+      result += replaceWith;
+    } else if (!inTag) {
+      result += char;
+    }
+  }
+  return result;
+};
+
 /**
  * Parses FAQ HTML content into Question/Answer pairs.
  */
@@ -660,8 +681,8 @@ export const parseFaqContent = (content: string): { question: string; answer: st
     const endH2Idx = section.toLowerCase().indexOf('</h2>');
     if (endH2Idx === -1) continue;
 
-    const question = section.substring(0, endH2Idx).replace(/<[^>]*>/g, '').trim();
-    const answer = section.substring(endH2Idx + 5).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+    const question = stripHtml(section.substring(0, endH2Idx)).trim();
+    const answer = stripHtml(section.substring(endH2Idx + 5), ' ').replace(/\s+/g, ' ').trim();
       
     if (question && answer) {
       parsedFaqs.push({ question, answer });
