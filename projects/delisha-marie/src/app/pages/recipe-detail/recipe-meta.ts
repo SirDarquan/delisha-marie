@@ -4,14 +4,12 @@ import {
   Component,
   ViewEncapsulation,
   computed,
-  inject,
   input,
-  resource,
 } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { RouterModule } from '@angular/router';
-import { Recipe, RecipeService } from '../../services/recipe.service';
+import { Recipe } from '../../services/recipe.service';
 
 @Component({
   selector: 'dml-recipe-meta',
@@ -78,19 +76,8 @@ import { Recipe, RecipeService } from '../../services/recipe.service';
 export class RecipeMeta {
   recipe = input.required<Recipe>();
 
-  private readonly recipeService = inject(RecipeService);
-
-  readonly commentsResource = resource({
-    params: () => ({ recipeId: String(this.recipe().id) }),
-    loader: ({ params }) => this.recipeService.getComments(params.recipeId),
-  });
-
-  commentCountOverride = input<number | null>(null);
-
   readonly commentCount = computed(() => {
-    const override = this.commentCountOverride();
-    if (override !== null) return override;
-    return this.commentsResource.value()?.total ?? 0;
+    return this.recipe().reviewCount;
   });
 
   readonly isUpdated = computed(() => {

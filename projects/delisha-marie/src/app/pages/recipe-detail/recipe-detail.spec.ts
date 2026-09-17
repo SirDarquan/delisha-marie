@@ -225,16 +225,32 @@ describe('RecipeDetail', () => {
     expect(breadcrumbs).toHaveLength(0);
   });
 
-  it('should update commentCountOverride when commentCountChange is emitted', async () => {
+  it('should update overrides when statsChange is emitted', () => {
     fixture.componentRef.setInput('recipe', mockRecipe);
-    fixture.detectChanges();
-    await new Promise((r) => setTimeout(r, 0));
     fixture.detectChanges();
 
     const commentsEl = fixture.debugElement.query(By.css('dml-recipe-comments'));
-    commentsEl.triggerEventHandler('commentCountChange', 42);
+    commentsEl.triggerEventHandler('statsChange', {
+      reviewCount: 42,
+      ratingCount: 15,
+      rating: 4.8,
+    });
 
     expect(component.commentCountOverride()).toBe(42);
+    expect(component.ratingCountOverride()).toBe(15);
+    expect(component.ratingOverride()).toBe(4.8);
+  });
+
+  it('should update commentCountOverride but not rating when statsChange has no rating', () => {
+    fixture.componentRef.setInput('recipe', mockRecipe);
+    fixture.detectChanges();
+
+    const commentsEl = fixture.debugElement.query(By.css('dml-recipe-comments'));
+    commentsEl.triggerEventHandler('statsChange', { reviewCount: 43, ratingCount: 0, rating: 0 });
+
+    expect(component.commentCountOverride()).toBe(43);
+    expect(component.ratingCountOverride()).toBeNull();
+    expect(component.ratingOverride()).toBeNull();
   });
 
   it('should execute setTimeout scroll logic when hash is present', async () => {

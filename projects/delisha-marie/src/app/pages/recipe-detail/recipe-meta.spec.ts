@@ -71,34 +71,15 @@ describe('RecipeMeta', () => {
     expect(compiled.querySelector('.recipe-meta')?.textContent).toContain('Author: Delisha Marie');
   });
 
-  it('should display "0 Comment(s)" initially', () => {
-    const compiled = fixture.nativeElement as HTMLElement;
+  it('should display the correct comment count', () => {
+    fixture.componentRef.setInput('recipe', { ...mockRecipe, reviewCount: 0 });
+    fixture.detectChanges();
+    let compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.querySelector('.recipe-meta')?.textContent).toContain('0 Comment(s)');
-  });
 
-  it('should update comment count when resource resolves', async () => {
-    recipeServiceMock.getComments.mockResolvedValue({
-      comments: [{ id: '1' }, { id: '2' }],
-      total: 2,
-    });
-
-    // Trigger resource re-fetch by updating the input (even with same ID to be safe or just wait)
-    fixture.componentRef.setInput('recipe', { ...mockRecipe, id: '123-new' });
+    fixture.componentRef.setInput('recipe', { ...mockRecipe, reviewCount: 42 });
     fixture.detectChanges();
-
-    // Wait for resource
-    await new Promise((resolve) => setTimeout(resolve, 0));
-    fixture.detectChanges();
-
-    const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('.recipe-meta')?.textContent).toContain('2 Comment(s)');
-  });
-
-  it('should override comment count when commentCountOverride is provided', () => {
-    fixture.componentRef.setInput('commentCountOverride', 42);
-    fixture.detectChanges();
-
-    const compiled = fixture.nativeElement as HTMLElement;
+    compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.querySelector('.recipe-meta')?.textContent).toContain('42 Comment(s)');
   });
 

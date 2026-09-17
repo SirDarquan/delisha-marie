@@ -4,6 +4,7 @@ import {
   Component,
   ViewEncapsulation,
   computed,
+  effect,
   inject,
   input,
   output,
@@ -344,7 +345,7 @@ export interface CommentFormValue {
 export class RecipeComments {
   recipe = input.required<Recipe>();
   page = input<string>();
-  commentCountChange = output<number>();
+  statsChange = output<{ reviewCount: number; ratingCount: number; rating: number }>();
 
   private readonly recipeService = inject(RecipeService);
   private readonly router = inject(Router);
@@ -354,6 +355,7 @@ export class RecipeComments {
   // Signals for state
   replyTo = signal<Comment | null>(null);
   pageSize = signal(50);
+  currentStats = signal<{ reviewCount: number; ratingCount: number; rating: number } | null>(null);
 
   currentPage = computed(() => {
     const p = this.page();
@@ -366,16 +368,23 @@ export class RecipeComments {
 
   // Resource for comments
   private readonly commentsResource = resource({
-    params: () => ({ recipeId: this.recipe().id, page: this.page() }),
-    loader: ({ params }) =>
-      this.recipeService.getComments(
-        params.recipeId,
-        params.page ? Number.parseInt(params.page, 10) : undefined,
-      ),
+    params: () => ({
+      recipeId: this.recipe().id,
+      page: this.page() ? Number.parseInt(this.page()!, 10) : undefined,
+    }),
+    loader: ({ params }) => this.recipeService.getComments(params.recipeId, params.page),
   });
 
   comments = computed(() => this.commentsResource.value()?.comments || []);
   totalTopLevelComments = computed(() => this.commentsResource.value()?.total || 0);
+
+  private readonly _countEffect = effect(() => {
+    const data = this.commentsResource.value();
+    if (data?.stats && !this.currentStats()) {
+      this.currentStats.set(data.stats);
+      this.statsChange.emit(data.stats);
+    }
+  });
   loading = computed(() => this.commentsResource.isLoading());
 
   topLevelComments = computed(() => {
@@ -417,6 +426,7 @@ export class RecipeComments {
       submission: {
         action: async (f) => {
           const value = f().value();
+          const isReply = !!this.replyTo();
           const newComment: Omit<Comment, 'id' | 'createdAt'> & { alt_email?: string } = {
             recipeId: String(this.recipe().id),
             author: value.author,
@@ -430,14 +440,71 @@ export class RecipeComments {
 
           try {
             const saved = await this.recipeService.addComment(newComment);
+
+            if (!saved?.id) {
+              throw new Error('Failed to post comment. Please try again.');
+            }
+
+            if (!saved.createdAt) {
+              saved.createdAt = new Date().toISOString();
+            }
+
+            // 1. Put the comment up first in the comments section
             this.commentsResource.update((prev) => {
-              if (!prev) return { comments: [saved], total: 1 };
-              const isReply = !!saved.parentId;
+              if (!prev) {
+                return {
+                  comments: [saved],
+                  total: 1,
+                  stats: {
+                    reviewCount: 1,
+                    ratingCount: saved.rating ? 1 : 0,
+                    rating: saved.rating || 0,
+                  },
+                };
+              }
+              const newTotal = isReply ? prev.total : prev.total + 1;
               return {
+                ...prev,
                 comments: [saved, ...prev.comments],
-                total: isReply ? prev.total : prev.total + 1,
+                total: newTotal,
               };
             });
+
+            // 2. Calculate updated stats
+            const prevStats = this.currentStats() ||
+              this.commentsResource.value()?.stats || {
+                reviewCount: this.recipe().reviewCount ?? 0,
+                ratingCount: this.recipe().ratingCount ?? 0,
+                rating: this.recipe().rating ?? 0,
+              };
+
+            const newReviewCount = (prevStats.reviewCount || 0) + 1;
+            const prevRatingCount = prevStats.ratingCount || 0;
+            const prevRating = prevStats.rating || 0;
+            let newRatingCount = prevRatingCount;
+            let newRating = prevRating;
+
+            if (saved.rating && !isReply) {
+              newRatingCount = prevRatingCount + 1;
+              newRating = Number(
+                ((prevRating * prevRatingCount + saved.rating) / newRatingCount).toFixed(2),
+              );
+            }
+
+            const updatedStats = {
+              reviewCount: newReviewCount,
+              ratingCount: newRatingCount,
+              rating: newRating,
+            };
+
+            this.currentStats.set(updatedStats);
+
+            this.commentsResource.update((prev) =>
+              prev ? { ...prev, stats: updatedStats } : prev,
+            );
+
+            // 3. After putting the comment up, send out the message
+            this.statsChange.emit(updatedStats);
 
             f().reset({
               author: '',
@@ -449,7 +516,6 @@ export class RecipeComments {
               isNew: false,
             });
 
-            const isReply = !!this.replyTo();
             this.replyTo.set(null);
 
             setTimeout(() => {
@@ -460,8 +526,6 @@ export class RecipeComments {
                 this.window.scrollTo({ top: y, behavior: 'smooth' });
               }
             }, 100);
-
-            this.commentCountChange.emit(this.totalTopLevelComments());
           } catch (err: unknown) {
             console.error('Failed to post comment', err);
             let errMsg = 'Failed to post comment. Please try again.';
