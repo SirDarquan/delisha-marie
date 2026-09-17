@@ -85,14 +85,11 @@ import { RecipeTags } from './recipe-tags';
             </div>
           </div>
         </div>
-      } @else if (recipe(); as r) {
+      } @else if (displayRecipe(); as r) {
         <!-- Breadcrumbs -->
         <dml-breadcrumbs [items]="breadcrumbItems()" class="block mb-8 px-4 sm:px-0 mt-4 sm:mt-0" />
 
-        <dml-recipe-meta
-          [recipe]="r"
-          [commentCountOverride]="commentCountOverride()"
-          class="block mb-8 px-4 sm:px-0" />
+        <dml-recipe-meta [recipe]="r" class="block mb-8 px-4 sm:px-0" />
 
         <article class="w-full">
           <!-- Hero Section -->
@@ -151,9 +148,9 @@ import { RecipeTags } from './recipe-tags';
 
                 <!-- Comments Section -->
                 <dml-recipe-comments
-                  [recipe]="r"
+                  [recipe]="recipe()!"
                   [page]="page()"
-                  (commentCountChange)="commentCountOverride.set($event)" />
+                  (statsChange)="onStatsChange($event)" />
               </div>
             </div>
           </div>
@@ -184,7 +181,6 @@ import { RecipeTags } from './recipe-tags';
       }
     </div>
   `,
-
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -194,6 +190,27 @@ export class RecipeDetail {
   page = input<string>();
 
   commentCountOverride = signal<number | null>(null);
+  ratingOverride = signal<number | null>(null);
+  ratingCountOverride = signal<number | null>(null);
+
+  readonly displayRecipe = computed(() => {
+    const r = this.recipe();
+    if (!r) return undefined;
+    return {
+      ...r,
+      reviewCount: this.commentCountOverride() ?? r.reviewCount,
+      ratingCount: this.ratingCountOverride() ?? r.ratingCount,
+      rating: this.ratingOverride() ?? r.rating,
+    };
+  });
+
+  onStatsChange(stats: { reviewCount: number; ratingCount: number; rating: number }) {
+    this.commentCountOverride.set(stats.reviewCount);
+    if (stats.ratingCount > 0 && stats.rating > 0) {
+      this.ratingCountOverride.set(stats.ratingCount);
+      this.ratingOverride.set(stats.rating);
+    }
+  }
 
   readonly isLoading = computed(() => this.recipe() === undefined);
 

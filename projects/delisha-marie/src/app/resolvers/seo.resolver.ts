@@ -156,6 +156,7 @@ export const seoDynamicPageResolver: ResolveFn<SeoContent> = async (route, state
   const document = inject(DOCUMENT);
   const baseHref = inject(APP_BASE_HREF);
 
+  const data = (route.data || {}) as Partial<SeoContent>;
   const origin = document.location.origin;
   const path = state.url.split('?')[0].split('#')[0];
   const siteName = "Delisha Marie's Kitchen";
@@ -193,7 +194,7 @@ export const seoDynamicPageResolver: ResolveFn<SeoContent> = async (route, state
     image: '',
     type: 'website',
     twitterCard: 'summary_large_image',
-    content: 'index,follow',
+    content: data.content || 'index,follow',
   };
 
   const resolvedSeo = resolveDynamicOrigin(seoConfig, origin);

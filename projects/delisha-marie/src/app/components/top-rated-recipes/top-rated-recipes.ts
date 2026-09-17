@@ -56,10 +56,10 @@ import { RecipeService } from '../../services/recipe.service';
                       {{ recipe.title }}
                     </h3>
                     <div class="flex items-center gap-1">
-                      <dml-stars [rating]="recipe.ratingCount" />
-                      <span class="font-bold text-sm">{{ recipe.ratingCount }} stars</span>
+                      <dml-stars [rating]="recipe.rating" />
+                      <span class="font-bold text-sm">{{ recipe.rating }} stars</span>
                       <span class="text-xs text-gray-500 ml-1"
-                        >({{ recipe.reviewCount }} ratings)</span
+                        >({{ recipe.reviewCount }} comments)</span
                       >
                     </div>
                   </mat-card-content>
@@ -84,6 +84,6 @@ export class TopRatedRecipes {
 
   readonly recipes = computed(() => {
     const all = this._recipeResource.value()?.items || [];
-    return all.filter((r) => r.ratingCount > 4.5).slice(0, 4);
+    return all.filter((r) => r.rating >= 4.5).slice(0, 4);
   });
 }
