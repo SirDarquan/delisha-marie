@@ -21,6 +21,16 @@ export interface Equipment {
   url: string;
 }
 
+export interface RecipeSeoData {
+  title: string;
+  description: string;
+  keywords?: string[];
+  image: string;
+  imageWidth?: string | number;
+  imageHeight?: string | number;
+  imageType?: string;
+}
+
 export interface Recipe extends BaseRecipe {
   breadcrumbs: Breadcrumbs;
   nutrition: Nutrition;
@@ -50,13 +60,19 @@ export interface NavigationLinks {
 export class RecipeService {
   private readonly api = inject(Api);
   private readonly recipeCache = new Map<string, Promise<Recipe | null>>();
+  private readonly seoCache = new Map<string, Promise<RecipeSeoData | null>>();
+  private readonly schemaCache = new Map<string, Promise<Recipe | null>>();
 
   /**
    * Fetches a single recipe by its slug.
    */
-  getRecipeBySlug(slug: string): Promise<Recipe | null> {
+  getRecipeBySlug(slug: string, refresh = false): Promise<Recipe | null> {
     const clean = (s: string) => s.replace(/^\/?recipe\//, '').replace(/^\//, '');
     const normalizedSearch = clean(slug);
+
+    if (refresh) {
+      this.recipeCache.delete(normalizedSearch);
+    }
 
     let cached = this.recipeCache.get(normalizedSearch);
     if (!cached) {
@@ -65,6 +81,58 @@ export class RecipeService {
 
       setTimeout(() => {
         this.recipeCache.delete(normalizedSearch);
+      }, 5000);
+    }
+    return cached;
+  }
+
+  /**
+   * Fetches a single recipe SEO by its slug.
+   */
+  getSeoBySlug(slug: string, refresh = false): Promise<RecipeSeoData | null> {
+    const clean = (s: string) => s.replace(/^\/?recipe\//, '').replace(/^\//, '');
+    const normalizedSearch = clean(slug);
+
+    if (refresh) {
+      this.seoCache.delete(normalizedSearch);
+    }
+
+    let cached = this.seoCache.get(normalizedSearch);
+    if (!cached) {
+      cached = this.api
+        .get<RecipeSeoData | null>(`/recipes/${normalizedSearch}/seo`)
+        .catch(() => null);
+      this.seoCache.set(normalizedSearch, cached);
+
+      setTimeout(() => {
+        this.seoCache.delete(normalizedSearch);
+      }, 5000);
+    }
+    return cached;
+  }
+
+  getSEOBySlug(slug: string, refresh = false): Promise<RecipeSeoData | null> {
+    return this.getSeoBySlug(slug, refresh);
+  }
+
+  /**
+   * Fetches a single recipe JSON-LD Schema by its slug.
+   */
+  getSchemaBySlug(slug: string, refresh = false): Promise<Recipe | null> {
+    const clean = (s: string) => s.replace(/^\/?recipe\//, '').replace(/^\//, '');
+    const normalizedSearch = clean(slug);
+
+    if (refresh) {
+      this.schemaCache.delete(normalizedSearch);
+    }
+
+    let cached = this.schemaCache.get(normalizedSearch);
+    if (!cached) {
+      cached = this.api.get<Recipe | null>(`/recipes/${normalizedSearch}/schema`).catch(() => null);
+      this.schemaCache.set(normalizedSearch, cached);
+
+      setTimeout(() => {
+        this.schemaCache.delete(normalizedSearch);
       }, 5000);
     }
     return cached;

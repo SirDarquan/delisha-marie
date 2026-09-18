@@ -1,8 +1,9 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { makeStateKey, TransferState } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { Recipe, RecipeService } from './recipe.service';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { Comment, Equipment, Recipe, RecipeService } from './recipe.service';
 
 describe('RecipeService', () => {
   let service: RecipeService;
@@ -145,7 +146,145 @@ describe('RecipeService', () => {
         window.setTimeout = origSetTimeout;
       }
     });
+
+    it('should refresh recipe when refresh flag is true', async () => {
+      const transferState = TestBed.inject(TransferState);
+      const mockRecipe1 = { id: 1, slug: 'test-slug', title: 'Test 1' } as unknown as Recipe;
+      const mockRecipe2 = { id: 1, slug: 'test-slug', title: 'Test 2' } as unknown as Recipe;
+
+      const p1 = service.getRecipeBySlug('test-slug');
+      httpMock.expectOne('/api/recipes/test-slug').flush(mockRecipe1);
+      const res1 = await p1;
+      expect(res1?.title).toBe('Test 1');
+
+      // Clear TransferState to allow network refetch
+      transferState.remove(makeStateKey('API_GET_/api/recipes/test-slug'));
+
+      const p2 = service.getRecipeBySlug('test-slug', true);
+      httpMock.expectOne('/api/recipes/test-slug').flush(mockRecipe2);
+      const res2 = await p2;
+      expect(res2?.title).toBe('Test 2');
+    });
   });
+
+  describe('getSEOBySlug', () => {
+    it('should fetch SEO metadata by slug', async () => {
+      const mockSeo = {
+        title: 'Test Recipe',
+        description: 'Delicious recipe',
+        keywords: ['test'],
+        image: '/img.jpg',
+        imageWidth: 800,
+        imageHeight: 600,
+      };
+
+      const promise = service.getSeoBySlug('test-recipe');
+      const req = httpMock.expectOne('/api/recipes/test-recipe/seo');
+      req.flush(mockSeo);
+
+      const result = await promise;
+      expect(result).toEqual(mockSeo);
+    });
+
+    it('should normalize slug and use seoCache on repeated calls', async () => {
+      const mockSeo = { title: 'Test' };
+
+      const p1 = service.getSeoBySlug('/recipe/my-slug');
+      httpMock.expectOne('/api/recipes/my-slug/seo').flush(mockSeo);
+      const r1 = await p1;
+      expect(r1).toEqual(mockSeo);
+
+      const p2 = service.getSeoBySlug('my-slug');
+      httpMock.expectNone('/api/recipes/my-slug/seo');
+      const r2 = await p2;
+      expect(r2).toEqual(mockSeo);
+    });
+
+    it('should refresh SEO when refresh flag is true', async () => {
+      const transferState = TestBed.inject(TransferState);
+      const mockSeo1 = { title: 'Old' };
+      const mockSeo2 = { title: 'New' };
+
+      const p1 = service.getSeoBySlug('my-slug');
+      httpMock.expectOne('/api/recipes/my-slug/seo').flush(mockSeo1);
+      await p1;
+
+      // Clear TransferState to allow network refetch
+      transferState.remove(makeStateKey('API_GET_/api/recipes/my-slug/seo'));
+
+      const p2 = service.getSeoBySlug('my-slug', true);
+      httpMock.expectOne('/api/recipes/my-slug/seo').flush(mockSeo2);
+      const r2 = await p2;
+      expect(r2).toEqual(mockSeo2);
+    });
+
+    it('should return null on error', async () => {
+      const promise = service.getSeoBySlug('error-slug');
+      const req = httpMock.expectOne('/api/recipes/error-slug/seo');
+      req.error(new ProgressEvent('Network error'));
+      const result = await promise;
+      expect(result).toBeNull();
+    });
+  });
+
+  describe('getSchemaBySlug', () => {
+    it('should fetch Schema metadata by slug', async () => {
+      const mockSchemaRecipe = {
+        id: 1,
+        title: 'Schema Recipe',
+        slug: 'schema-recipe',
+        comments: [],
+      } as unknown as Recipe;
+
+      const promise = service.getSchemaBySlug('schema-recipe');
+      const req = httpMock.expectOne('/api/recipes/schema-recipe/schema');
+      req.flush(mockSchemaRecipe);
+
+      const result = await promise;
+      expect(result).toEqual(mockSchemaRecipe);
+    });
+
+    it('should normalize slug and use schemaCache on repeated calls', async () => {
+      const mockSchemaRecipe = { id: 1, title: 'Cached Schema' } as unknown as Recipe;
+
+      const p1 = service.getSchemaBySlug('/recipe/cached-schema');
+      httpMock.expectOne('/api/recipes/cached-schema/schema').flush(mockSchemaRecipe);
+      const r1 = await p1;
+      expect(r1).toEqual(mockSchemaRecipe);
+
+      const p2 = service.getSchemaBySlug('cached-schema');
+      httpMock.expectNone('/api/recipes/cached-schema/schema');
+      const r2 = await p2;
+      expect(r2).toEqual(mockSchemaRecipe);
+    });
+
+    it('should refresh schema when refresh flag is true', async () => {
+      const transferState = TestBed.inject(TransferState);
+      const mockSchema1 = { id: 1, title: 'Schema 1' } as unknown as Recipe;
+      const mockSchema2 = { id: 1, title: 'Schema 2' } as unknown as Recipe;
+
+      const p1 = service.getSchemaBySlug('schema-refresh');
+      httpMock.expectOne('/api/recipes/schema-refresh/schema').flush(mockSchema1);
+      await p1;
+
+      // Clear TransferState to allow network refetch
+      transferState.remove(makeStateKey('API_GET_/api/recipes/schema-refresh/schema'));
+
+      const p2 = service.getSchemaBySlug('schema-refresh', true);
+      httpMock.expectOne('/api/recipes/schema-refresh/schema').flush(mockSchema2);
+      const r2 = await p2;
+      expect(r2).toEqual(mockSchema2);
+    });
+
+    it('should return null on error', async () => {
+      const promise = service.getSchemaBySlug('error-schema');
+      const req = httpMock.expectOne('/api/recipes/error-schema/schema');
+      req.error(new ProgressEvent('Network error'));
+      const result = await promise;
+      expect(result).toBeNull();
+    });
+  });
+
   describe('comments', () => {
     it('should fetch comments for a recipe', async () => {
       const mockResponse = {
@@ -283,6 +422,86 @@ describe('RecipeService', () => {
       );
       req2.flush({ items: [], total: 0 });
       await promise2;
+    });
+  });
+
+  describe('getTitle', () => {
+    it('should return title on success', async () => {
+      const promise = service.getTitle('test-recipe');
+      const req = httpMock.expectOne('/api/recipes/test-recipe/title');
+      req.flush({ title: 'My Awesome Recipe' });
+      const result = await promise;
+      expect(result).toBe('My Awesome Recipe');
+    });
+
+    it('should return null on failure', async () => {
+      const promise = service.getTitle('error-recipe');
+      const req = httpMock.expectOne('/api/recipes/error-recipe/title');
+      req.error(new ProgressEvent('Network error'));
+      const result = await promise;
+      expect(result).toBeNull();
+    });
+  });
+
+  describe('getFavoriteRecipes', () => {
+    it('should return favorite recipes list', async () => {
+      const mockList = { items: [{ id: 1, title: 'Fav' }] as unknown as Recipe[] };
+      const promise = service.getFavoriteRecipes();
+      const req = httpMock.expectOne('/api/recipes/favorites/list');
+      req.flush(mockList);
+      const result = await promise;
+      expect(result).toEqual(mockList);
+    });
+  });
+
+  describe('getTopComments', () => {
+    it('should return top comments for slug', async () => {
+      const mockComments = [{ id: '1', content: 'Great!' }] as unknown as Comment[];
+      const promise = service.getTopComments('my-slug');
+      const req = httpMock.expectOne('/api/recipes/my-slug/comments/top');
+      req.flush(mockComments);
+      const result = await promise;
+      expect(result).toEqual(mockComments);
+    });
+  });
+
+  describe('getRecipeEquipment', () => {
+    it('should return equipment for recipe', async () => {
+      const mockEquip = [{ id: '1', title: 'Pan' }] as unknown as Equipment[];
+      const promise = service.getRecipeEquipment(123);
+      const req = httpMock.expectOne('/api/recipes/123/equipment');
+      req.flush(mockEquip);
+      const result = await promise;
+      expect(result).toEqual(mockEquip);
+    });
+  });
+
+  describe('getSEOBySlug and cache timeouts', () => {
+    it('should call getSEOBySlug alias and expire cache after timeout', async () => {
+      vi.useFakeTimers();
+      try {
+        const mockSeo = { title: 'SEO Title' };
+        const promise = service.getSEOBySlug('seo-test');
+        const req = httpMock.expectOne('/api/recipes/seo-test/seo');
+        req.flush(mockSeo);
+        const result = await promise;
+        expect(result).toEqual(mockSeo);
+
+        const pRecipe = service.getRecipeBySlug('cache-test');
+        httpMock.expectOne('/api/recipes/cache-test').flush({ id: 1 } as unknown as Recipe);
+        await pRecipe;
+
+        const pSchema = service.getSchemaBySlug('cache-test-schema');
+        httpMock
+          .expectOne('/api/recipes/cache-test-schema/schema')
+          .flush({ id: 2 } as unknown as Recipe);
+        await pSchema;
+
+        // Advance timers by 5000ms to trigger delete callbacks on all three caches
+        vi.advanceTimersByTime(5000);
+      } finally {
+        vi.useRealTimers();
+      }
     });
   });
 });
