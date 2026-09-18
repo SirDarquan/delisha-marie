@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SeoContent } from '../models/seo-content';
 import { RecipeListService } from '../pages/recipe-list/recipe-list.service';
 import { PagesService, Page } from '../services/pages.service';
-import { Recipe, RecipeService } from '../services/recipe.service';
+import { RecipeService } from '../services/recipe.service';
 import { SeoService } from '../services/seo.service';
 import {
   seoDynamicPageResolver,
@@ -41,7 +41,11 @@ describe('Seo Resolvers', () => {
         },
         {
           provide: RecipeService,
-          useValue: { getRecipeBySlug: vi.fn().mockResolvedValue(null) },
+          useValue: {
+            getRecipeBySlug: vi.fn().mockResolvedValue(null),
+            getSEOBySlug: vi.fn().mockResolvedValue(null),
+            getSeoBySlug: vi.fn().mockResolvedValue(null),
+          },
         },
         {
           provide: PagesService,
@@ -289,19 +293,20 @@ describe('Seo Resolvers', () => {
   describe('seoRecipeResolver', () => {
     beforeEach(() => {
       vi.mocked(recipeService.getRecipeBySlug).mockClear();
+      vi.mocked(recipeService.getSEOBySlug).mockClear();
     });
 
     it('should resolve recipe SEO data', async () => {
-      const mockRecipe = {
+      const mockSeo = {
         title: 'Title',
         description: 'Desc',
         image: '/img.jpg',
         keywords: ['key'],
         imageWidth: '800',
         imageHeight: '800',
-      } as Recipe;
+      };
 
-      vi.mocked(recipeService.getRecipeBySlug).mockResolvedValue(mockRecipe);
+      vi.mocked(recipeService.getSEOBySlug).mockResolvedValue(mockSeo);
 
       const route = {
         paramMap: { get: () => 'test-slug' },
@@ -312,7 +317,7 @@ describe('Seo Resolvers', () => {
         return seoRecipeResolver(route, state);
       });
 
-      expect(recipeService.getRecipeBySlug).toHaveBeenCalledWith('test-slug');
+      expect(recipeService.getSEOBySlug).toHaveBeenCalledWith('test-slug');
       expect(seoService.setSEO).toHaveBeenCalledWith(
         expect.objectContaining({
           title: "Title | Delisha Marie's Kitchen",
@@ -335,7 +340,7 @@ describe('Seo Resolvers', () => {
     });
 
     it('should return 404 SEO if recipe not found', async () => {
-      vi.mocked(recipeService.getRecipeBySlug).mockResolvedValue(null);
+      vi.mocked(recipeService.getSEOBySlug).mockResolvedValue(null);
 
       const route = {
         paramMap: { get: () => 'unknown' },
@@ -349,14 +354,14 @@ describe('Seo Resolvers', () => {
     });
 
     it('should handle missing description and image in seoRecipeResolver', async () => {
-      const mockRecipe = {
+      const mockSeo = {
         title: 'Title',
         description: undefined as unknown as string,
         image: undefined as unknown as string,
         keywords: [],
-      } as unknown as Recipe;
+      };
 
-      vi.mocked(recipeService.getRecipeBySlug).mockResolvedValue(mockRecipe);
+      vi.mocked(recipeService.getSEOBySlug).mockResolvedValue(mockSeo);
 
       const route = {
         paramMap: { get: () => 'no-desc-no-img' },
