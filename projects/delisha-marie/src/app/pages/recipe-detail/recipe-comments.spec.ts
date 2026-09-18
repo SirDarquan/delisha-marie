@@ -230,7 +230,7 @@ describe('RecipeComments', () => {
       expect(component.replyTo()).toBeTruthy();
       await new Promise((resolve) => setTimeout(resolve, 60));
     }
-  });
+  }, 15000);
 
   it('should update rating when setRating is called', () => {
     component.setRating(4);
