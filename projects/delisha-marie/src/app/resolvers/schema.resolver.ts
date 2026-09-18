@@ -1,9 +1,9 @@
-import { DOCUMENT } from '@angular/common';
+import { APP_BASE_HREF, DOCUMENT, IMAGE_LOADER } from '@angular/common';
 import { inject } from '@angular/core';
 import { ResolveFn } from '@angular/router';
 import { deslugify } from '@dm/library';
-import { Recipe, RecipeService } from '../services/recipe.service';
 import { PagesService } from '../services/pages.service';
+import { Recipe, RecipeService } from '../services/recipe.service';
 
 export interface SchemaObject {
   '@context'?: string;
@@ -36,8 +36,11 @@ export const writeSchema = (document: Document, schema: SchemaObject[]) => {
 
 export const schemaResolver: ResolveFn<SchemaObject[]> = (route, state) => {
   const document = inject(DOCUMENT);
+  const loader = inject(IMAGE_LOADER);
+  const baseHref = inject(APP_BASE_HREF);
+  const appBaseHref = baseHref === '/' ? '' : baseHref.replace(/\/$/, '');
   const schema: SchemaObject[] = [];
-  const origin = document.location.origin;
+  const origin = document.location.origin + appBaseHref;
   const path = state.url.split('?')[0].split('#')[0];
   const url = origin + path;
 
@@ -45,14 +48,12 @@ export const schemaResolver: ResolveFn<SchemaObject[]> = (route, state) => {
   const description = route.data['description'];
   const slug = route.paramMap.get('slug') || '';
 
+  const logoUrl = loader({
+    src: '/delisha-marie-profile.jpg',
+    width: 800,
+  });
   schema.push(
-    generateOrganizationSchema(
-      origin,
-      siteName,
-      `${origin}/assets/delisha-marie.jpg`,
-      '1024',
-      '1024',
-    ),
+    generateOrganizationSchema(origin, siteName, logoUrl, '800px', '800px'),
     generateWebSiteSchema(origin, siteName),
   );
 
@@ -70,7 +71,7 @@ export const schemaResolver: ResolveFn<SchemaObject[]> = (route, state) => {
   }
 
   const breadcrumbs = getBaseBreadcrumbs(path);
-  schema.push(generateBreadcrumbSchema(breadcrumbs, origin, path));
+  schema.push(generateBreadcrumbSchema(breadcrumbs, origin, url));
 
   writeSchema(document, schema);
 
@@ -79,8 +80,11 @@ export const schemaResolver: ResolveFn<SchemaObject[]> = (route, state) => {
 
 export const schemaDynamicPageResolver: ResolveFn<SchemaObject[]> = async (route, state) => {
   const document = inject(DOCUMENT);
+  const loader = inject(IMAGE_LOADER);
+  const baseHref = inject(APP_BASE_HREF);
+  const appBaseHref = baseHref === '/' ? '' : baseHref.replace(/\/$/, '');
   const schema: SchemaObject[] = [];
-  const origin = document.location.origin;
+  const origin = document.location.origin + appBaseHref;
   const path = state.url.split('?')[0].split('#')[0];
   const url = origin + path;
 
@@ -88,14 +92,12 @@ export const schemaDynamicPageResolver: ResolveFn<SchemaObject[]> = async (route
   const description = route.data?.['description'];
   const slug = route.paramMap.get('slug') || route.data?.['slug'] || '';
 
+  const logoUrl = loader({
+    src: '/delisha-marie-profile.jpg',
+    width: 800,
+  });
   schema.push(
-    generateOrganizationSchema(
-      origin,
-      siteName,
-      `${origin}/assets/delisha-marie.jpg`,
-      '1024',
-      '1024',
-    ),
+    generateOrganizationSchema(origin, siteName, logoUrl, '800px', '800px'),
     generateWebSiteSchema(origin, siteName),
     generateWebPageSchema(url, slug, siteName, description, '', ''),
   );
@@ -107,48 +109,50 @@ export const schemaDynamicPageResolver: ResolveFn<SchemaObject[]> = async (route
   } else if (slug === 'faq') {
     const pageService = inject(PagesService);
     const page = await pageService.getPage('faq');
-    if (!page) return schema;
-    const parsedFaqs: { question: string; answer: string }[] = [];
-    const regex = /<h2[^>]*>(.*?)<\/h2>([\s\S]*?)(?=<h2|$)/gi;
-    let match;
-    while ((match = regex.exec(page.content)) !== null) {
-      const question = match[1].replace(/<[^>]*>/g, '').trim();
-      const answer = match[2]
-        .replace(/<[^>]*>/g, ' ')
-        .replace(/\s+/g, ' ')
-        .trim();
-      if (question && answer) {
-        parsedFaqs.push({ question, answer });
+    if (page) {
+      const parsedFaqs = parseFaqContent(page.content);
+      if (parsedFaqs.length > 0) {
+        schema.push(generateFAQPageSchema(url, siteName, parsedFaqs));
       }
-    }
-    if (parsedFaqs.length > 0) {
-      schema.push(generateFAQPageSchema(url, siteName, parsedFaqs));
     }
   }
 
   const breadcrumbs = getBaseBreadcrumbs(path);
-  schema.push(generateBreadcrumbSchema(breadcrumbs, origin, path));
+  schema.push(generateBreadcrumbSchema(breadcrumbs, origin, url));
 
   writeSchema(document, schema);
 
   return schema;
 };
 
-export const schemaRecipeResolver: ResolveFn<SchemaObject[]> = async (route) => {
+export const schemaRecipeResolver: ResolveFn<SchemaObject[]> = async (route, state) => {
   const document = inject(DOCUMENT);
+  const baseHref = inject(APP_BASE_HREF);
+  const loader = inject(IMAGE_LOADER);
+
   const siteName = 'Delisha Marie';
   const slug = route.paramMap.get('slug');
 
   if (!slug) return [];
-
-  const recipe = await inject(RecipeService).getRecipeBySlug(slug);
+  const recipeService = inject(RecipeService);
+  const recipe = await recipeService.getRecipeBySlug(slug);
 
   if (!recipe) return [];
+  recipe.comments = await recipeService.getTopComments(slug);
 
   const schema: SchemaObject[] = [];
-  const origin = document.location.origin.replace(/\/$/, '');
-  const logoUrl = `${origin}/assets/delisha-marie.jpg`;
-  const recipeUrl = `${origin}${recipe.slug}`;
+  const appBaseHref = baseHref === '/' ? '' : baseHref.replace(/\/$/, '');
+  const origin = document.location.origin.replace(/\/$/, '') + appBaseHref;
+  const path = state.url.split('?')[0].split('#')[0];
+  const url = `${origin}${path}`;
+  const logoUrl = loader({
+    src: '/delisha-marie-profile.jpg',
+    width: 800,
+  });
+  const imageUrl = loader({
+    src: recipe.image,
+    width: 300,
+  });
 
   schema.push(
     // 1. Organization
@@ -161,21 +165,21 @@ export const schemaRecipeResolver: ResolveFn<SchemaObject[]> = async (route) => 
     generateWebSiteSchema(origin, siteName),
 
     // 4. ImageObject (Recipe Image)
-    generateImageObjectSchema(recipeUrl, recipe.slug, recipe.image, recipe.title),
+    generateImageObjectSchema(url, imageUrl, recipe.title),
 
     // 5. WebPage
-    generateWebPageSchema(recipeUrl, recipe.slug, recipe.title, recipe.description, '', ''),
+    generateWebPageSchema(url, recipe.slug, recipe.title, recipe.description, '', ''),
 
     // 6. Article
-    generateArticleSchema(recipe, recipeUrl, recipe.image, recipe.keywords || [], [
+    generateArticleSchema(recipe, url, imageUrl, recipe.keywords || [], [
       recipe.course || 'Recipe',
     ]),
 
     // 7. Recipe
-    generateRecipeSchema(recipe, recipeUrl),
+    generateRecipeSchema(recipe, url, imageUrl),
 
     // 8. Breadcrumbs
-    generateBreadcrumbSchema(getRecipeBreadcrumbs(recipe), origin, recipe.slug),
+    generateBreadcrumbSchema(getRecipeBreadcrumbs(recipe), origin, url),
   );
 
   writeSchema(document, schema);
@@ -268,7 +272,7 @@ export const generateCollectionPageSchema = (
     name: name,
     description: description,
     isPartOf: {
-      '@id': `${url.split('/').slice(0, 3).join('/')}/#website`,
+      '@id': `${url}#website`,
     },
     about: {
       '@id': `${url}#organization`,
@@ -296,7 +300,7 @@ export const generateAboutPageSchema = (
     name: name,
     description: description,
     isPartOf: {
-      '@id': `${url.split('/').slice(0, 3).join('/')}/#website`,
+      '@id': `${url}#website`,
     },
     breadcrumb: {
       '@id': `${url}#breadcrumb`,
@@ -321,7 +325,7 @@ export const generateContactPageSchema = (
     name: name,
     description: description,
     isPartOf: {
-      '@id': `${url.split('/').slice(0, 3).join('/')}/#website`,
+      '@id': `${url}#website`,
     },
     breadcrumb: {
       '@id': `${url}#breadcrumb`,
@@ -353,7 +357,7 @@ export const generateFAQPageSchema = (
       },
     })),
     isPartOf: {
-      '@id': `${url.split('/').slice(0, 3).join('/')}/#website`,
+      '@id': `${url}#website`,
     },
     breadcrumb: {
       '@id': `${url}#breadcrumb`,
@@ -381,7 +385,7 @@ export const generateWebPageSchema = (
     name: name,
     description: description,
     isPartOf: {
-      '@id': `${url.split('/').slice(0, 3).join('/')}/#website`,
+      '@id': `${url}#website`,
     },
     primaryImageOfPage: {
       '@id': `${url}#primaryimage`,
@@ -389,7 +393,7 @@ export const generateWebPageSchema = (
     image: {
       '@id': `${url}#primaryimage`,
     },
-    thumbnailUrl: `${url}${thumbnailUrl}`,
+    thumbnailUrl: `${thumbnailUrl}`,
     datePublished: datePublished,
     breadcrumb: {
       '@id': `${url}#breadcrumb`,
@@ -407,14 +411,14 @@ export const generateWebPageSchema = (
 export const generateBreadcrumbSchema = (
   breadcrumbs: Breadcrumb[],
   baseUrl: string,
-  slug: string,
+  url: string,
 ): SchemaObject => {
   const items = breadcrumbs;
 
   return {
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
-    '@id': `${baseUrl}${slug}#breadcrumb`,
+    '@id': `${url}#breadcrumb`,
     itemListElement: items.map((b, index, arr) => ({
       '@type': 'ListItem',
       position: index + 1,
@@ -460,7 +464,6 @@ export const generatePersonSchema = (url: string, name: string): SchemaObject =>
  */
 export const generateImageObjectSchema = (
   url: string,
-  slug: string,
   imageUrl: string,
   caption?: string,
 ): SchemaObject => {
@@ -468,7 +471,7 @@ export const generateImageObjectSchema = (
     '@context': 'https://schema.org',
     '@type': 'ImageObject',
     '@id': `${url}#primaryimage`,
-    url: imageUrl, // todo
+    url: imageUrl,
     contentUrl: imageUrl,
     caption: caption,
     inLanguage: 'en-US',
@@ -485,7 +488,7 @@ export const generateArticleSchema = (
   keywords: string[],
   articleSection: string[],
 ): SchemaObject => {
-  const baseUrl = url.split('/').slice(0, 3).join('/');
+  const baseUrl = url.split('/').slice(0, -2).join('/');
   return {
     '@context': 'https://schema.org',
     '@type': 'Article',
@@ -500,8 +503,10 @@ export const generateArticleSchema = (
     headline: recipe.title,
     datePublished: recipe.createdAt,
     dateModified: recipe.updatedAt,
-    wordCount: 0,
-    commentCount: 0,
+    wordCount: stripHtml(recipe.content)
+      .split(/\s+/)
+      .filter((w) => w.length > 0).length, // Count the words
+    commentCount: recipe.reviewCount, // Count the comments
     mainEntityOfPage: {
       '@id': `${url}#webpage`,
     },
@@ -512,7 +517,7 @@ export const generateArticleSchema = (
       '@id': `${url}#primaryimage`,
     },
     description: recipe.description,
-    thumbnailUrl: `${url}${thumbnailUrl}`, // Todo
+    thumbnailUrl: `${thumbnailUrl}`, // Todo
     keywords: keywords,
     articleSection: articleSection,
     inLanguage: 'en-US',
@@ -529,7 +534,11 @@ export const generateArticleSchema = (
 /**
  * Generate a Recipe schema object.
  */
-export const generateRecipeSchema = (recipe: Recipe, url: string): SchemaObject => {
+export const generateRecipeSchema = (
+  recipe: Recipe,
+  url: string,
+  imageUrl: string,
+): SchemaObject => {
   return {
     '@context': 'https://schema.org',
     '@type': 'Recipe',
@@ -542,7 +551,7 @@ export const generateRecipeSchema = (recipe: Recipe, url: string): SchemaObject 
     datePublished: recipe.createdAt,
     dateModified: recipe.updatedAt,
     description: recipe.description,
-    image: [recipe.image], // todo
+    image: [imageUrl],
     ...(recipe.video
       ? {
           video: {
@@ -567,9 +576,9 @@ export const generateRecipeSchema = (recipe: Recipe, url: string): SchemaObject 
     })),
     aggregateRating: {
       '@type': 'AggregateRating',
-      ratingValue: recipe.rating || 5,
+      ratingValue: recipe.rating || 0,
       ratingCount: recipe.ratingCount,
-      reviewCount: recipe.reviewCount || 1,
+      reviewCount: recipe.reviewCount || 0,
     },
     review: recipe.comments?.slice(0, 6).map((comment) => ({
       '@type': 'Review',
@@ -578,10 +587,12 @@ export const generateRecipeSchema = (recipe: Recipe, url: string): SchemaObject 
         name: comment.author,
       },
       reviewBody: comment.content,
-      reviewRating: {
-        '@type': 'Rating',
-        ratingValue: comment.rating,
-      },
+      reviewRating: comment.rating
+        ? {
+            '@type': 'Rating',
+            ratingValue: comment.rating,
+          }
+        : undefined,
       datePublished: comment.createdAt,
     })),
     recipeCategory: recipe.course,
@@ -637,6 +648,49 @@ const convertToIso8601Duration = (duration: string): string => {
 
   return '';
 };
+
+/**
+ * Strip HTML tags from a string linearly to avoid regex backtracking.
+ */
+export const stripHtml = (html: string, replaceWith = ''): string => {
+  if (!html) return '';
+  let result = '';
+  let inTag = false;
+  for (const element of html) {
+    const char = element;
+    if (char === '<') {
+      inTag = true;
+    } else if (char === '>') {
+      inTag = false;
+      result += replaceWith;
+    } else if (!inTag) {
+      result += char;
+    }
+  }
+  return result;
+};
+
+/**
+ * Parses FAQ HTML content into Question/Answer pairs.
+ */
+export const parseFaqContent = (content: string): { question: string; answer: string }[] => {
+  const parsedFaqs: { question: string; answer: string }[] = [];
+  const sections = content.split(/<h2[^>]*>/i);
+  for (let i = 1; i < sections.length; i++) {
+    const section = sections[i];
+    const endH2Idx = section.toLowerCase().indexOf('</h2>');
+    if (endH2Idx === -1) continue;
+
+    const question = stripHtml(section.substring(0, endH2Idx)).trim();
+    const answer = stripHtml(section.substring(endH2Idx + 5), ' ').replace(/\s+/g, ' ').trim();
+      
+    if (question && answer) {
+      parsedFaqs.push({ question, answer });
+    }
+  }
+  return parsedFaqs;
+};
+
 /**
  * Generates breadcrumbs for list pages or other static pages.
  */

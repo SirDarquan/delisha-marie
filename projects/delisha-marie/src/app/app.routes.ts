@@ -108,6 +108,7 @@ export const routes: Routes = [
     data: {
       description: 'Search for semantic matches across all Delisha Marie recipes.',
       keywords: ['recipe search', 'find recipe'],
+      content: 'noindex,nofollow',
     },
   },
   {
@@ -118,6 +119,7 @@ export const routes: Routes = [
     data: {
       description: 'Search for semantic matches across all Delisha Marie recipes.',
       keywords: ['recipe search', 'find recipe'],
+      content: 'noindex,nofollow',
     },
   },
   {
@@ -125,14 +127,14 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/thank-you/thank-you').then((m) => m.ThankYouPage),
     title: dynamicPageResolver,
     resolve: { seo: seoDynamicPageResolver, schema: schemaDynamicPageResolver },
-    data: { slug: 'thank-you' },
+    data: { slug: 'thank-you', content: 'noindex,nofollow' },
   },
   {
     path: 'contact',
     loadComponent: () => import('./pages/contact/contact').then((m) => m.ContactPage),
     title: dynamicPageResolver,
     resolve: { seo: seoDynamicPageResolver, schema: schemaDynamicPageResolver },
-    data: { slug: 'contact' },
+    data: { slug: 'contact', content: 'noindex,nofollow' },
   },
   {
     path: ':slug',

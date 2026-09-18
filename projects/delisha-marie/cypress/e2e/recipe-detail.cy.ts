@@ -54,8 +54,14 @@ describe('Single Recipe Detail View', () => {
       body: mockFullRecipe,
     }).as('getRecipeDetail');
 
+    // Stub top comments for schema resolver
+    cy.intercept('GET', '**/recipes/*/comments/top', {
+      statusCode: 200,
+      body: [],
+    }).as('getTopComments');
+
     // Stub comments list for this recipe
-    cy.intercept('GET', '**/recipes/*/comments*', {
+    cy.intercept('GET', /\/api\/recipes\/[^/]+\/comments(\?.*)?$/, {
       statusCode: 200,
       body: {
         comments: [
