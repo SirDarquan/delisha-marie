@@ -1042,6 +1042,177 @@ describe('Recipes Router API', () => {
     });
   });
 
+  describe('GET /api/recipes/:slug/seo', () => {
+    it('should fetch SEO metadata for recipe by slug', async () => {
+      mockFrom.mockImplementation(() => {
+        const chain = {
+          select: () => chain,
+          eq: () => chain,
+          lte: () => chain,
+          maybeSingle: () =>
+            Promise.resolve({
+              data: {
+                title: 'Chocolate Cake',
+                description: 'Yummy cake',
+                keywords: ['chocolate', 'cake'],
+                image: '/images/cake.jpg',
+                image_width: 1200,
+                image_height: 800,
+                image_type: 'image/jpeg',
+              },
+              error: null,
+            }),
+        };
+        return chain;
+      });
+      const res = await createRequestMock(recipesRouter)().get('/api/recipes/chocolate-cake/seo');
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual({
+        title: 'Chocolate Cake',
+        description: 'Yummy cake',
+        keywords: ['chocolate', 'cake'],
+        image: '/images/cake.jpg',
+        imageWidth: 1200,
+        imageHeight: 800,
+        imageType: 'image/jpeg',
+      });
+    });
+
+    it('should return null when recipe is not found', async () => {
+      mockFrom.mockImplementation(() => {
+        const chain = {
+          select: () => chain,
+          eq: () => chain,
+          lte: () => chain,
+          maybeSingle: () => Promise.resolve({ data: null, error: null }),
+        };
+        return chain;
+      });
+      const res = await createRequestMock(recipesRouter)().get('/api/recipes/unknown/seo');
+      expect(res.status).toBe(200);
+      expect(res.body).toBeNull();
+    });
+
+    it('should return 500 on database error', async () => {
+      mockFrom.mockImplementation(() => {
+        const chain = {
+          select: () => chain,
+          eq: () => chain,
+          lte: () => chain,
+          maybeSingle: () => Promise.resolve({ data: null, error: new Error('db error') }),
+        };
+        return chain;
+      });
+      const res = await createRequestMock(recipesRouter)().get('/api/recipes/error/seo');
+      expect(res.status).toBe(500);
+      expect(res.body.error).toBe('db error');
+    });
+  });
+
+  describe('GET /api/recipes/:slug/schema', () => {
+    it('should fetch Schema metadata for recipe by slug', async () => {
+      const mockSingleDbRecipe = {
+        id: 'rec-1',
+        title: 'Recipe Schema Test',
+        slug: 'schema-slug',
+        status: 'published',
+        created_at: '2026-06-22T08:00:00Z',
+        recipe_categories: [],
+      };
+
+      mockRpc.mockReturnValue(
+        Promise.resolve({
+          data: [{ review_count: 5, rating_count: 4, average_rating: 4.8 }],
+          error: null,
+        }),
+      );
+
+      mockFrom.mockImplementation((table: string) => {
+        if (table === 'comments') {
+          const chain = {
+            select: () => chain,
+            eq: () => chain,
+            is: () => chain,
+            order: () => chain,
+            limit: () =>
+              Promise.resolve({
+                data: [
+                  {
+                    author: 'Delisha Fan',
+                    content: 'Great recipe!',
+                    rating: 5,
+                    created_at: '2026-06-23T08:00:00Z',
+                  },
+                ],
+                error: null,
+              }),
+          };
+          return chain;
+        }
+
+        const queryChain = {
+          eq: () => queryChain,
+          in: () => queryChain,
+          order: () => queryChain,
+          lte: () => queryChain,
+          maybeSingle: () => Promise.resolve({ data: mockSingleDbRecipe, error: null }),
+          then: (onfulfilled?: (value: unknown) => unknown) => {
+            return Promise.resolve({ data: [], error: null }).then(onfulfilled);
+          },
+        };
+        return {
+          select: () => queryChain,
+        };
+      });
+
+      const res = await createRequestMock(recipesRouter)().get('/api/recipes/schema-slug/schema');
+      expect(res.status).toBe(200);
+      expect(res.body.title).toBe('Recipe Schema Test');
+      expect(res.body.slug).toBe('schema-slug');
+      expect(res.body.reviewCount).toBe(5);
+      expect(res.body.ratingCount).toBe(4);
+      expect(res.body.rating).toBe(4.8);
+      expect(res.body.comments).toEqual([
+        {
+          author: 'Delisha Fan',
+          content: 'Great recipe!',
+          rating: 5,
+          createdAt: '2026-06-23T08:00:00Z',
+        },
+      ]);
+    });
+
+    it('should return null when recipe is not found', async () => {
+      mockFrom.mockImplementation(() => {
+        const chain = {
+          select: () => chain,
+          eq: () => chain,
+          lte: () => chain,
+          maybeSingle: () => Promise.resolve({ data: null, error: null }),
+        };
+        return chain;
+      });
+      const res = await createRequestMock(recipesRouter)().get('/api/recipes/unknown/schema');
+      expect(res.status).toBe(200);
+      expect(res.body).toBeNull();
+    });
+
+    it('should return 500 on database error', async () => {
+      mockFrom.mockImplementation(() => {
+        const chain = {
+          select: () => chain,
+          eq: () => chain,
+          lte: () => chain,
+          maybeSingle: () => Promise.resolve({ data: null, error: new Error('schema db error') }),
+        };
+        return chain;
+      });
+      const res = await createRequestMock(recipesRouter)().get('/api/recipes/error/schema');
+      expect(res.status).toBe(500);
+      expect(res.body.error).toBe('schema db error');
+    });
+  });
+
   describe('GET /api/recipes/:id/equipment', () => {
     it('should fetch equipment', async () => {
       mockFrom.mockImplementation(() => {

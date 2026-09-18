@@ -85,7 +85,7 @@ function getSelectString(method: string, category: string): string {
   }
   if (method === 'recipes' || method === 'the-best-recipes') {
     return `
-      ${labels},
+      *,
       recipe_categories!inner (
         categories!inner (id, name, url)
       ),
@@ -734,7 +734,7 @@ async function handleGetBySlug(req: VercelRequest, res: VercelResponse, slug: st
     const cleanSlug = slug.replace(/^\/?recipe\//, '').replace(/^\//, '');
 
     // Get recipe
-    const selectStr = getSelectString('recipes', '');
+    const selectStr = getSelectString('recipes', ' '); // category can't be null
     const { data: recipeDataRaw, error: recipeError } = await supabase
       .from('recipes')
       .select(selectStr)
@@ -806,6 +806,88 @@ async function handleGetTitle(req: VercelRequest, res: VercelResponse, slug: str
     res.status(500).json({ error: msg });
   }
 }
+
+async function handleSeoBySlug(req: VercelRequest, res: VercelResponse, slug: string) {
+  try {
+    const supabase = await getSupabaseClient();
+    const cleanSlug = slug.replace(/^\/?recipe\//, '').replace(/^\//, '');
+
+    const { data, error } = await supabase
+      .from('recipes')
+      .select('title, description, keywords, image, image_width, image_height, image_type')
+      .eq('slug', cleanSlug)
+      .eq('status', 'published')
+      .lte('created_at', new Date().toISOString())
+      .maybeSingle();
+
+    if (error) {
+      throw error;
+    }
+
+    if (!data) {
+      res.json(null);
+      return;
+    }
+
+    res.json(camelCaseKeys(data));
+  } catch (err: unknown) {
+    console.error(err);
+    const msg = err instanceof Error ? err.message : String(err);
+    res.status(500).json({ error: msg });
+  }
+}
+
+async function handleSchemaBySlug(req: VercelRequest, res: VercelResponse, slug: string) {
+  try {
+    const supabase = await getSupabaseClient();
+    const cleanSlug = slug.replace(/^\/?recipe\//, '').replace(/^\//, '');
+
+    const selectStr = getSelectString('recipes', ' ');
+    const { data: recipeDataRaw, error: recipeError } = await supabase
+      .from('recipes')
+      .select(selectStr)
+      .eq('slug', cleanSlug)
+      .eq('status', 'published')
+      .lte('created_at', new Date().toISOString())
+      .maybeSingle();
+
+    if (recipeError) {
+      throw recipeError;
+    }
+    if (!recipeDataRaw) {
+      res.json(null);
+      return;
+    }
+    const recipeData = recipeDataRaw as unknown as DbRecipe;
+    const [formatted] = formatDbRecipes([recipeData]);
+
+    const [breadcrumbsObj, stats, topCommentsResult] = await Promise.all([
+      getBreadcrumbs(supabase, recipeData.id, formatted),
+      getRecipeStats(supabase, recipeData.id),
+      supabase
+        .from('comments')
+        .select('author, content, rating, created_at')
+        .eq('recipe_id', recipeData.id)
+        .eq('status', 'approved')
+        .is('parent_id', null)
+        .order('created_at', { ascending: false })
+        .limit(6),
+    ]);
+
+    formatted.breadcrumbs = breadcrumbsObj;
+    formatted.reviewCount = stats.reviewCount;
+    formatted.ratingCount = stats.ratingCount;
+    formatted.rating = stats.rating;
+    formatted.comments = (topCommentsResult.data || []).map((c) => camelCaseKeys(c));
+
+    res.json(formatted);
+  } catch (err: unknown) {
+    console.error(err);
+    const msg = err instanceof Error ? err.message : String(err);
+    res.status(500).json({ error: msg });
+  }
+}
+
 async function handleGetEquipment(req: VercelRequest, res: VercelResponse, recipeId: string) {
   try {
     const supabase = await getSupabaseClient();
@@ -875,6 +957,16 @@ const routes: IRecipeRoute[] = [
     pattern: /^\/([^/]+)\/title$/,
     method: 'GET',
     handler: (req, res, match: RegExpExecArray) => handleGetTitle(req, res, match[1]),
+  },
+  {
+    pattern: /^\/([^/]+)\/seo$/,
+    method: 'GET',
+    handler: (req, res, match: RegExpExecArray) => handleSeoBySlug(req, res, match[1]),
+  },
+  {
+    pattern: /^\/([^/]+)\/schema$/,
+    method: 'GET',
+    handler: (req, res, match: RegExpExecArray) => handleSchemaBySlug(req, res, match[1]),
   },
   {
     pattern: /^\/([^/]+)$/,
