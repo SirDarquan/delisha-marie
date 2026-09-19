@@ -187,7 +187,7 @@ import { SidebarQuickView } from './sidebar-quick-view';
 })
 export class RecipeDetail {
   recipe = input<Recipe | null | undefined>(undefined);
-  slug = input<string | null>(null);
+  slug = input<string | null | undefined>(undefined);
   page = input<string>();
 
   private readonly recipeService = inject(RecipeService);
@@ -196,7 +196,7 @@ export class RecipeDetail {
   ratingCountOverride = signal<number | null>(null);
 
   readonly recipeResource = resource({
-    params: () => this.slug(),
+    params: () => (this.recipe() !== undefined ? null : this.slug()),
     loader: async ({ params: slug }) => {
       if (!slug) return null;
       return await this.recipeService.getRecipeBySlug(slug);
@@ -249,7 +249,7 @@ export class RecipeDetail {
       : null;
   });
 
-  readonly optimizedContent = useOptimizedContent(computed(() => this.recipe()?.content));
+  readonly optimizedContent = useOptimizedContent(computed(() => this.activeRecipe()?.content));
 
   private readonly document = inject(DOCUMENT);
 

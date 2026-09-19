@@ -100,7 +100,7 @@ describe('Single Recipe Detail View', () => {
     }).as('getRecipeEquipment');
 
     cy.visit('/recipe/signature-beef-stew');
-    cy.wait('@getRecipeDetail');
+    cy.wait('@getRecipeSchema');
   });
 
   it('should populate the HTML Head with robust JSON-LD Schema markup', () => {
