@@ -276,12 +276,110 @@ describe('RecipeService', () => {
       expect(r2).toEqual(mockSchema2);
     });
 
+    it('should reuse schemaCache in getRecipeBySlug if available', async () => {
+      const mockSchema = {
+        id: 1,
+        title: 'From Schema',
+        slug: 'cross-cache',
+      } as unknown as Recipe;
+      const schemaPromise = service.getSchemaBySlug('cross-cache');
+      httpMock.expectOne('/api/recipes/cross-cache/schema').flush(mockSchema);
+      await schemaPromise;
+
+      const recipePromise = service.getRecipeBySlug('cross-cache');
+      httpMock.expectNone('/api/recipes/cross-cache');
+      const recipe = await recipePromise;
+      expect(recipe?.title).toBe('From Schema');
+      expect(recipe?.navigation).toEqual({ prev: null, next: null });
+    });
+
+    it('should fallback to api in getRecipeBySlug if schemaCache returned null', async () => {
+      const schemaPromise = service.getSchemaBySlug('null-schema');
+      httpMock.expectOne('/api/recipes/null-schema/schema').flush(null);
+      await schemaPromise;
+
+      const recipePromise = service.getRecipeBySlug('null-schema');
+      await Promise.resolve();
+      const req = httpMock.expectOne('/api/recipes/null-schema');
+      const fallbackRecipe = { id: 2, title: 'Fallback' } as unknown as Recipe;
+      req.flush(fallbackRecipe);
+      const recipe = await recipePromise;
+      expect(recipe?.title).toBe('Fallback');
+    });
+
+    it('should reuse recipeCache in getSchemaBySlug if available', async () => {
+      const mockRecipe = {
+        id: 3,
+        title: 'From Recipe',
+        slug: 'recipe-first',
+      } as unknown as Recipe;
+      const rPromise = service.getRecipeBySlug('recipe-first');
+      httpMock.expectOne('/api/recipes/recipe-first').flush(mockRecipe);
+      await rPromise;
+
+      const sPromise = service.getSchemaBySlug('recipe-first');
+      httpMock.expectNone('/api/recipes/recipe-first/schema');
+      const schema = await sPromise;
+      expect(schema?.title).toBe('From Recipe');
+    });
+
     it('should return null on error', async () => {
       const promise = service.getSchemaBySlug('error-schema');
       const req = httpMock.expectOne('/api/recipes/error-schema/schema');
       req.error(new ProgressEvent('Network error'));
       const result = await promise;
       expect(result).toBeNull();
+    });
+  });
+
+  describe('getTitle', () => {
+    it('should fetch title via HTTP when not cached', async () => {
+      const p = service.getTitle('/recipe/sweet-pie');
+      const req = httpMock.expectOne('/api/recipes/sweet-pie/title');
+      req.flush({ title: 'Sweet Pie' });
+      const title = await p;
+      expect(title).toBe('Sweet Pie');
+    });
+
+    it('should return null on HTTP error for getTitle', async () => {
+      const p = service.getTitle('error-slug');
+      const req = httpMock.expectOne('/api/recipes/error-slug/title');
+      req.error(new ProgressEvent('Network error'));
+      const title = await p;
+      expect(title).toBeNull();
+    });
+
+    it('should reuse recipeCache for getTitle', async () => {
+      const mockRecipe = { id: 1, title: 'Cached In Recipe' } as unknown as Recipe;
+      const rPromise = service.getRecipeBySlug('recipe-cache-title');
+      httpMock.expectOne('/api/recipes/recipe-cache-title').flush(mockRecipe);
+      await rPromise;
+
+      const title = await service.getTitle('recipe-cache-title');
+      httpMock.expectNone('/api/recipes/recipe-cache-title/title');
+      expect(title).toBe('Cached In Recipe');
+    });
+
+    it('should reuse schemaCache for getTitle', async () => {
+      const mockSchema = { id: 1, title: 'Cached In Schema' } as unknown as Recipe;
+      const sPromise = service.getSchemaBySlug('schema-cache-title');
+      httpMock.expectOne('/api/recipes/schema-cache-title/schema').flush(mockSchema);
+      await sPromise;
+
+      const title = await service.getTitle('schema-cache-title');
+      httpMock.expectNone('/api/recipes/schema-cache-title/title');
+      expect(title).toBe('Cached In Schema');
+    });
+
+    it('should reuse seoCache for getTitle', async () => {
+      const mockSeo = { title: 'Cached In SEO' };
+      const seoPromise = service.getSeoBySlug('seo-cache-title');
+      httpMock.expectOne('/api/recipes/seo-cache-title/seo').flush(mockSeo);
+      await seoPromise;
+
+      const title = await service.getTitle('seo-cache-title');
+      httpMock.expectNone('/api/recipes/seo-cache-title/title');
+      expect(title).toBe('Cached In SEO');
     });
   });
 
