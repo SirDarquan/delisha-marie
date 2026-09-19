@@ -3,7 +3,6 @@ import { inject } from '@angular/core';
 import { ResolveFn } from '@angular/router';
 import { SeoContent } from '../models/seo-content';
 import { RecipeListService } from '../pages/recipe-list/recipe-list.service';
-import { RecipeService } from '../services/recipe.service';
 import { SeoService } from '../services/seo.service';
 import { PagesService } from '../services/pages.service';
 
@@ -48,7 +47,7 @@ export const seoResolver: ResolveFn<Partial<SeoContent>> = (route, state) => {
 /**
  * Recursively replaces {{origin}} placeholders with the actual origin.
  */
-function resolveDynamicOrigin<T>(target: T, origin: string): T {
+export function resolveDynamicOrigin<T>(target: T, origin: string): T {
   if (typeof target === 'string') {
     return target.replaceAll('{{origin}}', origin) as T;
   }
@@ -92,63 +91,7 @@ export const seoRecipeListResolver: ResolveFn<SeoContent> = (route, state) => {
   return resolvedSeo;
 };
 
-export const seoRecipeResolver: ResolveFn<SeoContent> = async (route, state) => {
-  const seoService = inject(SeoService);
-  const recipeService = inject(RecipeService);
-  const document = inject(DOCUMENT);
-  const baseHref = inject(APP_BASE_HREF);
-
-  const origin = document.location.origin;
-  const path = state.url.split('?')[0].split('#')[0];
-  const siteName = "Delisha Marie's Kitchen";
-  const slug = route.paramMap.get('slug') || undefined;
-  const appBaseHref = baseHref === '/' ? '' : baseHref;
-  const url = `${origin}${appBaseHref}${path}`;
-
-  const seoConfig404: SeoContent = {
-    title: `Recipe Not Found | ${siteName}`,
-    description: '',
-    url,
-    siteName: siteName,
-    keywords: [],
-    image: '',
-    type: 'website',
-    twitterCard: 'summary_large_image',
-    content: 'noindex,nofollow',
-  };
-
-  if (!slug) {
-    seoService.setSEO(seoConfig404);
-    return seoConfig404;
-  }
-  const recipe = await recipeService.getRecipeBySlug(slug);
-
-  if (!recipe) {
-    seoService.setSEO(seoConfig404);
-    return seoConfig404;
-  }
-
-  const seoConfig: SeoContent = {
-    title: `${recipe.title} | ${siteName}`,
-    description: recipe.description || '',
-    url,
-    siteName: siteName,
-    keywords: recipe.keywords,
-    image: recipe.image ? `${origin}${recipe.image}` : '',
-    imageWidth: recipe.imageWidth,
-    imageHeight: recipe.imageHeight,
-    type: 'website',
-    twitterCard: 'summary_large_image',
-    content: 'index,follow',
-  };
-
-  const resolvedSeo = resolveDynamicOrigin(seoConfig, origin);
-
-  // Trigger earliest possible SEO update
-  seoService.setSEO(resolvedSeo);
-
-  return resolvedSeo;
-};
+export * from './recipe-seo.resolver';
 
 export const seoDynamicPageResolver: ResolveFn<SeoContent> = async (route, state) => {
   const seoService = inject(SeoService);

@@ -54,6 +54,23 @@ describe('Single Recipe Detail View', () => {
       body: mockFullRecipe,
     }).as('getRecipeDetail');
 
+    // Stub recipe schema for schema resolver
+    cy.intercept('GET', '**/recipes/*/schema', {
+      statusCode: 200,
+      body: mockFullRecipe,
+    }).as('getRecipeSchema');
+
+    // Stub recipe seo for seo resolver
+    cy.intercept('GET', '**/recipes/*/seo', {
+      statusCode: 200,
+      body: {
+        title: mockFullRecipe.title,
+        description: mockFullRecipe.description,
+        image: mockFullRecipe.image,
+        keywords: ['beef', 'stew'],
+      },
+    }).as('getRecipeSeo');
+
     // Stub top comments for schema resolver
     cy.intercept('GET', '**/recipes/*/comments/top', {
       statusCode: 200,
@@ -83,7 +100,7 @@ describe('Single Recipe Detail View', () => {
     }).as('getRecipeEquipment');
 
     cy.visit('/recipe/signature-beef-stew');
-    cy.wait('@getRecipeDetail');
+    cy.wait('@getRecipeSchema');
   });
 
   it('should populate the HTML Head with robust JSON-LD Schema markup', () => {

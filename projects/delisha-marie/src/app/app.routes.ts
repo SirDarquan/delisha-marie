@@ -5,17 +5,14 @@ import {
   recipeResolver,
   recipeTitleResolver,
 } from './resolvers/recipe.resolver';
-import {
-  schemaDynamicPageResolver,
-  schemaRecipeResolver,
-  schemaResolver,
-} from './resolvers/schema.resolver';
+import { schemaDynamicPageResolver, schemaResolver } from './resolvers/schema.resolver';
+import { schemaRecipeResolver } from './resolvers/recipe-schema.resolver';
 import {
   seoDynamicPageResolver,
   seoRecipeListResolver,
-  seoRecipeResolver,
   seoResolver,
 } from './resolvers/seo.resolver';
+import { seoRecipeResolver } from './resolvers/recipe-seo.resolver';
 import { dynamicPageResolver } from './resolvers/dynamic-page.resolver';
 
 export const routes: Routes = [
@@ -85,7 +82,6 @@ export const routes: Routes = [
     title: recipeTitleResolver,
     loadComponent: () => import('./pages/recipe-detail/recipe-detail').then((m) => m.RecipeDetail),
     resolve: {
-      recipe: recipeResolver,
       seo: seoRecipeResolver,
       schema: schemaRecipeResolver,
     },
@@ -95,7 +91,6 @@ export const routes: Routes = [
     title: recipeTitleResolver,
     loadComponent: () => import('./pages/recipe-detail/recipe-detail').then((m) => m.RecipeDetail),
     resolve: {
-      recipe: recipeResolver,
       seo: seoRecipeResolver,
       schema: schemaRecipeResolver,
     },

@@ -6,6 +6,7 @@ import {
   effect,
   inject,
   input,
+  resource,
   signal,
   ViewEncapsulation,
 } from '@angular/core';
@@ -17,9 +18,8 @@ import { extractYouTubeVideoId } from '@dm/library';
 import { BreadcrumbItem, Breadcrumbs } from '../../components/breadcrumbs/breadcrumbs';
 import { RecipeEquipment } from '../../components/recipe-equipment/recipe-equipment';
 import { Sidebar } from '../../components/sidebar/sidebar';
-import { SidebarQuickView } from './sidebar-quick-view';
 import { PinterestHoverDirective } from '../../directives/pinterest-hover.directive';
-import { Recipe } from '../../services/recipe.service';
+import { Recipe, RecipeService } from '../../services/recipe.service';
 import { useOptimizedContent } from '../../utils/optimized-content';
 import { RecipeCard } from './recipe-card';
 import { RecipeComments } from './recipe-comments';
@@ -28,6 +28,7 @@ import { RecipeMeta } from './recipe-meta';
 import { RecipeNavigation } from './recipe-navigation';
 import { RecipeSource } from './recipe-source';
 import { RecipeTags } from './recipe-tags';
+import { SidebarQuickView } from './sidebar-quick-view';
 
 @Component({
   selector: 'dm-recipe-detail',
@@ -148,7 +149,7 @@ import { RecipeTags } from './recipe-tags';
 
                 <!-- Comments Section -->
                 <dml-recipe-comments
-                  [recipe]="recipe()!"
+                  [recipe]="r"
                   [page]="page()"
                   (statsChange)="onStatsChange($event)" />
               </div>
@@ -186,15 +187,33 @@ import { RecipeTags } from './recipe-tags';
 })
 export class RecipeDetail {
   recipe = input<Recipe | null | undefined>(undefined);
-
+  slug = input<string | null | undefined>(undefined);
   page = input<string>();
 
+  private readonly recipeService = inject(RecipeService);
   commentCountOverride = signal<number | null>(null);
   ratingOverride = signal<number | null>(null);
   ratingCountOverride = signal<number | null>(null);
 
+  readonly recipeResource = resource({
+    params: () => (this.recipe() !== undefined ? null : this.slug()),
+    loader: async ({ params: slug }) => {
+      if (!slug) return null;
+      return await this.recipeService.getRecipeBySlug(slug);
+    },
+  });
+
+  readonly activeRecipe = computed(() => {
+    const directRecipe = this.recipe();
+    return directRecipe !== undefined ? directRecipe : this.recipeResource.value();
+  });
+
+  readonly isLoading = computed(
+    () => this.recipe() === undefined && this.recipeResource.isLoading(),
+  );
+
   readonly displayRecipe = computed(() => {
-    const r = this.recipe();
+    const r = this.activeRecipe();
     if (!r) return undefined;
     return {
       ...r,
@@ -212,12 +231,10 @@ export class RecipeDetail {
     }
   }
 
-  readonly isLoading = computed(() => this.recipe() === undefined);
-
-  readonly videoId = computed(() => extractYouTubeVideoId(this.recipe()?.video));
+  readonly videoId = computed(() => extractYouTubeVideoId(this.activeRecipe()?.video));
 
   readonly breadcrumbItems = computed((): BreadcrumbItem[] => {
-    const r = this.recipe();
+    const r = this.activeRecipe();
     if (!r) return [];
     const idx = r.breadcrumbs.main;
     return typeof idx === 'number' ? r.breadcrumbs.items[idx] : [];
@@ -232,7 +249,7 @@ export class RecipeDetail {
       : null;
   });
 
-  readonly optimizedContent = useOptimizedContent(computed(() => this.recipe()?.content));
+  readonly optimizedContent = useOptimizedContent(computed(() => this.activeRecipe()?.content));
 
   private readonly document = inject(DOCUMENT);
 

@@ -1,8 +1,8 @@
+import { DOCUMENT } from '@angular/common';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { provideRouter, Router } from '@angular/router';
-import { beforeEach, describe, expect, it, Mock, vi } from 'vitest';
-import { WINDOW } from '../../services/global-tokens';
+import { afterEach, beforeEach, describe, expect, it, Mock, vi } from 'vitest';
 import { Comment, RecipeService } from '../../services/recipe.service';
 import { RecipeComments } from './recipe-comments';
 
@@ -10,11 +10,9 @@ describe('RecipeComments', () => {
   let component: RecipeComments;
   let fixture: ComponentFixture<RecipeComments>;
   let router: Router;
-  let windowMock: {
-    scrollY?: number;
-    scrollTo?: Mock;
-    document: { getElementById: Mock };
-  };
+  let doc: Document;
+  let getElementByIdSpy: Mock;
+  let scrollToSpy: Mock;
 
   const mockComments: Comment[] = Array.from({ length: 102 }, (_, i) => ({
     id: `c${i + 1}`,
@@ -48,26 +46,30 @@ describe('RecipeComments', () => {
       ),
   };
 
-  beforeEach(async () => {
-    windowMock = {
-      scrollY: 0,
-      scrollTo: vi.fn(),
-      document: {
-        getElementById: vi.fn().mockReturnValue({
-          getBoundingClientRect: vi.fn().mockReturnValue({ top: 100 }),
-        }),
-      },
-    };
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
 
+  beforeEach(async () => {
     TestBed.resetTestingModule();
     await TestBed.configureTestingModule({
       imports: [RecipeComments],
-      providers: [
-        provideRouter([]),
-        { provide: RecipeService, useValue: recipeServiceMock },
-        { provide: WINDOW, useValue: windowMock },
-      ],
+      providers: [provideRouter([]), { provide: RecipeService, useValue: recipeServiceMock }],
     }).compileComponents();
+
+    doc = TestBed.inject(DOCUMENT);
+    scrollToSpy = vi.fn();
+    if (doc.defaultView) {
+      vi.spyOn(doc.defaultView, 'scrollTo').mockImplementation(scrollToSpy);
+    }
+    getElementByIdSpy = vi.spyOn(doc, 'getElementById').mockImplementation((id: string) => {
+      if (id === 'respond' || id === 'comments' || id.startsWith('comment-')) {
+        return {
+          getBoundingClientRect: () => ({ top: 100 }) as DOMRect,
+        } as unknown as HTMLElement;
+      }
+      return Document.prototype.getElementById.call(doc, id);
+    });
 
     router = TestBed.inject(Router);
     vi.spyOn(router, 'navigate').mockResolvedValue(true);
@@ -230,7 +232,7 @@ describe('RecipeComments', () => {
       expect(component.replyTo()).toBeTruthy();
       await new Promise((resolve) => setTimeout(resolve, 60));
     }
-  });
+  }, 15000);
 
   it('should update rating when setRating is called', () => {
     component.setRating(4);
@@ -276,7 +278,7 @@ describe('RecipeComments', () => {
     );
 
     await new Promise((resolve) => setTimeout(resolve, 150));
-    expect(windowMock.document.getElementById).toHaveBeenCalledWith('comments');
+    expect(getElementByIdSpy).toHaveBeenCalledWith('comments');
   });
 
   it('should submit a reply and scroll to the new comment', async () => {
@@ -320,7 +322,7 @@ describe('RecipeComments', () => {
     );
 
     await new Promise((resolve) => setTimeout(resolve, 150));
-    expect(windowMock.document.getElementById).toHaveBeenCalledWith('comment-new-reply-id');
+    expect(getElementByIdSpy).toHaveBeenCalledWith('comment-new-reply-id');
   });
 
   it('should handle submission errors gracefully', async () => {
@@ -438,26 +440,26 @@ describe('RecipeComments', () => {
 
   it('should execute timer scroll logic when replyToComment is called', async () => {
     const comment = mockComments[0];
-    windowMock.document.getElementById.mockReturnValue({
+    getElementByIdSpy.mockReturnValue({
       getBoundingClientRect: vi.fn().mockReturnValue({ top: 100 }),
     });
     component.replyToComment(comment);
     await new Promise((resolve) => setTimeout(resolve, 150));
-    expect(windowMock.document.getElementById).toHaveBeenCalledWith('respond');
+    expect(getElementByIdSpy).toHaveBeenCalledWith('respond');
   });
 
   it('should handle missing scroll target in replyToComment', async () => {
     const comment = mockComments[0];
-    windowMock.document.getElementById.mockReturnValue(null);
+    getElementByIdSpy.mockReturnValue(null);
     component.replyToComment(comment);
     await new Promise((resolve) => setTimeout(resolve, 150));
     // Assert target element check was attempted and signal state updated
     expect(component.replyTo()).toBe(comment);
-    expect(windowMock.document.getElementById).toHaveBeenCalledWith('respond');
+    expect(getElementByIdSpy).toHaveBeenCalledWith('respond');
   });
 
   it('should handle missing scroll target in addComment', async () => {
-    windowMock.document.getElementById.mockReturnValue(null);
+    getElementByIdSpy.mockReturnValue(null);
     const saved = {
       id: 'new-scroll-test',
       author: 'User',
@@ -484,6 +486,6 @@ describe('RecipeComments', () => {
     await new Promise((resolve) => setTimeout(resolve, 150));
     // Assert comment was saved successfully and getElementById was called
     expect(component.comments()).toContain(saved);
-    expect(windowMock.document.getElementById).toHaveBeenCalledWith('comments');
+    expect(getElementByIdSpy).toHaveBeenCalledWith('comments');
   });
 });

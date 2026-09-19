@@ -47,6 +47,7 @@ describe('schemaResolver', () => {
           provide: RecipeService,
           useValue: {
             getRecipeBySlug: vi.fn().mockResolvedValue(null),
+            getSchemaBySlug: vi.fn().mockResolvedValue(null),
             getTopComments: vi.fn().mockResolvedValue([]),
           },
         },
@@ -248,7 +249,7 @@ describe('schemaResolver', () => {
         instructions: ['Step1'],
       });
 
-      vi.mocked(recipeService.getRecipeBySlug).mockResolvedValue(mockRecipe);
+      vi.mocked(recipeService.getSchemaBySlug).mockResolvedValue(mockRecipe);
 
       const route = {
         paramMap: { get: () => 'recipe' },
@@ -260,7 +261,7 @@ describe('schemaResolver', () => {
         schemaRecipeResolver(route, state),
       )) as Record<string, unknown>[];
 
-      expect(recipeService.getRecipeBySlug).toHaveBeenCalledWith('recipe');
+      expect(recipeService.getSchemaBySlug).toHaveBeenCalledWith('recipe');
       expect(result).toHaveLength(8); // Org, Person, WebSite, Image, WebPage, Article, Recipe, Breadcrumb
       const recipeSchema = result.find((s) => s['@type'] === 'Recipe') as Record<string, string>;
       expect(recipeSchema).toBeDefined();
@@ -308,7 +309,7 @@ describe('schemaResolver', () => {
         ],
       });
 
-      vi.mocked(recipeService.getRecipeBySlug).mockResolvedValue(mockRecipe);
+      vi.mocked(recipeService.getSchemaBySlug).mockResolvedValue(mockRecipe);
       vi.mocked(recipeService.getTopComments).mockResolvedValue(mockRecipe.comments || []);
 
       const route = {
@@ -358,7 +359,7 @@ describe('schemaResolver', () => {
     });
 
     it('should return empty array if recipe not found', async () => {
-      vi.mocked(recipeService.getRecipeBySlug).mockResolvedValue(null);
+      vi.mocked(recipeService.getSchemaBySlug).mockResolvedValue(null);
       const route = {
         paramMap: { get: () => 'unknown' },
         queryParamMap: { get: () => null },
@@ -411,7 +412,7 @@ describe('schemaResolver', () => {
         reviewCount: undefined,
       });
 
-      vi.mocked(recipeService.getRecipeBySlug).mockResolvedValue(mockRecipe);
+      vi.mocked(recipeService.getSchemaBySlug).mockResolvedValue(mockRecipe);
 
       const route = {
         paramMap: { get: () => 'no-rating' },
@@ -438,7 +439,7 @@ describe('schemaResolver', () => {
         slug: 'recipe',
         author: 'Author',
       });
-      vi.mocked(recipeService.getRecipeBySlug).mockResolvedValue(mockRecipe);
+      vi.mocked(recipeService.getSchemaBySlug).mockResolvedValue(mockRecipe);
 
       const existingScript = { setAttribute: vi.fn(), textContent: '' };
       mockDocument.querySelector = vi.fn().mockReturnValue(existingScript);
@@ -462,7 +463,7 @@ describe('schemaResolver', () => {
         course: undefined,
       });
 
-      vi.mocked(recipeService.getRecipeBySlug).mockResolvedValue(mockRecipe);
+      vi.mocked(recipeService.getSchemaBySlug).mockResolvedValue(mockRecipe);
 
       const route = {
         paramMap: { get: () => 'no-course' },
@@ -561,7 +562,7 @@ describe('schemaResolver', () => {
         totalTime: undefined as unknown as string,
         video: 'dQw4w9WgXcQ',
       });
-      vi.mocked(recipeService.getRecipeBySlug).mockResolvedValue(mockRecipe);
+      vi.mocked(recipeService.getSchemaBySlug).mockResolvedValue(mockRecipe);
 
       const route = {
         paramMap: { get: () => 'duration' },

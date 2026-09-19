@@ -45,6 +45,7 @@ export interface MockResponseBody {
   subcategories: unknown[];
   methods: unknown[];
   title: string;
+  slug?: string;
   length: number;
   breadcrumbs: {
     main: number;

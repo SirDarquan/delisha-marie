@@ -340,5 +340,113 @@ describe('ContactsPage', () => {
         expect.objectContaining({ snoozed_until: expect.any(String) }),
       );
     });
+
+    it('should calculate snooze options for different days of week', () => {
+      try {
+        // Thursday
+        vi.setSystemTime(new Date(2026, 8, 17, 9, 0, 0)); // Thursday Sep 17 2026
+        const thuOptions = (component as any).getSnoozeOptions();
+        expect(thuOptions.some((o: any) => o.label === 'This weekend')).toBe(true);
+        expect(thuOptions.some((o: any) => o.label === 'Later this week')).toBe(false);
+
+        // Saturday
+        vi.setSystemTime(new Date(2026, 8, 19, 9, 0, 0)); // Saturday Sep 19 2026
+        const satOptions = (component as any).getSnoozeOptions();
+        expect(satOptions.some((o: any) => o.label === 'This weekend')).toBe(false);
+        expect(satOptions.some((o: any) => o.label === 'Next week')).toBe(true);
+
+        // Sunday
+        vi.setSystemTime(new Date(2026, 8, 20, 9, 0, 0)); // Sunday Sep 20 2026
+        const sunOptions = (component as any).getSnoozeOptions();
+        expect(sunOptions.some((o: any) => o.label === 'Later this week')).toBe(true);
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it('should not hard delete msg if cancelled in dialog', async () => {
+      (component['dialog'].open as any).mockReturnValue({
+        afterClosed: () => of(false),
+      });
+      await (component as any).hardDeleteMsg(mockMessages[0]);
+      await new Promise((r) => setTimeout(r, 0));
+      expect(mockContactService.deleteMessage).not.toHaveBeenCalled();
+    });
+
+    it('should not bulk hard delete if cancelled in dialog', async () => {
+      (component as any).selectAll();
+      (component['dialog'].open as any).mockReturnValue({
+        afterClosed: () => of(false),
+      });
+      await (component as any).bulkHardDelete();
+      await new Promise((r) => setTimeout(r, 0));
+      expect(mockContactService.bulkDelete).not.toHaveBeenCalled();
+    });
+
+    it('should not empty trash if cancelled in dialog', async () => {
+      (component['dialog'].open as any).mockReturnValue({
+        afterClosed: () => of(false),
+      });
+      await (component as any).emptyTrash();
+      await new Promise((r) => setTimeout(r, 0));
+      expect(mockContactService.emptyTrash).not.toHaveBeenCalled();
+    });
+
+    it('should handle cancel or invalid date in openSnoozeDialog', async () => {
+      (component['dialog'].open as any).mockReturnValue({
+        afterClosed: () => of('invalid-date'),
+      });
+      await (component as any).openSnoozeDialog(mockMessages[0]);
+      await new Promise((r) => setTimeout(r, 0));
+      expect(mockContactService.updateMessage).not.toHaveBeenCalled();
+
+      (component['dialog'].open as any).mockReturnValue({
+        afterClosed: () => of(null),
+      });
+      await (component as any).openSnoozeDialog(mockMessages[0]);
+      await new Promise((r) => setTimeout(r, 0));
+      expect(mockContactService.updateMessage).not.toHaveBeenCalled();
+    });
+
+    it('should navigate on viewMessage', () => {
+      (component as any).viewMessage('msg-123');
+      expect(mockRouter.navigate).toHaveBeenCalledWith(['/contacts', 'msg-123']);
+    });
+
+    it('should render loading skeleton when isLoading is true and filteredMessages is empty', () => {
+      mockContactService.messages.set([]);
+      mockContactService.isLoading.set(true);
+      fixture.detectChanges();
+      const skeleton = fixture.nativeElement.querySelectorAll('.animate-pulse');
+      expect(skeleton.length).toBeGreaterThan(0);
+    });
+
+    it('should render empty state for various folders when filteredMessages is empty and not loading', () => {
+      mockContactService.messages.set([]);
+      mockContactService.isLoading.set(false);
+
+      queryParamMapSubject.next({ get: () => 'trash' });
+      fixture.detectChanges();
+      expect(fixture.nativeElement.textContent).toContain('Your trash is empty');
+
+      queryParamMapSubject.next({ get: () => 'snoozed' });
+      fixture.detectChanges();
+      expect(fixture.nativeElement.textContent).toContain('No snoozed messages');
+
+      queryParamMapSubject.next({ get: () => 'all' });
+      fixture.detectChanges();
+      expect(fixture.nativeElement.textContent).toContain('No messages found');
+
+      queryParamMapSubject.next({ get: () => 'inbox' });
+      fixture.detectChanges();
+      expect(fixture.nativeElement.textContent).toContain('Your inbox is empty');
+    });
+
+    it('should handle selectItem and deselectItem on message checkbox', () => {
+      (component as any).selectItem('1');
+      expect((component as any).isSelected('1')).toBe(true);
+      (component as any).deselectItem('1');
+      expect((component as any).isSelected('1')).toBe(false);
+    });
   });
 });

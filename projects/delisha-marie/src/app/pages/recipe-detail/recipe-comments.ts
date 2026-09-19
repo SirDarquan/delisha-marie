@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
+  DOCUMENT,
   ViewEncapsulation,
   computed,
   effect,
@@ -19,7 +20,6 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router, RouterLink } from '@angular/router';
 import { Stars } from '@dm/library';
 import { NgxPaginationModule } from 'ngx-pagination';
-import { WINDOW } from '../../services/global-tokens';
 import { Comment, Recipe, RecipeService } from '../../services/recipe.service';
 
 export interface CommentFormValue {
@@ -349,7 +349,7 @@ export class RecipeComments {
 
   private readonly recipeService = inject(RecipeService);
   private readonly router = inject(Router);
-  private readonly window = inject(WINDOW);
+  private readonly document = inject(DOCUMENT);
   private readonly snackBar = inject(MatSnackBar);
 
   // Signals for state
@@ -520,10 +520,11 @@ export class RecipeComments {
 
             setTimeout(() => {
               const targetId = isReply ? `comment-${saved.id}` : 'comments';
-              const el = this.window.document.getElementById(targetId);
+              const el = this.document.getElementById(targetId);
               if (el) {
-                const y = el.getBoundingClientRect().top + this.window.scrollY - 120;
-                this.window.scrollTo({ top: y, behavior: 'smooth' });
+                const window = this.document.defaultView;
+                const y = el.getBoundingClientRect().top + (window?.scrollY ?? 0) - 120;
+                window?.scrollTo({ top: y, behavior: 'smooth' });
               }
             }, 100);
           } catch (err: unknown) {
@@ -565,10 +566,11 @@ export class RecipeComments {
     this.formModel.update((m) => ({ ...m, rating: null }));
 
     setTimeout(() => {
-      const el = this.window.document.getElementById('respond');
+      const el = this.document.getElementById('respond');
       if (el) {
-        const y = el.getBoundingClientRect().top + this.window.scrollY - 120;
-        this.window.scrollTo({ top: y, behavior: 'smooth' });
+        const window = this.document.defaultView;
+        const y = el.getBoundingClientRect().top + (window?.scrollY ?? 0) - 120;
+        window?.scrollTo({ top: y, behavior: 'smooth' });
       }
     }, 50);
   }
