@@ -6,10 +6,12 @@ vi.hoisted(() => {
   process.env['SUPABASE_KEY'] = 'test-key';
 });
 
-const { mockFrom, mockInvoke, mockRpc } = vi.hoisted(() => ({
+const { mockFrom, mockInvoke, mockRpc, mockChannel, mockRemoveChannel } = vi.hoisted(() => ({
   mockFrom: vi.fn(),
   mockInvoke: vi.fn(),
   mockRpc: vi.fn(),
+  mockChannel: vi.fn(),
+  mockRemoveChannel: vi.fn(),
 }));
 
 vi.mock('@supabase/supabase-js', () => {
@@ -51,6 +53,8 @@ vi.mock('@supabase/supabase-js', () => {
         invoke: mockInvoke,
       },
       rpc: (...args: unknown[]) => wrapQueryChain(mockRpc(...args)),
+      channel: (...args: unknown[]) => mockChannel(...args),
+      removeChannel: (...args: unknown[]) => mockRemoveChannel(...args),
     })),
   };
 });
@@ -1964,6 +1968,161 @@ describe('Recipes Router API', () => {
     });
   });
 
+  describe('GET /api/recipes/:recipeId/comments/stream', () => {
+    it('should establish SSE stream, write connected event, subscribe to channel, emit heartbeat, and handle close', async () => {
+      vi.useFakeTimers();
+      try {
+        let postgresCallback:
+          ((payload: { new?: Record<string, unknown> }) => Promise<void>) | null = null;
+        const mockChan = {
+          on: vi.fn().mockImplementation((_event, _filter, cb) => {
+            postgresCallback = cb;
+            return mockChan;
+          }),
+          subscribe: vi.fn().mockReturnThis(),
+        };
+        mockChannel.mockReturnValue(mockChan);
+        mockRemoveChannel.mockResolvedValue(undefined);
+
+        mockRpc.mockReturnValue(
+          Promise.resolve({
+            data: [{ review_count: 5, rating_count: 2, average_rating: 4.8 }],
+            error: null,
+          }),
+        );
+
+        let closeHandler: (() => void) | null = null;
+        const writtenChunks: string[] = [];
+        const headers: Record<string, string> = {};
+        let isHeadersSent = false;
+
+        const req = {
+          method: 'GET',
+          query: { slug: ['123', 'comments', 'stream'] },
+          on: vi.fn().mockImplementation((event: string, cb: () => void) => {
+            if (event === 'close') closeHandler = cb;
+          }),
+        } as unknown as import('@vercel/node').VercelRequest;
+
+        const res = {
+          writeHead: vi.fn().mockImplementation((_status: number, h: Record<string, string>) => {
+            Object.assign(headers, h);
+            isHeadersSent = true;
+          }),
+          write: vi.fn().mockImplementation((chunk: string) => {
+            writtenChunks.push(chunk);
+          }),
+          setHeader: vi.fn(),
+          status: vi.fn().mockReturnThis(),
+          json: vi.fn(),
+          end: vi.fn(),
+          get headersSent() {
+            return isHeadersSent;
+          },
+        } as unknown as import('@vercel/node').VercelResponse;
+
+        await recipesRouter(req, res);
+
+        expect(res.writeHead).toHaveBeenCalledWith(
+          200,
+          expect.objectContaining({
+            'Content-Type': 'text/event-stream',
+            'Cache-Control': 'no-cache, no-transform',
+          }),
+        );
+        expect(writtenChunks).toContain('data: {"type":"connected"}\n\n');
+        expect(mockChannel).toHaveBeenCalledWith(expect.stringContaining('recipe-123-sse-'));
+        expect(mockChan.subscribe).toHaveBeenCalled();
+
+        // Advance timer for heartbeat
+        vi.advanceTimersByTime(15000);
+        expect(writtenChunks).toContain(': heartbeat\n\n');
+
+        // Trigger postgres callback with approved comment
+        expect(postgresCallback).toBeTruthy();
+        await postgresCallback!({
+          new: { id: 'c1', recipe_id: '123', status: 'approved', content: 'hello' },
+        });
+
+        const commentChunk = writtenChunks.find((c) => c.includes('hello'));
+        expect(commentChunk).toBeTruthy();
+        expect(commentChunk).toContain('"reviewCount":5');
+
+        // Trigger postgres callback with non-approved or empty comment (false branches)
+        await postgresCallback!({
+          new: { id: 'c2', recipe_id: '123', status: 'pending' },
+        });
+        await postgresCallback!({});
+
+        // Trigger close
+        expect(closeHandler).toBeTruthy();
+        closeHandler!();
+        expect(mockRemoveChannel).toHaveBeenCalledWith(mockChan);
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it('should handle error when establishing stream before headersSent', async () => {
+      const resJson = vi.fn();
+      const resStatus = vi.fn().mockReturnValue({ json: resJson });
+
+      const req = {
+        method: 'GET',
+        query: { slug: ['123', 'comments', 'stream'] },
+        on: vi.fn(),
+      } as unknown as import('@vercel/node').VercelRequest;
+
+      const res = {
+        writeHead: vi.fn().mockImplementation(() => {
+          throw new Error('WriteHead error');
+        }),
+        write: vi.fn(),
+        setHeader: vi.fn(),
+        status: resStatus,
+        json: resJson,
+        end: vi.fn(),
+        headersSent: false,
+      } as unknown as import('@vercel/node').VercelResponse;
+
+      await recipesRouter(req, res);
+
+      expect(resStatus).toHaveBeenCalledWith(500);
+      expect(resJson).toHaveBeenCalledWith({ error: 'Failed to establish stream' });
+    });
+
+    it('should call res.end() when error occurs after headersSent', async () => {
+      mockChannel.mockImplementationOnce(() => {
+        throw new Error('Post-header failure');
+      });
+
+      const req = {
+        method: 'GET',
+        query: { slug: ['123', 'comments', 'stream'] },
+        on: vi.fn(),
+      } as unknown as import('@vercel/node').VercelRequest;
+
+      let isHeadersSent = false;
+      const res = {
+        writeHead: vi.fn().mockImplementation(() => {
+          isHeadersSent = true;
+        }),
+        write: vi.fn(),
+        setHeader: vi.fn(),
+        status: vi.fn().mockReturnThis(),
+        json: vi.fn(),
+        end: vi.fn(),
+        get headersSent() {
+          return isHeadersSent;
+        },
+      } as unknown as import('@vercel/node').VercelResponse;
+
+      await recipesRouter(req, res);
+
+      expect(res.end).toHaveBeenCalled();
+    });
+  });
+
   describe('POST /api/recipes/:recipeId/comments', () => {
     it('should successfully post a comment', async () => {
       const mockComment = {
@@ -2369,6 +2528,38 @@ describe('Recipes Router API', () => {
   describe('clearRecipesCache', () => {
     it('should clear listCache and recipeSlugCache without errors', () => {
       expect(() => clearRecipesCache()).not.toThrow();
+    });
+  });
+
+  describe('recipesHandler top-level error handling', () => {
+    it('should handle unexpected exceptions with Error and non-Error in recipesRouter', async () => {
+      const resErr = {
+        setHeader: vi.fn().mockImplementation(() => {
+          throw new Error('Unexpected router error');
+        }),
+        status: vi.fn().mockReturnThis(),
+        json: vi.fn(),
+      } as unknown as import('@vercel/node').VercelResponse;
+
+      await recipesRouter(
+        { method: 'GET', query: {} } as import('@vercel/node').VercelRequest,
+        resErr,
+      );
+      expect(resErr.status).toHaveBeenCalledWith(500);
+
+      const resStr = {
+        setHeader: vi.fn().mockImplementation(() => {
+          throw 'Unexpected router string error';
+        }),
+        status: vi.fn().mockReturnThis(),
+        json: vi.fn(),
+      } as unknown as import('@vercel/node').VercelResponse;
+
+      await recipesRouter(
+        { method: 'GET', query: {} } as import('@vercel/node').VercelRequest,
+        resStr,
+      );
+      expect(resStr.status).toHaveBeenCalledWith(500);
     });
   });
 });

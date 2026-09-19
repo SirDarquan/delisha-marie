@@ -1,8 +1,10 @@
-import { CommonModule } from '@angular/common';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
   DOCUMENT,
+  DestroyRef,
+  PLATFORM_ID,
   ViewEncapsulation,
   computed,
   effect,
@@ -11,6 +13,7 @@ import {
   output,
   resource,
   signal,
+  untracked,
 } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { FormField, FormRoot, email, form, required } from '@angular/forms/signals';
@@ -20,6 +23,8 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router, RouterLink } from '@angular/router';
 import { Stars } from '@dm/library';
 import { NgxPaginationModule } from 'ngx-pagination';
+import { Subscription, retry } from 'rxjs';
+import { CommentStreamService } from '../../services/comment-stream.service';
 import { Comment, Recipe, RecipeService } from '../../services/recipe.service';
 
 export interface CommentFormValue {
@@ -351,11 +356,45 @@ export class RecipeComments {
   private readonly router = inject(Router);
   private readonly document = inject(DOCUMENT);
   private readonly snackBar = inject(MatSnackBar);
+  private readonly platformId = inject(PLATFORM_ID);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly isBrowser = isPlatformBrowser(this.platformId);
+  private readonly commentStreamService = inject(CommentStreamService);
+  private pollTimer: ReturnType<typeof setInterval> | null = null;
+  private streamSub: Subscription | null = null;
+  readonly pollIntervalMs = 60_000;
+
+  constructor() {
+    if (this.isBrowser) {
+      this.initPolling();
+    }
+  }
 
   // Signals for state
   replyTo = signal<Comment | null>(null);
   pageSize = signal(50);
   currentStats = signal<{ reviewCount: number; ratingCount: number; rating: number } | null>(null);
+  private readonly localComments = signal<Comment[]>([]);
+
+  readonly recipeId = computed(() => this.recipe().id);
+  readonly pageParam = computed(() =>
+    this.page() ? Number.parseInt(this.page()!, 10) : undefined,
+  );
+
+  private readonly _recipeResetEffect = effect(() => {
+    const id = this.recipeId();
+    untracked(() => {
+      this.localComments.set([]);
+      this.currentStats.set(null);
+      if (this.isBrowser) {
+        if (this.streamSub) {
+          this.streamSub.unsubscribe();
+          this.streamSub = null;
+        }
+        this.initStream(id);
+      }
+    });
+  });
 
   currentPage = computed(() => {
     const p = this.page();
@@ -368,15 +407,33 @@ export class RecipeComments {
 
   // Resource for comments
   private readonly commentsResource = resource({
-    params: () => ({
-      recipeId: this.recipe().id,
-      page: this.page() ? Number.parseInt(this.page()!, 10) : undefined,
-    }),
-    loader: ({ params }) => this.recipeService.getComments(params.recipeId, params.page),
+    params: () => `${this.recipeId()}:${this.pageParam() ?? ''}`,
+    loader: () => this.recipeService.getComments(this.recipeId(), this.pageParam()),
   });
 
-  comments = computed(() => this.commentsResource.value()?.comments || []);
-  totalTopLevelComments = computed(() => this.commentsResource.value()?.total || 0);
+  comments = computed(() => {
+    const fetched = this.commentsResource.value()?.comments || [];
+    const currentId = String(this.recipeId());
+    const local = this.localComments().filter((c) => String(c.recipeId) === currentId);
+    if (local.length === 0) return fetched;
+    const existingIds = new Set(fetched.map((c) => c.id));
+    const newItems = local.filter((c) => !existingIds.has(c.id));
+    return [...newItems, ...fetched];
+  });
+
+  totalTopLevelComments = computed(() => {
+    const resourceVal = this.commentsResource.value();
+    const serverTotal = resourceVal?.total ?? 0;
+    const fetched = resourceVal?.comments || [];
+    const currentId = String(this.recipeId());
+    const existingIds = new Set(fetched.map((c) => c.id));
+    const localTopLevel = this.localComments().filter(
+      (c) => String(c.recipeId) === currentId && !c.parentId && !existingIds.has(c.id),
+    ).length;
+    const computedTotal = serverTotal + localTopLevel;
+    const statsCount = this.currentStats()?.reviewCount ?? this.recipe().reviewCount ?? 0;
+    return Math.max(computedTotal, statsCount);
+  });
 
   private readonly _countEffect = effect(() => {
     const data = this.commentsResource.value();
@@ -449,7 +506,10 @@ export class RecipeComments {
               saved.createdAt = new Date().toISOString();
             }
 
-            // 1. Put the comment up first in the comments section
+            // 1. Put the comment up in localComments
+            this.localComments.update((prev) => [saved, ...prev]);
+
+            // 2. Put the comment up first in the comments section
             this.commentsResource.update((prev) => {
               if (!prev) {
                 return {
@@ -463,9 +523,13 @@ export class RecipeComments {
                 };
               }
               const newTotal = isReply ? prev.total : prev.total + 1;
+              const existingIds = new Set(prev.comments.map((c) => c.id));
+              const comments = existingIds.has(saved.id)
+                ? prev.comments
+                : [saved, ...prev.comments];
               return {
                 ...prev,
-                comments: [saved, ...prev.comments],
+                comments,
                 total: newTotal,
               };
             });
@@ -577,5 +641,118 @@ export class RecipeComments {
 
   cancelReply() {
     this.replyTo.set(null);
+  }
+
+  private initPolling(): void {
+    this.pollTimer = setInterval(() => {
+      void this.pollComments();
+    }, this.pollIntervalMs);
+
+    const onVisibilityChange = () => {
+      if (this.document.visibilityState === 'visible') {
+        void this.pollComments();
+      }
+    };
+    this.document.addEventListener('visibilitychange', onVisibilityChange);
+
+    this.destroyRef.onDestroy(() => {
+      if (this.pollTimer) {
+        clearInterval(this.pollTimer);
+        this.pollTimer = null;
+      }
+      this.document.removeEventListener('visibilitychange', onVisibilityChange);
+    });
+  }
+
+  private initStream(recipeId: string | number): void {
+    if (!this.isBrowser) return;
+
+    this.streamSub = this.commentStreamService
+      .getCommentStream(recipeId)
+      .pipe(retry({ delay: 3000 }))
+      .subscribe({
+        next: (event) => {
+          if (event.comment) {
+            const newComment = event.comment;
+            this.commentsResource.update((prev) => {
+              if (!prev) {
+                return {
+                  comments: [newComment],
+                  total: 1,
+                  stats: event.stats,
+                };
+              }
+              const existingIds = new Set(prev.comments.map((c) => c.id));
+              if (existingIds.has(newComment.id)) {
+                return prev;
+              }
+              return {
+                ...prev,
+                comments: [newComment, ...prev.comments],
+                total: newComment.parentId ? prev.total : prev.total + 1,
+                stats: event.stats ?? prev.stats,
+              };
+            });
+          }
+
+          if (event.stats) {
+            const current = this.currentStats();
+            if (
+              current?.reviewCount !== event.stats.reviewCount ||
+              current.ratingCount !== event.stats.ratingCount ||
+              current.rating !== event.stats.rating
+            ) {
+              this.currentStats.set(event.stats);
+              this.statsChange.emit(event.stats);
+            }
+          }
+        },
+        error: () => {
+          // On stream disconnection or error, the background polling timer seamlessly continues
+        },
+      });
+
+    this.destroyRef.onDestroy(() => {
+      if (this.streamSub) {
+        this.streamSub.unsubscribe();
+        this.streamSub = null;
+      }
+    });
+  }
+
+  async pollComments(): Promise<void> {
+    if (this.document.visibilityState !== 'visible') {
+      return;
+    }
+    try {
+      const res = await this.recipeService.getComments(this.recipeId(), this.pageParam());
+      if (!res) return;
+
+      this.commentsResource.update((prev) => {
+        if (!prev) return res;
+        const incomingIds = new Set(res.comments.map((c) => c.id));
+        const retained = prev.comments.filter((c) => !incomingIds.has(c.id));
+        return {
+          ...res,
+          comments: [...res.comments, ...retained],
+          total: Math.max(res.total, prev.total),
+          stats: res.stats ?? prev.stats,
+        };
+      });
+
+      if (res.stats) {
+        const current = this.currentStats();
+        if (
+          current?.reviewCount !== res.stats.reviewCount ||
+          current.ratingCount !== res.stats.ratingCount ||
+          current.rating !== res.stats.rating
+        ) {
+          this.currentStats.set(res.stats);
+          this.statsChange.emit(res.stats);
+        }
+      }
+    } catch {
+      // Quietly ignore background poll failures (e.g. temporary network offline)
+    }
   }
 }

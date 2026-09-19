@@ -586,6 +586,57 @@ async function handleGetComments(req: VercelRequest, res: VercelResponse, recipe
   }
 }
 
+async function handleCommentsStream(req: VercelRequest, res: VercelResponse, recipeId: string) {
+  try {
+    const supabase = await getSupabaseClient();
+
+    res.writeHead(200, {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache, no-transform',
+      Connection: 'keep-alive',
+      'X-Accel-Buffering': 'no',
+    });
+
+    res.write('data: {"type":"connected"}\n\n');
+
+    const heartbeat = setInterval(() => {
+      res.write(': heartbeat\n\n');
+    }, 15000);
+
+    const channel = supabase
+      .channel(`recipe-${recipeId}-sse-${Date.now()}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'comments',
+          filter: `recipe_id=eq.${recipeId}`,
+        },
+        async (payload: { new?: Record<string, unknown> }) => {
+          if (payload.new && payload.new['status'] === 'approved') {
+            const comment = camelCaseKeys(payload.new);
+            const stats = await getRecipeStats(supabase, recipeId);
+            res.write(`data: ${JSON.stringify({ comment, stats })}\n\n`);
+          }
+        },
+      )
+      .subscribe();
+
+    req.on('close', () => {
+      clearInterval(heartbeat);
+      void supabase.removeChannel(channel);
+    });
+  } catch (err: unknown) {
+    console.error('Error in comments stream:', err);
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'Failed to establish stream' });
+    } else {
+      res.end();
+    }
+  }
+}
+
 function isDomainBlocked(
   website: string | undefined,
   blockedDomainsStr: string | undefined,
@@ -1001,6 +1052,11 @@ const routes: IRecipeRoute[] = [
     pattern: /^\/([^/]+)\/comments\/top$/,
     method: 'GET',
     handler: (req, res, match: RegExpExecArray) => handleGetTopComments(req, res, match[1]),
+  },
+  {
+    pattern: /^\/([^/]+)\/comments\/stream$/,
+    method: 'GET',
+    handler: (req, res, match: RegExpExecArray) => handleCommentsStream(req, res, match[1]),
   },
   {
     pattern: /^\/([^/]+)\/comments$/,

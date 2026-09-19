@@ -2,8 +2,47 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { vi, describe, it, expect } from 'vitest';
 
 describe('test-utils', () => {
-  it('should exist', () => {
-    expect(true).toBe(true);
+  it('should test createMockResponse and createMockRequest branches', async () => {
+    const res = createMockResponse();
+    (res.status as (c: number) => VercelResponse)(201);
+    expect(res.statusCode).toBe(201);
+    (res.json as (b: unknown) => VercelResponse)({ error: '' });
+    expect(res.body).toEqual({ error: '' });
+    (res.send as (t: string) => VercelResponse)('hello');
+    expect(res.text).toBe('hello');
+    (res.setHeader as (k: string, v: string) => VercelResponse)('X-Custom', 'Value');
+    expect(res.headers['x-custom']).toBe('Value');
+
+    // writeHead without headers
+    (res.writeHead as (c: number) => VercelResponse)(200);
+    expect(res.headersSent).toBe(true);
+
+    // writeHead with headers
+    (res.writeHead as (c: number, h?: Record<string, string>) => VercelResponse)(200, {
+      'x-stream': 'true',
+    });
+    expect(res.headers['x-stream']).toBe('true');
+
+    // write when text already exists
+    (res.write as (chunk: string) => boolean)(' world');
+    expect(res.text).toBe('hello world');
+
+    // write when text is empty
+    const res2 = createMockResponse();
+    (res2.write as (chunk: string) => boolean)('first chunk');
+    expect(res2.text).toBe('first chunk');
+    (res2.end as () => void)();
+    expect(res2.end).toHaveBeenCalled();
+
+    // createRequestMock with empty url /api
+    const mockApp = createRequestMock((req, res) => {
+      res.status(200).send('ok');
+    });
+    const getRes = await mockApp().get('/api');
+    expect(getRes.status).toBe(200);
+
+    const postRes = await mockApp().post('/api').send({ foo: 'bar' });
+    expect(postRes.status).toBe(200);
   });
 });
 
@@ -73,9 +112,13 @@ export interface MockVercelResponse {
   json: unknown;
   send: unknown;
   setHeader: unknown;
+  writeHead?: unknown;
+  write?: unknown;
+  end?: unknown;
+  headersSent?: boolean;
 }
 
-function createMockResponse(): MockVercelResponse {
+export function createMockResponse(): MockVercelResponse {
   const res = { headers: {} } as MockVercelResponse;
   res.statusCode = 200;
   res.status = vi.fn().mockImplementation((code: number) => {
@@ -94,17 +137,32 @@ function createMockResponse(): MockVercelResponse {
     res.headers[name.toLowerCase()] = value;
     return res as unknown as VercelResponse;
   });
+  res.writeHead = vi.fn().mockImplementation((code: number, headers?: Record<string, string>) => {
+    res.statusCode = code;
+    if (headers) {
+      Object.assign(res.headers, headers);
+    }
+    res.headersSent = true;
+    return res as unknown as VercelResponse;
+  });
+  res.write = vi.fn().mockImplementation((chunk: string) => {
+    res.text = (res.text || '') + chunk;
+    return true;
+  });
+  res.end = vi.fn();
   return res;
 }
 
-function createMockRequest(url: string, method = 'GET', body: unknown = {}) {
-  return {
+export function createMockRequest(url: string, method = 'GET', body: unknown = {}) {
+  const req = {
     method,
     url: 'http://localhost' + url,
     body,
     query: {},
     headers: { host: 'localhost' },
+    on: vi.fn().mockImplementation(() => req),
   } as unknown as VercelRequest;
+  return req;
 }
 
 export interface GetRequestChain extends PromiseLike<MockVercelResponse> {
