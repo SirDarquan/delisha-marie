@@ -23,6 +23,8 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router, RouterLink } from '@angular/router';
 import { Stars } from '@dm/library';
 import { NgxPaginationModule } from 'ngx-pagination';
+import { Subscription } from 'rxjs';
+import { CommentStreamService } from '../../services/comment-stream.service';
 import { Comment, Recipe, RecipeService } from '../../services/recipe.service';
 
 export interface CommentFormValue {
@@ -357,7 +359,9 @@ export class RecipeComments {
   private readonly platformId = inject(PLATFORM_ID);
   private readonly destroyRef = inject(DestroyRef);
   private readonly isBrowser = isPlatformBrowser(this.platformId);
+  private readonly commentStreamService = inject(CommentStreamService);
   private pollTimer: ReturnType<typeof setInterval> | null = null;
+  private streamSub: Subscription | null = null;
   readonly pollIntervalMs = 60_000;
 
   constructor() {
@@ -378,10 +382,17 @@ export class RecipeComments {
   );
 
   private readonly _recipeResetEffect = effect(() => {
-    this.recipeId();
+    const id = this.recipeId();
     untracked(() => {
       this.localComments.set([]);
       this.currentStats.set(null);
+      if (this.isBrowser) {
+        if (this.streamSub) {
+          this.streamSub.unsubscribe();
+          this.streamSub = null;
+        }
+        this.initStream(id);
+      }
     });
   });
 
@@ -650,6 +661,60 @@ export class RecipeComments {
         this.pollTimer = null;
       }
       this.document.removeEventListener('visibilitychange', onVisibilityChange);
+    });
+  }
+
+  private initStream(recipeId: string | number): void {
+    if (!this.isBrowser) return;
+
+    this.streamSub = this.commentStreamService.getCommentStream(recipeId).subscribe({
+      next: (event) => {
+        if (event.comment) {
+          const newComment = event.comment;
+          this.commentsResource.update((prev) => {
+            if (!prev) {
+              return {
+                comments: [newComment],
+                total: 1,
+                stats: event.stats,
+              };
+            }
+            const existingIds = new Set(prev.comments.map((c) => c.id));
+            if (existingIds.has(newComment.id)) {
+              return prev;
+            }
+            return {
+              ...prev,
+              comments: [newComment, ...prev.comments],
+              total: newComment.parentId ? prev.total : prev.total + 1,
+              stats: event.stats ?? prev.stats,
+            };
+          });
+        }
+
+        if (event.stats) {
+          const current = this.currentStats();
+          if (
+            !current ||
+            current.reviewCount !== event.stats.reviewCount ||
+            current.ratingCount !== event.stats.ratingCount ||
+            current.rating !== event.stats.rating
+          ) {
+            this.currentStats.set(event.stats);
+            this.statsChange.emit(event.stats);
+          }
+        }
+      },
+      error: () => {
+        // On stream disconnection or error, the background polling timer seamlessly continues
+      },
+    });
+
+    this.destroyRef.onDestroy(() => {
+      if (this.streamSub) {
+        this.streamSub.unsubscribe();
+        this.streamSub = null;
+      }
     });
   }
 

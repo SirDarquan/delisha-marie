@@ -2,7 +2,9 @@ import { DOCUMENT } from '@angular/common';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { provideRouter, Router } from '@angular/router';
+import { Subject } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, Mock, vi } from 'vitest';
+import { CommentStreamEvent, CommentStreamService } from '../../services/comment-stream.service';
 import { Comment, RecipeService } from '../../services/recipe.service';
 import { RecipeComments } from './recipe-comments';
 
@@ -673,6 +675,79 @@ describe('RecipeComments', () => {
       expect(component['pollTimer']).not.toBeNull();
       fixture.destroy();
       expect(component['pollTimer']).toBeNull();
+    });
+  });
+
+  describe('Real-time Comment Streaming', () => {
+    it('should immediately append incoming comments from stream and update count', () => {
+      const streamSubject = new Subject<CommentStreamEvent>();
+      const streamService = TestBed.inject(CommentStreamService);
+      vi.spyOn(streamService, 'getCommentStream').mockReturnValue(streamSubject.asObservable());
+
+      // Re-init stream with mocked subject
+      component['initStream'](1);
+
+      const liveComment: Comment = {
+        id: 'live-stream-101',
+        recipeId: '1',
+        author: 'Instant Commenter',
+        email: 'instant@example.com',
+        content: 'This stream update is instantaneous!',
+        createdAt: new Date().toISOString(),
+      };
+
+      const liveStats = { reviewCount: 103, ratingCount: 50, rating: 5 };
+      let emittedStats: unknown;
+      component.statsChange.subscribe((s) => {
+        emittedStats = s;
+      });
+
+      streamSubject.next({ comment: liveComment, stats: liveStats });
+      fixture.detectChanges();
+
+      expect(component.comments()).toContainEqual(liveComment);
+      expect(component.totalTopLevelComments()).toBe(103);
+      expect(emittedStats).toEqual(liveStats);
+    });
+
+    it('should not duplicate comments when receiving an already existing comment ID from stream', () => {
+      const streamSubject = new Subject<CommentStreamEvent>();
+      const streamService = TestBed.inject(CommentStreamService);
+      vi.spyOn(streamService, 'getCommentStream').mockReturnValue(streamSubject.asObservable());
+
+      component['initStream'](1);
+
+      const existing = mockComments[0];
+      const countBefore = component.comments().length;
+
+      streamSubject.next({ comment: existing });
+      fixture.detectChanges();
+
+      expect(component.comments().length).toBe(countBefore);
+    });
+
+    it('should not increment totalTopLevelComments when receiving a reply from stream', () => {
+      const streamSubject = new Subject<CommentStreamEvent>();
+      const streamService = TestBed.inject(CommentStreamService);
+      vi.spyOn(streamService, 'getCommentStream').mockReturnValue(streamSubject.asObservable());
+
+      component['initStream'](1);
+
+      const initialTotal = component.totalTopLevelComments();
+      const replyComment: Comment = {
+        id: 'reply-stream-1',
+        parentId: 'c1',
+        recipeId: '1',
+        author: 'Replier',
+        email: 'reply@example.com',
+        content: 'I agree!',
+        createdAt: new Date().toISOString(),
+      };
+
+      streamSubject.next({ comment: replyComment });
+      fixture.detectChanges();
+
+      expect(component.totalTopLevelComments()).toBe(initialTotal);
     });
   });
 });
