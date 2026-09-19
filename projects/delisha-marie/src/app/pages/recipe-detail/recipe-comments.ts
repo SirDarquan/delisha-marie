@@ -23,7 +23,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router, RouterLink } from '@angular/router';
 import { Stars } from '@dm/library';
 import { NgxPaginationModule } from 'ngx-pagination';
-import { Subscription } from 'rxjs';
+import { Subscription, retry } from 'rxjs';
 import { CommentStreamService } from '../../services/comment-stream.service';
 import { Comment, Recipe, RecipeService } from '../../services/recipe.service';
 
@@ -667,48 +667,50 @@ export class RecipeComments {
   private initStream(recipeId: string | number): void {
     if (!this.isBrowser) return;
 
-    this.streamSub = this.commentStreamService.getCommentStream(recipeId).subscribe({
-      next: (event) => {
-        if (event.comment) {
-          const newComment = event.comment;
-          this.commentsResource.update((prev) => {
-            if (!prev) {
+    this.streamSub = this.commentStreamService
+      .getCommentStream(recipeId)
+      .pipe(retry({ delay: 3000 }))
+      .subscribe({
+        next: (event) => {
+          if (event.comment) {
+            const newComment = event.comment;
+            this.commentsResource.update((prev) => {
+              if (!prev) {
+                return {
+                  comments: [newComment],
+                  total: 1,
+                  stats: event.stats,
+                };
+              }
+              const existingIds = new Set(prev.comments.map((c) => c.id));
+              if (existingIds.has(newComment.id)) {
+                return prev;
+              }
               return {
-                comments: [newComment],
-                total: 1,
-                stats: event.stats,
+                ...prev,
+                comments: [newComment, ...prev.comments],
+                total: newComment.parentId ? prev.total : prev.total + 1,
+                stats: event.stats ?? prev.stats,
               };
-            }
-            const existingIds = new Set(prev.comments.map((c) => c.id));
-            if (existingIds.has(newComment.id)) {
-              return prev;
-            }
-            return {
-              ...prev,
-              comments: [newComment, ...prev.comments],
-              total: newComment.parentId ? prev.total : prev.total + 1,
-              stats: event.stats ?? prev.stats,
-            };
-          });
-        }
-
-        if (event.stats) {
-          const current = this.currentStats();
-          if (
-            !current ||
-            current.reviewCount !== event.stats.reviewCount ||
-            current.ratingCount !== event.stats.ratingCount ||
-            current.rating !== event.stats.rating
-          ) {
-            this.currentStats.set(event.stats);
-            this.statsChange.emit(event.stats);
+            });
           }
-        }
-      },
-      error: () => {
-        // On stream disconnection or error, the background polling timer seamlessly continues
-      },
-    });
+
+          if (event.stats) {
+            const current = this.currentStats();
+            if (
+              current?.reviewCount !== event.stats.reviewCount ||
+              current.ratingCount !== event.stats.ratingCount ||
+              current.rating !== event.stats.rating
+            ) {
+              this.currentStats.set(event.stats);
+              this.statsChange.emit(event.stats);
+            }
+          }
+        },
+        error: () => {
+          // On stream disconnection or error, the background polling timer seamlessly continues
+        },
+      });
 
     this.destroyRef.onDestroy(() => {
       if (this.streamSub) {
