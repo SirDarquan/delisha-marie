@@ -11,6 +11,7 @@ import {
   output,
   resource,
   signal,
+  untracked,
 } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { FormField, FormRoot, email, form, required } from '@angular/forms/signals';
@@ -356,6 +357,20 @@ export class RecipeComments {
   replyTo = signal<Comment | null>(null);
   pageSize = signal(50);
   currentStats = signal<{ reviewCount: number; ratingCount: number; rating: number } | null>(null);
+  private readonly localComments = signal<Comment[]>([]);
+
+  readonly recipeId = computed(() => this.recipe().id);
+  readonly pageParam = computed(() =>
+    this.page() ? Number.parseInt(this.page()!, 10) : undefined,
+  );
+
+  private readonly _recipeResetEffect = effect(() => {
+    this.recipeId();
+    untracked(() => {
+      this.localComments.set([]);
+      this.currentStats.set(null);
+    });
+  });
 
   currentPage = computed(() => {
     const p = this.page();
@@ -368,15 +383,33 @@ export class RecipeComments {
 
   // Resource for comments
   private readonly commentsResource = resource({
-    params: () => ({
-      recipeId: this.recipe().id,
-      page: this.page() ? Number.parseInt(this.page()!, 10) : undefined,
-    }),
-    loader: ({ params }) => this.recipeService.getComments(params.recipeId, params.page),
+    params: () => `${this.recipeId()}:${this.pageParam() ?? ''}`,
+    loader: () => this.recipeService.getComments(this.recipeId(), this.pageParam()),
   });
 
-  comments = computed(() => this.commentsResource.value()?.comments || []);
-  totalTopLevelComments = computed(() => this.commentsResource.value()?.total || 0);
+  comments = computed(() => {
+    const fetched = this.commentsResource.value()?.comments || [];
+    const currentId = String(this.recipeId());
+    const local = this.localComments().filter((c) => String(c.recipeId) === currentId);
+    if (local.length === 0) return fetched;
+    const existingIds = new Set(fetched.map((c) => c.id));
+    const newItems = local.filter((c) => !existingIds.has(c.id));
+    return [...newItems, ...fetched];
+  });
+
+  totalTopLevelComments = computed(() => {
+    const resourceVal = this.commentsResource.value();
+    const serverTotal = resourceVal?.total ?? 0;
+    const fetched = resourceVal?.comments || [];
+    const currentId = String(this.recipeId());
+    const existingIds = new Set(fetched.map((c) => c.id));
+    const localTopLevel = this.localComments().filter(
+      (c) => String(c.recipeId) === currentId && !c.parentId && !existingIds.has(c.id),
+    ).length;
+    const computedTotal = serverTotal + localTopLevel;
+    const statsCount = this.currentStats()?.reviewCount ?? this.recipe().reviewCount ?? 0;
+    return Math.max(computedTotal, statsCount);
+  });
 
   private readonly _countEffect = effect(() => {
     const data = this.commentsResource.value();
@@ -449,7 +482,10 @@ export class RecipeComments {
               saved.createdAt = new Date().toISOString();
             }
 
-            // 1. Put the comment up first in the comments section
+            // 1. Put the comment up in localComments
+            this.localComments.update((prev) => [saved, ...prev]);
+
+            // 2. Put the comment up first in the comments section
             this.commentsResource.update((prev) => {
               if (!prev) {
                 return {
@@ -463,9 +499,13 @@ export class RecipeComments {
                 };
               }
               const newTotal = isReply ? prev.total : prev.total + 1;
+              const existingIds = new Set(prev.comments.map((c) => c.id));
+              const comments = existingIds.has(saved.id)
+                ? prev.comments
+                : [saved, ...prev.comments];
               return {
                 ...prev,
-                comments: [saved, ...prev.comments],
+                comments,
                 total: newTotal,
               };
             });

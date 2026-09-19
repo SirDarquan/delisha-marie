@@ -488,4 +488,129 @@ describe('RecipeComments', () => {
     expect(component.comments()).toContain(saved);
     expect(getElementByIdSpy).toHaveBeenCalledWith('comments');
   });
+
+  it('should immediately update comment count to 2 and display comment when posted on a recipe with 1 comment', async () => {
+    // Initial state: recipe with 1 comment
+    const initialComment: Comment = {
+      id: 'existing-c1',
+      recipeId: '50',
+      author: 'Existing Commenter',
+      email: 'existing@example.com',
+      content: 'Great recipe!',
+      createdAt: '2024-01-01T00:00:00Z',
+    };
+    recipeServiceMock.getComments.mockResolvedValueOnce({
+      comments: [initialComment],
+      total: 1,
+      stats: { reviewCount: 1, ratingCount: 0, rating: 0 },
+    });
+
+    fixture.componentRef.setInput('recipe', {
+      id: 50,
+      title: 'Pancakes with Maple Syrup 12',
+      slug: 'pancakes-with-maple-syrup-12',
+      reviewCount: 1,
+    });
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(component.totalTopLevelComments()).toBe(1);
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.textContent).toContain("1 comment(s) on 'Pancakes with Maple Syrup 12'");
+
+    // User submits comment and rating
+    const savedComment: Comment = {
+      id: 'new-user-c2',
+      recipeId: '50',
+      author: 'Delisha Fan',
+      email: 'fan@example.com',
+      content: 'These pancakes are fluffy and delicious!',
+      rating: 5,
+      createdAt: new Date().toISOString(),
+    };
+    recipeServiceMock.addComment.mockResolvedValueOnce(savedComment);
+
+    let emittedStats: { reviewCount: number; ratingCount: number; rating: number } | undefined;
+    component.statsChange.subscribe((stats) => {
+      emittedStats = stats;
+    });
+
+    component['formModel'].set({
+      author: 'Delisha Fan',
+      email: 'fan@example.com',
+      website: '',
+      content: 'These pancakes are fluffy and delicious!',
+      rating: 5,
+      alt_email: '',
+      isNew: false,
+    });
+    fixture.detectChanges();
+
+    const formEl = compiled.querySelector('form') as HTMLFormElement;
+    formEl.dispatchEvent(new Event('submit'));
+    await fixture.whenStable();
+
+    // Stats were emitted with reviewCount = 2
+    expect(emittedStats?.reviewCount).toBe(2);
+
+    // Parent RecipeDetail passes new recipe object reference with updated reviewCount
+    fixture.componentRef.setInput('recipe', {
+      id: 50,
+      title: 'Pancakes with Maple Syrup 12',
+      slug: 'pancakes-with-maple-syrup-12',
+      reviewCount: 2,
+      rating: 5,
+      ratingCount: 1,
+    });
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    // Comment section header immediately shows 2 comments!
+    expect(component.totalTopLevelComments()).toBe(2);
+    expect(compiled.textContent).toContain("2 comment(s) on 'Pancakes with Maple Syrup 12'");
+
+    // Newly posted comment is displayed in comments and paginatedComments
+    expect(component.comments()).toContainEqual(savedComment);
+    expect(component.paginatedComments()[0].id).toBe('new-user-c2');
+    expect(compiled.textContent).toContain('These pancakes are fluffy and delicious!');
+    expect(compiled.textContent).toContain('Delisha Fan');
+  });
+
+  it('should reset local comments when switching to a different recipe ID', async () => {
+    const saved = {
+      id: 'r1-comment',
+      author: 'User 1',
+      content: 'Recipe 1 comment',
+      createdAt: new Date().toISOString(),
+      recipeId: '1',
+    };
+    recipeServiceMock.addComment.mockResolvedValueOnce(saved);
+
+    component['formModel'].set({
+      author: 'User 1',
+      email: 'user1@example.com',
+      website: '',
+      content: 'Recipe 1 comment',
+      rating: null,
+      alt_email: '',
+      isNew: false,
+    });
+    fixture.detectChanges();
+
+    const formEl = fixture.nativeElement.querySelector('form');
+    formEl.dispatchEvent(new Event('submit'));
+    await fixture.whenStable();
+
+    expect(component.comments()).toContainEqual(saved);
+
+    // Switch recipe
+    recipeServiceMock.getComments.mockResolvedValueOnce({ comments: [], total: 0 });
+    fixture.componentRef.setInput('recipe', { id: 2, title: 'Recipe Two', slug: 'recipe-two' });
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(component['localComments']()).toEqual([]);
+  });
 });
