@@ -1,8 +1,10 @@
-import { CommonModule } from '@angular/common';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
   DOCUMENT,
+  DestroyRef,
+  PLATFORM_ID,
   ViewEncapsulation,
   computed,
   effect,
@@ -352,6 +354,17 @@ export class RecipeComments {
   private readonly router = inject(Router);
   private readonly document = inject(DOCUMENT);
   private readonly snackBar = inject(MatSnackBar);
+  private readonly platformId = inject(PLATFORM_ID);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly isBrowser = isPlatformBrowser(this.platformId);
+  private pollTimer: ReturnType<typeof setInterval> | null = null;
+  readonly pollIntervalMs = 60_000;
+
+  constructor() {
+    if (this.isBrowser) {
+      this.initPolling();
+    }
+  }
 
   // Signals for state
   replyTo = signal<Comment | null>(null);
@@ -617,5 +630,62 @@ export class RecipeComments {
 
   cancelReply() {
     this.replyTo.set(null);
+  }
+
+  private initPolling(): void {
+    this.pollTimer = setInterval(() => {
+      void this.pollComments();
+    }, this.pollIntervalMs);
+
+    const onVisibilityChange = () => {
+      if (this.document.visibilityState === 'visible') {
+        void this.pollComments();
+      }
+    };
+    this.document.addEventListener('visibilitychange', onVisibilityChange);
+
+    this.destroyRef.onDestroy(() => {
+      if (this.pollTimer) {
+        clearInterval(this.pollTimer);
+        this.pollTimer = null;
+      }
+      this.document.removeEventListener('visibilitychange', onVisibilityChange);
+    });
+  }
+
+  async pollComments(): Promise<void> {
+    if (this.document.visibilityState !== 'visible') {
+      return;
+    }
+    try {
+      const res = await this.recipeService.getComments(this.recipeId(), this.pageParam());
+      if (!res) return;
+
+      this.commentsResource.update((prev) => {
+        if (!prev) return res;
+        const incomingIds = new Set(res.comments.map((c) => c.id));
+        const retained = prev.comments.filter((c) => !incomingIds.has(c.id));
+        return {
+          ...res,
+          comments: [...res.comments, ...retained],
+          total: Math.max(res.total, prev.total),
+          stats: res.stats ?? prev.stats,
+        };
+      });
+
+      if (res.stats) {
+        const current = this.currentStats();
+        if (
+          current?.reviewCount !== res.stats.reviewCount ||
+          current.ratingCount !== res.stats.ratingCount ||
+          current.rating !== res.stats.rating
+        ) {
+          this.currentStats.set(res.stats);
+          this.statsChange.emit(res.stats);
+        }
+      }
+    } catch {
+      // Quietly ignore background poll failures (e.g. temporary network offline)
+    }
   }
 }

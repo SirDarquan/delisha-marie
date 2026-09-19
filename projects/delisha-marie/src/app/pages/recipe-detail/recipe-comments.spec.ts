@@ -613,4 +613,66 @@ describe('RecipeComments', () => {
 
     expect(component['localComments']()).toEqual([]);
   });
+
+  describe('Background Polling', () => {
+    it('should silently fetch and merge new comments from other users when polling', async () => {
+      const incomingComment: Comment = {
+        id: 'from-world-1',
+        recipeId: '1',
+        author: 'World Chef',
+        email: 'chef@world.com',
+        content: 'Greetings from Italy! Loved this.',
+        createdAt: new Date().toISOString(),
+      };
+
+      const updatedStats = { reviewCount: 103, ratingCount: 50, rating: 4.8 };
+      recipeServiceMock.getComments.mockResolvedValueOnce({
+        comments: [...mockComments, incomingComment],
+        total: 103,
+        stats: updatedStats,
+      });
+
+      let emittedStats: { reviewCount: number; ratingCount: number; rating: number } | undefined;
+      component.statsChange.subscribe((s) => {
+        emittedStats = s;
+      });
+
+      await component.pollComments();
+
+      expect(component.comments()).toContainEqual(incomingComment);
+      expect(component.totalTopLevelComments()).toBe(103);
+      expect(emittedStats).toEqual(updatedStats);
+    });
+
+    it('should skip polling when tab is hidden', async () => {
+      const visibilitySpy = vi.spyOn(doc, 'visibilityState', 'get').mockReturnValue('hidden');
+      recipeServiceMock.getComments.mockClear();
+
+      await component.pollComments();
+
+      expect(recipeServiceMock.getComments).not.toHaveBeenCalled();
+      visibilitySpy.mockRestore();
+    });
+
+    it('should quietly catch background polling errors without throwing', async () => {
+      recipeServiceMock.getComments.mockRejectedValueOnce(new Error('500 Server Error'));
+
+      await expect(component.pollComments()).resolves.toBeUndefined();
+    });
+
+    it('should trigger pollComments when visibilitychange event fires with visible state', () => {
+      const pollSpy = vi.spyOn(component, 'pollComments').mockResolvedValue();
+
+      doc.dispatchEvent(new Event('visibilitychange'));
+
+      expect(pollSpy).toHaveBeenCalled();
+      pollSpy.mockRestore();
+    });
+
+    it('should clean up polling interval on destroy', () => {
+      expect(component['pollTimer']).not.toBeNull();
+      fixture.destroy();
+      expect(component['pollTimer']).toBeNull();
+    });
+  });
 });
