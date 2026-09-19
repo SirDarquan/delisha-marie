@@ -978,6 +978,99 @@ describe('Recipes Router API', () => {
       expect(res.status).toBe(500);
       expect(res.body.error).toBe('Cats error');
     });
+
+    it('should query categories when recipe_categories is not preloaded', async () => {
+      mockFrom.mockImplementation((table: string) => {
+        if (table === 'recipe_categories') {
+          return {
+            select: () => {
+              const chain = {
+                eq: () => chain,
+                then: (onfulfilled?: (value: unknown) => unknown) => {
+                  return Promise.resolve({
+                    data: [{ categories: { id: 'c1', name: 'Dinner', url: '/recipes/dinner' } }],
+                    error: null,
+                  }).then(onfulfilled);
+                },
+              };
+              return chain;
+            },
+          };
+        }
+        const queryChain = {
+          eq: () => queryChain,
+          in: () => queryChain,
+          order: () => queryChain,
+          maybeSingle: () =>
+            Promise.resolve({
+              data: { id: '1', slug: 'r1', status: 'published', title: 'T' },
+              error: null,
+            }),
+          then: (onfulfilled?: (value: unknown) => unknown) =>
+            Promise.resolve({ data: [], error: null }).then(onfulfilled),
+        };
+        return { select: () => queryChain };
+      });
+      const res = await createRequestMock(recipesRouter)().get('/api/recipes/r1');
+      expect(res.status).toBe(200);
+      expect(res.body.breadcrumbs.items[0]).toEqual([
+        { label: 'Home', url: '/' },
+        { label: 'Recipes', url: '/recipes' },
+        { label: 'Dinner', url: '/recipes/dinner' },
+        { label: 'T', url: '/recipe/r1' },
+      ]);
+    });
+
+    it('should cache recipe and hit cache on subsequent call when NODE_ENV is production', async () => {
+      const origEnv = process.env['NODE_ENV'];
+      process.env['NODE_ENV'] = 'production';
+      try {
+        let callCount = 0;
+        mockFrom.mockImplementation((table: string) => {
+          if (table === 'recipes') {
+            callCount++;
+          }
+          const queryChain = {
+            eq: () => queryChain,
+            in: () => queryChain,
+            order: () => queryChain,
+            lte: () => queryChain,
+            maybeSingle: () =>
+              Promise.resolve({
+                data: {
+                  id: 'cache-1',
+                  slug: 'cache-slug',
+                  status: 'published',
+                  title: 'Cached Title',
+                },
+                error: null,
+              }),
+            then: (onfulfilled?: (value: unknown) => unknown) =>
+              Promise.resolve({ data: [], error: null }).then(onfulfilled),
+          };
+          return { select: () => queryChain };
+        });
+
+        const res1 = await createRequestMock(recipesRouter)().get('/api/recipes/cache-slug');
+        expect(res1.status).toBe(200);
+        expect(res1.body.title).toBe('Cached Title');
+        expect(callCount).toBe(3);
+
+        const res2 = await createRequestMock(recipesRouter)().get('/api/recipes/cache-slug');
+        expect(res2.status).toBe(200);
+        expect(res2.body.title).toBe('Cached Title');
+        expect(callCount).toBe(3);
+
+        // Bypass cache with refresh=true
+        const res3 = await createRequestMock(recipesRouter)().get(
+          '/api/recipes/cache-slug?refresh=true',
+        );
+        expect(res3.status).toBe(200);
+        expect(callCount).toBe(6);
+      } finally {
+        process.env['NODE_ENV'] = origEnv;
+      }
+    });
   });
 
   describe('GET /api/recipes/favorites/list', () => {
@@ -1039,6 +1132,41 @@ describe('Recipes Router API', () => {
       });
       const res = await createRequestMock(recipesRouter)().get('/api/recipes/slug1/title');
       expect(res.status).toBe(500);
+    });
+
+    it('should return title from recipeSlugCache when warm in production', async () => {
+      const origEnv = process.env['NODE_ENV'];
+      process.env['NODE_ENV'] = 'production';
+      try {
+        mockFrom.mockImplementation(() => {
+          const queryChain = {
+            eq: () => queryChain,
+            in: () => queryChain,
+            order: () => queryChain,
+            lte: () => queryChain,
+            maybeSingle: () =>
+              Promise.resolve({
+                data: {
+                  id: 'title-1',
+                  slug: 'title-slug',
+                  status: 'published',
+                  title: 'Warmed Title',
+                },
+                error: null,
+              }),
+            then: (onfulfilled?: (value: unknown) => unknown) =>
+              Promise.resolve({ data: [], error: null }).then(onfulfilled),
+          };
+          return { select: () => queryChain };
+        });
+        await createRequestMock(recipesRouter)().get('/api/recipes/title-slug');
+
+        const res = await createRequestMock(recipesRouter)().get('/api/recipes/title-slug/title');
+        expect(res.status).toBe(200);
+        expect(res.body.title).toBe('Warmed Title');
+      } finally {
+        process.env['NODE_ENV'] = origEnv;
+      }
     });
   });
 
@@ -1106,6 +1234,58 @@ describe('Recipes Router API', () => {
       const res = await createRequestMock(recipesRouter)().get('/api/recipes/error/seo');
       expect(res.status).toBe(500);
       expect(res.body.error).toBe('db error');
+    });
+
+    it('should return SEO data from recipeSlugCache when warm in production and support refresh', async () => {
+      const origEnv = process.env['NODE_ENV'];
+      process.env['NODE_ENV'] = 'production';
+      try {
+        mockFrom.mockImplementation(() => {
+          const queryChain = {
+            eq: () => queryChain,
+            in: () => queryChain,
+            order: () => queryChain,
+            lte: () => queryChain,
+            maybeSingle: () =>
+              Promise.resolve({
+                data: {
+                  id: 'seo-c-1',
+                  slug: 'seo-cache-slug',
+                  status: 'published',
+                  title: 'SEO Warm Title',
+                  description: 'SEO Desc',
+                  keywords: ['k1'],
+                  image: '/img.jpg',
+                  image_width: 800,
+                  image_height: 600,
+                  image_type: 'image/jpeg',
+                },
+                error: null,
+              }),
+            then: (onfulfilled?: (value: unknown) => unknown) =>
+              Promise.resolve({ data: [], error: null }).then(onfulfilled),
+          };
+          return { select: () => queryChain };
+        });
+        await createRequestMock(recipesRouter)().get('/api/recipes/seo-cache-slug');
+
+        const res = await createRequestMock(recipesRouter)().get('/api/recipes/seo-cache-slug/seo');
+        expect(res.status).toBe(200);
+        const seoBody = res.body as unknown as Record<string, unknown>;
+        expect(seoBody['title']).toBe('SEO Warm Title');
+        expect(seoBody['description']).toBe('SEO Desc');
+        expect(seoBody['imageWidth']).toBe(800);
+
+        // Test refresh=true bypasses cache
+        const resRefresh = await createRequestMock(recipesRouter)().get(
+          '/api/recipes/seo-cache-slug/seo?refresh=true',
+        );
+        expect(resRefresh.status).toBe(200);
+        const refreshBody = resRefresh.body as unknown as Record<string, unknown>;
+        expect(refreshBody['title']).toBe('SEO Warm Title');
+      } finally {
+        process.env['NODE_ENV'] = origEnv;
+      }
     });
   });
 
@@ -1210,6 +1390,85 @@ describe('Recipes Router API', () => {
       const res = await createRequestMock(recipesRouter)().get('/api/recipes/error/schema');
       expect(res.status).toBe(500);
       expect(res.body.error).toBe('schema db error');
+    });
+
+    it('should reuse cache and fetch comments if needed when warm in production', async () => {
+      const origEnv = process.env['NODE_ENV'];
+      process.env['NODE_ENV'] = 'production';
+      try {
+        let commentsCalled = false;
+        mockFrom.mockImplementation((table: string) => {
+          if (table === 'comments') {
+            commentsCalled = true;
+            const chain = {
+              select: () => chain,
+              eq: () => chain,
+              is: () => chain,
+              order: () => chain,
+              limit: () =>
+                Promise.resolve({
+                  data: [
+                    {
+                      author: 'A1',
+                      content: 'C1',
+                      rating: 5,
+                      created_at: '2026-06-23T08:00:00Z',
+                    },
+                  ],
+                  error: null,
+                }),
+            };
+            return chain;
+          }
+          const queryChain = {
+            eq: () => queryChain,
+            in: () => queryChain,
+            order: () => queryChain,
+            lte: () => queryChain,
+            maybeSingle: () =>
+              Promise.resolve({
+                data: {
+                  id: 'schema-c-1',
+                  slug: 'schema-cache-slug',
+                  status: 'published',
+                  title: 'Schema Warm Title',
+                },
+                error: null,
+              }),
+            then: (onfulfilled?: (value: unknown) => unknown) =>
+              Promise.resolve({ data: [], error: null }).then(onfulfilled),
+          };
+          return { select: () => queryChain };
+        });
+
+        // Warm recipe without comments
+        await createRequestMock(recipesRouter)().get('/api/recipes/schema-cache-slug');
+
+        // Call schema: should see cached entry missing topComments, query comments and cache them
+        const res1 = await createRequestMock(recipesRouter)().get(
+          '/api/recipes/schema-cache-slug/schema',
+        );
+        expect(res1.status).toBe(200);
+        expect(res1.body.title).toBe('Schema Warm Title');
+        expect(commentsCalled).toBe(true);
+
+        // Call schema again: should hit cache with topComments
+        commentsCalled = false;
+        const res2 = await createRequestMock(recipesRouter)().get(
+          '/api/recipes/schema-cache-slug/schema',
+        );
+        expect(res2.status).toBe(200);
+        expect(commentsCalled).toBe(false);
+
+        // Refresh=true bypasses cache
+        const resRefresh = await createRequestMock(recipesRouter)().get(
+          '/api/recipes/schema-cache-slug/schema?refresh=true',
+        );
+        expect(resRefresh.status).toBe(200);
+        expect(commentsCalled).toBe(true);
+      } finally {
+        process.env['NODE_ENV'] = origEnv;
+      }
     });
   });
 
@@ -2104,6 +2363,12 @@ describe('Recipes Router API', () => {
       const res = await createRequestMock(recipesRouter)().get('/api/recipes/123/equipment');
       expect(res.status).toBe(500);
       expect(res.body.error).toBe('Equipment string crash');
+    });
+  });
+
+  describe('clearRecipesCache', () => {
+    it('should clear listCache and recipeSlugCache without errors', () => {
+      expect(() => clearRecipesCache()).not.toThrow();
     });
   });
 });

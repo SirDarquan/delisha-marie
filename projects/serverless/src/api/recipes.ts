@@ -424,16 +424,25 @@ async function getBreadcrumbs(
   supabase: SupabaseClient,
   recipeId: string,
   formatted: FormattedRecipe,
+  existingCategories?: CategoryRelation[] | null,
 ): Promise<{ main: number; items: { label: string; url?: string }[][] }> {
-  const { data: recipeCatsData, error: catsError } = await supabase
-    .from('recipe_categories')
-    .select('categories (id, name, url)')
-    .eq('recipe_id', recipeId);
-  if (catsError) throw catsError;
+  let categories: CategoryInfo[];
 
-  const categories = (recipeCatsData || [])
-    .map((rc) => (rc as unknown as CategoryRelation).categories)
-    .filter((cat): cat is CategoryInfo => cat !== null);
+  if (existingCategories) {
+    categories = existingCategories
+      .map((rc) => rc.categories)
+      .filter((cat): cat is CategoryInfo => Boolean(cat?.name && cat.url));
+  } else {
+    const { data: recipeCatsData, error: catsError } = await supabase
+      .from('recipe_categories')
+      .select('categories (id, name, url)')
+      .eq('recipe_id', recipeId);
+    if (catsError) throw catsError;
+
+    categories = (recipeCatsData || [])
+      .map((rc) => (rc as unknown as CategoryRelation).categories)
+      .filter((cat): cat is CategoryInfo => Boolean(cat?.name && cat.url));
+  }
 
   const breadcrumbItems: { label: string; url?: string }[][] = [];
 
@@ -674,6 +683,7 @@ async function handlePostComments(
     if (error) throw error;
 
     listCache.clear();
+    recipeSlugCache.clear();
 
     res.status(201).json(data);
   } catch (err: unknown) {
@@ -728,53 +738,113 @@ async function getRecipeStats(
   };
 }
 
+interface CachedSlugData {
+  timestamp: number;
+  recipe: FormattedRecipe;
+  rawRecipe: DbRecipe;
+  topComments?: unknown[];
+}
+
+const recipeSlugCache = new Map<string, CachedSlugData>();
+let cacheDisabledForTesting = process.env['NODE_ENV'] === 'test';
+
+export function setCacheDisabledForTesting(disabled: boolean) {
+  cacheDisabledForTesting = disabled;
+}
+
+async function getRecipeDataBySlug(
+  supabase: SupabaseClient,
+  cleanSlug: string,
+  includeComments = false,
+  refresh = false,
+): Promise<CachedSlugData | null> {
+  if (!refresh && !cacheDisabledForTesting) {
+    const cached = recipeSlugCache.get(cleanSlug);
+    if (cached && Date.now() - cached.timestamp < 1000 * 60 * 5) {
+      if (!includeComments || cached.topComments !== undefined) {
+        return cached;
+      }
+    }
+  }
+
+  // Get recipe
+  const selectStr = getSelectString('recipes', ' '); // category can't be null
+  const { data: recipeDataRaw, error: recipeError } = await supabase
+    .from('recipes')
+    .select(selectStr)
+    .eq('slug', cleanSlug)
+    .eq('status', 'published')
+    .lte('created_at', new Date().toISOString())
+    .maybeSingle();
+
+  if (recipeError) {
+    throw recipeError;
+  }
+  if (!recipeDataRaw) {
+    return null;
+  }
+  const recipeData = recipeDataRaw as unknown as DbRecipe;
+  const [formatted] = formatDbRecipes([recipeData]);
+
+  // Fetch breadcrumbs, adjacent sibling navigation, stats, and optionally comments in parallel
+  const [breadcrumbsObj, prev, next, stats, topCommentsResult] = await Promise.all([
+    getBreadcrumbs(supabase, recipeData.id, formatted, recipeData.recipe_categories),
+    getAdjacentRecipe(supabase, recipeData.id, 'prev'),
+    getAdjacentRecipe(supabase, recipeData.id, 'next'),
+    getRecipeStats(supabase, recipeData.id),
+    includeComments
+      ? supabase
+          .from('comments')
+          .select('author, content, rating, created_at')
+          .eq('recipe_id', recipeData.id)
+          .eq('status', 'approved')
+          .is('parent_id', null)
+          .order('created_at', { ascending: false })
+          .limit(6)
+      : Promise.resolve({ data: null, error: null }),
+  ]);
+
+  formatted.breadcrumbs = breadcrumbsObj;
+  formatted.navigation = {
+    prev,
+    next,
+  };
+  formatted.reviewCount = stats.reviewCount;
+  formatted.ratingCount = stats.ratingCount;
+  formatted.rating = stats.rating;
+  formatted.comments = [];
+
+  const topComments = topCommentsResult.data
+    ? topCommentsResult.data.map((c) => camelCaseKeys(c))
+    : undefined;
+
+  const entry: CachedSlugData = {
+    timestamp: Date.now(),
+    recipe: formatted,
+    rawRecipe: recipeData,
+    topComments,
+  };
+
+  recipeSlugCache.set(cleanSlug, entry);
+  return entry;
+}
+
 async function handleGetBySlug(req: VercelRequest, res: VercelResponse, slug: string) {
   try {
     const supabase = await getSupabaseClient();
     const cleanSlug = slug.replace(/^\/?recipe\//, '').replace(/^\//, '');
+    const refresh = req.query['refresh'] === 'true';
 
-    // Get recipe
-    const selectStr = getSelectString('recipes', ' '); // category can't be null
-    const { data: recipeDataRaw, error: recipeError } = await supabase
-      .from('recipes')
-      .select(selectStr)
-      .eq('slug', cleanSlug)
-      .eq('status', 'published')
-      .lte('created_at', new Date().toISOString())
-      .maybeSingle();
-
-    if (recipeError) {
-      throw recipeError;
-    }
-    if (!recipeDataRaw) {
+    const data = await getRecipeDataBySlug(supabase, cleanSlug, false, refresh);
+    if (!data) {
       res.json(null);
       return;
     }
-    const recipeData = recipeDataRaw as unknown as DbRecipe;
-    // Format fields (reuse formatDbRecipes helper)
-    const [formatted] = formatDbRecipes([recipeData]);
 
-    // Populate comments rating & review structure defaults
-    formatted.comments = [];
-
-    // Fetch breadcrumbs, adjacent sibling navigation, and stats in parallel
-    const [breadcrumbsObj, prev, next, stats] = await Promise.all([
-      getBreadcrumbs(supabase, recipeData.id, formatted),
-      getAdjacentRecipe(supabase, recipeData.id, 'prev'),
-      getAdjacentRecipe(supabase, recipeData.id, 'next'),
-      getRecipeStats(supabase, recipeData.id),
-    ]);
-
-    formatted.breadcrumbs = breadcrumbsObj;
-    formatted.navigation = {
-      prev,
-      next,
-    };
-    formatted.reviewCount = stats.reviewCount;
-    formatted.ratingCount = stats.ratingCount;
-    formatted.rating = stats.rating;
-
-    res.json(formatted);
+    res.json({
+      ...data.recipe,
+      comments: [],
+    });
   } catch (err: unknown) {
     console.error(err);
     const msg = err instanceof Error ? err.message : String(err);
@@ -786,6 +856,14 @@ async function handleGetTitle(req: VercelRequest, res: VercelResponse, slug: str
   try {
     const supabase = await getSupabaseClient();
     const cleanSlug = slug.replace(/^\/?recipe\//, '').replace(/^\//, '');
+
+    if (process.env['NODE_ENV'] !== 'test') {
+      const cached = recipeSlugCache.get(cleanSlug);
+      if (cached && Date.now() - cached.timestamp < 1000 * 60 * 5) {
+        res.json({ title: cached.recipe.title });
+        return;
+      }
+    }
 
     const { data, error } = await supabase
       .from('recipes')
@@ -811,6 +889,26 @@ async function handleSeoBySlug(req: VercelRequest, res: VercelResponse, slug: st
   try {
     const supabase = await getSupabaseClient();
     const cleanSlug = slug.replace(/^\/?recipe\//, '').replace(/^\//, '');
+    const refresh = req.query['refresh'] === 'true';
+
+    if (!refresh && process.env['NODE_ENV'] !== 'test') {
+      const cached = recipeSlugCache.get(cleanSlug);
+      if (cached && Date.now() - cached.timestamp < 1000 * 60 * 5) {
+        const raw = cached.rawRecipe;
+        res.json(
+          camelCaseKeys({
+            title: raw['title'],
+            description: raw['description'],
+            keywords: raw['keywords'],
+            image: raw['image'],
+            image_width: raw['image_width'],
+            image_height: raw['image_height'],
+            image_type: raw['image_type'],
+          }),
+        );
+        return;
+      }
+    }
 
     const { data, error } = await supabase
       .from('recipes')
@@ -841,46 +939,18 @@ async function handleSchemaBySlug(req: VercelRequest, res: VercelResponse, slug:
   try {
     const supabase = await getSupabaseClient();
     const cleanSlug = slug.replace(/^\/?recipe\//, '').replace(/^\//, '');
+    const refresh = req.query['refresh'] === 'true';
 
-    const selectStr = getSelectString('recipes', ' ');
-    const { data: recipeDataRaw, error: recipeError } = await supabase
-      .from('recipes')
-      .select(selectStr)
-      .eq('slug', cleanSlug)
-      .eq('status', 'published')
-      .lte('created_at', new Date().toISOString())
-      .maybeSingle();
-
-    if (recipeError) {
-      throw recipeError;
-    }
-    if (!recipeDataRaw) {
+    const data = await getRecipeDataBySlug(supabase, cleanSlug, true, refresh);
+    if (!data) {
       res.json(null);
       return;
     }
-    const recipeData = recipeDataRaw as unknown as DbRecipe;
-    const [formatted] = formatDbRecipes([recipeData]);
 
-    const [breadcrumbsObj, stats, topCommentsResult] = await Promise.all([
-      getBreadcrumbs(supabase, recipeData.id, formatted),
-      getRecipeStats(supabase, recipeData.id),
-      supabase
-        .from('comments')
-        .select('author, content, rating, created_at')
-        .eq('recipe_id', recipeData.id)
-        .eq('status', 'approved')
-        .is('parent_id', null)
-        .order('created_at', { ascending: false })
-        .limit(6),
-    ]);
-
-    formatted.breadcrumbs = breadcrumbsObj;
-    formatted.reviewCount = stats.reviewCount;
-    formatted.ratingCount = stats.ratingCount;
-    formatted.rating = stats.rating;
-    formatted.comments = (topCommentsResult.data || []).map((c) => camelCaseKeys(c));
-
-    res.json(formatted);
+    res.json({
+      ...data.recipe,
+      comments: data.topComments || [],
+    });
   } catch (err: unknown) {
     console.error(err);
     const msg = err instanceof Error ? err.message : String(err);
@@ -1011,4 +1081,5 @@ export default recipesHandler;
 
 export function clearRecipesCache() {
   listCache.clear();
+  recipeSlugCache.clear();
 }
