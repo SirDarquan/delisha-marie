@@ -1,4 +1,4 @@
-import { APP_BASE_HREF, DOCUMENT } from '@angular/common';
+import { APP_BASE_HREF, DOCUMENT, PathLocationStrategy } from '@angular/common';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
 import { beforeEach, describe, expect, it, Mock, vi } from 'vitest';
@@ -229,6 +229,25 @@ describe('schemaResolver', () => {
         unknown
       >[];
       expect(result).toBeDefined();
+    });
+
+    it('should use non-root baseHref from PathLocationStrategy when present', () => {
+      const spy = vi
+        .spyOn(PathLocationStrategy.prototype, 'getBaseHref')
+        .mockReturnValue('/kitchen');
+
+      const route = {
+        data: { description: 'desc' },
+        paramMap: { get: () => '' },
+      } as unknown as ActivatedRouteSnapshot;
+      const state = { url: '/recipes' } as RouterStateSnapshot;
+
+      const result = TestBed.runInInjectionContext(() => schemaResolver(route, state)) as Record<
+        string,
+        unknown
+      >[];
+      expect(result).toBeDefined();
+      spy.mockRestore();
     });
   });
 
@@ -480,6 +499,31 @@ describe('schemaResolver', () => {
       >;
       expect(articleSchema['articleSection'] as string[]).toEqual(['Recipe']);
     });
+
+    it('should use non-root baseHref from PathLocationStrategy in schemaRecipeResolver', async () => {
+      const spy = vi
+        .spyOn(PathLocationStrategy.prototype, 'getBaseHref')
+        .mockReturnValue('/kitchen/');
+
+      const mockRecipe = createMockRecipe({
+        title: 'Recipe BaseHref',
+        slug: 'recipe-basehref',
+        description: 'Desc',
+      });
+      vi.mocked(recipeService.getSchemaBySlug).mockResolvedValue(mockRecipe);
+
+      const route = {
+        paramMap: { get: () => 'recipe-basehref' },
+        queryParamMap: { get: () => null },
+      } as unknown as ActivatedRouteSnapshot;
+      const state = { url: '/recipe/recipe-basehref' } as RouterStateSnapshot;
+
+      const result = (await TestBed.runInInjectionContext(() =>
+        schemaRecipeResolver(route, state),
+      )) as Record<string, unknown>[];
+      expect(result).toBeDefined();
+      spy.mockRestore();
+    });
   });
 
   describe('schemaDynamicPageResolver', () => {
@@ -549,6 +593,24 @@ describe('schemaResolver', () => {
         schemaDynamicPageResolver(route, state),
       )) as Record<string, unknown>[];
       expect(result.some((s) => s['@type'] === 'FAQPage')).toBe(false);
+    });
+
+    it('should use non-root baseHref from PathLocationStrategy in schemaDynamicPageResolver', async () => {
+      const spy = vi
+        .spyOn(PathLocationStrategy.prototype, 'getBaseHref')
+        .mockReturnValue('/kitchen');
+
+      const route = {
+        data: { slug: 'about', description: 'desc' },
+        paramMap: { get: () => null },
+      } as unknown as ActivatedRouteSnapshot;
+      const state = { url: '/about' } as RouterStateSnapshot;
+
+      const result = (await TestBed.runInInjectionContext(() =>
+        schemaDynamicPageResolver(route, state),
+      )) as Record<string, unknown>[];
+      expect(result.some((s) => s['@type'] === 'AboutPage')).toBe(true);
+      spy.mockRestore();
     });
   });
 

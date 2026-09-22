@@ -1,5 +1,6 @@
+import { DOCUMENT } from '@angular/common';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Recipe } from '../../services/recipe.service';
 import { RecipeCard } from './recipe-card';
 
@@ -162,5 +163,52 @@ describe('RecipeCard', () => {
     fixture.detectChanges();
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.querySelector('.rating-text')?.textContent).toContain('(0)');
+  });
+
+  describe('openPinterest', () => {
+    it('should open Pinterest share dialog with recipe parameters', () => {
+      const mockEvent = { preventDefault: vi.fn() } as unknown as Event;
+      const windowSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
+
+      component.openPinterest(mockEvent);
+
+      expect(mockEvent.preventDefault).toHaveBeenCalled();
+      expect(windowSpy).toHaveBeenCalledWith(
+        expect.stringContaining('https://pinterest.com/pin/create/button/'),
+        'pinterestShare',
+        'width=890,height=600,noreferrer',
+      );
+      expect(windowSpy.mock.calls[0][0]).toContain(encodeURIComponent('Test Recipe'));
+      windowSpy.mockRestore();
+    });
+
+    it('should handle missing title or empty image when opening Pinterest', () => {
+      fixture.componentRef.setInput('recipe', { ...mockRecipe, title: '', image: '' });
+      fixture.detectChanges();
+      const mockEvent = { preventDefault: vi.fn() } as unknown as Event;
+      const windowSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
+
+      component.openPinterest(mockEvent);
+
+      expect(mockEvent.preventDefault).toHaveBeenCalled();
+      expect(windowSpy).toHaveBeenCalled();
+      windowSpy.mockRestore();
+    });
+
+    it('should return early if defaultView is null', () => {
+      const doc = TestBed.inject(DOCUMENT);
+      const origDefaultView = doc.defaultView;
+      Object.defineProperty(doc, 'defaultView', { value: null, configurable: true });
+      const mockEvent = { preventDefault: vi.fn() } as unknown as Event;
+      const windowSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
+
+      component.openPinterest(mockEvent);
+
+      expect(mockEvent.preventDefault).toHaveBeenCalled();
+      expect(windowSpy).not.toHaveBeenCalled();
+
+      Object.defineProperty(doc, 'defaultView', { value: origDefaultView, configurable: true });
+      windowSpy.mockRestore();
+    });
   });
 });

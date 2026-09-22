@@ -119,4 +119,17 @@ describe('TopRatedRecipes', () => {
     fixture.detectChanges();
     expect(component.recipes()).toHaveLength(0);
   });
+
+  it('should handle getRecipes error gracefully and default to empty list', async () => {
+    mockRecipeService.getRecipes.mockRejectedValue(new Error('Network error'));
+
+    fixture = TestBed.createComponent(TopRatedRecipes);
+    component = fixture.componentInstance;
+
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(component.recipes()).toHaveLength(0);
+  });
 });

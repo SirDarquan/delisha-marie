@@ -1,6 +1,7 @@
+import { DOCUMENT } from '@angular/common';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Recipe, RecipeService } from '../../services/recipe.service';
 import { createMockRecipe } from '../../utils/test-recipe';
 import { RecipeMeta } from './recipe-meta';
@@ -11,6 +12,11 @@ describe('RecipeMeta', () => {
   let recipeServiceMock: {
     getComments: ReturnType<typeof vi.fn>;
   };
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.useRealTimers();
+  });
 
   const mockRecipe: Recipe = createMockRecipe({
     id: '123',
@@ -126,5 +132,97 @@ describe('RecipeMeta', () => {
     expect(dateText).toContain('Published: Jun 1, 2026');
 
     vi.useRealTimers();
+  });
+
+  describe('scrollToRecipeCard', () => {
+    it('should scroll smoothly to target element when found', () => {
+      vi.useFakeTimers();
+      const mockEvent = { preventDefault: vi.fn() } as unknown as Event;
+      const mockElement = document.createElement('div');
+      mockElement.getBoundingClientRect = vi.fn().mockReturnValue({ top: 400 } as DOMRect);
+
+      const doc = TestBed.inject(DOCUMENT);
+      const getElementSpy = vi.spyOn(doc, 'getElementById').mockReturnValue(mockElement);
+      const scrollToSpy = vi.fn();
+      const origDefaultView = doc.defaultView;
+      Object.defineProperty(doc, 'defaultView', {
+        value: { scrollY: 100, scrollTo: scrollToSpy },
+        configurable: true,
+      });
+
+      component.scrollToRecipeCard(mockEvent, 'recipe-card');
+      expect(mockEvent.preventDefault).toHaveBeenCalled();
+
+      vi.advanceTimersByTime(50);
+      expect(doc.getElementById).toHaveBeenCalledWith('recipe-card');
+      expect(scrollToSpy).toHaveBeenCalledWith({ top: 400 + 100 - 120, behavior: 'smooth' });
+
+      Object.defineProperty(doc, 'defaultView', { value: origDefaultView, configurable: true });
+      getElementSpy.mockRestore();
+    });
+
+    it('should handle zero/undefined scrollY or null defaultView when scrolling', () => {
+      vi.useFakeTimers();
+      const mockEvent = { preventDefault: vi.fn() } as unknown as Event;
+      const mockElement = document.createElement('div');
+      mockElement.getBoundingClientRect = vi.fn().mockReturnValue({ top: 300 } as DOMRect);
+
+      const doc = TestBed.inject(DOCUMENT);
+      const getElementSpy = vi.spyOn(doc, 'getElementById').mockReturnValue(mockElement);
+      const scrollToSpy = vi.fn();
+      const origDefaultView = doc.defaultView;
+      Object.defineProperty(doc, 'defaultView', {
+        value: { scrollY: undefined, scrollTo: scrollToSpy },
+        configurable: true,
+      });
+
+      component.scrollToRecipeCard(mockEvent, 'comments');
+      vi.advanceTimersByTime(50);
+      expect(scrollToSpy).toHaveBeenCalledWith({ top: 300 + 0 - 120, behavior: 'smooth' });
+
+      // When defaultView is null
+      Object.defineProperty(doc, 'defaultView', { value: null, configurable: true });
+      component.scrollToRecipeCard(mockEvent, 'comments');
+      expect(() => vi.advanceTimersByTime(50)).not.toThrow();
+
+      Object.defineProperty(doc, 'defaultView', { value: origDefaultView, configurable: true });
+      getElementSpy.mockRestore();
+    });
+
+    it('should do nothing if target element does not exist', () => {
+      vi.useFakeTimers();
+      const mockEvent = { preventDefault: vi.fn() } as unknown as Event;
+      const doc = TestBed.inject(DOCUMENT);
+      const getElementSpy = vi.spyOn(doc, 'getElementById').mockReturnValue(null);
+      const scrollToSpy = vi.fn();
+      const origDefaultView = doc.defaultView;
+      Object.defineProperty(doc, 'defaultView', {
+        value: { scrollY: 0, scrollTo: scrollToSpy },
+        configurable: true,
+      });
+
+      component.scrollToRecipeCard(mockEvent, 'non-existent');
+      expect(mockEvent.preventDefault).toHaveBeenCalled();
+
+      vi.advanceTimersByTime(50);
+      expect(scrollToSpy).not.toHaveBeenCalled();
+
+      Object.defineProperty(doc, 'defaultView', { value: origDefaultView, configurable: true });
+      getElementSpy.mockRestore();
+    });
+
+    it('should trigger scrollToRecipeCard when clicking "Jump to Recipe" and "Comment(s)"', () => {
+      const scrollSpy = vi.spyOn(component, 'scrollToRecipeCard');
+      const compiled = fixture.nativeElement as HTMLElement;
+      const links = compiled.querySelectorAll('a');
+
+      const jumpLink = Array.from(links).find((a) => a.textContent?.includes('Jump to Recipe'));
+      jumpLink?.dispatchEvent(new MouseEvent('click'));
+      expect(scrollSpy).toHaveBeenCalledWith(expect.any(MouseEvent), 'recipe-card');
+
+      const commentLink = Array.from(links).find((a) => a.textContent?.includes('Comment(s)'));
+      commentLink?.dispatchEvent(new MouseEvent('click'));
+      expect(scrollSpy).toHaveBeenCalledWith(expect.any(MouseEvent), 'comments');
+    });
   });
 });
