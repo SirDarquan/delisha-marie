@@ -2,8 +2,8 @@
   "name": "delisha-marie",
   "short_name": "delisha-marie",
   "display": "standalone",
-  "scope": "./",
-  "start_url": "./",
+  "scope": "/kitchen",
+  "start_url": "/kitchen",
   "icons": [
     {
       "src": "icons/icon-72x72.png",
