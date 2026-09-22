@@ -1,4 +1,4 @@
-import { APP_BASE_HREF, DOCUMENT } from '@angular/common';
+import { DOCUMENT, PathLocationStrategy } from '@angular/common';
 import { inject } from '@angular/core';
 import { ResolveFn } from '@angular/router';
 import { SeoContent } from '../models/seo-content';
@@ -10,14 +10,14 @@ export const seoRecipeResolver: ResolveFn<SeoContent> = async (route, state) => 
   const seoService = inject(SeoService);
   const recipeService = inject(RecipeService);
   const document = inject(DOCUMENT);
-  const baseHref = inject(APP_BASE_HREF);
+  const locationStrategy = inject(PathLocationStrategy);
 
   const origin = document.location.origin;
   const path = state.url.split('?')[0].split('#')[0];
   const siteName = "Delisha Marie's Kitchen";
   const slug = route.paramMap.get('slug') || undefined;
-  const appBaseHref = baseHref === '/' ? '' : baseHref;
-  const url = `${origin}${appBaseHref}${path}`;
+  const baseHref = locationStrategy.getBaseHref() === '/' ? '' : locationStrategy.getBaseHref();
+  const url = `${origin}${baseHref}${path}`;
 
   const seoConfig404: SeoContent = {
     title: `Recipe Not Found | ${siteName}`,

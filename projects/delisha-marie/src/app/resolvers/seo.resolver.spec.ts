@@ -1,7 +1,7 @@
-import { DOCUMENT, APP_BASE_HREF } from '@angular/common';
+import { DOCUMENT, APP_BASE_HREF, PathLocationStrategy } from '@angular/common';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SeoContent } from '../models/seo-content';
 import { RecipeListService } from '../pages/recipe-list/recipe-list.service';
 import { PagesService, Page } from '../services/pages.service';
@@ -20,6 +20,10 @@ describe('Seo Resolvers', () => {
   let recipeService: RecipeService;
   let dynamicPageService: PagesService;
   let mockDocument: { location: { origin: string; href: string } };
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
 
   beforeEach(() => {
     mockDocument = {
@@ -205,6 +209,29 @@ describe('Seo Resolvers', () => {
         }),
       );
     });
+
+    it('should use non-root baseHref from PathLocationStrategy when present', () => {
+      const spy = vi
+        .spyOn(PathLocationStrategy.prototype, 'getBaseHref')
+        .mockReturnValue('/kitchen');
+      const route = {
+        data: {},
+        title: 'Kitchen',
+        paramMap: { get: () => null },
+      } as unknown as ActivatedRouteSnapshot;
+      const state = { url: '/recipes' } as RouterStateSnapshot;
+
+      TestBed.runInInjectionContext(() => {
+        seoResolver(route, state);
+      });
+
+      expect(seoService.setSEO).toHaveBeenCalledWith(
+        expect.objectContaining({
+          url: 'http://localhost:4200/kitchen/recipes',
+        }),
+      );
+      spy.mockRestore();
+    });
   });
 
   describe('seoRecipeListResolver', () => {
@@ -287,6 +314,30 @@ describe('Seo Resolvers', () => {
           url: 'http://localhost:4200/recipes/test-cat/test-sub',
         }),
       );
+    });
+
+    it('should use non-root baseHref from PathLocationStrategy in seoRecipeListResolver', () => {
+      const spy = vi
+        .spyOn(PathLocationStrategy.prototype, 'getBaseHref')
+        .mockReturnValue('/kitchen');
+      const route = {
+        paramMap: {
+          get: vi.fn().mockImplementation((key) => (key === 'category' ? 'dinner' : null)),
+        },
+        routeConfig: { path: 'recipes/:category' },
+      } as unknown as ActivatedRouteSnapshot;
+      const state = { url: '/recipes/dinner' } as RouterStateSnapshot;
+
+      TestBed.runInInjectionContext(() => {
+        seoRecipeListResolver(route, state);
+      });
+
+      expect(seoService.setSEO).toHaveBeenCalledWith(
+        expect.objectContaining({
+          url: 'http://localhost:4200/kitchen/recipes/dinner',
+        }),
+      );
+      spy.mockRestore();
     });
   });
 
@@ -378,6 +429,33 @@ describe('Seo Resolvers', () => {
           image: '',
         }),
       );
+    });
+
+    it('should use non-root baseHref from PathLocationStrategy in seoRecipeResolver', async () => {
+      const spy = vi
+        .spyOn(PathLocationStrategy.prototype, 'getBaseHref')
+        .mockReturnValue('/kitchen');
+      vi.mocked(recipeService.getSEOBySlug).mockResolvedValue({
+        title: 'Title',
+        description: 'Desc',
+        image: '/img.jpg',
+      });
+
+      const route = {
+        paramMap: { get: () => 'my-recipe' },
+      } as unknown as ActivatedRouteSnapshot;
+      const state = { url: '/recipe/my-recipe' } as RouterStateSnapshot;
+
+      await TestBed.runInInjectionContext(() => {
+        return seoRecipeResolver(route, state);
+      });
+
+      expect(seoService.setSEO).toHaveBeenCalledWith(
+        expect.objectContaining({
+          url: 'http://localhost:4200/kitchen/recipe/my-recipe',
+        }),
+      );
+      spy.mockRestore();
     });
   });
 
@@ -499,6 +577,36 @@ describe('Seo Resolvers', () => {
           description: '',
         }),
       );
+    });
+
+    it('should use non-root baseHref from PathLocationStrategy in seoDynamicPageResolver', async () => {
+      const spy = vi
+        .spyOn(PathLocationStrategy.prototype, 'getBaseHref')
+        .mockReturnValue('/kitchen');
+      vi.mocked(dynamicPageService.getPage).mockResolvedValue({
+        id: 'about',
+        title: 'About',
+        slug: 'about',
+        description: 'About desc',
+        content: 'Content',
+        updated_at: '2026-01-01',
+      });
+
+      const route = {
+        paramMap: { get: () => 'about' },
+      } as unknown as ActivatedRouteSnapshot;
+      const state = { url: '/about' } as RouterStateSnapshot;
+
+      await TestBed.runInInjectionContext(() => {
+        return seoDynamicPageResolver(route, state);
+      });
+
+      expect(seoService.setSEO).toHaveBeenCalledWith(
+        expect.objectContaining({
+          url: 'http://localhost:4200/kitchen/about',
+        }),
+      );
+      spy.mockRestore();
     });
   });
 });

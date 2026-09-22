@@ -35,7 +35,13 @@ import { RecipeService } from '../../services/recipe.service';
             </h2>
           </div>
           <div class="hidden md:flex gap-2">
-            <a mat-stroked-button [routerLink]="link()" class="!rounded-full">View All</a>
+            <a
+              mat-stroked-button
+              [routerLink]="link()"
+              [attr.aria-label]="'View all ' + title() + ' recipes'"
+              class="!rounded-full"
+              >View All</a
+            >
           </div>
         </div>
 
@@ -53,7 +59,10 @@ import { RecipeService } from '../../services/recipe.service';
                     class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
                   <div
                     class="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button mat-mini-fab color="primary">
+                    <button
+                      mat-mini-fab
+                      color="primary"
+                      [attr.aria-label]="'Save ' + recipe.title + ' to favorites'">
                       <mat-icon>favorite</mat-icon>
                     </button>
                   </div>
@@ -111,7 +120,11 @@ export class FeaturedRecipes {
 
   protected readonly _recipeResource = resource({
     params: () => this._dataTrigger(),
-    loader: ({ params: t }) => this.recipeService.getRecipes(1, 4, t.method, t.cat, t.sub),
+    loader: ({ params: t }) =>
+      this.recipeService.getRecipes(1, 4, t.method, t.cat, t.sub).catch(() => ({
+        items: [],
+        total: 0,
+      })),
   });
 
   readonly recipes = computed(() => this._recipeResource.value()?.items || []);

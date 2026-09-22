@@ -1,4 +1,4 @@
-import { APP_BASE_HREF, DOCUMENT, IMAGE_LOADER } from '@angular/common';
+import { DOCUMENT, IMAGE_LOADER, PathLocationStrategy } from '@angular/common';
 import { inject } from '@angular/core';
 import { ResolveFn } from '@angular/router';
 import { Recipe, RecipeService } from '../services/recipe.service';
@@ -17,7 +17,7 @@ import {
 
 export const schemaRecipeResolver: ResolveFn<SchemaObject[]> = async (route, state) => {
   const document = inject(DOCUMENT);
-  const baseHref = inject(APP_BASE_HREF);
+  const locationStrategy = inject(PathLocationStrategy);
   const loader = inject(IMAGE_LOADER);
 
   const siteName = 'Delisha Marie';
@@ -33,8 +33,9 @@ export const schemaRecipeResolver: ResolveFn<SchemaObject[]> = async (route, sta
   }
 
   const schema: SchemaObject[] = [];
-  const appBaseHref = baseHref === '/' ? '' : baseHref.replace(/\/$/, '');
-  const origin = document.location.origin.replace(/\/$/, '') + appBaseHref;
+  const baseHref =
+    locationStrategy.getBaseHref() === '/' ? '' : locationStrategy.getBaseHref().replace(/\/$/, '');
+  const origin = document.location.origin.replace(/\/$/, '') + baseHref;
   const path = state.url.split('?')[0].split('#')[0];
   const url = `${origin}${path}`;
   const logoUrl = loader({

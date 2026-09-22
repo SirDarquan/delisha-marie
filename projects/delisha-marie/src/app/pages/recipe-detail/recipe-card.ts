@@ -1,4 +1,4 @@
-import { CommonModule, DOCUMENT, NgOptimizedImage } from '@angular/common';
+import { CommonModule, DOCUMENT, NgOptimizedImage, IMAGE_LOADER } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -373,6 +373,7 @@ export class RecipeCard {
   recipe = input.required<Recipe>();
 
   private readonly document = inject(DOCUMENT);
+  private readonly imageLoader = inject(IMAGE_LOADER);
 
   openPinterest(event: Event) {
     event.preventDefault();
@@ -380,8 +381,9 @@ export class RecipeCard {
     if (!window) return;
 
     const r = this.recipe();
+    const image = this.imageLoader({ src: r.image, width: 400 });
     const url = encodeURIComponent(window.location.href);
-    const media = encodeURIComponent(r.image || '');
+    const media = encodeURIComponent(image || '');
     const description = encodeURIComponent(r.title || '');
 
     const pinterestUrl = `https://pinterest.com/pin/create/button/?url=${url}&media=${media}&description=${description}`;

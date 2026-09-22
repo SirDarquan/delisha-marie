@@ -58,7 +58,7 @@ import { RecipeService } from '../../services/recipe.service';
                     <div class="flex items-center gap-1">
                       <dml-stars [rating]="recipe.rating" />
                       <span class="font-bold text-sm">{{ recipe.rating }} stars</span>
-                      <span class="text-xs text-gray-500 ml-1"
+                      <span class="text-xs text-[var(--mat-sys-on-surface-variant)] ml-1"
                         >({{ recipe.reviewCount }} comments)</span
                       >
                     </div>
@@ -79,7 +79,9 @@ export class TopRatedRecipes {
 
   private readonly _recipeResource = resource({
     loader: () =>
-      this.recipeService.getRecipes(1, 20, 'the-best-recipes', undefined, undefined, true),
+      this.recipeService
+        .getRecipes(1, 20, 'the-best-recipes', undefined, undefined, true)
+        .catch(() => ({ items: [], total: 0 })),
   });
 
   readonly recipes = computed(() => {

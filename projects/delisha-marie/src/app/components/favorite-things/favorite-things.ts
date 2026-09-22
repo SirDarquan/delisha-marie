@@ -55,7 +55,11 @@ export class FavoriteThings {
   private readonly recipeService = inject(RecipeService);
 
   private readonly _favoritesResource = resource({
-    loader: () => this.recipeService.getFavoriteRecipes().then((res) => res.items),
+    loader: () =>
+      this.recipeService
+        .getFavoriteRecipes()
+        .then((res) => res.items)
+        .catch(() => []),
   });
 
   protected readonly favorites = computed(() => this._favoritesResource.value() || []);

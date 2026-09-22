@@ -1,23 +1,23 @@
-import { APP_BASE_HREF, DOCUMENT } from '@angular/common';
+import { DOCUMENT, PathLocationStrategy } from '@angular/common';
 import { inject } from '@angular/core';
 import { ResolveFn } from '@angular/router';
 import { SeoContent } from '../models/seo-content';
 import { RecipeListService } from '../pages/recipe-list/recipe-list.service';
-import { SeoService } from '../services/seo.service';
 import { PagesService } from '../services/pages.service';
+import { SeoService } from '../services/seo.service';
 
 export const seoResolver: ResolveFn<Partial<SeoContent>> = (route, state) => {
   const seoService = inject(SeoService);
   const document = inject(DOCUMENT);
-  const baseHref = inject(APP_BASE_HREF);
+  const locationStrategy = inject(PathLocationStrategy);
 
   const data = route.data as Partial<SeoContent>;
   const origin = document.location.origin;
 
   // Construct perfect canonical URL
   const path = state.url.split('?')[0].split('#')[0];
-  const appBaseHref = baseHref === '/' ? '' : baseHref;
-  const url = `${origin}${appBaseHref}${path === '/' ? '' : path}`;
+  const baseHref = locationStrategy.getBaseHref() === '/' ? '' : locationStrategy.getBaseHref();
+  const url = `${origin}${baseHref}${path === '/' ? '' : path}`;
   const siteName = "Delisha Marie's Kitchen";
   const title = route.paramMap.get('slug') || route.title;
 
@@ -71,7 +71,7 @@ export const seoRecipeListResolver: ResolveFn<SeoContent> = (route, state) => {
   const seoService = inject(SeoService);
   const recipeListService = inject(RecipeListService);
   const document = inject(DOCUMENT);
-  const baseHref = inject(APP_BASE_HREF);
+  const locationStrategy = inject(PathLocationStrategy);
 
   const origin = document.location.origin;
   const path = state.url.split('?')[0].split('#')[0];
@@ -81,8 +81,8 @@ export const seoRecipeListResolver: ResolveFn<SeoContent> = (route, state) => {
   let url = route.routeConfig?.path?.split('/')[0] || '';
 
   const recipeList = recipeListService.getInfo({ url, category, subCategory });
-  const appBaseHref = baseHref === '/' ? '' : baseHref;
-  url = `${origin}${appBaseHref}${path}`;
+  const baseHref = locationStrategy.getBaseHref() === '/' ? '' : locationStrategy.getBaseHref();
+  url = `${origin}${baseHref}${path}`;
   const resolvedSeo = { ...resolveDynamicOrigin(recipeList, origin), url, siteName };
 
   // Trigger earliest possible SEO update
@@ -97,14 +97,14 @@ export const seoDynamicPageResolver: ResolveFn<SeoContent> = async (route, state
   const seoService = inject(SeoService);
   const dynamicPageService = inject(PagesService);
   const document = inject(DOCUMENT);
-  const baseHref = inject(APP_BASE_HREF);
+  const locationStrategy = inject(PathLocationStrategy);
 
   const data = (route.data || {}) as Partial<SeoContent>;
   const origin = document.location.origin;
   const path = state.url.split('?')[0].split('#')[0];
   const siteName = "Delisha Marie's Kitchen";
   const slug = route.paramMap.get('slug') || route.data?.['slug'] || undefined;
-  const appBaseHref = baseHref === '/' ? '' : baseHref;
+  const appBaseHref = locationStrategy.getBaseHref() === '/' ? '' : locationStrategy.getBaseHref();
   const url = `${origin}${appBaseHref}${path}`;
 
   const seoConfig404: SeoContent = {

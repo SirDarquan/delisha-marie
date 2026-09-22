@@ -52,4 +52,17 @@ describe('FavoriteThings', () => {
     expect(compiled.textContent).toContain('Recipe 1');
     expect(compiled.textContent).toContain('Recipe 2');
   });
+
+  it('should handle error gracefully and default to empty array', async () => {
+    mockRecipeService['getFavoriteRecipes'].mockRejectedValue(new Error('Network error'));
+
+    fixture = TestBed.createComponent(FavoriteThings);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(component['favorites']()).toEqual([]);
+  });
 });

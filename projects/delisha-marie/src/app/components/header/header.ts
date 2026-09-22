@@ -72,7 +72,8 @@ import { ThemeService } from '../../services/theme.service';
           <mat-slide-toggle
             [checked]="themeService.isDark()"
             (change)="themeService.toggle()"
-            [hideIcon]="true">
+            [hideIcon]="true"
+            aria-label="Toggle dark mode">
             <span
               class="flex items-center gap-2 ml-1 text-sm font-bold uppercase tracking-widest text-[var(--mat-sys-on-surface-variant)] transition-all">
               <mat-icon class="!text-[20px] transition-all">{{
@@ -87,7 +88,8 @@ import { ThemeService } from '../../services/theme.service';
         <mat-slide-toggle
           [checked]="themeService.isDark()"
           (change)="themeService.toggle()"
-          [hideIcon]="true">
+          [hideIcon]="true"
+          aria-label="Toggle dark mode">
           <span
             class="flex items-center gap-2 ml-1 text-sm font-bold uppercase tracking-widest text-[var(--mat-sys-on-surface-variant)] transition-all">
             <mat-icon class="!text-[20px] transition-all text-[var(--mat-sys-on-surface-variant)]">
@@ -95,7 +97,7 @@ import { ThemeService } from '../../services/theme.service';
             </mat-icon>
           </span>
         </mat-slide-toggle>
-        <button mat-icon-button [matMenuTriggerFor]="mobileMenu">
+        <button mat-icon-button [matMenuTriggerFor]="mobileMenu" aria-label="Open navigation menu">
           <mat-icon>menu</mat-icon>
         </button>
 
