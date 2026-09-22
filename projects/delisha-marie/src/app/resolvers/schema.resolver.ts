@@ -1,4 +1,4 @@
-import { APP_BASE_HREF, DOCUMENT, IMAGE_LOADER } from '@angular/common';
+import { DOCUMENT, IMAGE_LOADER, PathLocationStrategy } from '@angular/common';
 import { inject } from '@angular/core';
 import { ResolveFn } from '@angular/router';
 import { deslugify } from '@dm/library';
@@ -36,8 +36,8 @@ export const writeSchema = (document: Document, schema: SchemaObject[]) => {
 export const schemaResolver: ResolveFn<SchemaObject[]> = (route, state) => {
   const document = inject(DOCUMENT);
   const loader = inject(IMAGE_LOADER);
-  const baseHref = inject(APP_BASE_HREF);
-  const appBaseHref = baseHref === '/' ? '' : baseHref.replace(/\/$/, '');
+  const locationStrategy = inject(PathLocationStrategy);
+  const appBaseHref = locationStrategy.getBaseHref() === '/' ? '' : locationStrategy.getBaseHref();
   const schema: SchemaObject[] = [];
   const origin = document.location.origin + appBaseHref;
   const path = state.url.split('?')[0].split('#')[0];
@@ -80,8 +80,8 @@ export const schemaResolver: ResolveFn<SchemaObject[]> = (route, state) => {
 export const schemaDynamicPageResolver: ResolveFn<SchemaObject[]> = async (route, state) => {
   const document = inject(DOCUMENT);
   const loader = inject(IMAGE_LOADER);
-  const baseHref = inject(APP_BASE_HREF);
-  const appBaseHref = baseHref === '/' ? '' : baseHref.replace(/\/$/, '');
+  const locationStrategy = inject(PathLocationStrategy);
+  const appBaseHref = locationStrategy.getBaseHref() === '/' ? '' : locationStrategy.getBaseHref();
   const schema: SchemaObject[] = [];
   const origin = document.location.origin + appBaseHref;
   const path = state.url.split('?')[0].split('#')[0];

@@ -211,8 +211,8 @@ describe('schemaResolver', () => {
 
       TestBed.runInInjectionContext(() => schemaResolver(route, state));
 
-      // Should not create a new one
-      expect(mockDocument.createElement).not.toHaveBeenCalled();
+      // Should not create a new script tag
+      expect(mockDocument.createElement).not.toHaveBeenCalledWith('script');
       // Should modify the existing one
       expect((existingScript as unknown as HTMLScriptElement).textContent).toContain('@context');
     });
@@ -452,7 +452,7 @@ describe('schemaResolver', () => {
 
       await TestBed.runInInjectionContext(() => schemaRecipeResolver(route, state));
 
-      expect(mockDocument.createElement).not.toHaveBeenCalled();
+      expect(mockDocument.createElement).not.toHaveBeenCalledWith('script');
       expect(existingScript.textContent).toContain('@context');
     });
 
