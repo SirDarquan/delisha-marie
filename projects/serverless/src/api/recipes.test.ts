@@ -2063,6 +2063,46 @@ describe('Recipes Router API', () => {
       }
     });
 
+    it('should end stream and write retry when 25s serverless timeout elapses', async () => {
+      vi.useFakeTimers();
+      try {
+        const mockChan = {
+          on: vi.fn().mockReturnThis(),
+          subscribe: vi.fn().mockReturnThis(),
+        };
+        mockChannel.mockReturnValue(mockChan);
+        mockRemoveChannel.mockResolvedValue(undefined);
+
+        const writtenChunks: string[] = [];
+        const req = {
+          method: 'GET',
+          query: { slug: ['123', 'comments', 'stream'] },
+          on: vi.fn(),
+        } as unknown as import('@vercel/node').VercelRequest;
+
+        const res = {
+          writeHead: vi.fn(),
+          write: vi.fn().mockImplementation((chunk: string) => {
+            writtenChunks.push(chunk);
+          }),
+          setHeader: vi.fn(),
+          status: vi.fn().mockReturnThis(),
+          json: vi.fn(),
+          end: vi.fn(),
+          headersSent: true,
+        } as unknown as import('@vercel/node').VercelResponse;
+
+        await recipesRouter(req, res);
+
+        vi.advanceTimersByTime(25000);
+        expect(writtenChunks).toContain('retry: 1000\n\n');
+        expect(res.end).toHaveBeenCalled();
+        expect(mockRemoveChannel).toHaveBeenCalledWith(mockChan);
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
     it('should handle error when establishing stream before headersSent', async () => {
       const resJson = vi.fn();
       const resStatus = vi.fn().mockReturnValue({ json: resJson });

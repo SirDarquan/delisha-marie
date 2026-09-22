@@ -623,10 +623,21 @@ async function handleCommentsStream(req: VercelRequest, res: VercelResponse, rec
       )
       .subscribe();
 
-    req.on('close', () => {
+    const cleanup = () => {
       clearInterval(heartbeat);
+      clearTimeout(serverlessTimeout);
       void supabase.removeChannel(channel);
-    });
+    };
+
+    req.on('close', cleanup);
+
+    // Vercel serverless execution limit is 30s. End the stream gracefully at 25s so the function exits cleanly with 200 OK.
+    // Client EventSource will automatically reconnect according to retry interval.
+    const serverlessTimeout = setTimeout(() => {
+      res.write('retry: 1000\n\n');
+      res.end();
+      cleanup();
+    }, 25000);
   } catch (err: unknown) {
     console.error('Error in comments stream:', err);
     if (!res.headersSent) {
