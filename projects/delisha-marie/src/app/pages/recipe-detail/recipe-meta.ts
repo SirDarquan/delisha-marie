@@ -2,8 +2,10 @@ import { CommonModule } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
+  DOCUMENT,
   ViewEncapsulation,
   computed,
+  inject,
   input,
 } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
@@ -20,9 +22,9 @@ import { Recipe } from '../../services/recipe.service';
       <!-- Jump to Recipe -->
       <a
         mat-stroked-button
-        routerLink="."
         [routerLink]="[]"
         fragment="recipe-card"
+        (click)="scrollToRecipeCard($event, 'recipe-card')"
         class="glow-button flex items-center gap-2 transition-all group rounded-full !border-[var(--mat-sys-outline-variant)]">
         <mat-icon class="text-lg w-5 h-5 group-hover:scale-110 transition-transform"
           >restaurant_menu</mat-icon
@@ -35,6 +37,7 @@ import { Recipe } from '../../services/recipe.service';
         mat-stroked-button
         [routerLink]="[]"
         fragment="comments"
+        (click)="scrollToRecipeCard($event, 'comments')"
         class="glow-button flex items-center gap-2 transition-all group rounded-full !border-[var(--mat-sys-outline-variant)]">
         <mat-icon class="text-lg w-5 h-5 group-hover:scale-110 transition-transform"
           >chat_bubble_outline</mat-icon
@@ -75,6 +78,7 @@ import { Recipe } from '../../services/recipe.service';
 })
 export class RecipeMeta {
   recipe = input.required<Recipe>();
+  document = inject(DOCUMENT);
 
   readonly commentCount = computed(() => {
     return this.recipe().reviewCount;
@@ -96,4 +100,16 @@ export class RecipeMeta {
     }
     return r.createdAt || r.updatedAt || new Date().toISOString();
   });
+
+  scrollToRecipeCard($event: Event, fragment: string) {
+    $event.preventDefault();
+    setTimeout(() => {
+      const el = this.document.getElementById(fragment);
+      if (el) {
+        const window = this.document.defaultView;
+        const y = el.getBoundingClientRect().top + (window?.scrollY ?? 0) - 120;
+        window?.scrollTo({ top: y, behavior: 'smooth' });
+      }
+    }, 50);
+  }
 }
