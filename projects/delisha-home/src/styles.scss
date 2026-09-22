@@ -1,0 +1,45 @@
+@use '@angular/material' as mat;
+@use 'tailwindcss';
+@use '../../delisha-marie/src/theme-1' as delisha-marie;
+@use '../../delisha-marie/src/app-theme';
+
+:root {
+  color-scheme: light;
+}
+
+.dark-theme {
+  color-scheme: dark;
+}
+
+html {
+  scroll-behavior: smooth;
+  @include mat.theme((
+    color: (
+      primary: delisha-marie.$primary-palette,
+      tertiary: delisha-marie.$tertiary-palette,
+    ),
+    typography: 'Outfit',
+    density: 0,
+  ));
+}
+
+html,
+body,
+app-root {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+app-root {
+  display: block;
+}
+
+body {
+  background-color: var(--mat-sys-surface);
+  color: var(--mat-sys-on-surface);
+  font: var(--mat-sys-body-medium);
+  overflow-x: hidden;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
