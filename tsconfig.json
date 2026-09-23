@@ -58,6 +58,12 @@
     },
     {
       "path": "./projects/dm/library/tsconfig.spec.json"
+    },
+    {
+      "path": "./projects/delisha-home/tsconfig.app.json"
+    },
+    {
+      "path": "./projects/delisha-home/tsconfig.spec.json"
     }
   ]
 }

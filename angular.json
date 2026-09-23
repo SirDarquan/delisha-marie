@@ -3,11 +3,7 @@
   "version": 1,
   "cli": {
     "packageManager": "npm",
-    "schematicCollections": [
-      "@cypress/schematic",
-      "angular-eslint",
-      "@schematics/angular"
-    ],
+    "schematicCollections": ["@cypress/schematic", "angular-eslint", "@schematics/angular"],
     "analytics": false
   },
   "newProjectRoot": "projects",
@@ -43,12 +39,7 @@
             "server": "projects/delisha-marie/src/main.server.ts",
             "outputMode": "server",
             "security": {
-              "allowedHosts": [
-                "localhost",
-                "127.0.0.1",
-                "[::1]",
-                "*.vercel.app"
-              ]
+              "allowedHosts": ["localhost", "127.0.0.1", "[::1]", "*.vercel.app"]
             },
             "ssr": {
               "entry": "projects/delisha-marie/src/server.ts"
@@ -56,6 +47,11 @@
           },
           "configurations": {
             "production": {
+              "outputPath":{
+                "base":"dist/kitchen",
+                "browser":"browser"
+              },
+              "deployUrl":"/kitchen/",
               "baseHref": "/kitchen",
               "budgets": [
                 {
@@ -144,7 +140,6 @@
             "coverageExclude": ["projects/dm/library/**/*"]
           }
         },
-
         "lint": {
           "builder": "@angular-eslint/builder:lint",
           "options": {
@@ -534,6 +529,101 @@
             "fix": true,
             "lintFilePatterns": ["projects/dm/backend-shared/**/*.ts"],
             "eslintConfig": "projects/dm/backend-shared/eslint.config.js"
+          }
+        }
+      }
+    },
+    "delisha-home": {
+      "projectType": "application",
+      "schematics": {
+        "@schematics/angular:component": {
+          "style": "scss"
+        }
+      },
+      "root": "projects/delisha-home",
+      "sourceRoot": "projects/delisha-home/src",
+      "prefix": "app",
+      "architect": {
+        "build": {
+          "builder": "@angular/build:application",
+          "options": {
+            "browser": "projects/delisha-home/src/main.ts",
+            "tsConfig": "projects/delisha-home/tsconfig.app.json",
+            "inlineStyleLanguage": "scss",
+            "assets": [
+              {
+                "glob": "**/*",
+                "input": "projects/delisha-home/public"
+              }
+            ],
+            "styles": [
+              "projects/delisha-home/src/tailwind.css",
+              "projects/delisha-home/src/styles.scss"
+            ],
+            "outputPath": {
+              "base": "dist",
+              "browser": ""
+            }
+          },
+          "configurations": {
+            "production": {
+              "budgets": [
+                {
+                  "type": "initial",
+                  "maximumWarning": "500kB",
+                  "maximumError": "1MB"
+                },
+                {
+                  "type": "anyComponentStyle",
+                  "maximumWarning": "4kB",
+                  "maximumError": "8kB"
+                }
+              ],
+              "outputHashing": "all"
+            },
+            "development": {
+              "optimization": false,
+              "extractLicenses": false,
+              "sourceMap": true
+            }
+          },
+          "defaultConfiguration": "production"
+        },
+        "serve": {
+          "builder": "@angular/build:dev-server",
+          "configurations": {
+            "production": {
+              "buildTarget": "delisha-home:build:production"
+            },
+            "development": {
+              "buildTarget": "delisha-home:build:development",
+              "port": 4220
+            }
+          },
+          "defaultConfiguration": "development"
+        },
+        "test": {
+          "builder": "@angular/build:unit-test",
+          "options": {
+            "coverageReporters": ["lcov"],
+            "watch": false,
+            "coverageThresholds": {
+              "statements": 95,
+              "branches": 90,
+              "functions": 95,
+              "lines": 95
+            }
+          }
+        },
+        "lint": {
+          "builder": "@angular-eslint/builder:lint",
+          "options": {
+            "lintFilePatterns": [
+              "projects/delisha-home/**/*.ts",
+              "projects/delisha-home/**/*.html"
+            ],
+            "eslintConfig": "projects/delisha-home/eslint.config.js",
+            "fix": true
           }
         }
       }
