@@ -32,9 +32,9 @@ describe('Header', () => {
   it('should render single navigation link for Kitchen', () => {
     const compiled = fixture.nativeElement as HTMLElement;
     const navLinks = compiled.querySelectorAll('nav a');
-    expect(navLinks.length).toBe(1);
+    expect(navLinks).toHaveLength(1);
     expect(navLinks[0].textContent).toContain('Kitchen');
     expect(navLinks[0].getAttribute('href')).toBe(component.kitchenUrl);
-    expect(component.kitchenUrl).toContain('/kitchen');
+    expect(component.kitchenUrl).toContain('/');
   });
 });

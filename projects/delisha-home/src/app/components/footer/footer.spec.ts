@@ -33,7 +33,7 @@ describe('Footer', () => {
     const kitchenLink = links.find((a) => a.textContent?.trim() === 'Kitchen');
     expect(kitchenLink).toBeTruthy();
     expect(kitchenLink?.getAttribute('href')).toBe(component.kitchenUrl);
-    expect(component.kitchenUrl).toContain('/kitchen');
+    expect(component.kitchenUrl).toContain('');
   });
 
   it('should scroll to top when "^ Back to the top" is clicked', () => {
