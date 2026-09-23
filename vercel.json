@@ -30,11 +30,11 @@
     },
     {
       "source": "/kitchen",
-      "destination": "/"
+      "destination": "/kitchen/browser"
     },
     {
       "source": "/kitchen/:path*",
-      "destination": "/:path*"
+      "destination": "/kitchen/browser/:path*"
     }
   ],
   "headers": [

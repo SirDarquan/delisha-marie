@@ -47,6 +47,11 @@
           },
           "configurations": {
             "production": {
+              "outputPath":{
+                "base":"dist/kitchen",
+                "browser":"browser"
+              },
+              "deployUrl":"/kitchen/",
               "baseHref": "/kitchen",
               "budgets": [
                 {
@@ -94,11 +99,7 @@
             "styles": [
               "projects/delisha-marie/src/tailwind.css",
               "projects/delisha-marie/src/styles.scss"
-            ],
-            "outputPath": {
-              "base": "dist/kitchen",
-              "browser": ""
-            }
+            ]
           },
           "configurations": {
             "e2e": {
