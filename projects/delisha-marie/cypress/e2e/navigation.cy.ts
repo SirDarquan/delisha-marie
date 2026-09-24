@@ -34,13 +34,11 @@ describe('Main Blog Global Navigation', () => {
     cy.title().should('eq', "Home | Delisha Marie's Kitchen");
   });
 
-  it('should navigate to the About page from the header navigation menu', () => {
-    // Click inside desktop menu link
+  // Updated by Cypress Author on 2026-09-24 for multi-zone navigation
+  it('should link to the About page from the header navigation menu', () => {
     cy.get('dm-header').within(() => {
-      cy.get('a').contains('About').click({ force: true });
+      cy.contains('a', 'About').should('have.attr', 'href').and('include', '/about');
     });
-    cy.url().should('include', '/about');
-    cy.title().should('eq', "About | Delisha Marie's Kitchen");
   });
 
   it('should navigate to the Recipes Index and confirm rendering', () => {
@@ -52,12 +50,11 @@ describe('Main Blog Global Navigation', () => {
     cy.title().should('eq', "Recipe Index | Delisha Marie's Kitchen");
   });
 
-  it('should navigate to the Contact page and display the contact details', () => {
+  // Updated by Cypress Author on 2026-09-24 for multi-zone navigation
+  it('should link to the Contact page from the header navigation menu', () => {
     cy.get('dm-header').within(() => {
-      cy.get('a').contains('Contact').click({ force: true });
+      cy.contains('a', 'Contact').should('have.attr', 'href').and('include', '/contact');
     });
-    cy.url().should('include', '/contact');
-    cy.title().should('eq', "Contact | Delisha Marie's Kitchen");
   });
 
   it('should successfully fallback to a 404 page if an unknown URL is specified', () => {

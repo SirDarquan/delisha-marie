@@ -47,6 +47,19 @@ describe('Header', () => {
     expect(links.length).toBeGreaterThanOrEqual(3); // About, Recipe, Contact
   });
 
+  it('should render external links for About and Contact', () => {
+    const fixture = TestBed.createComponent(Header);
+    fixture.detectChanges();
+    const compiled = fixture.nativeElement as HTMLElement;
+    const links = Array.from(compiled.querySelectorAll('a'));
+
+    const aboutLink = links.find((l) => l.textContent?.trim() === 'About');
+    const contactLink = links.find((l) => l.textContent?.trim() === 'Contact');
+
+    expect(aboutLink?.getAttribute('href')).toContain('/about');
+    expect(contactLink?.getAttribute('href')).toContain('/contact');
+  });
+
   it('should toggle theme when switch is flipped', () => {
     const fixture = TestBed.createComponent(Header);
     fixture.detectChanges();

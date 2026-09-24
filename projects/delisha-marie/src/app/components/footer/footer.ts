@@ -6,6 +6,7 @@ import {
   ViewEncapsulation,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { getHomeUrl } from '../../utils/navigation';
 
 @Component({
   selector: 'dm-footer',
@@ -23,7 +24,7 @@ import { RouterLink } from '@angular/router';
             ^ Back to the top
           </a>
           <a
-            routerLink="/"
+            [href]="homeUrl"
             class="text-[var(--mat-sys-on-surface-variant)] hover:text-[var(--mat-sys-primary)] text-sm font-medium transition-colors no-underline">
             Home
           </a>
@@ -33,12 +34,12 @@ import { RouterLink } from '@angular/router';
             Recipes
           </a>
           <a
-            routerLink="/about"
+            [href]="aboutUrl"
             class="text-[var(--mat-sys-on-surface-variant)] hover:text-[var(--mat-sys-primary)] text-sm font-medium transition-colors no-underline">
             About
           </a>
           <a
-            routerLink="/contact"
+            [href]="contactUrl"
             class="text-[var(--mat-sys-on-surface-variant)] hover:text-[var(--mat-sys-primary)] text-sm font-medium transition-colors no-underline">
             Contact
           </a>
@@ -67,6 +68,9 @@ export class Footer {
   private readonly document = inject(DOCUMENT);
 
   readonly year = new Date().getFullYear();
+  protected readonly homeUrl = getHomeUrl();
+  protected readonly aboutUrl = getHomeUrl('/about');
+  protected readonly contactUrl = getHomeUrl('/contact');
 
   scrollToTop(event: Event): void {
     const window = this.document.defaultView;

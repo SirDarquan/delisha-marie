@@ -5,10 +5,12 @@ import {
   inject,
   ViewEncapsulation,
 } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { getKitchenUrl } from '../../utils/navigation';
 
 @Component({
   selector: 'dm-footer',
+  imports: [RouterLink],
   template: `
     <footer
       class="footer-bar w-full py-4 md:py-6 px-8 md:px-16 lg:px-24 xl:px-32 border-t border-white/15 bg-black/45 backdrop-blur-md text-white/90">
@@ -18,6 +20,16 @@ import { getKitchenUrl } from '../../utils/navigation';
           (click)="scrollToTop($event)"
           class="text-white/80 hover:text-[#ffb952] text-sm font-medium transition-colors no-underline">
           ^ Back to the top
+        </a>
+        <a
+          routerLink="/about"
+          class="text-white/80 hover:text-[#ffb952] text-sm font-medium transition-colors no-underline">
+          About
+        </a>
+        <a
+          routerLink="/contact"
+          class="text-white/80 hover:text-[#ffb952] text-sm font-medium transition-colors no-underline">
+          Contact
         </a>
         <a
           [href]="kitchenUrl"
@@ -58,11 +70,12 @@ import { getKitchenUrl } from '../../utils/navigation';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Footer {
-  readonly year = new Date().getFullYear();
-  readonly kitchenUrl = getKitchenUrl();
   private readonly document = inject(DOCUMENT);
 
-  scrollToTop(event: Event) {
+  readonly year = new Date().getFullYear();
+  readonly kitchenUrl = getKitchenUrl();
+
+  scrollToTop(event: Event): void {
     event.preventDefault();
     this.document.defaultView?.scrollTo({ top: 0, behavior: 'smooth' });
   }

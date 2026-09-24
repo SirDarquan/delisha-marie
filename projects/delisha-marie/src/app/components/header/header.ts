@@ -6,6 +6,7 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatMenuModule } from '@angular/material/menu';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { ThemeService } from '../../services/theme.service';
+import { getHomeUrl } from '../../utils/navigation';
 
 @Component({
   selector: 'dm-header',
@@ -25,7 +26,7 @@ import { ThemeService } from '../../services/theme.service';
   template: `
     <mat-toolbar
       class="!bg-[var(--mat-sys-surface)]/80 backdrop-blur-md h-20 px-4 md:px-8 flex justify-between items-center border-b border-[var(--mat-sys-outline-variant)]">
-      <a class="flex items-center cursor-pointer logo-container" routerLink="/">
+      <a class="flex items-center cursor-pointer logo-container" [href]="homeUrl">
         <div class="logo-word">
           <span class="logo-letter-bold">D</span>
           <span class="logo-letter-fade">elisha</span>
@@ -42,7 +43,11 @@ import { ThemeService } from '../../services/theme.service';
 
       <div class="hidden md:flex items-center gap-6">
         @for (link of menuLinks; track link.label) {
-          @if (link.children) {
+          @if (link.externalUrl) {
+            <a mat-button [href]="link.externalUrl" class="text-lg font-medium">
+              {{ link.label }}
+            </a>
+          } @else if (link.children) {
             <button mat-button [matMenuTriggerFor]="desktopSub" class="text-lg font-medium">
               {{ link.label }}
               <mat-icon class="!mr-0">arrow_drop_down</mat-icon>
@@ -103,7 +108,11 @@ import { ThemeService } from '../../services/theme.service';
 
         <mat-menu #mobileMenu="matMenu">
           @for (link of menuLinks; track link.label) {
-            @if (link.children) {
+            @if (link.externalUrl) {
+              <a mat-menu-item [href]="link.externalUrl">
+                <span>{{ link.label }}</span>
+              </a>
+            } @else if (link.children) {
               <button mat-menu-item [matMenuTriggerFor]="mobileSub">
                 <span>{{ link.label }}</span>
               </button>
@@ -135,15 +144,17 @@ import { ThemeService } from '../../services/theme.service';
 })
 export class Header {
   protected readonly themeService = inject(ThemeService);
+  protected readonly homeUrl = getHomeUrl();
 
   // Note: Add a `children` array to any item to automatically generate a dropdown!
   protected readonly menuLinks: {
     label: string;
     path?: string;
+    externalUrl?: string;
     children?: { label: string; path: string }[];
   }[] = [
     { path: '/recipe-index', label: 'Recipes' },
-    { path: '/about', label: 'About' },
-    { path: '/contact', label: 'Contact' },
+    { externalUrl: getHomeUrl('/about'), label: 'About' },
+    { externalUrl: getHomeUrl('/contact'), label: 'Contact' },
   ];
 }
