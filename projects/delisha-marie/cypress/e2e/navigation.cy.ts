@@ -37,7 +37,7 @@ describe('Main Blog Global Navigation', () => {
   // Updated by Cypress Author on 2026-09-24 for multi-zone navigation
   it('should link to the About page from the header navigation menu', () => {
     cy.get('dm-header').within(() => {
-      cy.get('a').contains('About').should('have.attr', 'href').and('include', '/about');
+      cy.contains('a', 'About').should('have.attr', 'href').and('include', '/about');
     });
   });
 
@@ -53,7 +53,7 @@ describe('Main Blog Global Navigation', () => {
   // Updated by Cypress Author on 2026-09-24 for multi-zone navigation
   it('should link to the Contact page from the header navigation menu', () => {
     cy.get('dm-header').within(() => {
-      cy.get('a').contains('Contact').should('have.attr', 'href').and('include', '/contact');
+      cy.contains('a', 'Contact').should('have.attr', 'href').and('include', '/contact');
     });
   });
 
