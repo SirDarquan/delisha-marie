@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { App } from './app';
 
@@ -9,6 +10,7 @@ describe('App', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [App],
+      providers: [provideRouter([])],
     }).compileComponents();
 
     fixture = TestBed.createComponent(App);
@@ -26,12 +28,8 @@ describe('App', () => {
     expect(compiled.querySelector('dm-footer')).toBeTruthy();
   });
 
-  it('should render full-screen hero image of Delisha Marie', () => {
+  it('should render a router-outlet', () => {
     const compiled = fixture.nativeElement as HTMLElement;
-    const img = compiled.querySelector('main img');
-    expect(img).toBeTruthy();
-    expect(img?.getAttribute('src')).toBe('/delisha-marie.jpg');
-    expect(img?.getAttribute('alt')).toContain('Delisha Marie');
-    expect(img?.classList.contains('object-cover')).toBe(true);
+    expect(compiled.querySelector('router-outlet')).toBeTruthy();
   });
 });
