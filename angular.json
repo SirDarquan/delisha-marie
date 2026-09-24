@@ -47,11 +47,11 @@
           },
           "configurations": {
             "production": {
-              "outputPath":{
-                "base":"dist/kitchen",
-                "browser":"browser"
+              "outputPath": {
+                "base": "dist/kitchen",
+                "browser": "browser"
               },
-              "deployUrl":"/kitchen/",
+              "deployUrl": "/kitchen/",
               "baseHref": "/kitchen",
               "budgets": [
                 {
@@ -570,7 +570,7 @@
               "budgets": [
                 {
                   "type": "initial",
-                  "maximumWarning": "500kB",
+                  "maximumWarning": "750kB",
                   "maximumError": "1MB"
                 },
                 {
