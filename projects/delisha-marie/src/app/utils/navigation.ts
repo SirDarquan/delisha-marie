@@ -15,7 +15,10 @@ export function getHomeUrl(path = '', options?: HomeUrlOptions): string {
   const currentHost =
     options?.hostname ?? (typeof window !== 'undefined' ? window.location.hostname : 'localhost');
   const isLocal = currentHost === 'localhost' || currentHost === '127.0.0.1';
-  const cleanPath = path ? (path.startsWith('/') ? path : `/${path}`) : '';
+  let cleanPath = '';
+  if (path) {
+    cleanPath = path.startsWith('/') ? path : `/${path}`;
+  }
 
   if (!isLocal || !isDev) {
     return cleanPath || '/';
