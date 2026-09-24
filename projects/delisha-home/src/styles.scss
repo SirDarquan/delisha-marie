@@ -4,17 +4,10 @@
 @use '../../delisha-marie/src/app-theme';
 
 :root {
-  color-scheme: light;
-}
-
-.dark-theme {
   color-scheme: dark;
-}
-
-html {
-  scroll-behavior: smooth;
   @include mat.theme((
     color: (
+      theme-type: dark,
       primary: delisha-marie.$primary-palette,
       tertiary: delisha-marie.$tertiary-palette,
     ),
@@ -23,18 +16,31 @@ html {
   ));
 }
 
-html,
-body {
+.light-theme {
+  color-scheme: light;
+  @include mat.theme-overrides((
+    color: (
+      theme-type: light,
+      primary: delisha-marie.$primary-palette,
+      tertiary: delisha-marie.$tertiary-palette,
+    ),
+  ));
+}
+
+html {
+  scroll-behavior: smooth;
   height: 100%;
   width: 100%;
 }
 
 body {
+  color-scheme: dark;
   background-color: var(--mat-sys-surface);
   color: var(--mat-sys-on-surface);
   font: var(--mat-sys-body-medium);
   margin: 0;
+  width: 100%;
+  min-height: 100%;
   overflow-x: hidden;
-  
   transition: background-color 0.3s ease, color 0.3s ease;
 }
