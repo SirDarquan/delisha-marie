@@ -24,22 +24,17 @@ html {
 }
 
 html,
-body,
-app-root {
+body {
   height: 100%;
   width: 100%;
-  margin: 0;
-  padding: 0;
-}
-
-app-root {
-  display: block;
 }
 
 body {
   background-color: var(--mat-sys-surface);
   color: var(--mat-sys-on-surface);
   font: var(--mat-sys-body-medium);
+  margin: 0;
   overflow-x: hidden;
+  
   transition: background-color 0.3s ease, color 0.3s ease;
 }
