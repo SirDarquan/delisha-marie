@@ -109,14 +109,17 @@ export async function isKitchenReleased(fetchFn: typeof fetch = fetch): Promise<
   }
 }
 
-export async function isLive(): Promise<boolean> {
+export async function isLive(
+  isDevFn: typeof isDevMode = isDevMode,
+  fetchFn: typeof fetch = fetch,
+): Promise<boolean> {
   let preview = false;
   if (typeof window !== 'undefined') {
     preview = window.location.hostname.endsWith('vercel.app');
   } else if (typeof process !== 'undefined' && process.env) {
     preview = process.env['VERCEL_ENV'] === 'preview';
   }
-  return preview || isDevMode() || (await isKitchenReleased());
+  return preview || isDevFn() || (await isKitchenReleased(fetchFn));
 }
 
 @Component({

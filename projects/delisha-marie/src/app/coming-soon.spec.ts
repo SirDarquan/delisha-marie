@@ -201,7 +201,12 @@ describe('coming-soon', () => {
       expect(result).toBe(true);
     });
 
-    it('should return false when not preview, dev mode is active, and kitchen is not released', async () => {
+    it('should return true when isDevMode is true', async () => {
+      const result = await isLive(() => true);
+      expect(result).toBe(true);
+    });
+
+    it('should return false when not preview, not in dev mode, and kitchen is not released', async () => {
       const originalLocation = window.location;
       Object.defineProperty(window, 'location', {
         value: { hostname: 'delisha-marie.com' },
@@ -209,11 +214,11 @@ describe('coming-soon', () => {
         configurable: true,
       });
 
-      vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      const mockFetch = vi.fn().mockResolvedValue({
         headers: new Headers({ date: 'Wed, 02 Dec 2026 09:00:00 GMT' }),
       } as Response);
 
-      const result = await isLive();
+      const result = await isLive(() => false, mockFetch as unknown as typeof fetch);
       expect(result).toBe(false);
 
       Object.defineProperty(window, 'location', {
