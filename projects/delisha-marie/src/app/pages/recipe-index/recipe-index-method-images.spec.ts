@@ -1,3 +1,4 @@
+import { provideImageKitLoader } from '@angular/common';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { FullCategory } from '../../models/category';
@@ -8,14 +9,14 @@ describe('RecipeIndexMethodImages', () => {
   let fixture: ComponentFixture<RecipeIndexMethodImages>;
 
   const mockMethods: FullCategory[] = [
-    { name: 'Air Fryer', image: '/air.png', url: '/methods/air-fryer' },
-    { name: 'Baked', image: '/baked.png', url: '/methods/baked' },
+    { name: 'Air Fryer', image: 'air.png', url: '/methods/air-fryer' },
+    { name: 'Baked', image: 'baked.png', url: '/methods/baked' },
   ];
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [RecipeIndexMethodImages],
-      providers: [provideRouter([])],
+      providers: [provideRouter([]), provideImageKitLoader('https://ik.imagekit.io/delishamarie')],
     }).compileComponents();
 
     fixture = TestBed.createComponent(RecipeIndexMethodImages);

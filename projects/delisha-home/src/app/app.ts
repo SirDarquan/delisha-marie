@@ -8,7 +8,7 @@ import { Header } from './components/header/header';
   imports: [Header, Footer, RouterOutlet],
   template: `
     <div class="flex flex-col min-h-screen min-h-[100dvh] w-full box-border">
-      <dm-header class="w-full shrink-0 z-10" />
+      <dm-header class="sticky top-0 w-full shrink-0 z-10" />
       <main class="flex-1 flex flex-col w-full min-h-0">
         <router-outlet />
       </main>

@@ -44,15 +44,14 @@ describe('Contact', () => {
     expect(compiled.querySelector('dm-colored-header')).toBeTruthy();
     expect(compiled.querySelector('h1')?.textContent).toContain('Get');
     expect(compiled.querySelector('h1')?.textContent).toContain('in Touch');
-    expect(compiled.textContent).toContain('hello@delishamarie.com');
     expect(compiled.textContent).toContain('Collaborations');
     expect(compiled.textContent).toContain('Recipe Questions');
   });
 
   it('should render form fields inside the contact box with preserved subject placeholder', () => {
     const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('input[placeholder="Delisha Marie"]')).toBeTruthy();
-    expect(compiled.querySelector('input[placeholder="hello@delishamarie.com"]')).toBeTruthy();
+    expect(compiled.querySelector('input[placeholder="Joe Smith"]')).toBeTruthy();
+    expect(compiled.querySelector('input[placeholder="yourname@example.com"]')).toBeTruthy();
     expect(
       compiled.querySelector('input[placeholder="Recipe question / collaboration inquiry"]'),
     ).toBeTruthy();

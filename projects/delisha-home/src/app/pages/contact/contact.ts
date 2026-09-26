@@ -56,22 +56,6 @@ export interface ContactSubmissionPayload {
           <div
             class="bg-[var(--mat-sys-surface-container)] backdrop-blur-md rounded-2xl p-6 border border-[var(--mat-sys-outline-variant)]/40 flex flex-col gap-3 shadow-xl">
             <div class="flex items-center gap-3 text-[var(--mat-sys-primary)]">
-              <mat-icon>email</mat-icon>
-              <h2 class="text-lg font-bold text-[var(--mat-sys-on-surface)]">Direct Email</h2>
-            </div>
-            <p class="text-sm text-[var(--mat-sys-on-surface-variant)]">
-              For general inquiries and personal notes:
-            </p>
-            <a
-              href="mailto:hello@delishamarie.com"
-              class="text-[var(--mat-sys-primary)] hover:underline font-medium text-sm mt-1">
-              hello&#64;delishamarie.com
-            </a>
-          </div>
-
-          <div
-            class="bg-[var(--mat-sys-surface-container)] backdrop-blur-md rounded-2xl p-6 border border-[var(--mat-sys-outline-variant)]/40 flex flex-col gap-3 shadow-xl">
-            <div class="flex items-center gap-3 text-[var(--mat-sys-primary)]">
               <mat-icon>handshake</mat-icon>
               <h2 class="text-lg font-bold text-[var(--mat-sys-on-surface)]">Collaborations</h2>
             </div>
@@ -100,7 +84,7 @@ export interface ContactSubmissionPayload {
               <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <mat-form-field appearance="outline" class="w-full">
                   <mat-label>Name</mat-label>
-                  <input matInput [formField]="contactForm.name" placeholder="Delisha Marie" />
+                  <input matInput [formField]="contactForm.name" placeholder="Joe Smith" />
                   @for (error of contactForm.name().errors(); track error.message) {
                     <mat-error>{{ error.message }}</mat-error>
                   }
@@ -111,7 +95,7 @@ export interface ContactSubmissionPayload {
                   <input
                     matInput
                     [formField]="contactForm.email"
-                    placeholder="hello@delishamarie.com" />
+                    placeholder="yourname@example.com" />
                   @for (error of contactForm.email().errors(); track error.message) {
                     <mat-error>{{ error.message }}</mat-error>
                   }
