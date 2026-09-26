@@ -12,12 +12,20 @@ const mocks = vi.hoisted(() => {
 
 const { mockUpload, mockToBuffer, mockWebp } = mocks;
 
-// Mock ImageKit
-vi.mock('imagekit', () => {
+// Mock @imagekit/nodejs
+vi.mock('@imagekit/nodejs', () => {
   return {
-    default: class {
-      upload = mocks.mockUpload;
+    ImageKit: class {
+      files = {
+        upload: mocks.mockUpload,
+      };
     },
+    default: class {
+      files = {
+        upload: mocks.mockUpload,
+      };
+    },
+    toFile: vi.fn(async (buf: Buffer, name: string) => ({ name, size: buf?.length })),
   };
 });
 
@@ -65,6 +73,13 @@ describe('Upload Router API', () => {
     expect(mockMkdirSync).toHaveBeenCalledWith(expect.stringContaining('images'), {
       recursive: true,
     });
+  });
+
+  it('should not create directory if it already exists on module load', async () => {
+    vi.resetModules();
+    mockExistsSync.mockReturnValueOnce(true);
+    await import('./upload');
+    expect(mockMkdirSync).not.toHaveBeenCalled();
   });
 
   it('should return 400 if no image is uploaded', async () => {
