@@ -1,28 +1,12 @@
 import { bootstrapApplication } from '@angular/platform-browser';
 import { inject } from '@vercel/analytics';
 import { injectSpeedInsights } from '@vercel/speed-insights';
+import { initBotId } from 'botid/client/core';
 import { App } from './app/app';
 import { appConfig } from './app/app.config';
-import { initBotId } from 'botid/client/core';
-import { isDevMode } from '@angular/core';
-import { AppEx, appConfigEx, isKitchenReleased } from './app/coming-soon';
+import { AppEx, appConfigEx, isLive } from './app/coming-soon';
 
-const isReleased = await isKitchenReleased();
-
-let live = false;
-if (
-  isDevMode() ||
-  location.hostname.endsWith('vercel.app') ||
-  (location.pathname.startsWith('/kitchen') && isReleased)
-) {
-  live = true;
-}
-console.log({
-  isDevMode: isDevMode(),
-  preview: location.hostname.endsWith('vercel.app'),
-  live: location.hostname.endsWith('delisha-marie.com'),
-});
-
+const live = await isLive();
 if (!live) {
   bootstrapApplication(AppEx, appConfigEx).catch((err) => console.error(err));
 } else {
