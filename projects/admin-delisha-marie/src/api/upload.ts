@@ -1,14 +1,12 @@
 import { Router } from 'express';
-import ImageKit from 'imagekit';
+import { ImageKit, toFile } from '@imagekit/nodejs';
 import multer from 'multer';
 import fs from 'node:fs';
 import path from 'node:path';
 import sharp from 'sharp';
 
 const imagekit = new ImageKit({
-  publicKey: process.env['IMAGEKIT_PUBLIC_KEY'] || 'dummy_public_key',
   privateKey: process.env['IMAGEKIT_PRIVATE_KEY'] || 'dummy_private_key',
-  urlEndpoint: process.env['IMAGEKIT_URL_ENDPOINT'] || 'https://ik.imagekit.io/dummy',
 });
 
 const uploadRouter = Router();
@@ -53,8 +51,8 @@ uploadRouter.post('/upload', upload.single('image'), async (req, res) => {
     }
 
     // Upload directly to ImageKit
-    const ikResponse = await imagekit.upload({
-      file: webpBuffer,
+    const ikResponse = await imagekit.files.upload({
+      file: await toFile(webpBuffer, `${basename}.webp`),
       fileName: `${basename}.webp`,
       folder: uploadFolder,
       useUniqueFileName: false,
