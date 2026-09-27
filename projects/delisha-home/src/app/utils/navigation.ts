@@ -17,7 +17,7 @@ export function getKitchenUrl(options?: KitchenUrlOptions): string {
   const isLocal = currentHost === 'localhost' || currentHost === '127.0.0.1';
 
   if (!isLocal || !isDev) {
-    return '/kitchen';
+    return '/kitchen/';
   }
 
   return 'http://localhost:4200';
