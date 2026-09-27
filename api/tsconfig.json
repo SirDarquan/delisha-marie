@@ -12,8 +12,9 @@
     "strictBindCallApply": true,
     "strictPropertyInitialization": true,
     "alwaysStrict": true,
-    "lib": ["esnext"],
+    "lib": ["esnext", "dom"],
     "types":["node"],
+    "skipLibCheck": true,
     "ignoreDeprecations": "6.0"
   }
 }
