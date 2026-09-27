@@ -614,7 +614,7 @@ async function handleCommentsStream(req: VercelRequest, res: VercelResponse, rec
           filter: `recipe_id=eq.${recipeId}`,
         },
         async (payload: { new?: Record<string, unknown> }) => {
-          if (payload.new && payload.new['status'] === 'approved') {
+          if (payload?.new?.['status'] === 'approved') {
             const comment = camelCaseKeys(payload.new);
             const stats = await getRecipeStats(supabase, recipeId);
             res.write(`data: ${JSON.stringify({ comment, stats })}\n\n`);

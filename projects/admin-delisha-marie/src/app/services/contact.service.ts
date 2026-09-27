@@ -12,6 +12,7 @@ export interface ContactMessage {
   is_archived: boolean;
   snoozed_until: string | null;
   deleted_at: string | null;
+  isSpam?: boolean;
   created_at: string;
 }
 

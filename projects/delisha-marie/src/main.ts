@@ -6,23 +6,22 @@ import { App } from './app/app';
 import { appConfig } from './app/app.config';
 import { AppEx, appConfigEx, isLive } from './app/coming-soon';
 
-const live = await isLive();
-if (!live) {
-  bootstrapApplication(AppEx, appConfigEx).catch((err) => console.error(err));
-} else {
-  inject();
-  injectSpeedInsights();
-  initBotId({
-    protect: [
-      {
-        path: '/api/subscriber',
-        method: 'POST',
-      },
-      {
-        path: '/api/recipes/*/comments',
-        method: 'POST',
-      },
-    ],
-  });
-  bootstrapApplication(App, appConfig).catch((err) => console.error(err));
-}
+inject();
+injectSpeedInsights();
+initBotId({
+  protect: [
+    {
+      path: '/api/subscriber',
+      method: 'POST',
+    },
+    {
+      path: '/api/recipes/*/comments',
+      method: 'POST',
+    },
+  ],
+});
+
+const options = (await isLive())
+  ? { app: App, config: appConfig }
+  : { app: AppEx, config: appConfigEx };
+bootstrapApplication(options.app, options.config).catch((err) => console.error(err));

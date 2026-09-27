@@ -15,7 +15,6 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { firstValueFrom } from 'rxjs';
 import { ColoredHeaderComponent } from '../../components/colored-header/colored-header';
-import { getApiUrl } from '../../utils/navigation';
 
 export interface ContactSubmissionPayload {
   name: string;
@@ -174,7 +173,7 @@ export class Contact {
           this.isSubmitting.set(true);
           const values = fields().value();
           try {
-            await firstValueFrom(this.http.post(getApiUrl('/api/contacts'), values));
+            await firstValueFrom(this.http.post('/api/contacts', values));
             this.snackBar.open(
               'Message sent successfully! Delisha will get back to you soon.',
               'Close',
@@ -184,6 +183,12 @@ export class Contact {
               },
             );
             this.userModel.set({ name: '', email: '', subject: '', message: '' });
+            fields().reset({
+              name: '',
+              email: '',
+              subject: '',
+              message: '',
+            });
           } catch (error) {
             console.error('Error submitting contact form:', error);
             this.snackBar.open('Failed to send message. Please try again later.', 'Close', {
@@ -191,12 +196,6 @@ export class Contact {
             });
           } finally {
             this.isSubmitting.set(false);
-            fields().reset({
-              name: '',
-              email: '',
-              subject: '',
-              message: '',
-            });
           }
         },
       },
