@@ -64,7 +64,7 @@ contactsRouter.get('/contacts/:id', async (req, res) => {
 
 contactsRouter.put('/contacts/:id', async (req, res) => {
   try {
-    const { is_read, is_archived, snoozed_until, deleted_at } = req.body;
+    const { is_read, is_archived, snoozed_until, deleted_at, isSpam } = req.body;
     const supabase = backendService.supabaseAdmin;
 
     const updateData: Record<string, unknown> = {};
@@ -72,6 +72,8 @@ contactsRouter.put('/contacts/:id', async (req, res) => {
     if (is_archived !== undefined) updateData['is_archived'] = is_archived;
     if (snoozed_until !== undefined) updateData['snoozed_until'] = snoozed_until;
     if (deleted_at !== undefined) updateData['deleted_at'] = deleted_at;
+    const spamVal = isSpam !== undefined ? isSpam : req.body['is_spam'];
+    if (spamVal !== undefined) updateData['isSpam'] = spamVal;
 
     const { data, error } = await supabase
       .from('contacts')
