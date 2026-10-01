@@ -34,14 +34,14 @@ app.use(
 app.use((req, res, next) => {
   angularApp
     .handle(req)
-    .then((response) => {
+    .then(async (response) => {
       if (response) {
         // Cache SSR HTML responses on Vercel Edge for fast page loads
         res.setHeader(
           'Cache-Control',
           'public, max-age=0, s-maxage=60, stale-while-revalidate=86400',
         );
-        writeResponseToNodeResponse(response, res);
+        await writeResponseToNodeResponse(response, res);
       } else {
         next();
       }

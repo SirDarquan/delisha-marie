@@ -77,23 +77,22 @@ export class RecipeService {
 
     let cached = this.recipeCache.get(normalizedSearch);
     if (!cached) {
-      const schemaPromise = this.schemaCache.get(normalizedSearch);
-      if (schemaPromise) {
-        cached = schemaPromise.then((schemaRecipe) => {
-          if (!schemaRecipe) {
-            return this.api.get<Recipe | null>(`/recipes/${normalizedSearch}`).catch(() => null);
+      const fetchRecipe = async (): Promise<Recipe | null> => {
+        const schemaPromise = this.schemaCache.get(normalizedSearch);
+        if (schemaPromise) {
+          const schemaRecipe = await schemaPromise;
+          if (schemaRecipe) {
+            return {
+              ...schemaRecipe,
+              navigation: schemaRecipe.navigation || { prev: null, next: null },
+            };
           }
-          const fullRecipe: Recipe = {
-            ...schemaRecipe,
-            navigation: schemaRecipe.navigation || { prev: null, next: null },
-          };
-          return fullRecipe;
-        });
-        this.recipeCache.set(normalizedSearch, cached);
-      } else {
-        cached = this.api.get<Recipe | null>(`/recipes/${normalizedSearch}`).catch(() => null);
-        this.recipeCache.set(normalizedSearch, cached);
-      }
+        }
+        return await this.api.get<Recipe | null>(`/recipes/${normalizedSearch}`).catch(() => null);
+      };
+
+      cached = fetchRecipe();
+      this.recipeCache.set(normalizedSearch, cached);
 
       setTimeout(() => {
         this.recipeCache.delete(normalizedSearch);
