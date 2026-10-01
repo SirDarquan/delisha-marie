@@ -139,11 +139,5 @@ export const routes: Routes = [
       data: { slug },
     },
   ]),
-  {
-    path: ':slug',
-    loadComponent: () => import('./pages/dynamic-page/dynamic-page').then((m) => m.DynamicPage),
-    title: dynamicPageResolver,
-    resolve: { seo: seoDynamicPageResolver, schema: schemaDynamicPageResolver },
-  },
   { path: '**', redirectTo: '' },
 ];
