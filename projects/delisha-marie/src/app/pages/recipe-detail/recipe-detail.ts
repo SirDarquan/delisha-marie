@@ -10,10 +10,10 @@ import {
   signal,
   ViewEncapsulation,
 } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { DomSanitizer } from '@angular/platform-browser';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { extractYouTubeVideoId } from '@dm/library';
 import { BreadcrumbItem, Breadcrumbs } from '../../components/breadcrumbs/breadcrumbs';
 import { RecipeEquipment } from '../../components/recipe-equipment/recipe-equipment';
@@ -190,13 +190,19 @@ export class RecipeDetail {
   slug = input<string | null | undefined>(undefined);
   page = input<string>();
 
+  private readonly route = inject(ActivatedRoute, { optional: true });
   private readonly recipeService = inject(RecipeService);
+  private readonly _params = this.route ? toSignal(this.route.params) : signal(undefined);
+
+  readonly effectiveSlug = computed(
+    () => this.slug() ?? (this._params()?.['slug'] as string | null | undefined),
+  );
   commentCountOverride = signal<number | null>(null);
   ratingOverride = signal<number | null>(null);
   ratingCountOverride = signal<number | null>(null);
 
   readonly recipeResource = resource({
-    params: () => (this.recipe() !== undefined ? null : this.slug()),
+    params: () => (this.recipe() !== undefined ? null : this.effectiveSlug()),
     loader: async ({ params: slug }) => {
       if (!slug) return null;
       return await this.recipeService.getRecipeBySlug(slug);
@@ -208,9 +214,15 @@ export class RecipeDetail {
     return directRecipe !== undefined ? directRecipe : this.recipeResource.value();
   });
 
-  readonly isLoading = computed(
-    () => this.recipe() === undefined && this.recipeResource.isLoading(),
-  );
+  readonly isLoading = computed(() => {
+    if (this.recipe() !== undefined) {
+      return false;
+    }
+    if (this.recipeResource.isLoading()) {
+      return true;
+    }
+    return this.recipeResource.value() === undefined;
+  });
 
   readonly displayRecipe = computed(() => {
     const r = this.activeRecipe();
@@ -240,13 +252,9 @@ export class RecipeDetail {
     return typeof idx === 'number' ? r.breadcrumbs.items[idx] : [];
   });
 
-  private readonly sanitizer = inject(DomSanitizer);
-
   readonly safeVideoUrl = computed(() => {
     const id = this.videoId();
-    return id
-      ? this.sanitizer.bypassSecurityTrustResourceUrl(`https://www.youtube.com/embed/${id}`)
-      : null;
+    return id ? `https://www.youtube.com/embed/${id}` : null;
   });
 
   readonly optimizedContent = useOptimizedContent(computed(() => this.activeRecipe()?.content));
