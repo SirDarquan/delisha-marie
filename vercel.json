@@ -5,20 +5,32 @@
       "destination": "/api/config"
     },
     {
-      "source": "/robots.txt",
+      "source": "/kitchen/config",
+      "destination": "/api/config"
+    },
+    {
+      "source": "/kitchen/robots.txt",
       "destination": "/api/robots"
     },
     {
-      "source": "/sitemap(.*).xml",
+      "source": "/kitchen/sitemap(.*).xml",
       "destination": "/api/sitemap"
+    },
+    {
+      "source": "/kitchen/api/recipes/(.*)",
+      "destination": "/api/recipes?slug=$1"
     },
     {
       "source": "/api/recipes/(.*)",
       "destination": "/api/recipes?slug=$1"
     },
     {
+      "source": "/kitchen/api/pages/(.*)",
+      "destination": "/api/pages?slug=$1"
+    },
+    {
       "source": "/api/pages/(.*)",
-      "destination": "/api/pages?slug=$1" 
+      "destination": "/api/pages?slug=$1"
     },
     {
       "source": "/149e9513-01fa-4fb0-aad4-566afd725d1b/2d206a39-8ed7-437e-a3be-862e0f06eea3/a-4-a/c.js",
@@ -29,16 +41,12 @@
       "destination": "https://api.vercel.com/bot-protection/v1/proxy/:path*"
     },
     {
-      "source": "/kitchen/:path*.:ext",
-      "destination": "/kitchen/browser/:path*.:ext"
-    },
-    {
-      "source": "/kitchen",
-      "destination": "/api?path=/"
+      "source": "/kitchen/(.*\\.[a-zA-Z0-9]+)",
+      "destination": "/kitchen/browser/$1"
     },
     {
       "source": "/kitchen/",
-      "destination": "/api?path=/"
+      "destination": "/api?path=/kitchen/"
     },
     {
       "source": "/kitchen/:path*",
@@ -57,6 +65,15 @@
         {
           "key": "X-Frame-Options",
           "value": "SAMEORIGIN"
+        }
+      ]
+    },
+    {
+      "source": "/kitchen/manifest.webmanifest",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/manifest+json"
         }
       ]
     }

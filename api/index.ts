@@ -8,26 +8,35 @@ let handlerPromise: Promise<SsrModule> | null = null;
 
 async function getHandler() {
   // Dynamic import evaluated at runtime so TypeScript doesn't require dist/ during build
-handlerPromise ??= new Function(
-      'specifier',
-      'return import(specifier)',
-    )('../dist/kitchen/server/server.mjs') as Promise<SsrModule>;
+  handlerPromise ??= new Function(
+    'specifier',
+    'return import(specifier)',
+  )('../dist/kitchen/server/server.mjs') as Promise<SsrModule>;
   return (await handlerPromise).reqHandler;
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const originalUri = req.headers['x-forwarded-uri'] as string | undefined;
   const pathParam = req.query['path'];
+  const rawPath = typeof pathParam === 'string' ? pathParam : '';
 
   if (originalUri?.startsWith('/kitchen')) {
     req.url = originalUri;
-  } else if (typeof pathParam === 'string') {
-    const trimmed = pathParam.replace(/^\/+/, '');
+  } else if (rawPath) {
+    const trimmed = rawPath.replace('/kitchen', '').replace(/^\/+/, '');
     req.url = trimmed ? `/kitchen/${trimmed}` : '/kitchen';
   } else {
-    req.url = '/kitchen';
+    req.url = '/kitchen/';
   }
+  (req as unknown as { originalUrl: string }).originalUrl = req.url;
 
-  const ssrHandler = await getHandler();
-  return ssrHandler(req, res);
+  try {
+    const ssrHandler = await getHandler();
+    return await ssrHandler(req, res);
+  } catch (err) {
+    console.error('SSR Handler Error:', err);
+    if (!res.headersSent) {
+      return res.status(500).send('Internal Server Error');
+    }
+  }
 }
