@@ -12,6 +12,7 @@ const app = express();
 const angularApp = new AngularNodeAppEngine({
   allowedHosts: ['localhost', '127.0.0.1', '[::1]', '*.vercel.app'],
   trustProxyHeaders: [
+    'forwarded',
     'x-forwarded-port',
     'x-forwarded-proto',
     'x-forwarded-host',
