@@ -503,7 +503,7 @@ describe('schemaResolver', () => {
     it('should use non-root baseHref from PathLocationStrategy in schemaRecipeResolver', async () => {
       const spy = vi
         .spyOn(PathLocationStrategy.prototype, 'getBaseHref')
-        .mockReturnValue('/kitchen/');
+        .mockReturnValue('/kitchen');
 
       const mockRecipe = createMockRecipe({
         title: 'Recipe BaseHref',

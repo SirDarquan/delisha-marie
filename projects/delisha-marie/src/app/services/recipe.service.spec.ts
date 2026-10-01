@@ -579,7 +579,7 @@ describe('RecipeService', () => {
       vi.useFakeTimers();
       try {
         const mockSeo = { title: 'SEO Title' };
-        const promise = service.getSEOBySlug('seo-test');
+        const promise = service.getSeoBySlug('seo-test');
         const req = httpMock.expectOne('/api/recipes/seo-test/seo');
         req.flush(mockSeo);
         const result = await promise;

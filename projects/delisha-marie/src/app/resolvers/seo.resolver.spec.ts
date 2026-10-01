@@ -344,7 +344,7 @@ describe('Seo Resolvers', () => {
   describe('seoRecipeResolver', () => {
     beforeEach(() => {
       vi.mocked(recipeService.getRecipeBySlug).mockClear();
-      vi.mocked(recipeService.getSEOBySlug).mockClear();
+      vi.mocked(recipeService.getSeoBySlug).mockClear();
     });
 
     it('should resolve recipe SEO data', async () => {
@@ -357,7 +357,7 @@ describe('Seo Resolvers', () => {
         imageHeight: '800',
       };
 
-      vi.mocked(recipeService.getSEOBySlug).mockResolvedValue(mockSeo);
+      vi.mocked(recipeService.getSeoBySlug).mockResolvedValue(mockSeo);
 
       const route = {
         paramMap: { get: () => 'test-slug' },
@@ -368,7 +368,7 @@ describe('Seo Resolvers', () => {
         return seoRecipeResolver(route, state);
       });
 
-      expect(recipeService.getSEOBySlug).toHaveBeenCalledWith('test-slug');
+      expect(recipeService.getSeoBySlug).toHaveBeenCalledWith('test-slug');
       expect(seoService.setSEO).toHaveBeenCalledWith(
         expect.objectContaining({
           title: "Title | Delisha Marie's Kitchen",
@@ -391,7 +391,7 @@ describe('Seo Resolvers', () => {
     });
 
     it('should return 404 SEO if recipe not found', async () => {
-      vi.mocked(recipeService.getSEOBySlug).mockResolvedValue(null);
+      vi.mocked(recipeService.getSeoBySlug).mockResolvedValue(null);
 
       const route = {
         paramMap: { get: () => 'unknown' },
@@ -412,7 +412,7 @@ describe('Seo Resolvers', () => {
         keywords: [],
       };
 
-      vi.mocked(recipeService.getSEOBySlug).mockResolvedValue(mockSeo);
+      vi.mocked(recipeService.getSeoBySlug).mockResolvedValue(mockSeo);
 
       const route = {
         paramMap: { get: () => 'no-desc-no-img' },
@@ -435,7 +435,7 @@ describe('Seo Resolvers', () => {
       const spy = vi
         .spyOn(PathLocationStrategy.prototype, 'getBaseHref')
         .mockReturnValue('/kitchen');
-      vi.mocked(recipeService.getSEOBySlug).mockResolvedValue({
+      vi.mocked(recipeService.getSeoBySlug).mockResolvedValue({
         title: 'Title',
         description: 'Desc',
         image: '/img.jpg',

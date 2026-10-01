@@ -127,10 +127,6 @@ export class RecipeService {
     return cached;
   }
 
-  getSEOBySlug(slug: string, refresh = false): Promise<RecipeSeoData | null> {
-    return this.getSeoBySlug(slug, refresh);
-  }
-
   /**
    * Fetches a single recipe JSON-LD Schema by its slug.
    */
