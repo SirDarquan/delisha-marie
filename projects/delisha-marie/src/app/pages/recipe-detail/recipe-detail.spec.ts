@@ -277,7 +277,7 @@ describe('RecipeDetail', () => {
     }
   });
 
-  it('should compute videoId and safeVideoUrl correctly', async () => {
+  it('should compute videoId correctly', async () => {
     const customRecipe = {
       ...mockRecipe,
       slug: 'video-recipe',

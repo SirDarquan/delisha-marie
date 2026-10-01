@@ -13,6 +13,7 @@ import {
 import { toSignal } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { DomSanitizer } from '@angular/platform-browser';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { extractYouTubeVideoId } from '@dm/library';
 import { BreadcrumbItem, Breadcrumbs } from '../../components/breadcrumbs/breadcrumbs';
@@ -252,9 +253,13 @@ export class RecipeDetail {
     return typeof idx === 'number' ? r.breadcrumbs.items[idx] : [];
   });
 
+  private readonly sanitizer = inject(DomSanitizer);
+
   readonly safeVideoUrl = computed(() => {
     const id = this.videoId();
-    return id ? `https://www.youtube.com/embed/${id}` : null;
+    return id
+      ? this.sanitizer.bypassSecurityTrustResourceUrl(`https://www.youtube.com/embed/${id}`)
+      : null;
   });
 
   readonly optimizedContent = useOptimizedContent(computed(() => this.activeRecipe()?.content));
