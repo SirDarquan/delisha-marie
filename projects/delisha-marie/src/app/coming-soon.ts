@@ -20,7 +20,7 @@ export const appConfigEx: ApplicationConfig = {
   providers: [
     provideZonelessChangeDetection(),
     provideBrowserGlobalErrorListeners(),
-    provideBaseHref('/kitchen'),
+    provideBaseHref('/kitchen/'),
   ],
 };
 
