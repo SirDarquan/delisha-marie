@@ -35,7 +35,7 @@ export const seoRecipeResolver: ResolveFn<SeoContent> = async (route, state) => 
     seoService.setSEO(seoConfig404);
     return seoConfig404;
   }
-  const seo = await recipeService.getSEOBySlug(slug);
+  const seo = await recipeService.getSeoBySlug(slug);
 
   if (!seo) {
     seoService.setSEO(seoConfig404);

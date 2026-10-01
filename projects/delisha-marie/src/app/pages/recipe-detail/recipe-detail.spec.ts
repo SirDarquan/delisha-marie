@@ -4,7 +4,6 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Recipe, RecipeService } from '../../services/recipe.service';
-import { WINDOW } from '../../services/global-tokens';
 import { createMockRecipe } from '../../utils/test-recipe';
 import { RecipeDetail } from './recipe-detail';
 import { By } from '@angular/platform-browser';
@@ -66,37 +65,41 @@ describe('RecipeDetail', () => {
       getRecipeEquipment: vi.fn().mockResolvedValue([]),
     };
 
-    const windowMock = {
-      location: { hash: '' },
-      scrollY: 0,
-      scrollTo: vi.fn(),
-      document: {
-        getElementById: vi.fn().mockReturnValue(null),
-      },
-    };
-
     await TestBed.configureTestingModule({
       imports: [RecipeDetail],
-      providers: [
-        provideRouter([]),
-        { provide: RecipeService, useValue: recipeServiceMock },
-        { provide: WINDOW, useValue: windowMock },
-      ],
+      providers: [provideRouter([]), { provide: RecipeService, useValue: recipeServiceMock }],
     }).compileComponents();
 
     fixture = TestBed.createComponent(RecipeDetail);
     component = fixture.componentInstance;
   });
 
+  async function loadRecipe(recipe: Recipe | null, slug?: string) {
+    recipeServiceMock.getRecipeBySlug.mockResolvedValue(recipe);
+    const targetSlug = slug ?? recipe?.slug ?? 'test-recipe';
+    if (component.slug() === targetSlug) {
+      component.recipeResource.reload();
+    } else {
+      fixture.componentRef.setInput('slug', targetSlug);
+    }
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+  }
+
   it('should create', () => {
     expect(component).toBeTruthy();
   });
 
+  it('should render skeleton loader during initial state before slug is loaded', () => {
+    fixture.detectChanges();
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.querySelector('.skeleton')).toBeTruthy();
+    expect(compiled.textContent).not.toContain('Recipe not found');
+  });
+
   it('should render recipe details when recipe is provided', async () => {
-    fixture.componentRef.setInput('recipe', mockRecipe);
-    fixture.detectChanges();
-    await new Promise((r) => setTimeout(r, 0));
-    fixture.detectChanges();
+    await loadRecipe(mockRecipe);
 
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.querySelector('dml-recipe-hero')).toBeTruthy();
@@ -110,19 +113,14 @@ describe('RecipeDetail', () => {
   }, 30000);
 
   it('should render "Recipe not found" when recipe is null', async () => {
-    fixture.componentRef.setInput('recipe', null);
-    fixture.detectChanges();
-    await new Promise((r) => setTimeout(r, 0));
-    fixture.detectChanges();
+    await loadRecipe(null, 'not-found');
 
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.textContent).toContain('Recipe not found');
   });
 
   it('should generate correct breadcrumbs with all levels', async () => {
-    fixture.componentRef.setInput('recipe', mockRecipe);
-    fixture.detectChanges();
-    await new Promise((r) => setTimeout(r, 0));
+    await loadRecipe(mockRecipe);
 
     const breadcrumbs = component.breadcrumbItems();
 
@@ -136,6 +134,7 @@ describe('RecipeDetail', () => {
   it('should handle breadcrumbs without subcategory', async () => {
     const customRecipe = {
       ...mockRecipe,
+      slug: 'no-subcat',
       breadcrumbs: {
         main: 0,
         items: [
@@ -148,9 +147,7 @@ describe('RecipeDetail', () => {
         ],
       },
     };
-    fixture.componentRef.setInput('recipe', customRecipe);
-    fixture.detectChanges();
-    await new Promise((r) => setTimeout(r, 0));
+    await loadRecipe(customRecipe);
 
     const breadcrumbs = component.breadcrumbItems();
 
@@ -162,6 +159,7 @@ describe('RecipeDetail', () => {
   it('should handle breadcrumbs without category', async () => {
     const customRecipe = {
       ...mockRecipe,
+      slug: 'no-cat',
       breadcrumbs: {
         main: 0,
         items: [
@@ -173,9 +171,7 @@ describe('RecipeDetail', () => {
         ],
       },
     };
-    fixture.componentRef.setInput('recipe', customRecipe);
-    fixture.detectChanges();
-    await new Promise((r) => setTimeout(r, 0));
+    await loadRecipe(customRecipe);
 
     const breadcrumbs = component.breadcrumbItems();
 
@@ -185,11 +181,12 @@ describe('RecipeDetail', () => {
   });
 
   it('should handle breadcrumbs with undefined content', async () => {
-    const customRecipe = { ...mockRecipe, content: undefined as unknown as string };
-    fixture.componentRef.setInput('recipe', customRecipe);
-    fixture.detectChanges();
-    await new Promise((r) => setTimeout(r, 0));
-    fixture.detectChanges();
+    const customRecipe = {
+      ...mockRecipe,
+      slug: 'undef-content',
+      content: undefined as unknown as string,
+    };
+    await loadRecipe(customRecipe);
 
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.querySelector('.recipe-story')).toBeNull();
@@ -198,6 +195,7 @@ describe('RecipeDetail', () => {
   it('should return empty array if breadcrumb main index is undefined', async () => {
     const customRecipe = {
       ...mockRecipe,
+      slug: 'undef-main',
       breadcrumbs: {
         main: undefined as unknown as number,
         items: [
@@ -208,26 +206,21 @@ describe('RecipeDetail', () => {
         ],
       },
     };
-    fixture.componentRef.setInput('recipe', customRecipe);
-    fixture.detectChanges();
-    await new Promise((r) => setTimeout(r, 0));
+    await loadRecipe(customRecipe);
 
     const breadcrumbs = component.breadcrumbItems();
     expect(breadcrumbs).toHaveLength(0);
   });
 
   it('should return empty array if recipe is null', async () => {
-    fixture.componentRef.setInput('recipe', null);
-    fixture.detectChanges();
-    await new Promise((r) => setTimeout(r, 0));
+    await loadRecipe(null, 'null-recipe');
 
     const breadcrumbs = component.breadcrumbItems();
     expect(breadcrumbs).toHaveLength(0);
   });
 
-  it('should update overrides when statsChange is emitted', () => {
-    fixture.componentRef.setInput('recipe', mockRecipe);
-    fixture.detectChanges();
+  it('should update overrides when statsChange is emitted', async () => {
+    await loadRecipe(mockRecipe);
 
     const commentsEl = fixture.debugElement.query(By.css('dml-recipe-comments'));
     commentsEl.triggerEventHandler('statsChange', {
@@ -241,9 +234,8 @@ describe('RecipeDetail', () => {
     expect(component.ratingOverride()).toBe(4.8);
   });
 
-  it('should update commentCountOverride but not rating when statsChange has no rating', () => {
-    fixture.componentRef.setInput('recipe', mockRecipe);
-    fixture.detectChanges();
+  it('should update commentCountOverride but not rating when statsChange has no rating', async () => {
+    await loadRecipe(mockRecipe);
 
     const commentsEl = fixture.debugElement.query(By.css('dml-recipe-comments'));
     commentsEl.triggerEventHandler('statsChange', { reviewCount: 43, ratingCount: 0, rating: 0 });
@@ -269,7 +261,9 @@ describe('RecipeDetail', () => {
 
     try {
       const newFixture = TestBed.createComponent(RecipeDetail);
-      newFixture.componentRef.setInput('recipe', mockRecipe);
+      newFixture.componentRef.setInput('slug', mockRecipe.slug);
+      newFixture.detectChanges();
+      await newFixture.whenStable();
       newFixture.detectChanges();
 
       await new Promise((r) => setTimeout(r, 150));
@@ -283,11 +277,13 @@ describe('RecipeDetail', () => {
     }
   });
 
-  it('should compute videoId and safeVideoUrl correctly', async () => {
-    const customRecipe = { ...mockRecipe, video: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' };
-    fixture.componentRef.setInput('recipe', customRecipe);
-    fixture.detectChanges();
-    await new Promise((r) => setTimeout(r, 0));
+  it('should compute videoId correctly', async () => {
+    const customRecipe = {
+      ...mockRecipe,
+      slug: 'video-recipe',
+      video: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+    };
+    await loadRecipe(customRecipe);
 
     expect(component.videoId()).toBe('dQw4w9WgXcQ');
     const safeUrl = component.safeVideoUrl();
@@ -295,24 +291,24 @@ describe('RecipeDetail', () => {
     // In test environment without proper DomSanitizer mocking, the object might be complex,
     // but we can verify it's not null. We can also test the null case.
 
-    fixture.componentRef.setInput('recipe', mockRecipe); // no video
-    fixture.detectChanges();
+    await loadRecipe(mockRecipe); // no video
     expect(component.videoId()).toBeNull();
     expect(component.safeVideoUrl()).toBeNull();
   });
 
   describe('optimizedContent', () => {
-    it('should return null if recipe is undefined', () => {
-      fixture.componentRef.setInput('recipe', null);
-      fixture.detectChanges();
+    it('should return null if recipe is undefined', async () => {
+      await loadRecipe(null, 'null-recipe');
       expect(component.optimizedContent()).toBeNull();
     });
 
     it('should optimize relative images with srcset and lazy loading', async () => {
-      const customRecipe = { ...mockRecipe, content: '<img src="/images/pic.png" alt="Pic">' };
-      fixture.componentRef.setInput('recipe', customRecipe);
-      fixture.detectChanges();
-      await new Promise((r) => setTimeout(r, 0));
+      const customRecipe = {
+        ...mockRecipe,
+        slug: 'rel-img',
+        content: '<img src="/images/pic.png" alt="Pic">',
+      };
+      await loadRecipe(customRecipe);
 
       const compiled = fixture.nativeElement as HTMLElement;
       const img = compiled.querySelector('.story img') as HTMLImageElement;
@@ -326,11 +322,10 @@ describe('RecipeDetail', () => {
     it('should add lazy loading to absolute images but not srcset', async () => {
       const customRecipe = {
         ...mockRecipe,
+        slug: 'abs-img',
         content: '<img src="https://example.com/pic.png" alt="Pic">',
       };
-      fixture.componentRef.setInput('recipe', customRecipe);
-      fixture.detectChanges();
-      await new Promise((r) => setTimeout(r, 0));
+      await loadRecipe(customRecipe);
 
       const compiled = fixture.nativeElement as HTMLElement;
       const img = compiled.querySelector('.story img') as HTMLImageElement;
@@ -342,10 +337,12 @@ describe('RecipeDetail', () => {
 
     it('should ignore data: URIs', async () => {
       const dataUri = 'data:image/png;base64,iVBORw0KGgo=';
-      const customRecipe = { ...mockRecipe, content: `<img src="${dataUri}" alt="Pic">` };
-      fixture.componentRef.setInput('recipe', customRecipe);
-      fixture.detectChanges();
-      await new Promise((r) => setTimeout(r, 0));
+      const customRecipe = {
+        ...mockRecipe,
+        slug: 'data-uri-img',
+        content: `<img src="${dataUri}" alt="Pic">`,
+      };
+      await loadRecipe(customRecipe);
 
       const compiled = fixture.nativeElement as HTMLElement;
       const img = compiled.querySelector('.story img') as HTMLImageElement;
@@ -356,10 +353,8 @@ describe('RecipeDetail', () => {
     });
 
     it('should handle images without src attribute safely', async () => {
-      const customRecipe = { ...mockRecipe, content: '<img alt="Pic">' };
-      fixture.componentRef.setInput('recipe', customRecipe);
-      fixture.detectChanges();
-      await new Promise((r) => setTimeout(r, 0));
+      const customRecipe = { ...mockRecipe, slug: 'no-src-img', content: '<img alt="Pic">' };
+      await loadRecipe(customRecipe);
 
       const compiled = fixture.nativeElement as HTMLElement;
       const img = compiled.querySelector('.story img') as HTMLImageElement;

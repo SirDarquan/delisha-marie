@@ -57,11 +57,11 @@ describe('Main Blog Global Navigation', () => {
     });
   });
 
-  it('should successfully fallback to a 404 page if an unknown URL is specified', () => {
-    // Router matches ':slug' and shows a 404 page if not found in db
+  // Updated by Cypress Author on 2026-10-01 for wildcard redirect to home
+  it('should successfully fallback to Home page if an unknown URL is specified', () => {
+    // Router redirects '**' back to ''
     cy.visit('/non-existent-route-goes-here');
-    cy.title().should('eq', "Page Not Found | Delisha Marie's Kitchen");
-    cy.get('dm-dynamic-page').should('be.visible');
-    cy.contains('Page Not Found').should('be.visible');
+    cy.url().should('eq', `${Cypress.config().baseUrl}/`);
+    cy.title().should('eq', "Home | Delisha Marie's Kitchen");
   });
 });

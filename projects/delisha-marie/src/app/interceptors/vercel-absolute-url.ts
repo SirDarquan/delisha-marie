@@ -1,6 +1,6 @@
+import { isPlatformServer } from '@angular/common';
 import { HttpHandlerFn, HttpInterceptorFn, HttpRequest } from '@angular/common/http';
 import { inject, PLATFORM_ID } from '@angular/core';
-import { isPlatformServer } from '@angular/common';
 
 export const vercelAbsoluteUrlInterceptor: HttpInterceptorFn = (
   req: HttpRequest<unknown>,
@@ -8,7 +8,7 @@ export const vercelAbsoluteUrlInterceptor: HttpInterceptorFn = (
 ) => {
   const platformId = inject(PLATFORM_ID);
 
-  if (req.url.startsWith('/api/')) {
+  if (req.url.startsWith('/api/') || req.url.startsWith('/kitchen/api/')) {
     // Only prepend absolute URL during SSR. Browsers handle relative paths automatically.
     if (isPlatformServer(platformId)) {
       let env: Record<string, string | undefined> = {};

@@ -73,9 +73,8 @@ export const routes: Routes = [
     path: 'recipe/:slug/print',
     title: recipeTitleResolver,
     loadComponent: () => import('./pages/recipe-print/recipe-print').then((m) => m.RecipePrint),
-    resolve: {
-      recipe: recipeResolver,
-    },
+    resolve: { recipe: recipeResolver },
+    data: { content: 'noindex,nofollow' },
   },
   {
     path: 'recipe/:slug',
@@ -131,11 +130,14 @@ export const routes: Routes = [
     resolve: { seo: seoDynamicPageResolver, schema: schemaDynamicPageResolver },
     data: { slug: 'contact', content: 'noindex,nofollow' },
   },
-  {
-    path: ':slug',
-    loadComponent: () => import('./pages/dynamic-page/dynamic-page').then((m) => m.DynamicPage),
-    title: dynamicPageResolver,
-    resolve: { seo: seoDynamicPageResolver, schema: schemaDynamicPageResolver },
-  },
+  ...['faq', 'privacy-policy'].flatMap((slug) => [
+    {
+      path: slug,
+      loadComponent: () => import('./pages/dynamic-page/dynamic-page').then((m) => m.DynamicPage),
+      title: dynamicPageResolver,
+      resolve: { seo: seoDynamicPageResolver, schema: schemaDynamicPageResolver },
+      data: { slug },
+    },
+  ]),
   { path: '**', redirectTo: '' },
 ];

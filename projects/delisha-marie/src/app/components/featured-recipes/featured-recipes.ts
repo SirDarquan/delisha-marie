@@ -1,10 +1,11 @@
-import { NgOptimizedImage } from '@angular/common';
+import { isPlatformBrowser, NgOptimizedImage } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
   computed,
   inject,
   input,
+  PLATFORM_ID,
   resource,
   ViewEncapsulation,
 } from '@angular/core';
@@ -102,6 +103,7 @@ export class FeaturedRecipes {
   readonly link = input.required<string>();
 
   private readonly recipeService = inject(RecipeService);
+  private readonly platformId = inject(PLATFORM_ID);
 
   readonly categorySlug = computed(() => this.link().split('/')[2]);
   readonly subCategorySlug = computed(() => this.link().split('/')[3]);
@@ -120,11 +122,15 @@ export class FeaturedRecipes {
 
   protected readonly _recipeResource = resource({
     params: () => this._dataTrigger(),
-    loader: ({ params: t }) =>
-      this.recipeService.getRecipes(1, 4, t.method, t.cat, t.sub).catch(() => ({
+    loader: ({ params: t }) => {
+      if (!isPlatformBrowser(this.platformId)) {
+        return Promise.resolve({ items: [], total: 0 });
+      }
+      return this.recipeService.getRecipes(1, 4, t.method, t.cat, t.sub).catch(() => ({
         items: [],
         total: 0,
-      })),
+      }));
+    },
   });
 
   readonly recipes = computed(() => this._recipeResource.value()?.items || []);

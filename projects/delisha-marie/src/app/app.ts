@@ -2,7 +2,6 @@ import { ViewportScroller } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
-  PLATFORM_ID,
   ViewEncapsulation,
   effect,
   inject,
@@ -48,7 +47,6 @@ import { Newsletter } from './components/newsletter/newsletter';
 })
 export class App {
   private readonly viewportScroller = inject(ViewportScroller);
-  private readonly platformId = inject(PLATFORM_ID);
   private readonly router = inject(Router);
 
   readonly isPrintPage = signal(false);

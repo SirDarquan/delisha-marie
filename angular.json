@@ -49,10 +49,11 @@
             "production": {
               "outputPath": {
                 "base": "dist/kitchen",
-                "browser": "browser"
+                "browser": "browser",
+                "server": "server"
               },
               "deployUrl": "/kitchen/",
-              "baseHref": "/kitchen",
+              "baseHref": "/kitchen/",
               "budgets": [
                 {
                   "type": "initial",
