@@ -16,7 +16,8 @@ export const seoResolver: ResolveFn<Partial<SeoContent>> = (route, state) => {
 
   // Construct perfect canonical URL
   const path = state.url.split('?')[0].split('#')[0];
-  const baseHref = locationStrategy.getBaseHref() === '/' ? '' : locationStrategy.getBaseHref().replace(/\/$/,'');
+  const baseHref =
+    locationStrategy.getBaseHref() === '/' ? '' : locationStrategy.getBaseHref().replace(/\/$/, '');
   const url = `${origin}${baseHref}${path === '/' ? '' : path}`;
   const siteName = "Delisha Marie's Kitchen";
   const title = route.paramMap.get('slug') || route.title;
@@ -81,7 +82,8 @@ export const seoRecipeListResolver: ResolveFn<SeoContent> = (route, state) => {
   let url = route.routeConfig?.path?.split('/')[0] || '';
 
   const recipeList = recipeListService.getInfo({ url, category, subCategory });
-  const baseHref = locationStrategy.getBaseHref() === '/' ? '' : locationStrategy.getBaseHref().replace(/\/$/,'');
+  const baseHref =
+    locationStrategy.getBaseHref() === '/' ? '' : locationStrategy.getBaseHref().replace(/\/$/, '');
   url = `${origin}${baseHref}${path}`;
   const resolvedSeo = { ...resolveDynamicOrigin(recipeList, origin), url, siteName };
 
@@ -104,7 +106,8 @@ export const seoDynamicPageResolver: ResolveFn<SeoContent> = async (route, state
   const path = state.url.split('?')[0].split('#')[0];
   const siteName = "Delisha Marie's Kitchen";
   const slug = route.paramMap.get('slug') || route.data?.['slug'] || undefined;
-  const appBaseHref = locationStrategy.getBaseHref() === '/' ? '' : locationStrategy.getBaseHref().replace(/\/$/,'');
+  const appBaseHref =
+    locationStrategy.getBaseHref() === '/' ? '' : locationStrategy.getBaseHref().replace(/\/$/, '');
   const url = `${origin}${appBaseHref}${path}`;
 
   const seoConfig404: SeoContent = {
