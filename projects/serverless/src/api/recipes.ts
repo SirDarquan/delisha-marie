@@ -64,11 +64,32 @@ interface FormattedRecipe {
   [key: string]: unknown;
 }
 
+const LIST_RECIPE_FIELDS = 'id,title,description,slug,image,status,created_at,the_best,favorite';
+
+const SINGLE_RECIPE_SELECT = `
+  id,title,slug,description,content,image,image_width,image_height,image_type,
+  prep_time,cook_time,total_time,yield,author,status,the_best,favorite,
+  cuisine,course,method,nutrition,keywords,notes,video,source,likes,
+  ingredients,instructions,created_at,updated_at,
+  recipe_categories (
+    categories (id, name, url)
+  ),
+  recipe_methods (
+    methods (name)
+  ),
+  recipe_holidays (
+    holidays (name)
+  ),
+  recipe_special_diets (
+    special_diets (name)
+  )
+`;
+
 function getSelectString(method: string, category: string): string {
-  const labels = 'id,title,description,slug,image';
+  const labels = LIST_RECIPE_FIELDS;
   if (!category) {
     return `
-      ${labels},status,created_at,the_best,
+      ${labels},
       recipe_categories (
         categories (id, name, url)
       ),
@@ -85,7 +106,7 @@ function getSelectString(method: string, category: string): string {
   }
   if (method === 'recipes' || method === 'the-best-recipes') {
     return `
-      *,
+      ${labels},
       recipe_categories!inner (
         categories!inner (id, name, url)
       ),
@@ -172,7 +193,7 @@ function getSelectString(method: string, category: string): string {
     `;
   }
   return `
-    *,
+    ${labels},
     recipe_categories (
       categories (id, name, url)
     ),
@@ -420,90 +441,107 @@ async function getAdjacentRecipe(
   return next;
 }
 
-async function getBreadcrumbs(
+async function getRecipeNavigation(
   supabase: SupabaseClient,
   recipeId: string,
-  formatted: FormattedRecipe,
+): Promise<{
+  prev: { title: string; slug: string } | null;
+  next: { title: string; slug: string } | null;
+}> {
+  const [prev, next] = await Promise.all([
+    getAdjacentRecipe(supabase, recipeId, 'prev'),
+    getAdjacentRecipe(supabase, recipeId, 'next'),
+  ]);
+  return { prev, next };
+}
+
+function formatCategoryLabel(segment: string): string {
+  if (segment === 'the-best-recipes') return 'The Best Recipes';
+  if (segment === 'recipes') return 'Recipes';
+  return segment
+    .split('-')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
+}
+
+function buildBreadcrumbs(
+  recipe: { title: string; slug: string; the_best?: boolean },
   existingCategories?: CategoryRelation[] | null,
-): Promise<{ main: number; items: { label: string; url?: string }[][] }> {
-  let categories: CategoryInfo[];
+): { main: number; items: { label: string; url?: string }[][] } {
+  let categories: CategoryInfo[] = [];
 
   if (existingCategories) {
     categories = existingCategories
       .map((rc) => rc.categories)
-      .filter((cat): cat is CategoryInfo => Boolean(cat?.name && cat.url));
-  } else {
-    const { data: recipeCatsData, error: catsError } = await supabase
-      .from('recipe_categories')
-      .select('categories (id, name, url)')
-      .eq('recipe_id', recipeId);
-    if (catsError) throw catsError;
-
-    categories = (recipeCatsData || [])
-      .map((rc) => (rc as unknown as CategoryRelation).categories)
       .filter((cat): cat is CategoryInfo => Boolean(cat?.name && cat.url));
   }
 
   const breadcrumbItems: { label: string; url?: string }[][] = [];
 
   if (categories.length === 0) {
-    const mainLabel = formatted.the_best ? 'The Best Recipes' : 'Recipes';
-    const mainUrl = formatted.the_best ? '/the-best-recipes' : '/recipes';
+    const mainLabel = recipe.the_best ? 'The Best Recipes' : 'Recipes';
+    const mainUrl = recipe.the_best ? '/the-best-recipes' : '/recipes';
     breadcrumbItems.push([
       { label: 'Home', url: '/' },
       { label: mainLabel, url: mainUrl },
-      { label: formatted.title, url: '/recipe/' + formatted.slug },
+      { label: recipe.title, url: '/recipe/' + recipe.slug },
     ]);
     return { main: 0, items: breadcrumbItems };
   }
 
   categories.forEach((cat) => {
-    const isBest = cat.url.startsWith('/the-best-recipes');
-    const mainLabel = isBest ? 'The Best Recipes' : 'Recipes';
-    const mainUrl = isBest ? '/the-best-recipes' : '/recipes';
+    const trail: { label: string; url?: string }[] = [{ label: 'Home', url: '/' }];
+    const parts = cat.url.split('/').filter(Boolean);
 
-    breadcrumbItems.push([
-      { label: 'Home', url: '/' },
-      { label: mainLabel, url: mainUrl },
-      { label: cat.name, url: cat.url },
-      { label: formatted.title, url: '/recipe/' + formatted.slug },
-    ]);
+    let currentPath = '';
+    for (let i = 0; i < parts.length; i++) {
+      const segment = parts[i];
+      currentPath += '/' + segment;
+      const label = i === parts.length - 1 ? cat.name : formatCategoryLabel(segment);
+      trail.push({ label, url: currentPath });
+    }
+
+    trail.push({ label: recipe.title, url: '/recipe/' + recipe.slug });
+    breadcrumbItems.push(trail);
   });
 
-  const prefixUrl = formatted.the_best ? '/the-best-recipes' : '/recipes';
-  let mainIndex = breadcrumbItems.findIndex((trail) => trail[1].url === prefixUrl);
+  const prefixUrl = recipe.the_best ? '/the-best-recipes' : '/recipes';
+  let mainIndex = breadcrumbItems.findIndex((trail) => trail[1]?.url === prefixUrl);
   if (mainIndex === -1) mainIndex = 0;
 
   return { main: mainIndex, items: breadcrumbItems };
+}
+
+async function fetchTopComments(
+  supabase: SupabaseClient,
+  cleanSlug: string,
+): Promise<Record<string, unknown>[]> {
+  const { data, error } = await supabase
+    .from('comments')
+    .select('author, content, rating, created_at, recipes!inner(slug)')
+    .eq('recipes.slug', cleanSlug)
+    .eq('status', 'approved')
+    .is('parent_id', null)
+    .order('created_at', { ascending: false })
+    .limit(6);
+
+  if (error) throw error;
+
+  return (data || []).map((item) => {
+    const rest = { ...item };
+    if ('recipes' in rest) {
+      delete (rest as Record<string, unknown>)['recipes'];
+    }
+    return camelCaseKeys(rest) as Record<string, unknown>;
+  });
 }
 
 async function handleGetTopComments(req: VercelRequest, res: VercelResponse, slug: string) {
   try {
     const supabase = await getSupabaseClient();
     const cleanSlug = slug.replace(/^\/?recipe\//, '').replace(/^\//, '');
-
-    const { data, error } = await supabase
-      .from('comments')
-      .select('author, content, rating, created_at, recipes!inner(slug)')
-      .eq('recipes.slug', cleanSlug)
-      .eq('status', 'approved')
-      .is('parent_id', null)
-      .order('created_at', { ascending: false })
-      .limit(6);
-
-    if (error) throw error;
-
-    // Remove the joined recipes object to keep the response clean
-    const cleanedData = data
-      ? data.map((item) => {
-          const rest = { ...item };
-          if ('recipes' in rest) {
-            delete (rest as Record<string, unknown>)['recipes'];
-          }
-          return rest;
-        })
-      : [];
-    res.json(cleanedData);
+    const comments = await fetchTopComments(supabase, cleanSlug);
+    res.json(comments);
   } catch (err: unknown) {
     console.error(err);
     const msg = err instanceof Error ? err.message : String(err);
@@ -804,7 +842,6 @@ interface CachedSlugData {
   timestamp: number;
   recipe: FormattedRecipe;
   rawRecipe: DbRecipe;
-  topComments?: unknown[];
 }
 
 const recipeSlugCache = new Map<string, CachedSlugData>();
@@ -814,26 +851,13 @@ export function setCacheDisabledForTesting(disabled: boolean) {
   cacheDisabledForTesting = disabled;
 }
 
-async function getRecipeDataBySlug(
+async function fetchRecipeBySlug(
   supabase: SupabaseClient,
   cleanSlug: string,
-  includeComments = false,
-  refresh = false,
-): Promise<CachedSlugData | null> {
-  if (!refresh && !cacheDisabledForTesting) {
-    const cached = recipeSlugCache.get(cleanSlug);
-    if (cached && Date.now() - cached.timestamp < 1000 * 60 * 5) {
-      if (!includeComments || cached.topComments !== undefined) {
-        return cached;
-      }
-    }
-  }
-
-  // Get recipe
-  const selectStr = getSelectString('recipes', ' '); // category can't be null
+): Promise<{ formatted: FormattedRecipe; raw: DbRecipe } | null> {
   const { data: recipeDataRaw, error: recipeError } = await supabase
     .from('recipes')
-    .select(selectStr)
+    .select(SINGLE_RECIPE_SELECT)
     .eq('slug', cleanSlug)
     .eq('status', 'published')
     .lte('created_at', new Date().toISOString())
@@ -847,44 +871,133 @@ async function getRecipeDataBySlug(
   }
   const recipeData = recipeDataRaw as unknown as DbRecipe;
   const [formatted] = formatDbRecipes([recipeData]);
+  return { formatted, raw: recipeData };
+}
 
-  // Fetch breadcrumbs, adjacent sibling navigation, stats, and optionally comments in parallel
-  const [breadcrumbsObj, prev, next, stats, topCommentsResult] = await Promise.all([
-    getBreadcrumbs(supabase, recipeData.id, formatted, recipeData.recipe_categories),
-    getAdjacentRecipe(supabase, recipeData.id, 'prev'),
-    getAdjacentRecipe(supabase, recipeData.id, 'next'),
-    getRecipeStats(supabase, recipeData.id),
-    includeComments
-      ? supabase
-          .from('comments')
-          .select('author, content, rating, created_at')
-          .eq('recipe_id', recipeData.id)
-          .eq('status', 'approved')
-          .is('parent_id', null)
-          .order('created_at', { ascending: false })
-          .limit(6)
-      : Promise.resolve({ data: null, error: null }),
+async function fetchBreadcrumbsBySlug(
+  supabase: SupabaseClient,
+  cleanSlug: string,
+): Promise<{ main: number; items: { label: string; url?: string }[][] } | null> {
+  const { data: recipe, error } = await supabase
+    .from('recipes')
+    .select('id, title, slug, the_best, recipe_categories (categories (id, name, url))')
+    .eq('slug', cleanSlug)
+    .eq('status', 'published')
+    .lte('created_at', new Date().toISOString())
+    .maybeSingle();
+
+  if (error) throw error;
+  if (!recipe) {
+    return null;
+  }
+
+  const dbRecipe = recipe as unknown as DbRecipe;
+  if (!dbRecipe.recipe_categories) {
+    const { data: recipeCatsData, error: catsError } = await supabase
+      .from('recipe_categories')
+      .select('categories (id, name, url)')
+      .eq('recipe_id', recipe.id);
+    if (catsError) throw catsError;
+    return buildBreadcrumbs(
+      recipe as unknown as { title: string; slug: string; the_best?: boolean },
+      recipeCatsData as unknown as CategoryRelation[],
+    );
+  }
+
+  return buildBreadcrumbs(
+    recipe as unknown as { title: string; slug: string; the_best?: boolean },
+    dbRecipe.recipe_categories,
+  );
+}
+
+async function fetchNavigationBySlug(
+  supabase: SupabaseClient,
+  cleanSlug: string,
+): Promise<{
+  prev: { title: string; slug: string } | null;
+  next: { title: string; slug: string } | null;
+}> {
+  const { data: recipe, error } = await supabase
+    .from('recipes')
+    .select('id')
+    .eq('slug', cleanSlug)
+    .eq('status', 'published')
+    .lte('created_at', new Date().toISOString())
+    .maybeSingle();
+
+  if (error) throw error;
+  if (!recipe) {
+    return { prev: null, next: null };
+  }
+
+  return getRecipeNavigation(supabase, recipe.id);
+}
+
+async function fetchStatsBySlug(
+  supabase: SupabaseClient,
+  cleanSlugOrId: string,
+): Promise<{ reviewCount: number; ratingCount: number; rating: number }> {
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+    cleanSlugOrId,
+  );
+  let recipeId = cleanSlugOrId;
+
+  if (!isUuid) {
+    const { data: recipe, error } = await supabase
+      .from('recipes')
+      .select('id')
+      .eq('slug', cleanSlugOrId)
+      .eq('status', 'published')
+      .lte('created_at', new Date().toISOString())
+      .maybeSingle();
+
+    if (error) throw error;
+    if (!recipe) {
+      return { reviewCount: 0, ratingCount: 0, rating: 0 };
+    }
+    recipeId = recipe.id;
+  }
+
+  return getRecipeStats(supabase, recipeId);
+}
+
+async function getRecipeDataBySlug(
+  supabase: SupabaseClient,
+  cleanSlug: string,
+  refresh = false,
+): Promise<CachedSlugData | null> {
+  if (!refresh && !cacheDisabledForTesting) {
+    const cached = recipeSlugCache.get(cleanSlug);
+    if (cached && Date.now() - cached.timestamp < 1000 * 60 * 5) {
+      return cached;
+    }
+  }
+
+  // Call the decomposed functions in parallel, all taking cleanSlug directly
+  const [recipeResult, breadcrumbs, navigation, stats] = await Promise.all([
+    fetchRecipeBySlug(supabase, cleanSlug),
+    fetchBreadcrumbsBySlug(supabase, cleanSlug),
+    fetchNavigationBySlug(supabase, cleanSlug),
+    fetchStatsBySlug(supabase, cleanSlug),
   ]);
 
-  formatted.breadcrumbs = breadcrumbsObj;
-  formatted.navigation = {
-    prev,
-    next,
-  };
+  if (!recipeResult) {
+    return null;
+  }
+
+  const { formatted, raw: recipeData } = recipeResult;
+
+  formatted.breadcrumbs = breadcrumbs!;
+  formatted.navigation = navigation;
   formatted.reviewCount = stats.reviewCount;
   formatted.ratingCount = stats.ratingCount;
   formatted.rating = stats.rating;
   formatted.comments = [];
 
-  const topComments = topCommentsResult.data
-    ? topCommentsResult.data.map((c) => camelCaseKeys(c))
-    : undefined;
-
   const entry: CachedSlugData = {
     timestamp: Date.now(),
     recipe: formatted,
     rawRecipe: recipeData,
-    topComments,
   };
 
   recipeSlugCache.set(cleanSlug, entry);
@@ -897,16 +1010,13 @@ async function handleGetBySlug(req: VercelRequest, res: VercelResponse, slug: st
     const cleanSlug = slug.replace(/^\/?recipe\//, '').replace(/^\//, '');
     const refresh = req.query['refresh'] === 'true';
 
-    const data = await getRecipeDataBySlug(supabase, cleanSlug, false, refresh);
+    const data = await getRecipeDataBySlug(supabase, cleanSlug, refresh);
     if (!data) {
       res.json(null);
       return;
     }
 
-    res.json({
-      ...data.recipe,
-      comments: [],
-    });
+    res.json(data.recipe);
   } catch (err: unknown) {
     console.error(err);
     const msg = err instanceof Error ? err.message : String(err);
@@ -1003,16 +1113,83 @@ async function handleSchemaBySlug(req: VercelRequest, res: VercelResponse, slug:
     const cleanSlug = slug.replace(/^\/?recipe\//, '').replace(/^\//, '');
     const refresh = req.query['refresh'] === 'true';
 
-    const data = await getRecipeDataBySlug(supabase, cleanSlug, true, refresh);
-    if (!data) {
+    if (!refresh && !cacheDisabledForTesting) {
+      const cached = recipeSlugCache.get(cleanSlug);
+      if (cached && Date.now() - cached.timestamp < 1000 * 60 * 5) {
+        const comments = await fetchTopComments(supabase, cleanSlug);
+        res.json({
+          ...cached.recipe,
+          comments,
+        });
+        return;
+      }
+    }
+
+    const [recipeResult, breadcrumbs, stats, comments] = await Promise.all([
+      fetchRecipeBySlug(supabase, cleanSlug),
+      fetchBreadcrumbsBySlug(supabase, cleanSlug),
+      fetchStatsBySlug(supabase, cleanSlug),
+      fetchTopComments(supabase, cleanSlug),
+    ]);
+
+    if (!recipeResult) {
       res.json(null);
       return;
     }
 
+    const { formatted } = recipeResult;
+
+    formatted.breadcrumbs = breadcrumbs!;
+    formatted.reviewCount = stats.reviewCount;
+    formatted.ratingCount = stats.ratingCount;
+    formatted.rating = stats.rating;
+
     res.json({
-      ...data.recipe,
-      comments: data.topComments || [],
+      ...formatted,
+      comments,
     });
+  } catch (err: unknown) {
+    console.error(err);
+    const msg = err instanceof Error ? err.message : String(err);
+    res.status(500).json({ error: msg });
+  }
+}
+
+async function handleGetBreadcrumbs(req: VercelRequest, res: VercelResponse, slug: string) {
+  try {
+    const supabase = await getSupabaseClient();
+    const cleanSlug = slug.replace(/^\/?recipe\//, '').replace(/^\//, '');
+
+    const breadcrumbs = await fetchBreadcrumbsBySlug(supabase, cleanSlug);
+    res.json(breadcrumbs);
+  } catch (err: unknown) {
+    console.error(err);
+    const msg = err instanceof Error ? err.message : String(err);
+    res.status(500).json({ error: msg });
+  }
+}
+
+async function handleGetNavigation(req: VercelRequest, res: VercelResponse, slug: string) {
+  try {
+    const supabase = await getSupabaseClient();
+    const cleanSlug = slug.replace(/^\/?recipe\//, '').replace(/^\//, '');
+
+    const nav = await fetchNavigationBySlug(supabase, cleanSlug);
+    res.json(nav);
+  } catch (err: unknown) {
+    console.error(err);
+    const msg = err instanceof Error ? err.message : String(err);
+    res.status(500).json({ error: msg });
+  }
+}
+
+async function handleGetStats(req: VercelRequest, res: VercelResponse, slugOrId: string) {
+  try {
+    const supabase = await getSupabaseClient();
+    const cleanSlug = slugOrId.replace(/^\/?recipe\//, '').replace(/^\//, '');
+
+    const stats = await fetchStatsBySlug(supabase, cleanSlug);
+    res.json(stats);
   } catch (err: unknown) {
     console.error(err);
     const msg = err instanceof Error ? err.message : String(err);
@@ -1089,6 +1266,21 @@ const routes: IRecipeRoute[] = [
     pattern: /^\/([^/]+)\/equipment$/,
     method: 'GET',
     handler: (req, res, match: RegExpExecArray) => handleGetEquipment(req, res, match[1]),
+  },
+  {
+    pattern: /^\/([^/]+)\/breadcrumbs$/,
+    method: 'GET',
+    handler: (req, res, match: RegExpExecArray) => handleGetBreadcrumbs(req, res, match[1]),
+  },
+  {
+    pattern: /^\/([^/]+)\/navigation$/,
+    method: 'GET',
+    handler: (req, res, match: RegExpExecArray) => handleGetNavigation(req, res, match[1]),
+  },
+  {
+    pattern: /^\/([^/]+)\/stats$/,
+    method: 'GET',
+    handler: (req, res, match: RegExpExecArray) => handleGetStats(req, res, match[1]),
   },
   {
     pattern: /^\/([^/]+)\/title$/,

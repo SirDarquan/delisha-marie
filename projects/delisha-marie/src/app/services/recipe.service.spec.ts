@@ -115,6 +115,27 @@ describe('RecipeService', () => {
       expect(result).toBeNull();
     });
 
+    it('should return schema recipe from TransferState if available', async () => {
+      const transferState = TestBed.inject(TransferState);
+      const mockSchemaRecipe = {
+        id: '10',
+        slug: 'schema-slug',
+        title: 'Schema Recipe',
+      } as unknown as Recipe;
+      const key = makeStateKey<Recipe | null>('API_GET_/api/recipes/schema-slug/schema');
+      transferState.set(key, mockSchemaRecipe);
+
+      const res = await service.getRecipeBySlug('schema-slug');
+      expect(res?.title).toBe('Schema Recipe');
+      expect(res?.navigation).toEqual({ prev: null, next: null });
+      expect(res?.breadcrumbs?.items[0]).toEqual([
+        { label: 'Home', url: '/' },
+        { label: 'Recipes', url: '/recipes' },
+        { label: 'Schema Recipe', url: '/recipe/schema-slug' },
+      ]);
+      httpMock.expectNone('/api/recipes/schema-slug');
+    });
+
     it('should clear cache after 5 seconds for getRecipeBySlug', async () => {
       const origSetTimeout = window.setTimeout;
       let interceptedCb: ((...args: unknown[]) => void) | null = null;
@@ -600,6 +621,24 @@ describe('RecipeService', () => {
       } finally {
         vi.useRealTimers();
       }
+    });
+
+    it('should fetch separated navigation', async () => {
+      const mockNav = { prev: { title: 'Prev', slug: '/recipe/prev' }, next: null };
+      const promise = service.getRecipeNavigation('/recipe/my-recipe');
+      const req = httpMock.expectOne('/api/recipes/my-recipe/navigation');
+      req.flush(mockNav);
+      const res = await promise;
+      expect(res).toEqual(mockNav);
+    });
+
+    it('should fetch separated stats', async () => {
+      const mockStats = { reviewCount: 10, ratingCount: 8, rating: 4.9 };
+      const promise = service.getRecipeStats('my-recipe');
+      const req = httpMock.expectOne('/api/recipes/my-recipe/stats');
+      req.flush(mockStats);
+      const res = await promise;
+      expect(res).toEqual(mockStats);
     });
   });
 });

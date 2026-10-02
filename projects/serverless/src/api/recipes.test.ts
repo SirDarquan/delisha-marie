@@ -553,6 +553,7 @@ describe('Recipes Router API', () => {
       expect(res.body.breadcrumbs.items[1]).toEqual([
         { label: 'Home', url: '/' },
         { label: 'Recipes', url: '/recipes' },
+        { label: 'Dinner', url: '/recipes/dinner' },
         { label: 'Pasta', url: '/recipes/dinner/pasta' },
         { label: 'Recipe 1', url: '/recipe/r1' },
       ]);
@@ -758,6 +759,7 @@ describe('Recipes Router API', () => {
       expect(res.body.breadcrumbs.items[0]).toEqual([
         { label: 'Home', url: '/' },
         { label: 'The Best Recipes', url: '/the-best-recipes' },
+        { label: 'The Best Dinner', url: '/the-best-recipes/the-best-dinner' },
         { label: 'The Best Steak', url: '/the-best-recipes/the-best-dinner/steak' },
         { label: 'Recipe 2', url: '/recipe/r2' },
       ]);
@@ -889,6 +891,69 @@ describe('Recipes Router API', () => {
         { label: 'Recipes', url: '/recipes' },
         { label: 'Dinner', url: '/recipes/dinner' },
         { label: 'Recipe 5', url: '/recipe/r5' },
+      ]);
+    });
+
+    it('should build hierarchical breadcrumbs with extended parent categories for subcategories', async () => {
+      const mockSingleDbRecipe = {
+        id: '9',
+        title: 'Garlic Butter Steak Bites 9',
+        slug: 'garlic-butter-steak-bites-9',
+        status: 'published',
+        the_best: false,
+        created_at: '2026-06-22T08:00:00Z',
+        recipe_categories: [
+          {
+            categories: {
+              id: 'c-pasta',
+              name: 'Pasta',
+              url: '/recipes/dinner/pasta',
+            },
+          },
+        ],
+        recipe_methods: [],
+        recipe_holidays: [],
+        recipe_special_diets: [],
+      };
+
+      mockFrom.mockImplementation((table: string) => {
+        if (table === 'recipe_categories') {
+          const queryChain = {
+            select: () => queryChain,
+            eq: () => queryChain,
+            then: (onfulfilled?: (value: unknown) => unknown) => {
+              return Promise.resolve({
+                data: mockSingleDbRecipe.recipe_categories,
+                error: null,
+              }).then(onfulfilled);
+            },
+          };
+          return queryChain;
+        }
+        const queryChain = {
+          eq: () => queryChain,
+          in: () => queryChain,
+          order: () => queryChain,
+          maybeSingle: () => Promise.resolve({ data: mockSingleDbRecipe, error: null }),
+          then: (onfulfilled?: (value: unknown) => unknown) => {
+            return Promise.resolve({ data: [], error: null }).then(onfulfilled);
+          },
+        };
+        return {
+          select: () => queryChain,
+        };
+      });
+
+      const res = await createRequestMock(recipesRouter)().get(
+        '/api/recipes/garlic-butter-steak-bites-9',
+      );
+      expect(res.status).toBe(200);
+      expect(res.body.breadcrumbs.items[0]).toEqual([
+        { label: 'Home', url: '/' },
+        { label: 'Recipes', url: '/recipes' },
+        { label: 'Dinner', url: '/recipes/dinner' },
+        { label: 'Pasta', url: '/recipes/dinner/pasta' },
+        { label: 'Garlic Butter Steak Bites 9', url: '/recipe/garlic-butter-steak-bites-9' },
       ]);
     });
 
@@ -1058,19 +1123,19 @@ describe('Recipes Router API', () => {
         const res1 = await createRequestMock(recipesRouter)().get('/api/recipes/cache-slug');
         expect(res1.status).toBe(200);
         expect(res1.body.title).toBe('Cached Title');
-        expect(callCount).toBe(3);
+        expect(callCount).toBe(6);
 
         const res2 = await createRequestMock(recipesRouter)().get('/api/recipes/cache-slug');
         expect(res2.status).toBe(200);
         expect(res2.body.title).toBe('Cached Title');
-        expect(callCount).toBe(3);
+        expect(callCount).toBe(6);
 
         // Bypass cache with refresh=true
         const res3 = await createRequestMock(recipesRouter)().get(
           '/api/recipes/cache-slug?refresh=true',
         );
         expect(res3.status).toBe(200);
-        expect(callCount).toBe(6);
+        expect(callCount).toBe(12);
       } finally {
         process.env['NODE_ENV'] = origEnv;
       }
@@ -1102,6 +1167,14 @@ describe('Recipes Router API', () => {
           order: () => Promise.resolve({ data: null, error: new Error('db error') }),
         };
         return chain;
+      });
+      const res = await createRequestMock(recipesRouter)().get('/api/recipes/favorites/list');
+      expect(res.status).toBe(500);
+    });
+
+    it('should return 500 on unexpected exception in favorites', async () => {
+      mockFrom.mockImplementation(() => {
+        throw new Error('Favorites crash');
       });
       const res = await createRequestMock(recipesRouter)().get('/api/recipes/favorites/list');
       expect(res.status).toBe(500);
@@ -1364,6 +1437,11 @@ describe('Recipes Router API', () => {
           createdAt: '2026-06-23T08:00:00Z',
         },
       ]);
+      expect(res.body.breadcrumbs.items[0]).toEqual([
+        { label: 'Home', url: '/' },
+        { label: 'Recipes', url: '/recipes' },
+        { label: 'Recipe Schema Test', url: '/recipe/schema-slug' },
+      ]);
     });
 
     it('should return null when recipe is not found', async () => {
@@ -1372,7 +1450,12 @@ describe('Recipes Router API', () => {
           select: () => chain,
           eq: () => chain,
           lte: () => chain,
+          is: () => chain,
+          order: () => chain,
+          limit: () => chain,
           maybeSingle: () => Promise.resolve({ data: null, error: null }),
+          then: (onfulfilled?: (value: unknown) => unknown) =>
+            Promise.resolve({ data: [], error: null }).then(onfulfilled),
         };
         return chain;
       });
@@ -1396,11 +1479,12 @@ describe('Recipes Router API', () => {
       expect(res.body.error).toBe('schema db error');
     });
 
-    it('should reuse cache and fetch comments if needed when warm in production', async () => {
+    it('should reuse cached recipe while fetching schema comments in production', async () => {
       const origEnv = process.env['NODE_ENV'];
       process.env['NODE_ENV'] = 'production';
       try {
         let commentsCalled = false;
+        let recipeFetchCount = 0;
         mockFrom.mockImplementation((table: string) => {
           if (table === 'comments') {
             commentsCalled = true;
@@ -1413,8 +1497,8 @@ describe('Recipes Router API', () => {
                 Promise.resolve({
                   data: [
                     {
-                      author: 'A1',
-                      content: 'C1',
+                      author: 'Delisha Fan',
+                      content: 'Top comment',
                       rating: 5,
                       created_at: '2026-06-23T08:00:00Z',
                     },
@@ -1423,6 +1507,9 @@ describe('Recipes Router API', () => {
                 }),
             };
             return chain;
+          }
+          if (table === 'recipes') {
+            recipeFetchCount++;
           }
           const queryChain = {
             eq: () => queryChain,
@@ -1445,31 +1532,26 @@ describe('Recipes Router API', () => {
           return { select: () => queryChain };
         });
 
-        // Warm recipe without comments
+        // Warm recipe
         await createRequestMock(recipesRouter)().get('/api/recipes/schema-cache-slug');
+        const initialRecipeFetches = recipeFetchCount;
 
-        // Call schema: should see cached entry missing topComments, query comments and cache them
+        // Call schema: should reuse warm recipe cache and fetch comments in parallel
         const res1 = await createRequestMock(recipesRouter)().get(
           '/api/recipes/schema-cache-slug/schema',
         );
         expect(res1.status).toBe(200);
         expect(res1.body.title).toBe('Schema Warm Title');
         expect(commentsCalled).toBe(true);
+        expect(recipeFetchCount).toBe(initialRecipeFetches);
+        expect(res1.body.comments).toHaveLength(1);
 
-        // Call schema again: should hit cache with topComments
-        commentsCalled = false;
-        const res2 = await createRequestMock(recipesRouter)().get(
-          '/api/recipes/schema-cache-slug/schema',
-        );
-        expect(res2.status).toBe(200);
-        expect(commentsCalled).toBe(false);
-
-        // Refresh=true bypasses cache
+        // Refresh=true bypasses recipe cache
         const resRefresh = await createRequestMock(recipesRouter)().get(
           '/api/recipes/schema-cache-slug/schema?refresh=true',
         );
         expect(resRefresh.status).toBe(200);
-        expect(commentsCalled).toBe(true);
+        expect(recipeFetchCount).toBeGreaterThan(initialRecipeFetches);
       } finally {
         process.env['NODE_ENV'] = origEnv;
       }
@@ -1502,6 +1584,225 @@ describe('Recipes Router API', () => {
       });
       const res = await createRequestMock(recipesRouter)().get('/api/recipes/1/equipment');
       expect(res.status).toBe(500);
+    });
+  });
+
+  describe('GET /api/recipes/:slug/breadcrumbs', () => {
+    it('should return breadcrumbs for recipe by slug', async () => {
+      mockFrom.mockImplementation((table: string) => {
+        if (table === 'recipes') {
+          const chain = {
+            select: () => chain,
+            eq: () => chain,
+            lte: () => chain,
+            maybeSingle: () =>
+              Promise.resolve({
+                data: {
+                  id: '1',
+                  title: 'Title',
+                  slug: 'slug1',
+                  the_best: false,
+                  recipe_categories: [
+                    { categories: { id: 'c1', name: 'Dinner', url: '/recipes/dinner' } },
+                  ],
+                },
+                error: null,
+              }),
+          };
+          return chain;
+        }
+        return {};
+      });
+
+      const res = await createRequestMock(recipesRouter)().get('/api/recipes/slug1/breadcrumbs');
+      expect(res.status).toBe(200);
+      const body = res.body as unknown as { items: { label: string }[][] };
+      expect(body.items).toBeDefined();
+      expect(body.items[0][2].label).toBe('Dinner');
+    });
+
+    it('should return null when recipe not found', async () => {
+      mockFrom.mockImplementation(() => {
+        const chain = {
+          select: () => chain,
+          eq: () => chain,
+          lte: () => chain,
+          maybeSingle: () => Promise.resolve({ data: null, error: null }),
+        };
+        return chain;
+      });
+
+      const res = await createRequestMock(recipesRouter)().get('/api/recipes/missing/breadcrumbs');
+      expect(res.status).toBe(200);
+      expect(res.body).toBeNull();
+    });
+
+    it('should return 500 on database error', async () => {
+      mockFrom.mockImplementation(() => {
+        const chain = {
+          select: () => chain,
+          eq: () => chain,
+          lte: () => chain,
+          maybeSingle: () => Promise.resolve({ data: null, error: new Error('Breadcrumb error') }),
+        };
+        return chain;
+      });
+
+      const res = await createRequestMock(recipesRouter)().get('/api/recipes/err-slug/breadcrumbs');
+      expect(res.status).toBe(500);
+      expect(res.body.error).toBe('Breadcrumb error');
+    });
+  });
+
+  describe('GET /api/recipes/:slug/navigation', () => {
+    it('should return navigation for recipe by slug', async () => {
+      mockFrom.mockImplementation((table: string) => {
+        if (table === 'recipes') {
+          const chain = {
+            select: () => chain,
+            eq: () => chain,
+            lte: () => chain,
+            gt: () => chain,
+            lt: () => chain,
+            order: () => chain,
+            limit: () => chain,
+            maybeSingle: () =>
+              Promise.resolve({
+                data: { id: 'uuid-1', slug: 'nav-slug' },
+                error: null,
+              }),
+            then: (onfulfilled?: (value: unknown) => unknown) =>
+              Promise.resolve({ data: [{ title: 'Adjacent', slug: 'adj' }], error: null }).then(
+                onfulfilled,
+              ),
+          };
+          return chain;
+        }
+        return {};
+      });
+
+      const res = await createRequestMock(recipesRouter)().get('/api/recipes/nav-slug/navigation');
+      expect(res.status).toBe(200);
+      const body = res.body as unknown as { prev: unknown; next: unknown };
+      expect(body.prev).toBeDefined();
+    });
+
+    it('should return null navigation when recipe not found', async () => {
+      mockFrom.mockImplementation(() => {
+        const chain = {
+          select: () => chain,
+          eq: () => chain,
+          lte: () => chain,
+          maybeSingle: () => Promise.resolve({ data: null, error: null }),
+        };
+        return chain;
+      });
+
+      const res = await createRequestMock(recipesRouter)().get('/api/recipes/missing/navigation');
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual({ prev: null, next: null });
+    });
+
+    it('should return 500 on database error', async () => {
+      mockFrom.mockImplementation(() => {
+        const chain = {
+          select: () => chain,
+          eq: () => chain,
+          lte: () => chain,
+          maybeSingle: () => Promise.resolve({ data: null, error: new Error('Navigation error') }),
+        };
+        return chain;
+      });
+
+      const res = await createRequestMock(recipesRouter)().get('/api/recipes/err-slug/navigation');
+      expect(res.status).toBe(500);
+      expect(res.body.error).toBe('Navigation error');
+    });
+  });
+
+  describe('GET /api/recipes/:slug/stats', () => {
+    it('should return stats for recipe by slug or id', async () => {
+      mockRpc.mockReturnValue(
+        Promise.resolve({
+          data: [{ review_count: 12, rating_count: 10, average_rating: 4.7 }],
+          error: null,
+        }),
+      );
+
+      mockFrom.mockImplementation((table: string) => {
+        if (table === 'recipes') {
+          const chain = {
+            select: () => chain,
+            eq: () => chain,
+            lte: () => chain,
+            maybeSingle: () =>
+              Promise.resolve({
+                data: { id: 'uuid-recipe-1', slug: 'stats-slug' },
+                error: null,
+              }),
+          };
+          return chain;
+        }
+        return {};
+      });
+
+      const res = await createRequestMock(recipesRouter)().get('/api/recipes/stats-slug/stats');
+      expect(res.status).toBe(200);
+      const body = res.body as unknown as {
+        reviewCount: number;
+        ratingCount: number;
+        rating: number;
+      };
+      expect(body.reviewCount).toBe(12);
+      expect(body.ratingCount).toBe(10);
+      expect(body.rating).toBe(4.7);
+    });
+
+    it('should return stats when direct UUID is provided', async () => {
+      mockRpc.mockReturnValue(
+        Promise.resolve({
+          data: [{ review_count: 5, rating_count: 5, average_rating: 5 }],
+          error: null,
+        }),
+      );
+
+      const res = await createRequestMock(recipesRouter)().get(
+        '/api/recipes/12345678-1234-1234-1234-123456789abc/stats',
+      );
+      expect(res.status).toBe(200);
+      expect(res.body.reviewCount).toBe(5);
+    });
+
+    it('should return zero stats when recipe is not found by slug', async () => {
+      mockFrom.mockImplementation(() => {
+        const chain = {
+          select: () => chain,
+          eq: () => chain,
+          lte: () => chain,
+          maybeSingle: () => Promise.resolve({ data: null, error: null }),
+        };
+        return chain;
+      });
+
+      const res = await createRequestMock(recipesRouter)().get('/api/recipes/missing/stats');
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual({ reviewCount: 0, ratingCount: 0, rating: 0 });
+    });
+
+    it('should return 500 on database error', async () => {
+      mockFrom.mockImplementation(() => {
+        const chain = {
+          select: () => chain,
+          eq: () => chain,
+          lte: () => chain,
+          maybeSingle: () => Promise.resolve({ data: null, error: new Error('Stats DB error') }),
+        };
+        return chain;
+      });
+
+      const res = await createRequestMock(recipesRouter)().get('/api/recipes/error/stats');
+      expect(res.status).toBe(500);
+      expect(res.body.error).toBe('Stats DB error');
     });
   });
 
@@ -1577,6 +1878,41 @@ describe('Recipes Router API', () => {
       expect(res.body as unknown as unknown[]).toHaveLength(6);
       expect((res.body as unknown as { id: string }[])[0].id).toBe('c1');
       expect((res.body as unknown as { recipes?: unknown }[])[0].recipes).toBeUndefined(); // Should be stripped
+    });
+
+    it('should return top comments when recipe id is resolved from recipes table', async () => {
+      mockFrom.mockImplementation((table: string) => {
+        if (table === 'recipes') {
+          const chain = {
+            select: () => chain,
+            eq: () => chain,
+            lte: () => chain,
+            maybeSingle: () => Promise.resolve({ data: { id: 'uuid-10' }, error: null }),
+          };
+          return chain;
+        }
+        if (table === 'comments') {
+          const chain = {
+            select: () => chain,
+            eq: () => chain,
+            is: () => chain,
+            order: () => chain,
+            limit: () =>
+              Promise.resolve({
+                data: [{ id: 'c1', author: 'A', content: 'C', rating: 5 }],
+                error: null,
+              }),
+          };
+          return chain;
+        }
+        return {};
+      });
+
+      const res = await createRequestMock(recipesRouter)().get(
+        '/api/recipes/slug-direct/comments/top',
+      );
+      expect(res.status).toBe(200);
+      expect(res.body).toHaveLength(1);
     });
 
     it('should handle comments database error', async () => {
@@ -2600,6 +2936,23 @@ describe('Recipes Router API', () => {
         resStr,
       );
       expect(resStr.status).toHaveBeenCalledWith(500);
+    });
+
+    it('should return 404 when route does not match', async () => {
+      const res404 = {
+        setHeader: vi.fn(),
+        status: vi.fn().mockReturnThis(),
+        json: vi.fn(),
+      } as unknown as import('@vercel/node').VercelResponse;
+
+      await recipesRouter(
+        {
+          method: 'PUT',
+          query: { slug: ['some', 'unknown', 'route'] },
+        } as unknown as import('@vercel/node').VercelRequest,
+        res404,
+      );
+      expect(res404.status).toHaveBeenCalledWith(404);
     });
   });
 });

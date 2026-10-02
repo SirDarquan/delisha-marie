@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable, inject, TransferState, makeStateKey } from '@angular/core';
 import type { BaseRecipe, Breadcrumbs, Comment, Nutrition } from '@dm/library';
 import { Api } from './api';
 export type { Comment };
@@ -59,9 +59,31 @@ export interface NavigationLinks {
 })
 export class RecipeService {
   private readonly api = inject(Api);
+  private readonly transferState = inject(TransferState);
   private readonly recipeCache = new Map<string, Promise<Recipe | null>>();
   private readonly seoCache = new Map<string, Promise<RecipeSeoData | null>>();
   private readonly schemaCache = new Map<string, Promise<Recipe | null>>();
+
+  private normalizeSchemaRecipe(schemaRecipe: Recipe): Recipe {
+    const defaultBreadcrumbs = {
+      main: 0,
+      items: [
+        [
+          { label: 'Home', url: '/' },
+          {
+            label: schemaRecipe.theBest ? 'The Best Recipes' : 'Recipes',
+            url: schemaRecipe.theBest ? '/the-best-recipes' : '/recipes',
+          },
+          { label: schemaRecipe.title, url: `/recipe/${schemaRecipe.slug}` },
+        ],
+      ],
+    };
+    return {
+      ...schemaRecipe,
+      breadcrumbs: schemaRecipe.breadcrumbs || defaultBreadcrumbs,
+      navigation: schemaRecipe.navigation || { prev: null, next: null },
+    };
+  }
 
   /**
    * Fetches a single recipe by its slug.
@@ -82,12 +104,20 @@ export class RecipeService {
         if (schemaPromise) {
           const schemaRecipe = await schemaPromise;
           if (schemaRecipe) {
-            return {
-              ...schemaRecipe,
-              navigation: schemaRecipe.navigation || { prev: null, next: null },
-            };
+            return this.normalizeSchemaRecipe(schemaRecipe);
           }
         }
+
+        const schemaKey = makeStateKey<Recipe | null>(
+          `API_GET_/api/recipes/${normalizedSearch}/schema`,
+        );
+        if (this.transferState.hasKey(schemaKey)) {
+          const schemaRecipe = this.transferState.get(schemaKey, null);
+          if (schemaRecipe) {
+            return this.normalizeSchemaRecipe(schemaRecipe);
+          }
+        }
+
         return await this.api.get<Recipe | null>(`/recipes/${normalizedSearch}`).catch(() => null);
       };
 
@@ -243,8 +273,29 @@ export class RecipeService {
    * Fetches 6 top comments for a specific recipe.
    */
   getTopComments(slug: string): Promise<Comment[]> {
-    const url = `/recipes/${slug}/comments/top`;
+    const clean = (s: string) => s.replace(/^\/?recipe\//, '').replace(/^\//, '');
+    const url = `/recipes/${clean(slug)}/comments/top`;
     return this.api.get<Comment[]>(url);
+  }
+
+  /**
+   * Fetches adjacent sibling navigation (prev/next) for a recipe by slug.
+   */
+  getRecipeNavigation(slug: string): Promise<NavigationLinks> {
+    const clean = (s: string) => s.replace(/^\/?recipe\//, '').replace(/^\//, '');
+    return this.api.get<NavigationLinks>(`/recipes/${clean(slug)}/navigation`);
+  }
+
+  /**
+   * Fetches recipe ratings and review statistics.
+   */
+  getRecipeStats(
+    slugOrId: string,
+  ): Promise<{ reviewCount: number; ratingCount: number; rating: number }> {
+    const clean = (s: string) => s.replace(/^\/?recipe\//, '').replace(/^\//, '');
+    return this.api.get<{ reviewCount: number; ratingCount: number; rating: number }>(
+      `/recipes/${clean(slugOrId)}/stats`,
+    );
   }
 
   /**

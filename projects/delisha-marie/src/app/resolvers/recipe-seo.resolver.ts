@@ -16,7 +16,8 @@ export const seoRecipeResolver: ResolveFn<SeoContent> = async (route, state) => 
   const path = state.url.split('?')[0].split('#')[0];
   const siteName = "Delisha Marie's Kitchen";
   const slug = route.paramMap.get('slug') || undefined;
-  const baseHref = locationStrategy.getBaseHref() === '/' ? '' : locationStrategy.getBaseHref().replace(/\/$/,'');
+  const baseHref =
+    locationStrategy.getBaseHref() === '/' ? '' : locationStrategy.getBaseHref().replace(/\/$/, '');
   const url = `${origin}${baseHref}${path}`;
 
   const seoConfig404: SeoContent = {
