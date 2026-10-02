@@ -64,6 +64,27 @@ export class RecipeService {
   private readonly seoCache = new Map<string, Promise<RecipeSeoData | null>>();
   private readonly schemaCache = new Map<string, Promise<Recipe | null>>();
 
+  private normalizeSchemaRecipe(schemaRecipe: Recipe): Recipe {
+    const defaultBreadcrumbs = {
+      main: 0,
+      items: [
+        [
+          { label: 'Home', url: '/' },
+          {
+            label: schemaRecipe.theBest ? 'The Best Recipes' : 'Recipes',
+            url: schemaRecipe.theBest ? '/the-best-recipes' : '/recipes',
+          },
+          { label: schemaRecipe.title, url: `/recipe/${schemaRecipe.slug}` },
+        ],
+      ],
+    };
+    return {
+      ...schemaRecipe,
+      breadcrumbs: schemaRecipe.breadcrumbs || defaultBreadcrumbs,
+      navigation: schemaRecipe.navigation || { prev: null, next: null },
+    };
+  }
+
   /**
    * Fetches a single recipe by its slug.
    */
@@ -83,24 +104,7 @@ export class RecipeService {
         if (schemaPromise) {
           const schemaRecipe = await schemaPromise;
           if (schemaRecipe) {
-            const defaultBreadcrumbs = {
-              main: 0,
-              items: [
-                [
-                  { label: 'Home', url: '/' },
-                  {
-                    label: schemaRecipe.theBest ? 'The Best Recipes' : 'Recipes',
-                    url: schemaRecipe.theBest ? '/the-best-recipes' : '/recipes',
-                  },
-                  { label: schemaRecipe.title, url: `/recipe/${schemaRecipe.slug}` },
-                ],
-              ],
-            };
-            return {
-              ...schemaRecipe,
-              breadcrumbs: schemaRecipe.breadcrumbs || defaultBreadcrumbs,
-              navigation: schemaRecipe.navigation || { prev: null, next: null },
-            };
+            return this.normalizeSchemaRecipe(schemaRecipe);
           }
         }
 
@@ -110,24 +114,7 @@ export class RecipeService {
         if (this.transferState.hasKey(schemaKey)) {
           const schemaRecipe = this.transferState.get(schemaKey, null);
           if (schemaRecipe) {
-            const defaultBreadcrumbs = {
-              main: 0,
-              items: [
-                [
-                  { label: 'Home', url: '/' },
-                  {
-                    label: schemaRecipe.theBest ? 'The Best Recipes' : 'Recipes',
-                    url: schemaRecipe.theBest ? '/the-best-recipes' : '/recipes',
-                  },
-                  { label: schemaRecipe.title, url: `/recipe/${schemaRecipe.slug}` },
-                ],
-              ],
-            };
-            return {
-              ...schemaRecipe,
-              breadcrumbs: schemaRecipe.breadcrumbs || defaultBreadcrumbs,
-              navigation: schemaRecipe.navigation || { prev: null, next: null },
-            };
+            return this.normalizeSchemaRecipe(schemaRecipe);
           }
         }
 
