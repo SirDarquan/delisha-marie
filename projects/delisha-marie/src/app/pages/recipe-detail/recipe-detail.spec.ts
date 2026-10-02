@@ -360,5 +360,15 @@ describe('RecipeDetail', () => {
       const img = compiled.querySelector('.story img') as HTMLImageElement;
       expect(img).toBeTruthy();
     });
+
+    it('should handle recipe with undefined breadcrumbs without throwing', async () => {
+      const customRecipe = {
+        ...mockRecipe,
+        slug: 'no-breadcrumbs',
+        breadcrumbs: undefined as unknown as Recipe['breadcrumbs'],
+      };
+      await loadRecipe(customRecipe);
+      expect(component.breadcrumbItems()).toEqual([]);
+    });
   });
 });

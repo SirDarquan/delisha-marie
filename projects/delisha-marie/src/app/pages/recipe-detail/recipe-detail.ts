@@ -20,7 +20,7 @@ import { BreadcrumbItem, Breadcrumbs } from '../../components/breadcrumbs/breadc
 import { RecipeEquipment } from '../../components/recipe-equipment/recipe-equipment';
 import { Sidebar } from '../../components/sidebar/sidebar';
 import { PinterestHoverDirective } from '../../directives/pinterest-hover.directive';
-import { Recipe, RecipeService } from '../../services/recipe.service';
+import { RecipeService } from '../../services/recipe.service';
 import { useOptimizedContent } from '../../utils/optimized-content';
 import { RecipeCard } from './recipe-card';
 import { RecipeComments } from './recipe-comments';
@@ -187,33 +187,32 @@ import { SidebarQuickView } from './sidebar-quick-view';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RecipeDetail {
-  recipe = input<Recipe | null | undefined>(undefined);
-  slug = input<string | null | undefined>(undefined);
+  slug = input<string>();
   page = input<string>();
 
-  private readonly route = inject(ActivatedRoute, { optional: true });
+  private readonly route = inject(ActivatedRoute);
   private readonly recipeService = inject(RecipeService);
-  private readonly _params = this.route ? toSignal(this.route.params) : signal(undefined);
+  private readonly _params = toSignal(this.route.params);
 
   readonly effectiveSlug = computed(
-    () => this.slug() ?? (this._params()?.['slug'] as string | null | undefined),
+    () =>
+      this.slug() ??
+      this.route.snapshot?.paramMap?.get('slug') ??
+      (this._params()?.['slug'] as string | null | undefined),
   );
   commentCountOverride = signal<number | null>(null);
   ratingOverride = signal<number | null>(null);
   ratingCountOverride = signal<number | null>(null);
 
   readonly recipeResource = resource({
-    params: () => (this.recipe() !== undefined ? null : this.effectiveSlug()),
+    params: () => this.effectiveSlug(),
     loader: async ({ params: slug }) => {
       if (!slug) return null;
       return await this.recipeService.getRecipeBySlug(slug);
     },
   });
 
-  readonly activeRecipe = computed(() => {
-    const directRecipe = this.recipe();
-    return directRecipe !== undefined ? directRecipe : this.recipeResource.value();
-  });
+  readonly recipe = computed(() => this.recipeResource.value());
 
   readonly isLoading = computed(() => {
     if (this.recipe() !== undefined) {
@@ -226,7 +225,7 @@ export class RecipeDetail {
   });
 
   readonly displayRecipe = computed(() => {
-    const r = this.activeRecipe();
+    const r = this.recipe();
     if (!r) return undefined;
     return {
       ...r,
@@ -244,11 +243,11 @@ export class RecipeDetail {
     }
   }
 
-  readonly videoId = computed(() => extractYouTubeVideoId(this.activeRecipe()?.video));
+  readonly videoId = computed(() => extractYouTubeVideoId(this.recipe()?.video));
 
   readonly breadcrumbItems = computed((): BreadcrumbItem[] => {
-    const r = this.activeRecipe();
-    if (!r) return [];
+    const r = this.recipe();
+    if (!r?.breadcrumbs) return [];
     const idx = r.breadcrumbs.main;
     return typeof idx === 'number' ? r.breadcrumbs.items[idx] : [];
   });
@@ -262,7 +261,7 @@ export class RecipeDetail {
       : null;
   });
 
-  readonly optimizedContent = useOptimizedContent(computed(() => this.activeRecipe()?.content));
+  readonly optimizedContent = useOptimizedContent(computed(() => this.recipe()?.content));
 
   private readonly document = inject(DOCUMENT);
 
