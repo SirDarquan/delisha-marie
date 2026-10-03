@@ -144,18 +144,12 @@ export class PageEditorComponent implements OnInit {
   );
 
   async save(value: PageFormModel) {
-    console.log('==> SAVE METHOD STARTED', value);
     try {
-      console.log('==> CALLING SAVEPAGE');
       await this.pagesService.savePage(this.slug(), value);
-      console.log('==> SAVEPAGE RETURNED');
       this.snackBar.open('Page saved successfully!', 'Close', { duration: 3000 });
-      console.log('==> SNACKBAR OPENED');
       this.router.navigate(['/pages']);
-      console.log('==> ROUTER NAVIGATED');
     } catch (error) {
       console.error('Failed to save page', error);
-      console.log('==> CATCH BLOCK');
       this.snackBar.open('Failed to save page.', 'Close', { duration: 3000 });
     }
   }

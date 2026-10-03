@@ -545,7 +545,7 @@ recipesRouter.put('/recipes/:id', async (req: AuthRequest, res: Response) => {
       searchIngredients: savedTags,
     });
   } catch (err: unknown) {
-    console.log('caught error in POST /recipes:', err);
+    console.error('caught error in POST /recipes:', err);
     const msg = err instanceof Error ? err.message : String(err);
     return res.status(400).json({ error: msg });
   }
