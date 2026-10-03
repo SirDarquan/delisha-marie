@@ -23,8 +23,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (originalUri?.startsWith('/kitchen')) {
     req.url = originalUri;
   } else if (rawPath) {
-    const trimmed = rawPath.replace('/kitchen', '').replace(/^\/+/, '');
-    req.url = trimmed ? `/kitchen/${trimmed}` : '/kitchen';
+    req.url = rawPath;
   } else {
     req.url = '/kitchen/';
   }
