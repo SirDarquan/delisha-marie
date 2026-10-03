@@ -1,7 +1,8 @@
 import { DOCUMENT } from '@angular/common';
 import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { ActivatedRoute, provideRouter } from '@angular/router';
+import { BehaviorSubject, of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Recipe, RecipeService } from '../../services/recipe.service';
 import { createMockRecipe } from '../../utils/test-recipe';
@@ -11,6 +12,7 @@ import { By } from '@angular/platform-browser';
 describe('RecipeDetail', () => {
   let component: RecipeDetail;
   let fixture: ComponentFixture<RecipeDetail>;
+  let paramsSubject: BehaviorSubject<{ slug?: string }>;
   let recipeServiceMock: {
     recipes: ReturnType<typeof signal<Recipe[]>>;
     getComments: ReturnType<typeof vi.fn>;
@@ -58,6 +60,7 @@ describe('RecipeDetail', () => {
   ];
 
   beforeEach(async () => {
+    paramsSubject = new BehaviorSubject<{ slug?: string }>({});
     recipeServiceMock = {
       recipes: signal(mockRecipes),
       getComments: vi.fn().mockResolvedValue({ comments: [], total: 0 }),
@@ -67,7 +70,25 @@ describe('RecipeDetail', () => {
 
     await TestBed.configureTestingModule({
       imports: [RecipeDetail],
-      providers: [provideRouter([]), { provide: RecipeService, useValue: recipeServiceMock }],
+      providers: [
+        provideRouter([]),
+        {
+          provide: ActivatedRoute,
+          useValue: {
+            params: paramsSubject.asObservable(),
+            queryParams: of({}),
+            snapshot: {
+              paramMap: {
+                get: (key: string) => paramsSubject.value[key as keyof typeof paramsSubject.value],
+              },
+              queryParamMap: {
+                get: () => null,
+              },
+            },
+          },
+        },
+        { provide: RecipeService, useValue: recipeServiceMock },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(RecipeDetail);
@@ -77,11 +98,7 @@ describe('RecipeDetail', () => {
   async function loadRecipe(recipe: Recipe | null, slug?: string) {
     recipeServiceMock.getRecipeBySlug.mockResolvedValue(recipe);
     const targetSlug = slug ?? recipe?.slug ?? 'test-recipe';
-    if (component.slug() === targetSlug) {
-      component.recipeResource.reload();
-    } else {
-      fixture.componentRef.setInput('slug', targetSlug);
-    }
+    paramsSubject.next({ slug: targetSlug });
     fixture.detectChanges();
     await fixture.whenStable();
     fixture.detectChanges();
@@ -91,7 +108,9 @@ describe('RecipeDetail', () => {
     expect(component).toBeTruthy();
   });
 
-  it('should render skeleton loader during initial state before slug is loaded', () => {
+  it('should render skeleton loader when recipe is loading', () => {
+    recipeServiceMock.getRecipeBySlug.mockReturnValue(new Promise(() => {}));
+    paramsSubject.next({ slug: 'loading-recipe' });
     fixture.detectChanges();
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.querySelector('.skeleton')).toBeTruthy();
@@ -260,8 +279,8 @@ describe('RecipeDetail', () => {
     doc.body.appendChild(testEl);
 
     try {
+      paramsSubject.next({ slug: mockRecipe.slug });
       const newFixture = TestBed.createComponent(RecipeDetail);
-      newFixture.componentRef.setInput('slug', mockRecipe.slug);
       newFixture.detectChanges();
       await newFixture.whenStable();
       newFixture.detectChanges();

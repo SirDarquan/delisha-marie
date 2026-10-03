@@ -187,25 +187,19 @@ import { SidebarQuickView } from './sidebar-quick-view';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RecipeDetail {
-  slug = input<string>();
   page = input<string>();
 
   private readonly route = inject(ActivatedRoute);
   private readonly recipeService = inject(RecipeService);
   private readonly _params = toSignal(this.route.params);
 
-  readonly effectiveSlug = computed(
-    () =>
-      this.slug() ??
-      this.route.snapshot?.paramMap?.get('slug') ??
-      (this._params()?.['slug'] as string | null | undefined),
-  );
+  readonly slug = computed(() => this._params()?.['slug'] as string | null | undefined);
   commentCountOverride = signal<number | null>(null);
   ratingOverride = signal<number | null>(null);
   ratingCountOverride = signal<number | null>(null);
 
   readonly recipeResource = resource({
-    params: () => this.effectiveSlug(),
+    params: () => this.slug(),
     loader: async ({ params: slug }) => {
       if (!slug) return null;
       return await this.recipeService.getRecipeBySlug(slug);
@@ -214,15 +208,7 @@ export class RecipeDetail {
 
   readonly recipe = computed(() => this.recipeResource.value());
 
-  readonly isLoading = computed(() => {
-    if (this.recipe() !== undefined) {
-      return false;
-    }
-    if (this.recipeResource.isLoading()) {
-      return true;
-    }
-    return this.recipeResource.value() === undefined;
-  });
+  readonly isLoading = computed(() => this.recipeResource.isLoading());
 
   readonly displayRecipe = computed(() => {
     const r = this.recipe();
