@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { PLATFORM_ID } from '@angular/core';
+import { PLATFORM_ID, REQUEST } from '@angular/core';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { HttpClient, provideHttpClient, withInterceptors } from '@angular/common/http';
 import { vercelAbsoluteUrlInterceptor } from './vercel-absolute-url';
@@ -41,32 +41,37 @@ describe('vercelAbsoluteUrlInterceptor', () => {
     }
   });
 
-  it('should make relative /api/ requests absolute using localhost by default', () => {
-    httpClient.get('/api/test').subscribe();
-    const req = httpMock.expectOne('http://localhost:4200/api/test');
-    expect(req.request.method).toBe('GET');
-    req.flush({});
-  });
-
-  it('should use VERCEL_URL if available', () => {
-    (window as unknown as { process?: { env: Record<string, string | undefined> } }).process!.env[
-      'VERCEL_URL'
-    ] = 'preview-domain.vercel.app';
-    httpClient.get('/api/test2').subscribe();
-    const req = httpMock.expectOne('https://preview-domain.vercel.app/api/test2');
-    expect(req.request.method).toBe('GET');
-    req.flush({});
-  });
-
-  it('should fallback to VERCEL_PROJECT_PRODUCTION_URL if VERCEL_URL is not available', () => {
-    (window as unknown as { process?: { env: Record<string, string | undefined> } }).process!.env[
-      'VERCEL_PROJECT_PRODUCTION_URL'
-    ] = 'prod-domain.vercel.app';
-    httpClient.get('/api/test3').subscribe();
-    const req = httpMock.expectOne('https://prod-domain.vercel.app/api/test3');
-    expect(req.request.method).toBe('GET');
-    req.flush({});
-  });
+  it.each([
+    {
+      description: 'localhost by default',
+      env: {},
+      path: '/api/test',
+      expectedUrl: 'http://localhost:4200/api/test',
+    },
+    {
+      description: 'VERCEL_URL if available',
+      env: { VERCEL_URL: 'preview-domain.vercel.app' },
+      path: '/api/test2',
+      expectedUrl: 'https://preview-domain.vercel.app/api/test2',
+    },
+    {
+      description: 'VERCEL_PROJECT_PRODUCTION_URL fallback',
+      env: { VERCEL_PROJECT_PRODUCTION_URL: 'prod-domain.vercel.app' },
+      path: '/api/test3',
+      expectedUrl: 'https://prod-domain.vercel.app/api/test3',
+    },
+  ])(
+    'should make relative /api/ requests absolute using $description',
+    ({ env, path, expectedUrl }) => {
+      (
+        window as unknown as { process?: { env: Record<string, string | undefined> } }
+      ).process!.env = { ...env };
+      httpClient.get(path).subscribe();
+      const req = httpMock.expectOne(expectedUrl);
+      expect(req.request.method).toBe('GET');
+      req.flush({});
+    },
+  );
 
   it('should strip the "host" header if it is present', () => {
     httpClient
@@ -83,5 +88,106 @@ describe('vercelAbsoluteUrlInterceptor', () => {
     const req = httpMock.expectOne('/assets/image.png');
     expect(req.request.method).toBe('GET');
     req.flush({});
+  });
+
+  it('should attach x-vercel-protection-bypass header from VERCEL_AUTOMATION_BYPASS_SECRET', () => {
+    (window as unknown as { process?: { env: Record<string, string | undefined> } }).process!.env[
+      'VERCEL_AUTOMATION_BYPASS_SECRET'
+    ] = 'secret-bypass-token';
+    httpClient.get('/api/test-bypass').subscribe();
+    const req = httpMock.expectOne('http://localhost:4200/api/test-bypass');
+    expect(req.request.headers.get('x-vercel-protection-bypass')).toBe('secret-bypass-token');
+    req.flush({});
+  });
+
+  it('should handle /kitchen/api/ endpoints correctly', () => {
+    httpClient.get('/kitchen/api/recipes').subscribe();
+    const req = httpMock.expectOne('http://localhost:4200/kitchen/api/recipes');
+    expect(req.request.method).toBe('GET');
+    req.flush({});
+  });
+});
+
+describe('vercelAbsoluteUrlInterceptor with REQUEST token', () => {
+  it('should forward cookie, bypass, and authorization headers from incoming request object', () => {
+    const mockRequest = {
+      headers: {
+        cookie: 'session_id=123',
+        'x-vercel-protection-bypass': 'incoming-bypass',
+        authorization: 'Bearer token123',
+      },
+    };
+
+    TestBed.configureTestingModule({
+      providers: [
+        provideHttpClient(withInterceptors([vercelAbsoluteUrlInterceptor])),
+        provideHttpClientTesting(),
+        { provide: PLATFORM_ID, useValue: 'server' },
+        { provide: REQUEST, useValue: mockRequest },
+      ],
+    });
+
+    const httpMock = TestBed.inject(HttpTestingController);
+    const httpClient = TestBed.inject(HttpClient);
+
+    httpClient.get('/api/protected').subscribe();
+    const req = httpMock.expectOne('http://localhost:4200/api/protected');
+    expect(req.request.headers.get('cookie')).toBe('session_id=123');
+    expect(req.request.headers.get('x-vercel-protection-bypass')).toBe('incoming-bypass');
+    expect(req.request.headers.get('authorization')).toBe('Bearer token123');
+    req.flush({});
+    httpMock.verify();
+  });
+
+  it('should forward headers when incoming request has Headers instance', () => {
+    const headersMap = new Map<string, string>([
+      ['cookie', 'session_id=456'],
+      ['x-vercel-protection-bypass', 'header-bypass'],
+      ['authorization', 'Bearer token456'],
+    ]);
+    const mockRequest = {
+      headers: {
+        get: (name: string) => headersMap.get(name) || null,
+      },
+    };
+
+    TestBed.configureTestingModule({
+      providers: [
+        provideHttpClient(withInterceptors([vercelAbsoluteUrlInterceptor])),
+        provideHttpClientTesting(),
+        { provide: PLATFORM_ID, useValue: 'server' },
+        { provide: REQUEST, useValue: mockRequest },
+      ],
+    });
+
+    const httpMock = TestBed.inject(HttpTestingController);
+    const httpClient = TestBed.inject(HttpClient);
+
+    httpClient.get('/api/headers-instance').subscribe();
+    const req = httpMock.expectOne('http://localhost:4200/api/headers-instance');
+    expect(req.request.headers.get('cookie')).toBe('session_id=456');
+    expect(req.request.headers.get('x-vercel-protection-bypass')).toBe('header-bypass');
+    expect(req.request.headers.get('authorization')).toBe('Bearer token456');
+    req.flush({});
+    httpMock.verify();
+  });
+
+  it('should pass through unchanged when running on browser platform', () => {
+    TestBed.configureTestingModule({
+      providers: [
+        provideHttpClient(withInterceptors([vercelAbsoluteUrlInterceptor])),
+        provideHttpClientTesting(),
+        { provide: PLATFORM_ID, useValue: 'browser' },
+      ],
+    });
+
+    const httpMock = TestBed.inject(HttpTestingController);
+    const httpClient = TestBed.inject(HttpClient);
+
+    httpClient.get('/api/browser-call').subscribe();
+    const req = httpMock.expectOne('/api/browser-call');
+    expect(req.request.method).toBe('GET');
+    req.flush({});
+    httpMock.verify();
   });
 });

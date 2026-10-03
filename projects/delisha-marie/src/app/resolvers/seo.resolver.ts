@@ -107,7 +107,7 @@ export const seoDynamicPageResolver: ResolveFn<SeoContent> = async (route, state
   const siteName = "Delisha Marie's Kitchen";
   const slug = route.paramMap.get('slug') || route.data?.['slug'] || undefined;
   const appBaseHref =
-    locationStrategy.getBaseHref() === '/' ? '' : locationStrategy.getBaseHref().replace(/\/$/, '');
+    locationStrategy.getBaseHref() === '/' ? '' : locationStrategy.getBaseHref().replace('/$', '');
   const url = `${origin}${appBaseHref}${path}`;
 
   const seoConfig404: SeoContent = {
