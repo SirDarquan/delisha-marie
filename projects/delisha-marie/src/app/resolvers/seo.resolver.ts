@@ -1,4 +1,4 @@
-import { DOCUMENT, PathLocationStrategy } from '@angular/common';
+import { DOCUMENT, IMAGE_LOADER, PathLocationStrategy } from '@angular/common';
 import { inject } from '@angular/core';
 import { ResolveFn } from '@angular/router';
 import { SeoContent } from '../models/seo-content';
@@ -10,9 +10,19 @@ export const seoResolver: ResolveFn<Partial<SeoContent>> = (route, state) => {
   const seoService = inject(SeoService);
   const document = inject(DOCUMENT);
   const locationStrategy = inject(PathLocationStrategy);
+  const loader = inject(IMAGE_LOADER);
 
   const data = route.data as Partial<SeoContent>;
   const origin = document.location.origin;
+  let image = data.image
+    ? loader({
+        src: data.image,
+        width: Number.parseInt(data.imageWidth || '800', 10),
+      })
+    : '';
+  if (image && !image.startsWith('http')) {
+    image = `${origin}${image.startsWith('/') ? '' : '/'}${image}`;
+  }
 
   // Construct perfect canonical URL
   const path = state.url.split('?')[0].split('#')[0];
@@ -28,9 +38,10 @@ export const seoResolver: ResolveFn<Partial<SeoContent>> = (route, state) => {
     url,
     siteName: siteName,
     keywords: data.keywords,
-    image: data.image ? `${origin}${data.image}` : '',
+    image,
     imageWidth: data.imageWidth,
     imageHeight: data.imageHeight,
+    imageType: data.imageType,
     type: data.type || 'website',
     twitterCard: data.twitterCard || 'summary_large_image',
     content: data.content || 'index,follow',
@@ -114,7 +125,7 @@ export const seoDynamicPageResolver: ResolveFn<SeoContent> = async (route, state
     title: `Not Found | ${siteName}`,
     description: '',
     url,
-    siteName: siteName,
+    siteName,
     keywords: [],
     image: '',
     type: 'website',
@@ -135,7 +146,7 @@ export const seoDynamicPageResolver: ResolveFn<SeoContent> = async (route, state
     title: `${page.title} | ${siteName}`,
     description: page.description || '',
     url,
-    siteName: siteName,
+    siteName,
     keywords: page.keywords,
     image: '',
     type: 'website',
