@@ -39,7 +39,7 @@ export const schemaRecipeResolver: ResolveFn<SchemaObject[]> = async (route, sta
   const path = state.url.split('?')[0].split('#')[0];
   const url = `${origin}${path}`;
   const logoUrl = loader({
-    src: '/delisha-marie-profile.jpg',
+    src: '/delisha_marie_profile.jpg',
     width: 800,
   });
   const imageUrl = loader({

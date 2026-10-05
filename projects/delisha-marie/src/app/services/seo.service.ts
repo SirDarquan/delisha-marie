@@ -23,15 +23,19 @@ export class SeoService {
 
     // OpenGraph / Basic
     this.meta.addTag({ property: 'og:title', content: formattedTitle });
-    this.meta.addTag({ name: 'description', content: config.description });
-    this.meta.addTag({ property: 'og:description', content: config.description });
+    if (config.description) {
+      this.meta.addTag({ name: 'description', content: config.description });
+      this.meta.addTag({ property: 'og:description', content: config.description });
+    }
     this.meta.addTag({ property: 'og:url', content: config.url });
     this.meta.addTag({ property: 'og:site_name', content: config.siteName });
     this.meta.addTag({ property: 'og:type', content: config.type || 'website' });
 
     // Twitter
     this.meta.addTag({ name: 'twitter:title', content: formattedTitle });
-    this.meta.addTag({ name: 'twitter:description', content: config.description });
+    if (config.description) {
+      this.meta.addTag({ name: 'twitter:description', content: config.description });
+    }
     this.meta.addTag({
       name: 'twitter:card',
       content: config.twitterCard || 'summary_large_image',

@@ -26,8 +26,8 @@ export interface RecipeSeoData {
   description: string;
   keywords?: string[];
   image: string;
-  imageWidth?: string | number;
-  imageHeight?: string | number;
+  imageWidth?: string;
+  imageHeight?: string;
   imageType?: string;
 }
 

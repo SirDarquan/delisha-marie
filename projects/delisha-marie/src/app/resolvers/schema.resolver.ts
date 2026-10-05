@@ -48,7 +48,7 @@ export const schemaResolver: ResolveFn<SchemaObject[]> = (route, state) => {
   const slug = route.paramMap.get('slug') || '';
 
   const logoUrl = loader({
-    src: '/delisha-marie-profile.jpg',
+    src: '/delisha_marie_profile.jpg',
     width: 800,
   });
   schema.push(
@@ -92,7 +92,7 @@ export const schemaDynamicPageResolver: ResolveFn<SchemaObject[]> = async (route
   const slug = route.paramMap.get('slug') || route.data?.['slug'] || '';
 
   const logoUrl = loader({
-    src: '/delisha-marie-profile.jpg',
+    src: '/delisha_marie_profile.jpg',
     width: 800,
   });
   schema.push(

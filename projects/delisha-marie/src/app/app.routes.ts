@@ -25,6 +25,8 @@ export const routes: Routes = [
       description:
         'Discover authentic flavors and handcrafted recipes with Delisha Marie. Join our culinary journey for simple yet elegant dishes.',
       keywords: ['food blog', 'delisha marie', 'authentic recipes', 'home cooking', 'dallas food'],
+      image: 'delisha_marie_hero_widescreen.png',
+      imageType: 'image/png',
     },
   },
   {
@@ -36,6 +38,8 @@ export const routes: Routes = [
       description:
         'Explore Delisha Marie’s recipe index for handcrafted, seasonal recipes. Simple, elegant dishes for elevated home cooking.',
       keywords: ['recipe index', 'food categories', 'delisha marie masterlist'],
+      image: 'delisha_marie_profile.png',
+      imageType: 'image/png',
     },
   },
   // Top-level Collection Routes
@@ -70,6 +74,13 @@ export const routes: Routes = [
     },
   ]),
   {
+    path: 'tag',
+    title: 'Tag Not Found',
+    loadComponent: () => import('./pages/not-found/not-found').then((m) => m.NotFoundPage),
+    resolve: { seo: seoResolver },
+    data: { content: 'noindex,nofollow', itemType: 'tag', title: 'Tag Not Found' },
+  },
+  {
     path: 'recipe/:slug/print',
     title: recipeTitleResolver,
     loadComponent: () => import('./pages/recipe-print/recipe-print').then((m) => m.RecipePrint),
@@ -93,6 +104,13 @@ export const routes: Routes = [
       seo: seoRecipeResolver,
       schema: schemaRecipeResolver,
     },
+  },
+  {
+    path: 'recipe',
+    title: 'Recipe Not Found',
+    loadComponent: () => import('./pages/not-found/not-found').then((m) => m.NotFoundPage),
+    resolve: { seo: seoResolver },
+    data: { content: 'noindex,nofollow', itemType: 'recipe', title: 'Recipe Not Found' },
   },
   {
     path: 'search',
@@ -123,13 +141,6 @@ export const routes: Routes = [
     resolve: { seo: seoDynamicPageResolver, schema: schemaDynamicPageResolver },
     data: { slug: 'thank-you', content: 'noindex,nofollow' },
   },
-  {
-    path: 'contact',
-    loadComponent: () => import('./pages/contact/contact').then((m) => m.ContactPage),
-    title: dynamicPageResolver,
-    resolve: { seo: seoDynamicPageResolver, schema: schemaDynamicPageResolver },
-    data: { slug: 'contact', content: 'noindex,nofollow' },
-  },
   ...['faq', 'privacy-policy'].flatMap((slug) => [
     {
       path: slug,
@@ -139,5 +150,23 @@ export const routes: Routes = [
       data: { slug },
     },
   ]),
-  { path: '**', redirectTo: '' },
+  {
+    path: '404',
+    title: 'Page Not Found',
+    loadComponent: () => import('./pages/not-found/not-found').then((m) => m.NotFoundPage),
+    resolve: { seo: seoResolver },
+    data: {
+      title: 'Page Not Found',
+      itemType: 'page',
+      description:
+        "Sorry, this page doesn't exist or has moved. Something is always cooking in Delisha Marie's Kitchen!",
+      content: 'noindex,nofollow',
+    },
+  },
+  {
+    path: '**',
+    loadComponent: () => import('./pages/not-found/not-found').then((m) => m.NotFoundPage),
+    resolve: { seo: seoResolver },
+    data: { content: 'noindex,nofollow' },
+  },
 ];
