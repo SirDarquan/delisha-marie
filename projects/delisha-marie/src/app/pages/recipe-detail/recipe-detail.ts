@@ -190,7 +190,7 @@ export class RecipeDetail {
   readonly displayRecipe = computed(() => {
     const r = this.recipe();
     if (!r) {
-      this.router.navigate(['/404'], {
+      void this.router.navigate(['/404'], {
         skipLocationChange: true,
         queryParams: {
           itemType: 'recipe',
