@@ -1,4 +1,4 @@
-import { DOCUMENT, PathLocationStrategy } from '@angular/common';
+import { DOCUMENT, IMAGE_LOADER, PathLocationStrategy } from '@angular/common';
 import { inject } from '@angular/core';
 import { ResolveFn } from '@angular/router';
 import { SeoContent } from '../models/seo-content';
@@ -11,6 +11,7 @@ export const seoRecipeResolver: ResolveFn<SeoContent> = async (route, state) => 
   const recipeService = inject(RecipeService);
   const document = inject(DOCUMENT);
   const locationStrategy = inject(PathLocationStrategy);
+  const loader = inject(IMAGE_LOADER);
 
   const origin = document.location.origin;
   const path = state.url.split('?')[0].split('#')[0];
@@ -24,7 +25,7 @@ export const seoRecipeResolver: ResolveFn<SeoContent> = async (route, state) => 
     title: `Recipe Not Found | ${siteName}`,
     description: '',
     url,
-    siteName: siteName,
+    siteName,
     keywords: [],
     image: '',
     type: 'website',
@@ -42,16 +43,24 @@ export const seoRecipeResolver: ResolveFn<SeoContent> = async (route, state) => 
     seoService.setSEO(seoConfig404);
     return seoConfig404;
   }
-
+  let image = seo.image
+    ? loader({
+        src: seo.image,
+        width: Number.parseInt(seo.imageWidth || '800', 10),
+      })
+    : '';
+  if (image && !image.startsWith('http')) {
+    image = `${origin}${image.startsWith('/') ? '' : '/'}${image}`;
+  }
   const seoConfig: SeoContent = {
     title: `${seo.title} | ${siteName}`,
     description: seo.description || '',
     url,
-    siteName: siteName,
+    siteName,
     keywords: seo.keywords,
-    image: seo.image ? `${origin}${seo.image}` : '',
-    imageWidth: seo.imageWidth != null ? String(seo.imageWidth) : undefined,
-    imageHeight: seo.imageHeight != null ? String(seo.imageHeight) : undefined,
+    image,
+    imageWidth: seo.imageWidth,
+    imageHeight: seo.imageHeight,
     imageType: seo.imageType,
     type: 'website',
     twitterCard: 'summary_large_image',
