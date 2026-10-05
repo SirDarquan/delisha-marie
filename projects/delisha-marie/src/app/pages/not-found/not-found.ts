@@ -778,11 +778,10 @@ export class NotFoundPage {
     if (typeof title !== 'string') return null;
     const clean = title.trim();
     if (!clean) return null;
-    const notFoundSuffixRegex = /\s+Not\s+Found$/i;
-    if (notFoundSuffixRegex.test(clean)) {
-      return clean.replace(notFoundSuffixRegex, '').trim().toLowerCase();
-    }
     const lower = clean.toLowerCase();
+    if (lower.endsWith(' not found')) {
+      return lower.slice(0, -10).trim();
+    }
     if (lower.includes('recipe')) return 'recipe';
     if (lower.includes('tag')) return 'tag';
     if (lower.includes('collection')) return 'collection';
