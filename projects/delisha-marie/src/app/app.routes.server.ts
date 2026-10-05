@@ -14,10 +14,23 @@ export const serverRoutes: ServerRoute[] = [
   { path: 'special-diets/**', renderMode: RenderMode.Server },
   { path: 'the-best-recipes', renderMode: RenderMode.Server },
   { path: 'the-best-recipes/**', renderMode: RenderMode.Server },
+  {
+    path: 'tag',
+    renderMode: RenderMode.Server,
+    status: 404,
+    headers: { CacheControl: 'no-cache, no-store, must-revalidate' },
+  },
   { path: 'tag/**', renderMode: RenderMode.Server },
   { path: 'recipe/:slug', renderMode: RenderMode.Server },
   { path: 'recipe/:slug/page/:page', renderMode: RenderMode.Server },
-  { path: ':slug', renderMode: RenderMode.Server },
+  {
+    path: 'recipe',
+    renderMode: RenderMode.Server,
+    status: 404,
+    headers: { CacheControl: 'no-cache, no-store, must-revalidate' },
+  },
+  { path: 'faq', renderMode: RenderMode.Server },
+  { path: 'privacy-policy', renderMode: RenderMode.Server },
   { path: 'search', renderMode: RenderMode.Server },
   { path: 'search/page/:page', renderMode: RenderMode.Server },
 
@@ -26,5 +39,10 @@ export const serverRoutes: ServerRoute[] = [
   { path: 'thank-you', renderMode: RenderMode.Client },
 
   // Fallback → CSR (this is where the app shell lives)
-  { path: '**', renderMode: RenderMode.Client },
+  {
+    path: '**',
+    renderMode: RenderMode.Server,
+    status: 404,
+    headers: { CacheControl: 'no-cache, no-store, must-revalidate' },
+  },
 ];
