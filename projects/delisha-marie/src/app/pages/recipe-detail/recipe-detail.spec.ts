@@ -1,7 +1,7 @@
 import { DOCUMENT } from '@angular/common';
 import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { ActivatedRoute, provideRouter } from '@angular/router';
+import { ActivatedRoute, provideRouter, Router } from '@angular/router';
 import { BehaviorSubject, of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Recipe, RecipeService } from '../../services/recipe.service';
@@ -71,7 +71,7 @@ describe('RecipeDetail', () => {
     await TestBed.configureTestingModule({
       imports: [RecipeDetail],
       providers: [
-        provideRouter([]),
+        provideRouter([{ path: '404', component: class DummyComponent {} }]),
         {
           provide: ActivatedRoute,
           useValue: {
@@ -93,6 +93,7 @@ describe('RecipeDetail', () => {
 
     fixture = TestBed.createComponent(RecipeDetail);
     component = fixture.componentInstance;
+    vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
   });
 
   async function loadRecipe(recipe: Recipe | null, slug?: string) {
@@ -109,7 +110,7 @@ describe('RecipeDetail', () => {
   });
 
   it('should render skeleton loader when recipe is loading', () => {
-    recipeServiceMock.getRecipeBySlug.mockReturnValue(new Promise(() => {}));
+    recipeServiceMock.getRecipeBySlug.mockReturnValue(new Promise(() => undefined));
     paramsSubject.next({ slug: 'loading-recipe' });
     fixture.detectChanges();
     const compiled = fixture.nativeElement as HTMLElement;
@@ -131,11 +132,19 @@ describe('RecipeDetail', () => {
     expect(compiled.querySelector('dml-recipe-comments')).toBeTruthy();
   }, 30000);
 
-  it('should render "Recipe not found" when recipe is null', async () => {
+  it('should navigate to 404 when recipe is null', async () => {
+    const router = TestBed.inject(Router);
     await loadRecipe(null, 'not-found');
 
-    const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.textContent).toContain('Recipe not found');
+    expect(router.navigate).toHaveBeenCalledWith(
+      ['/404'],
+      expect.objectContaining({
+        queryParams: {
+          itemType: 'recipe',
+          title: 'Recipe Not Found',
+        },
+      }),
+    );
   });
 
   it('should generate correct breadcrumbs with all levels', async () => {
