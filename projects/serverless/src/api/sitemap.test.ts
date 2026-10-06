@@ -28,6 +28,7 @@ describe('sitemap', () => {
     process.env = { ...originalEnv };
     process.env['SUPABASE_URL'] = 'https://example.supabase.co';
     process.env['SUPABASE_KEY'] = 'test-key';
+    process.env['OPTIMIZE_IMAGE'] = 'https://ik.imagekit.io/delishamarie';
     delete process.env['SITE_URL'];
     resetSupabaseClient();
 
@@ -103,10 +104,11 @@ describe('sitemap', () => {
       expect(res.headers['content-type']).toContain('application/xml');
       expect(res.text).toContain('<loc>https://custom-domain.com/</loc>');
       expect(res.text).toContain('<loc>https://custom-domain.com/recipe-index</loc>');
+      expect(res.text).toContain('<loc>https://custom-domain.com/search</loc>');
       expect(res.text).toContain('<loc>https://custom-domain.com/faq</loc>');
-      expect(res.text).toContain('<loc>https://custom-domain.com/about</loc>');
-      expect(res.text).toContain('<loc>https://custom-domain.com/contact</loc>');
       expect(res.text).toContain('<loc>https://custom-domain.com/privacy-policy</loc>');
+      expect(res.text).not.toContain('<loc>https://custom-domain.com/about</loc>');
+      expect(res.text).not.toContain('<loc>https://custom-domain.com/contact</loc>');
       expect(res.text).toContain('<changefreq>monthly</changefreq>');
       expect(res.text).toContain('<changefreq>yearly</changefreq>');
     });
@@ -217,6 +219,94 @@ describe('sitemap', () => {
 
       const res = await request(app).get('/sitemap-recipes.xml');
       expect(res.text).not.toContain('<loc>');
+    });
+
+    it('should throw an error if OPTIMIZE_IMAGE is not set', async () => {
+      delete process.env['OPTIMIZE_IMAGE'];
+      await expect(request(app).get('/sitemap-recipes.xml')).rejects.toThrow(
+        'OPTIMIZE_IMAGE is required',
+      );
+    });
+
+    it('should prepend OPTIMIZE_IMAGE to relative recipe images', async () => {
+      mockLte.mockResolvedValueOnce({
+        data: [
+          {
+            slug: 'apple-pie',
+            title: 'Apple Pie',
+            image: '/images/recipes/apple-pie.jpg',
+            updated_at: '2026-08-01T12:00:00.000Z',
+          },
+        ],
+        error: null,
+      });
+
+      process.env['SITE_URL'] = 'https://custom-domain.com';
+      process.env['OPTIMIZE_IMAGE'] = 'https://ik.imagekit.io/delishamarie';
+      const res = await request(app).get('/sitemap-recipes.xml');
+
+      expect(res.status).toBe(200);
+      expect(res.text).toContain(
+        '<image:loc>https://ik.imagekit.io/delishamarie/images/recipes/apple-pie.jpg</image:loc>',
+      );
+    });
+  });
+
+  describe('dynamic prefix and rewrite support', () => {
+    it('should support /kitchen prefix on master sitemap', async () => {
+      process.env['SITE_URL'] = 'https://custom-domain.com';
+      const res = await request(app).get('/kitchen/sitemap.xml');
+
+      expect(res.status).toBe(200);
+      expect(res.text).toContain('<loc>https://custom-domain.com/kitchen/sitemap-pages.xml</loc>');
+      expect(res.text).toContain(
+        '<loc>https://custom-domain.com/kitchen/sitemap-categories.xml</loc>',
+      );
+      expect(res.text).toContain(
+        '<loc>https://custom-domain.com/kitchen/sitemap-recipes.xml</loc>',
+      );
+    });
+
+    it('should support arbitrary prefix on master sitemap', async () => {
+      process.env['SITE_URL'] = 'https://custom-domain.com';
+      const res = await request(app).get('/blog/v2/sitemap.xml');
+
+      expect(res.status).toBe(200);
+      expect(res.text).toContain('<loc>https://custom-domain.com/blog/v2/sitemap-pages.xml</loc>');
+    });
+
+    it('should support /kitchen prefix on recipes sitemap', async () => {
+      mockLte.mockResolvedValueOnce({
+        data: [
+          {
+            slug: 'chocolate-cake',
+            title: 'Chocolate Cake',
+            image: '/cake.jpg',
+            updated_at: '2026-08-01T12:00:00.000Z',
+          },
+        ],
+        error: null,
+      });
+
+      process.env['SITE_URL'] = 'https://custom-domain.com';
+      process.env['OPTIMIZE_IMAGE'] = 'https://ik.imagekit.io/delishamarie';
+      const res = await request(app).get('/kitchen/sitemap-recipes.xml');
+
+      expect(res.status).toBe(200);
+      expect(res.text).toContain(
+        '<loc>https://custom-domain.com/kitchen/recipe/chocolate-cake</loc>',
+      );
+      expect(res.text).toContain(
+        '<image:loc>https://ik.imagekit.io/delishamarie/cake.jpg</image:loc>',
+      );
+    });
+
+    it('should support rewrite via query param ?path=', async () => {
+      process.env['SITE_URL'] = 'https://custom-domain.com';
+      const res = await request(app).get('/api/sitemap?path=/kitchen/sitemap-pages.xml');
+
+      expect(res.status).toBe(200);
+      expect(res.text).toContain('<loc>https://custom-domain.com/kitchen/recipe-index</loc>');
     });
   });
 

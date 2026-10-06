@@ -9,6 +9,10 @@
       "destination": "/api/robots"
     },
     {
+      "source": "/:prefix+/sitemap(.*).xml",
+      "destination": "/api/sitemap"
+    },
+    {
       "source": "/sitemap(.*).xml",
       "destination": "/api/sitemap"
     },

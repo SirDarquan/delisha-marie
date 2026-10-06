@@ -19,15 +19,17 @@ function escapeXml(unsafe: string): string {
 }
 
 function getBaseUrl(req: VercelRequest): string {
+  let base: string;
   if (process.env['SITE_URL']) {
-    return process.env['SITE_URL'];
+    base = process.env['SITE_URL'];
+  } else if (process.env['VERCEL_PROJECT_PRODUCTION_URL']) {
+    base = `https://${process.env['VERCEL_PROJECT_PRODUCTION_URL']}`;
+  } else {
+    const proto = req.headers['x-forwarded-proto'] || 'https';
+    const host = req.headers['host'] || 'localhost';
+    base = `${proto}://${host}`;
   }
-  if (process.env['VERCEL_PROJECT_PRODUCTION_URL']) {
-    return `https://${process.env['VERCEL_PROJECT_PRODUCTION_URL']}`;
-  }
-  const proto = req.headers['x-forwarded-proto'] || 'https';
-  const host = req.headers['host'] || 'localhost';
-  return `${proto}://${host}`;
+  return base.endsWith('/') ? base.slice(0, -1) : base;
 }
 
 // 1. Define the Interface
@@ -64,8 +66,6 @@ class PagesSitemap implements ISitemap {
       { url: '/recipe-index', changefreq: 'weekly', priority: '0.9' },
       { url: '/search', changefreq: 'weekly', priority: '0.7' },
       { url: '/faq', changefreq: 'monthly', priority: '0.6' },
-      { url: '/about', changefreq: 'monthly', priority: '0.6' },
-      { url: '/contact', changefreq: 'monthly', priority: '0.5' },
       { url: '/privacy-policy', changefreq: 'yearly', priority: '0.3' },
     ];
 
@@ -108,6 +108,11 @@ ${categories
 // 2. Concrete Strategy: Recipes
 class RecipesSitemap implements ISitemap {
   async generate(baseUrl: string): Promise<string> {
+    const optimizeImage = process.env['OPTIMIZE_IMAGE'];
+    if (!optimizeImage) {
+      throw new Error('OPTIMIZE_IMAGE is required');
+    }
+
     let recipesXml = '';
 
     try {
@@ -129,8 +134,13 @@ class RecipesSitemap implements ISitemap {
 
             let imageTag = '';
             if (recipe.image) {
-              imageTag = `    <image:image>
-      <image:loc>${escapeXml(recipe.image)}</image:loc>
+              const imageUrl =
+                recipe.image.startsWith('http://') || recipe.image.startsWith('https://')
+                  ? recipe.image
+                  : `${optimizeImage}${recipe.image}`;
+              imageTag = `
+    <image:image>
+      <image:loc>${escapeXml(imageUrl)}</image:loc>
     </image:image>`;
             }
 
@@ -163,18 +173,27 @@ const sitemapRoutes: Record<string, ISitemap> = {
   '/sitemap-recipes.xml': new RecipesSitemap(),
 };
 
+const SITEMAP_PATTERN = /\/sitemap[^/]*\.xml$/;
+
 // 4. The Main Handler
 export default async function sitemap(req: VercelRequest, res: VercelResponse): Promise<void> {
-  const url = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`);
-  const pathname = url.pathname;
+  const url = new URL(req.url || '/', `http://${req.headers?.host || 'localhost'}`);
+  const rawPath = (req.query?.['path'] as string | undefined) || url.pathname;
 
+  // Extract sitemap filename e.g., '/sitemap.xml', '/sitemap-recipes.xml'
+  const match = SITEMAP_PATTERN.exec(rawPath);
+  const routeKey = match ? match[0] : '';
+
+  // Extract any prefix preceding the sitemap filename (e.g., '/kitchen', '/blog', or '')
+  const prefix = match ? rawPath.slice(0, match.index) : '';
   res.setHeader('Content-Type', 'application/xml; charset=utf-8');
   res.setHeader('Cache-Control', 'public, max-age=3600, s-maxage=86400');
 
-  const handler = sitemapRoutes[pathname];
+  const handler = sitemapRoutes[routeKey];
 
   if (handler) {
-    const baseUrl = getBaseUrl(req);
+    const rawBaseUrl = getBaseUrl(req);
+    const baseUrl = `${rawBaseUrl}${prefix}`;
     const xmlContent = await handler.generate(baseUrl);
     res.status(200).send(xmlContent);
   } else {
