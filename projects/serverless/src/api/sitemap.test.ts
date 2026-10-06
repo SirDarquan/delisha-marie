@@ -59,11 +59,20 @@ describe('sitemap', () => {
       expect(res.text).toContain('<loc>https://custom-domain.com/sitemap-recipes.xml</loc>');
     });
 
-    it('should use VERCEL_PROJECT_PRODUCTION_URL if SITE_URL is not set', async () => {
+    it('should use VERCEL_PROJECT_PRODUCTION_URL in production if SITE_URL is not set', async () => {
       delete process.env['SITE_URL'];
+      process.env['VERCEL_ENV'] = 'production';
       process.env['VERCEL_PROJECT_PRODUCTION_URL'] = 'vercel-app.com';
       const res = await request(app).get('/sitemap.xml');
       expect(res.text).toContain('<loc>https://vercel-app.com/sitemap-pages.xml</loc>');
+    });
+
+    it('should use VERCEL_URL in preview if SITE_URL is not set', async () => {
+      delete process.env['SITE_URL'];
+      process.env['VERCEL_ENV'] = 'preview';
+      process.env['VERCEL_URL'] = 'preview-app.vercel.app';
+      const res = await request(app).get('/sitemap.xml');
+      expect(res.text).toContain('<loc>https://preview-app.vercel.app/sitemap-pages.xml</loc>');
     });
 
     it('should fallback to req.headers if no env vars are set', async () => {
