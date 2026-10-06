@@ -11,12 +11,25 @@ interface RobotsTxt {
   sitemap?: string | string[];
 }
 
+function getBaseUrl(req: VercelRequest): string {
+  let base: string;
+  const vercelEnv = process.env['VERCEL_ENV'];
+  if (process.env['SITE_URL']) {
+    base = process.env['SITE_URL'];
+  } else if (vercelEnv === 'preview') {
+    base = `https://${process.env['VERCEL_URL']}`;
+  } else if (vercelEnv === 'production') {
+    base = `https://${process.env['VERCEL_PROJECT_PRODUCTION_URL']}`;
+  } else {
+    const proto = req.headers?.['x-forwarded-proto'] || 'https';
+    const host = req.headers?.['host'] || 'localhost';
+    base = `${proto}://${host}`;
+  }
+  return base.endsWith('/') ? base.slice(0, -1) : base;
+}
+
 export default function robotsTxt(req: VercelRequest, res: VercelResponse): void {
-  const baseUrl =
-    process.env['SITE_URL'] ||
-    (process.env['VERCEL_PROJECT_PRODUCTION_URL']
-      ? `https://${process.env['VERCEL_PROJECT_PRODUCTION_URL']}`
-      : 'http://localhost:4200');
+  const baseUrl = getBaseUrl(req);
   const robotsTxt: RobotsTxt = JSON.parse(
     process.env['ROBOTS_TXT'] || '{"rules":[{"userAgent":"*","disallow":["/"]}]}',
   );

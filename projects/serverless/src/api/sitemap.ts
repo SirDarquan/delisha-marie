@@ -20,13 +20,16 @@ function escapeXml(unsafe: string): string {
 
 function getBaseUrl(req: VercelRequest): string {
   let base: string;
+  const vercelEnv = process.env['VERCEL_ENV'];
   if (process.env['SITE_URL']) {
     base = process.env['SITE_URL'];
-  } else if (process.env['VERCEL_PROJECT_PRODUCTION_URL']) {
+  } else if (vercelEnv === 'preview') {
+    base = `https://${process.env['VERCEL_URL']}`;
+  } else if (vercelEnv === 'production') {
     base = `https://${process.env['VERCEL_PROJECT_PRODUCTION_URL']}`;
   } else {
-    const proto = req.headers['x-forwarded-proto'] || 'https';
-    const host = req.headers['host'] || 'localhost';
+    const proto = req.headers?.['x-forwarded-proto'] || 'https';
+    const host = req.headers?.['host'] || 'localhost';
     base = `${proto}://${host}`;
   }
   return base.endsWith('/') ? base.slice(0, -1) : base;

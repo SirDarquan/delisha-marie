@@ -17,10 +17,6 @@
       "destination": "/api/sitemap"
     },
     {
-      "source": "/sitemap(.*).xml",
-      "destination": "/api/sitemap"
-    },
-    {
       "source": "/kitchen/api/recipes/(.*)",
       "destination": "/api/recipes?slug=$1"
     },

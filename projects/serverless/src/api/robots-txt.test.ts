@@ -1,5 +1,4 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createRequestMock } from './test-utils';
 import robotsTxtRouter from './robots-txt';
 
@@ -113,16 +112,46 @@ describe('robotsTxtRouter', () => {
     expect(res.text).toContain('Sitemap: https://example.com/sitemap2.xml');
   });
 
-  it('should use VERCEL_PROJECT_PRODUCTION_URL if SITE_URL is not set', () => {
+  it('should use VERCEL_PROJECT_PRODUCTION_URL in production if SITE_URL is not set', async () => {
     delete process.env['SITE_URL'];
+    process.env['VERCEL_ENV'] = 'production';
     process.env['VERCEL_PROJECT_PRODUCTION_URL'] = 'vercel-test.com';
-    const req = { headers: {} } as unknown as VercelRequest;
-    const res = {
-      setHeader: vi.fn(),
-      send: vi.fn(),
-      status: vi.fn().mockReturnThis(),
-    } as unknown as VercelResponse;
-    robotsTxtRouter(req, res);
-    expect(res.send).toHaveBeenCalled();
+    process.env['ROBOTS_TXT'] = JSON.stringify({
+      rules: [],
+      sitemap: '/sitemap.xml',
+    });
+    const res = await request(app).get('/robots.txt');
+    expect(res.status).toBe(200);
+    expect(res.text).toContain('Sitemap: https://vercel-test.com/sitemap.xml');
+  });
+
+  it('should use VERCEL_URL in preview if SITE_URL is not set', async () => {
+    delete process.env['SITE_URL'];
+    process.env['VERCEL_ENV'] = 'preview';
+    process.env['VERCEL_URL'] = 'preview-test.vercel.app';
+    process.env['ROBOTS_TXT'] = JSON.stringify({
+      rules: [],
+      sitemap: '/sitemap.xml',
+    });
+    const res = await request(app).get('/robots.txt');
+    expect(res.status).toBe(200);
+    expect(res.text).toContain('Sitemap: https://preview-test.vercel.app/sitemap.xml');
+  });
+
+  it('should fallback to headers/localhost when no env vars are set', async () => {
+    delete process.env['SITE_URL'];
+    delete process.env['VERCEL_ENV'];
+    delete process.env['VERCEL_PROJECT_PRODUCTION_URL'];
+    delete process.env['VERCEL_URL'];
+    process.env['ROBOTS_TXT'] = JSON.stringify({
+      rules: [],
+      sitemap: '/sitemap.xml',
+    });
+    const res = await request(app)
+      .get('/robots.txt')
+      .set('x-forwarded-proto', 'https')
+      .set('host', 'custom-host:4200');
+    expect(res.status).toBe(200);
+    expect(res.text).toContain('Sitemap: https://custom-host:4200/sitemap.xml');
   });
 });
