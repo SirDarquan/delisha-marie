@@ -16,6 +16,16 @@ describe('Admin Pages Router API', () => {
     vi.mocked(backendService.verifyToken).mockResolvedValue({
       id: 'test-user-id',
     } as unknown as import('@supabase/supabase-js').User);
+    backendService.supabaseAdmin = {
+      from: vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        maybeSingle: vi.fn().mockResolvedValue({
+          data: { role: 'member', status: 'active' },
+          error: null,
+        }),
+      }),
+    } as unknown as typeof backendService.supabaseAdmin;
     app = express();
     app.use(express.json());
     app.use(cookieParser());

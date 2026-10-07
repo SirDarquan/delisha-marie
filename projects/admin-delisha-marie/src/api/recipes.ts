@@ -135,9 +135,14 @@ async function fetchPaginatedRecipes(
   limit: number,
   search: string | undefined,
   statusOrder: Record<string, number>,
+  tenantId?: string | null,
 ): Promise<Record<string, unknown>[]> {
   // 1. Fetch lightweight skeleton
   let skeletonQuery = client.from('recipes').select('id, status, updated_at');
+
+  if (tenantId) {
+    skeletonQuery = skeletonQuery.eq('tenant_id', tenantId);
+  }
 
   if (search) {
     skeletonQuery = skeletonQuery.ilike('title', `%${search}%`);
@@ -206,6 +211,7 @@ async function fetchPaginatedRecipes(
 async function fetchAllRecipes(
   client: SupabaseClient,
   statusOrder: Record<string, number>,
+  tenantId?: string | null,
 ): Promise<Record<string, unknown>[]> {
   const allData: Record<string, unknown>[] = [];
   let from = 0;
@@ -213,11 +219,16 @@ async function fetchAllRecipes(
   let hasMore = true;
 
   while (hasMore) {
-    const { data, error } = await client
+    let query = client
       .from('recipes')
       .select('*, recipe_holidays (holidays (name)), recipe_special_diets (special_diets (name))')
-      .order('updated_at', { ascending: false })
-      .range(from, from + step - 1);
+      .order('updated_at', { ascending: false });
+
+    if (tenantId) {
+      query = query.eq('tenant_id', tenantId);
+    }
+
+    const { data, error } = await query.range(from, from + step - 1);
     if (error) throw error;
 
     if (data && data.length > 0) {
@@ -264,11 +275,18 @@ recipesRouter.get('/recipes', async (req: AuthRequest, res: Response) => {
       const offset = Number.parseInt(offsetStr || '0', 10);
       const limit = Number.parseInt(limitStr || '100', 10);
       const search = req.query['search'] as string | undefined;
-      const formatted = await fetchPaginatedRecipes(client, offset, limit, search, statusOrder);
+      const formatted = await fetchPaginatedRecipes(
+        client,
+        offset,
+        limit,
+        search,
+        statusOrder,
+        req.tenantId,
+      );
       return res.json(formatted);
     }
 
-    const formatted = await fetchAllRecipes(client, statusOrder);
+    const formatted = await fetchAllRecipes(client, statusOrder, req.tenantId);
     return res.json(formatted);
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
@@ -294,14 +312,18 @@ recipesRouter.get('/home', async (req: AuthRequest, res: Response) => {
     const client = backendService.getClient(req.token);
 
     // 1. Get total recipes count
-    const { count, error: countError } = await client
-      .from('recipes')
-      .select('*', { count: 'exact', head: true });
+    let countQuery = client.from('recipes').select('*', { count: 'exact', head: true });
+
+    if (req.tenantId) {
+      countQuery = countQuery.eq('tenant_id', req.tenantId);
+    }
+
+    const { count, error: countError } = await countQuery;
 
     if (countError) throw countError;
 
     // 2. Get recent recipes (last 3)
-    const { data: recentData, error: recentError } = await client
+    let recentQuery = client
       .from('recipes')
       .select(
         `
@@ -315,8 +337,13 @@ recipesRouter.get('/home', async (req: AuthRequest, res: Response) => {
         )
       `,
       )
-      .order('created_at', { ascending: false })
-      .limit(3);
+      .order('created_at', { ascending: false });
+
+    if (req.tenantId) {
+      recentQuery = recentQuery.eq('tenant_id', req.tenantId);
+    }
+
+    const { data: recentData, error: recentError } = await recentQuery.limit(3);
 
     if (recentError) throw recentError;
 
@@ -454,6 +481,9 @@ recipesRouter.post('/recipes', async (req: AuthRequest, res: Response) => {
     const dbBody = normalizeDbBody(
       filterRecipeColumns(snakeCaseKeys(req.body as Record<string, unknown>)),
     );
+    if (req.tenantId && !dbBody['tenant_id']) {
+      dbBody['tenant_id'] = req.tenantId;
+    }
 
     const { data: recipe, error } = await client.from('recipes').insert(dbBody).select().single();
     if (error) throw error;
@@ -468,6 +498,7 @@ recipesRouter.post('/recipes', async (req: AuthRequest, res: Response) => {
       equipment: equipmentData,
       searchIngredients: searchIngredients,
       ingredients: ingredients,
+      tenantId: req.tenantId,
     });
 
     return res.json({
@@ -534,6 +565,7 @@ recipesRouter.put('/recipes/:id', async (req: AuthRequest, res: Response) => {
       equipment: equipmentData,
       searchIngredients: searchIngredients,
       ingredients: ingredients,
+      tenantId: req.tenantId,
     });
 
     return res.json({
@@ -668,25 +700,36 @@ async function getOrCreateLookupItem(
   tableName: 'methods' | 'holidays' | 'special_diets' | 'categories' | 'ingredients',
   name: string,
   urlOverride?: string,
+  tenantId?: string | null,
 ): Promise<string> {
   const isCategory = tableName === 'categories';
   const matchField = isCategory ? 'url' : 'name';
   const matchValue = isCategory ? urlOverride || '' : name;
 
-  const { data, error } = await client
-    .from(tableName)
-    .select('id')
-    .eq(matchField, matchValue)
-    .maybeSingle();
+  let query = client.from(tableName).select('id').eq(matchField, matchValue);
+
+  if (tenantId) {
+    query = query.eq('tenant_id', tenantId);
+  }
+
+  const { data, error } = await query.maybeSingle();
   if (error) throw error;
   if (data) return data.id as string;
 
   const matchFieldInsert = isCategory ? 'url' : 'slug';
   const matchValueInsert = isCategory ? urlOverride || '' : slugify(name);
 
+  const insertPayload: Record<string, unknown> = {
+    name,
+    [matchFieldInsert]: matchValueInsert,
+  };
+  if (tenantId) {
+    insertPayload['tenant_id'] = tenantId;
+  }
+
   const { data: newItem, error: insertError } = await client
     .from(tableName)
-    .insert({ name, [matchFieldInsert]: matchValueInsert })
+    .insert(insertPayload)
     .select('id')
     .single();
   if (insertError) throw insertError;
@@ -697,10 +740,11 @@ async function saveRecipeCategoryTrail(
   client: SupabaseClient,
   recipeId: string | number,
   trails: unknown[][],
+  tenantId?: string | null,
 ): Promise<void> {
   for (const trail of trails) {
     if (!Array.isArray(trail)) continue;
-    await saveTrailParts(client, recipeId, trail);
+    await saveTrailParts(client, recipeId, trail, tenantId);
   }
 }
 
@@ -708,11 +752,18 @@ async function saveTrailParts(
   client: SupabaseClient,
   recipeId: string | number,
   trail: unknown[],
+  tenantId?: string | null,
 ): Promise<void> {
   for (let i = 2; i < trail.length; i++) {
     const part = trail[i] as { name?: string; url?: string } | null;
     if (part?.name && typeof part.url === 'string' && !part.url.startsWith('/recipe/')) {
-      const catId = await getOrCreateLookupItem(client, 'categories', part.name, part.url);
+      const catId = await getOrCreateLookupItem(
+        client,
+        'categories',
+        part.name,
+        part.url,
+        tenantId,
+      );
       const { error } = await client
         .from('recipe_categories')
         .upsert(
@@ -731,10 +782,17 @@ async function saveRecipeListRelations(
   joinTable: 'recipe_holidays' | 'recipe_special_diets',
   lookupTable: 'holidays' | 'special_diets',
   fkColumn: 'holiday_id' | 'diet_id',
+  tenantId?: string | null,
 ): Promise<void> {
   for (const name of items) {
     if (typeof name === 'string' && name.trim() !== '') {
-      const itemId = await getOrCreateLookupItem(client, lookupTable, name.trim());
+      const itemId = await getOrCreateLookupItem(
+        client,
+        lookupTable,
+        name.trim(),
+        undefined,
+        tenantId,
+      );
       const { error } = await client
         .from(joinTable)
         .upsert(
@@ -754,6 +812,7 @@ interface RecipeRelationsOptions {
   equipment?: unknown;
   searchIngredients?: unknown;
   ingredients?: unknown;
+  tenantId?: string | null;
 }
 
 async function clearOldRelations(client: SupabaseClient, recipeId: string | number): Promise<void> {
@@ -801,9 +860,16 @@ async function saveRecipeIngredients(
   client: SupabaseClient,
   recipeId: string | number,
   tags: string[],
+  tenantId?: string | null,
 ): Promise<void> {
   for (const tag of tags) {
-    const ingredientId = await getOrCreateLookupItem(client, 'ingredients', tag);
+    const ingredientId = await getOrCreateLookupItem(
+      client,
+      'ingredients',
+      tag,
+      undefined,
+      tenantId,
+    );
     const { error } = await client
       .from('recipe_ingredients')
       .insert({ recipe_id: recipeId, ingredient_id: ingredientId });
@@ -819,11 +885,17 @@ async function saveAllRecipeRelations(
   await clearOldRelations(client, recipeId);
 
   if (options.category?.trails && Array.isArray(options.category.trails)) {
-    await saveRecipeCategoryTrail(client, recipeId, options.category.trails);
+    await saveRecipeCategoryTrail(client, recipeId, options.category.trails, options.tenantId);
   }
 
   if (typeof options.method === 'string' && options.method.trim() !== '') {
-    const methodId = await getOrCreateLookupItem(client, 'methods', options.method.trim());
+    const methodId = await getOrCreateLookupItem(
+      client,
+      'methods',
+      options.method.trim(),
+      undefined,
+      options.tenantId,
+    );
     const { error } = await client
       .from('recipe_methods')
       .upsert({ recipe_id: recipeId, method_id: methodId }, { onConflict: 'recipe_id,method_id' });
@@ -838,6 +910,7 @@ async function saveAllRecipeRelations(
       'recipe_holidays',
       'holidays',
       'holiday_id',
+      options.tenantId,
     );
   }
 
@@ -849,22 +922,29 @@ async function saveAllRecipeRelations(
       'recipe_special_diets',
       'special_diets',
       'diet_id',
+      options.tenantId,
     );
   }
 
   if (Array.isArray(options.equipment) && options.equipment.length > 0) {
-    const equipmentToInsert = options.equipment.map((eq) => ({
-      recipe_id: recipeId,
-      title: eq.title,
-      url: eq.url,
-      image: eq.image,
-    }));
+    const equipmentToInsert = options.equipment.map((eq) => {
+      const payload: Record<string, unknown> = {
+        recipe_id: recipeId,
+        title: eq.title,
+        url: eq.url,
+        image: eq.image,
+      };
+      if (options.tenantId) {
+        payload['tenant_id'] = options.tenantId;
+      }
+      return payload;
+    });
     const { error } = await client.from('equipment').insert(equipmentToInsert);
     if (error) throw error;
   }
 
   const tagsToSave = extractTagsToSave(options.searchIngredients, options.ingredients);
-  await saveRecipeIngredients(client, recipeId, tagsToSave);
+  await saveRecipeIngredients(client, recipeId, tagsToSave, options.tenantId);
 
   return tagsToSave;
 }
