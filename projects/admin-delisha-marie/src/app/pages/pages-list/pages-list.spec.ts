@@ -2,6 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { PagesListComponent } from './pages-list';
 import { PagesService } from '../../services/pages.service';
+import { AuthService } from '../../services/auth.service';
 import { provideRouter } from '@angular/router';
 
 describe('PagesListComponent', () => {
@@ -16,7 +17,11 @@ describe('PagesListComponent', () => {
 
     await TestBed.configureTestingModule({
       imports: [PagesListComponent],
-      providers: [provideRouter([]), { provide: PagesService, useValue: pagesServiceSpy }],
+      providers: [
+        provideRouter([]),
+        { provide: PagesService, useValue: pagesServiceSpy },
+        { provide: AuthService, useValue: { tenant: () => ({ name: 'Test Tenant' }) } },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(PagesListComponent);

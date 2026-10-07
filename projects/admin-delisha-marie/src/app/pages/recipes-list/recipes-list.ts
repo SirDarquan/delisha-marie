@@ -6,6 +6,7 @@ import {
   Component,
   DestroyRef,
   afterNextRender,
+  computed,
   inject,
   OnInit,
   signal,
@@ -24,6 +25,7 @@ import { ConfirmDialogComponent } from '../../components/confirm-dialog/confirm-
 import { CreateRecipeDialogComponent } from '../../components/create-recipe-dialog/create-recipe-dialog';
 import { Recipe } from '../../models/recipe.model';
 import { RecipeService } from '../../services/recipe.service';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-recipes-list',
@@ -40,7 +42,9 @@ import { RecipeService } from '../../services/recipe.service';
     <div class="p-4 md:p-8">
       <div class="mb-6 flex justify-between items-center">
         <div>
-          <h1 class="text-2xl font-bold text-white tracking-tight">Recipe Directory</h1>
+          <div class="flex items-center gap-3">
+            <h1 class="text-2xl font-bold text-white tracking-tight">Recipe Directory</h1>
+          </div>
           <p class="text-slate-400 text-xs font-medium mt-1">Manage and edit your recipes</p>
         </div>
       </div>
@@ -184,7 +188,23 @@ import { RecipeService } from '../../services/recipe.service';
 
                 @if (recipes().length === 0 && !isLoading()) {
                   <div class="p-8 text-center text-slate-400 font-medium text-sm">
-                    No recipes found. Try a different search term.
+                    @if (!tenant() && isAdmin()) {
+                      <span
+                        >You are logged in as an Administrator without an active tenant
+                        sandbox.</span
+                      >
+                      <div class="mt-2">
+                        <a
+                          routerLink="/users"
+                          class="text-purple-400 hover:text-purple-300 underline font-semibold">
+                          Go to Users &amp; Tenants
+                        </a>
+                        to log in as a member (e.g. sirdarquan+dm&#64;gmail.com) and view their
+                        recipes.
+                      </div>
+                    } @else {
+                      <span>No recipes found. Try a different search term.</span>
+                    }
                   </div>
                 }
 
@@ -222,12 +242,15 @@ import { RecipeService } from '../../services/recipe.service';
 })
 export class RecipesListComponent implements OnInit {
   private readonly recipeService = inject(RecipeService);
+  private readonly authService = inject(AuthService);
   private readonly dialog = inject(MatDialog);
   private readonly destroyRef = inject(DestroyRef);
   private readonly cdr = inject(ChangeDetectorRef);
 
   readonly viewport = viewChild<CdkVirtualScrollViewport>(CdkVirtualScrollViewport);
 
+  readonly tenant = computed(() => this.authService.tenant());
+  readonly isAdmin = computed(() => this.authService.isAdmin());
   protected readonly searchTerm = signal<string>('');
   protected readonly highlightedRecipeId = signal<string | number | null>(null);
 
@@ -239,7 +262,9 @@ export class RecipesListComponent implements OnInit {
     );
   }
 
-  protected readonly recipes = signal<Recipe[]>(this.recipeService.getCachedRecipesList());
+  protected readonly recipes = signal<Recipe[]>(
+    this.recipeService.getCachedRecipesList(this.authService.tenant()?.id),
+  );
   protected readonly isLoading = signal<boolean>(false);
   private hasMore = true;
   private offset = this.recipes().length;
@@ -248,6 +273,15 @@ export class RecipesListComponent implements OnInit {
   constructor() {
     toObservable(this.searchTerm)
       .pipe(skip(1), debounceTime(500), takeUntilDestroyed())
+      .subscribe(() => {
+        this.recipes.set([]);
+        this.offset = 0;
+        this.hasMore = true;
+        this.fetchNextBatch();
+      });
+
+    toObservable(this.tenant)
+      .pipe(skip(1), takeUntilDestroyed())
       .subscribe(() => {
         this.recipes.set([]);
         this.offset = 0;
@@ -288,7 +322,7 @@ export class RecipesListComponent implements OnInit {
       if (vp) {
         this.recipeService.setLastScrollOffset(vp.measureScrollOffset());
       }
-      this.recipeService.setCachedRecipesList(this.recipes());
+      this.recipeService.setCachedRecipesList(this.recipes(), this.authService.tenant()?.id);
     });
   }
 
@@ -350,7 +384,7 @@ export class RecipesListComponent implements OnInit {
       .subscribe((newRecipe) => {
         if (newRecipe) {
           this.recipes.update((list) => [newRecipe, ...list]);
-          this.recipeService.setCachedRecipesList(this.recipes());
+          this.recipeService.setCachedRecipesList(this.recipes(), this.authService.tenant()?.id);
         }
       });
   }
@@ -371,7 +405,7 @@ export class RecipesListComponent implements OnInit {
       if (result) {
         await this.recipeService.deleteRecipe(id);
         this.recipes.update((list) => list.filter((r) => r.id !== id));
-        this.recipeService.setCachedRecipesList(this.recipes());
+        this.recipeService.setCachedRecipesList(this.recipes(), this.authService.tenant()?.id);
       }
     });
   }

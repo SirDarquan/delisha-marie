@@ -1,10 +1,12 @@
 import { ScrollingModule } from '@angular/cdk/scrolling';
+import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MatDialog } from '@angular/material/dialog';
 import { provideRouter } from '@angular/router';
 import { of } from 'rxjs';
 import { Recipe } from '../../models/recipe.model';
 import { RecipeService } from '../../services/recipe.service';
+import { AuthService } from '../../services/auth.service';
 import { RecipesListComponent } from './recipes-list';
 import { CreateRecipeDialogComponent } from '../../components/create-recipe-dialog/create-recipe-dialog';
 
@@ -14,6 +16,14 @@ describe('RecipesListComponent', () => {
 
   let mockRecipesData: Recipe[] = [];
   let deletedId: string | number | null = null;
+
+  const fakeTenant = signal<{ name: string; id: string } | null>(null);
+  const fakeIsAdmin = signal<boolean>(false);
+
+  const fakeAuthService = {
+    tenant: fakeTenant,
+    isAdmin: fakeIsAdmin,
+  };
 
   const fakeRecipeService = {
     fetchRecipes: vi.fn().mockResolvedValue(mockRecipesData),
@@ -84,11 +94,14 @@ describe('RecipesListComponent', () => {
         provideRouter([]),
         { provide: RecipeService, useValue: fakeRecipeService },
         { provide: MatDialog, useValue: mockMatDialog },
+        { provide: AuthService, useValue: fakeAuthService },
       ],
     }).compileComponents();
   });
 
   beforeEach(async () => {
+    fakeTenant.set(null);
+    fakeIsAdmin.set(false);
     mockMatDialog.open.mockClear();
     fixture = TestBed.createComponent(RecipesListComponent);
     component = fixture.componentInstance;
@@ -391,5 +404,35 @@ describe('RecipesListComponent', () => {
     await fixture.whenStable();
 
     expect(fakeRecipeService.deleteRecipe).not.toHaveBeenCalled();
+  });
+
+  it('should reflect tenant when tenant is present', () => {
+    fakeTenant.set({ name: 'Sir Darquan DM Tenant', id: 'tenant-1' });
+    fixture = TestBed.createComponent(RecipesListComponent);
+    component = fixture.componentInstance;
+    expect(component.tenant()).toEqual({ name: 'Sir Darquan DM Tenant', id: 'tenant-1' });
+
+    fakeTenant.set(null);
+  });
+
+  it('should render administrator notice when recipes is empty and user is admin without tenant', async () => {
+    fakeTenant.set(null);
+    fakeIsAdmin.set(true);
+    fakeRecipeService.getCachedRecipesList = () => [];
+    fakeRecipeService.fetchRecipes.mockResolvedValueOnce([]);
+
+    fixture = TestBed.createComponent(RecipesListComponent);
+    component = fixture.componentInstance;
+    component['recipes'].set([]);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    await new Promise((r) => setTimeout(r, 50));
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain(
+      'You are logged in as an Administrator without an active tenant sandbox',
+    );
+
+    fakeIsAdmin.set(false);
   });
 });
