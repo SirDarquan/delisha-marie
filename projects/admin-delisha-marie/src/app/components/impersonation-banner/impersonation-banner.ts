@@ -53,6 +53,6 @@ export class ImpersonationBannerComponent {
 
   async onExitImpersonation(): Promise<void> {
     await this.authService.exitImpersonation();
-    this.router.navigate(['/users']);
+    await this.router.navigate(['/users']);
   }
 }

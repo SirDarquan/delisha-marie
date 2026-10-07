@@ -42,7 +42,7 @@ describe('ImpersonationBannerComponent', () => {
     fixture = TestBed.createComponent(ImpersonationBannerComponent);
     component = fixture.componentInstance;
     router = TestBed.inject(Router);
-    vi.spyOn(router, 'navigate');
+    vi.spyOn(router, 'navigate').mockResolvedValue(true);
     fixture.detectChanges();
   });
 

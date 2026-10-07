@@ -67,7 +67,7 @@ export class PendingApprovalComponent {
     try {
       await this.auth.checkSession();
       if (this.auth.userStatus() === 'active') {
-        this.router.navigate(['/']);
+        await this.router.navigate(['/']);
       } else if (this.auth.userStatus() === 'blocked') {
         this.statusMessage.set('Your account has been blocked by the administrator.');
       } else {
@@ -82,6 +82,6 @@ export class PendingApprovalComponent {
 
   onLogout(): void {
     this.auth.logout();
-    this.router.navigate(['/login']);
+    void this.router.navigate(['/login']);
   }
 }

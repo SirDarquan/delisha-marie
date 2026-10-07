@@ -432,7 +432,7 @@ export class UsersPageComponent implements OnInit {
   editTenantDomain = '';
 
   ngOnInit(): void {
-    this.loadData();
+    void this.loadData();
   }
 
   async loadData(): Promise<void> {
@@ -527,7 +527,7 @@ export class UsersPageComponent implements OnInit {
       await this.usersService.impersonateUser(user.id);
       await this.auth.checkSession();
       this.showMessage(`Now impersonating ${user.email}`);
-      this.router.navigate(['/recipes']);
+      await this.router.navigate(['/recipes']);
     } catch {
       this.showMessage(`Failed to impersonate ${user.email}`, true);
     }

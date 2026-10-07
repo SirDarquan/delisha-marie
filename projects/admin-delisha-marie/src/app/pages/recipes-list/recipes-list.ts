@@ -277,7 +277,7 @@ export class RecipesListComponent implements OnInit {
         this.recipes.set([]);
         this.offset = 0;
         this.hasMore = true;
-        this.fetchNextBatch();
+        void this.fetchNextBatch();
       });
 
     toObservable(this.tenant)
@@ -286,7 +286,7 @@ export class RecipesListComponent implements OnInit {
         this.recipes.set([]);
         this.offset = 0;
         this.hasMore = true;
-        this.fetchNextBatch();
+        void this.fetchNextBatch();
       });
 
     afterNextRender(() => {

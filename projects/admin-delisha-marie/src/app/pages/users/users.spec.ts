@@ -238,7 +238,7 @@ describe('UsersPageComponent', () => {
 
     const buttons = fixture.nativeElement.querySelectorAll('.border-b button');
     // Button 0: All Users & Tenants, Button 1: Waiting Room
-    expect(buttons.length).toBe(2);
+    expect(buttons).toHaveLength(2);
 
     // Switch to Waiting Room
     buttons[1].click();
