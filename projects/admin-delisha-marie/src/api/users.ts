@@ -5,7 +5,7 @@ import { backendService } from './supabase-backend.service';
 const usersRouter = Router();
 
 // Exit impersonation only requires the admin_original_token cookie
-usersRouter.post('/auth/exit-impersonation', async (req: Request, res: Response) => {
+usersRouter.post('/auth/exit-impersonation', (req: Request, res: Response) => {
   const originalToken = req.cookies?.['admin_original_token'];
   if (!originalToken) {
     return res.status(400).json({ error: 'No active impersonation session found' });
@@ -323,7 +323,7 @@ usersRouter.put('/admin/tenants/:id', adminOnlyMiddleware, async (req: Request, 
 });
 
 // 9. GET /auth/session - Returns the enriched session information
-usersRouter.get('/auth/session', async (req: Request, res: Response) => {
+usersRouter.get('/auth/session', (req: Request, res: Response) => {
   const authReq = req as AuthRequest;
   return res.json({
     user: authReq.user,

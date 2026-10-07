@@ -208,38 +208,38 @@ async function fetchPaginatedRecipes(
   return formatRecipeList(pageData || [], statusOrder, pageIds);
 }
 
+async function fetchAllBatches(
+  client: SupabaseClient,
+  from = 0,
+  step = 1000,
+  tenantId?: string | null,
+): Promise<Record<string, unknown>[]> {
+  let query = client
+    .from('recipes')
+    .select('*, recipe_holidays (holidays (name)), recipe_special_diets (special_diets (name))')
+    .order('updated_at', { ascending: false });
+
+  if (tenantId) {
+    query = query.eq('tenant_id', tenantId);
+  }
+
+  const { data, error } = await query.range(from, from + step - 1);
+  if (error) throw error;
+
+  const currentBatch = (data || []) as Record<string, unknown>[];
+  if (currentBatch.length < step) {
+    return currentBatch;
+  }
+  const nextBatches = await fetchAllBatches(client, from + step, step, tenantId);
+  return currentBatch.concat(nextBatches);
+}
+
 async function fetchAllRecipes(
   client: SupabaseClient,
   statusOrder: Record<string, number>,
   tenantId?: string | null,
 ): Promise<Record<string, unknown>[]> {
-  const allData: Record<string, unknown>[] = [];
-  let from = 0;
-  const step = 1000;
-  let hasMore = true;
-
-  while (hasMore) {
-    let query = client
-      .from('recipes')
-      .select('*, recipe_holidays (holidays (name)), recipe_special_diets (special_diets (name))')
-      .order('updated_at', { ascending: false });
-
-    if (tenantId) {
-      query = query.eq('tenant_id', tenantId);
-    }
-
-    const { data, error } = await query.range(from, from + step - 1);
-    if (error) throw error;
-
-    if (data && data.length > 0) {
-      allData.push(...data);
-    }
-    if (!data || data.length < step) {
-      hasMore = false;
-    } else {
-      from += step;
-    }
-  }
+  const allData = await fetchAllBatches(client, 0, 1000, tenantId);
 
   // Fetch comments to calculate counts
   const { data: commentsData } = await client
@@ -742,10 +742,8 @@ async function saveRecipeCategoryTrail(
   trails: unknown[][],
   tenantId?: string | null,
 ): Promise<void> {
-  for (const trail of trails) {
-    if (!Array.isArray(trail)) continue;
-    await saveTrailParts(client, recipeId, trail, tenantId);
-  }
+  const validTrails = Array.isArray(trails) ? trails.filter(Array.isArray) : [];
+  await Promise.all(validTrails.map((trail) => saveTrailParts(client, recipeId, trail, tenantId)));
 }
 
 async function saveTrailParts(
@@ -754,9 +752,16 @@ async function saveTrailParts(
   trail: unknown[],
   tenantId?: string | null,
 ): Promise<void> {
-  for (let i = 2; i < trail.length; i++) {
-    const part = trail[i] as { name?: string; url?: string } | null;
-    if (part?.name && typeof part.url === 'string' && !part.url.startsWith('/recipe/')) {
+  const parts = trail
+    .slice(2)
+    .map((item) => item as { name?: string; url?: string } | null)
+    .filter(
+      (part): part is { name: string; url: string } =>
+        !!part?.name && typeof part.url === 'string' && !part.url.startsWith('/recipe/'),
+    );
+
+  await Promise.all(
+    parts.map(async (part) => {
       const catId = await getOrCreateLookupItem(
         client,
         'categories',
@@ -771,8 +776,8 @@ async function saveTrailParts(
           { onConflict: 'recipe_id,category_id' },
         );
       if (error) throw error;
-    }
-  }
+    }),
+  );
 }
 
 async function saveRecipeListRelations(
@@ -784,8 +789,12 @@ async function saveRecipeListRelations(
   fkColumn: 'holiday_id' | 'diet_id',
   tenantId?: string | null,
 ): Promise<void> {
-  for (const name of items) {
-    if (typeof name === 'string' && name.trim() !== '') {
+  const validNames = (Array.isArray(items) ? items : []).filter(
+    (name): name is string => typeof name === 'string' && name.trim() !== '',
+  );
+
+  await Promise.all(
+    validNames.map(async (name) => {
       const itemId = await getOrCreateLookupItem(
         client,
         lookupTable,
@@ -800,8 +809,8 @@ async function saveRecipeListRelations(
           { onConflict: `recipe_id,${fkColumn}` },
         );
       if (error) throw error;
-    }
-  }
+    }),
+  );
 }
 
 interface RecipeRelationsOptions {
@@ -862,19 +871,21 @@ async function saveRecipeIngredients(
   tags: string[],
   tenantId?: string | null,
 ): Promise<void> {
-  for (const tag of tags) {
-    const ingredientId = await getOrCreateLookupItem(
-      client,
-      'ingredients',
-      tag,
-      undefined,
-      tenantId,
-    );
-    const { error } = await client
-      .from('recipe_ingredients')
-      .insert({ recipe_id: recipeId, ingredient_id: ingredientId });
-    if (error) throw error;
-  }
+  await Promise.all(
+    tags.map(async (tag) => {
+      const ingredientId = await getOrCreateLookupItem(
+        client,
+        'ingredients',
+        tag,
+        undefined,
+        tenantId,
+      );
+      const { error } = await client
+        .from('recipe_ingredients')
+        .insert({ recipe_id: recipeId, ingredient_id: ingredientId });
+      if (error) throw error;
+    }),
+  );
 }
 
 async function saveAllRecipeRelations(
