@@ -23,6 +23,9 @@ export interface TenantInfo {
   owner_id?: string;
 }
 
+export type UserRole = 'admin' | 'member' | 'unassigned';
+export type UserStatus = 'pending' | 'active' | 'blocked';
+
 @Injectable({
   providedIn: 'root',
 })
@@ -46,8 +49,8 @@ export class AuthService {
 
   private readonly _isAuthenticated = signal<boolean>(false);
   private readonly _currentUser = signal<AdminUser | null>(null);
-  private readonly _userRole = signal<'admin' | 'member' | 'unassigned'>('member');
-  private readonly _userStatus = signal<'pending' | 'active' | 'blocked'>('active');
+  private readonly _userRole = signal<UserRole>('member');
+  private readonly _userStatus = signal<UserStatus>('active');
   private readonly _tenant = signal<TenantInfo | null>(null);
   private readonly _isImpersonating = signal<boolean>(false);
   private readonly _authError = signal<string | null>(null);
@@ -82,15 +85,15 @@ export class AuthService {
     try {
       const resp = await this.api.get<{
         user: AdminUser;
-        role?: 'admin' | 'member' | 'unassigned';
-        status?: 'pending' | 'active' | 'blocked';
+        role?: UserRole;
+        status?: UserStatus;
         tenant?: TenantInfo | null;
         isImpersonating?: boolean;
       }>(`/auth/me?t=${Date.now()}`);
       if (resp?.user) {
         let sessionInfo: {
-          role?: 'admin' | 'member' | 'unassigned';
-          status?: 'pending' | 'active' | 'blocked';
+          role?: UserRole;
+          status?: UserStatus;
           tenant?: TenantInfo | null;
           isImpersonating?: boolean;
         } | null = null;
@@ -371,8 +374,8 @@ export class AuthService {
 
   setSession(
     user: AdminUser,
-    role: 'admin' | 'member' | 'unassigned' = 'member',
-    status: 'pending' | 'active' | 'blocked' = 'active',
+    role: UserRole = 'member',
+    status: UserStatus = 'active',
     tenant: TenantInfo | null = null,
     isImpersonating = false,
   ): void {
