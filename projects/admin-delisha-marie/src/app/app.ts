@@ -10,14 +10,16 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { filter, map } from 'rxjs/operators';
 import { HeaderComponent } from './components/header/header';
+import { ImpersonationBannerComponent } from './components/impersonation-banner/impersonation-banner';
 import { AuthService } from './services/auth.service';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, HeaderComponent],
+  imports: [RouterOutlet, HeaderComponent, ImpersonationBannerComponent],
   template: `
     <div class="min-h-screen bg-slate-950 text-slate-100 font-sans flex flex-col">
       @if (showHeader()) {
+        <app-impersonation-banner />
         <app-header />
       }
       <div class="flex-grow">

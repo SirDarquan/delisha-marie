@@ -7,9 +7,14 @@ import { AuthService } from '../../services/auth.service';
   selector: 'app-header',
   imports: [RouterLink, RouterLinkActive, MatButtonModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    class: 'contents',
+    style: 'display: contents;',
+  },
   template: `
     <header
-      class="sticky top-0 z-50 backdrop-blur-md bg-slate-950/80 border-b border-slate-800 px-4 md:px-8 py-4 flex justify-between items-center">
+      class="backdrop-blur-md bg-slate-950/80 border-b border-slate-800 px-4 md:px-8 py-4 flex justify-between items-center"
+      [class.top-[41px]]="isImpersonating()">
       <div class="flex items-center gap-6">
         <a
           routerLink="/"
@@ -24,24 +29,34 @@ import { AuthService } from '../../services/auth.service';
             [routerLinkActiveOptions]="{ exact: true }">
             Dashboard
           </a>
-          <a
-            routerLink="/recipes"
-            class="text-sm font-semibold text-slate-300 hover:text-purple-400 transition"
-            routerLinkActive="text-purple-400 font-bold">
-            Recipes
-          </a>
-          <a
-            routerLink="/contacts"
-            class="text-sm font-semibold text-slate-300 hover:text-purple-400 transition"
-            routerLinkActive="text-purple-400 font-bold">
-            Contacts
-          </a>
-          <a
-            routerLink="/pages"
-            class="text-sm font-semibold text-slate-300 hover:text-purple-400 transition"
-            routerLinkActive="text-purple-400 font-bold">
-            Other Pages
-          </a>
+
+          @if (isAdmin() && !isImpersonating()) {
+            <a
+              routerLink="/users"
+              class="text-sm font-semibold text-slate-300 hover:text-purple-400 transition"
+              routerLinkActive="text-purple-400 font-bold">
+              Users & Tenants
+            </a>
+          } @else {
+            <a
+              routerLink="/recipes"
+              class="text-sm font-semibold text-slate-300 hover:text-purple-400 transition"
+              routerLinkActive="text-purple-400 font-bold">
+              Recipes
+            </a>
+            <a
+              routerLink="/contacts"
+              class="text-sm font-semibold text-slate-300 hover:text-purple-400 transition"
+              routerLinkActive="text-purple-400 font-bold">
+              Contacts
+            </a>
+            <a
+              routerLink="/pages"
+              class="text-sm font-semibold text-slate-300 hover:text-purple-400 transition"
+              routerLinkActive="text-purple-400 font-bold">
+              Other Pages
+            </a>
+          }
         </nav>
       </div>
 
@@ -49,7 +64,9 @@ import { AuthService } from '../../services/auth.service';
         <span class="text-slate-400 text-sm font-medium hidden sm:inline">
           Welcome back,
           @if (user()) {
-            <span class="text-slate-200 font-semibold">{{ user()?.user_metadata?.username }}</span>
+            <span class="text-slate-200 font-semibold">{{
+              user()?.user_metadata?.username || user()?.email
+            }}</span>
           } @else {
             Admin
           }
@@ -70,7 +87,17 @@ export class HeaderComponent {
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
 
-  readonly user = computed(() => this.authService.currentUser());
+  readonly user = computed(() =>
+    typeof this.authService.currentUser === 'function' ? this.authService.currentUser() : null,
+  );
+  readonly isAdmin = computed(() =>
+    typeof this.authService.isAdmin === 'function' ? this.authService.isAdmin() : false,
+  );
+  readonly isImpersonating = computed(() =>
+    typeof this.authService.isImpersonating === 'function'
+      ? this.authService.isImpersonating()
+      : false,
+  );
 
   onLogout(): void {
     this.authService.logout();

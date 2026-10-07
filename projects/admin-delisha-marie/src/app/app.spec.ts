@@ -27,7 +27,11 @@ describe('App', () => {
           useValue: {
             isAuthenticated: signal(true),
             currentUser: signal(null),
+            isAdmin: signal(false),
+            isImpersonating: signal(false),
+            tenant: signal(null),
             logout: vi.fn(),
+            exitImpersonation: vi.fn(),
           },
         },
       ],
@@ -71,25 +75,31 @@ describe('App', () => {
     expect(app['showHeader']()).toBe(true);
   });
 
-  it('should render the app-header only when showHeader is true', async () => {
+  it('should render the app-header and app-impersonation-banner only when showHeader is true', async () => {
     const fixture = TestBed.createComponent(App);
     const router = TestBed.inject(Router);
 
     // Initial root route
     fixture.detectChanges();
     let headerEl = fixture.nativeElement.querySelector('app-header');
+    let bannerEl = fixture.nativeElement.querySelector('app-impersonation-banner');
     expect(headerEl).toBeTruthy();
+    expect(bannerEl).toBeTruthy();
 
     // Navigate to /login (showHeader is false)
     await router.navigate(['/login']);
     fixture.detectChanges();
     headerEl = fixture.nativeElement.querySelector('app-header');
+    bannerEl = fixture.nativeElement.querySelector('app-impersonation-banner');
     expect(headerEl).toBeFalsy();
+    expect(bannerEl).toBeFalsy();
 
     // Navigate to /recipes (showHeader is true)
     await router.navigate(['/recipes']);
     fixture.detectChanges();
     headerEl = fixture.nativeElement.querySelector('app-header');
+    bannerEl = fixture.nativeElement.querySelector('app-impersonation-banner');
     expect(headerEl).toBeTruthy();
+    expect(bannerEl).toBeTruthy();
   });
 });
