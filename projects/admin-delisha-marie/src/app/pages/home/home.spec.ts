@@ -3,6 +3,7 @@ import { Router, provideRouter } from '@angular/router';
 import { MatDialog } from '@angular/material/dialog';
 import { vi } from 'vitest';
 import { ApiService } from '../../services/api.service';
+import { AuthService } from '../../services/auth.service';
 import { HomeComponent } from './home';
 
 interface HomeData {
@@ -92,5 +93,60 @@ describe('HomeComponent', () => {
     );
     createButton?.click();
     expect(mockMatDialog.open).toHaveBeenCalled();
+  });
+
+  it('should display Administrator Control Center when user is admin and not impersonating', async () => {
+    const fakeAuth = {
+      isAdmin: vi.fn().mockReturnValue(true),
+      isImpersonating: vi.fn().mockReturnValue(false),
+    };
+    TestBed.resetTestingModule();
+    await TestBed.configureTestingModule({
+      imports: [HomeComponent],
+      providers: [
+        provideRouter([]),
+        {
+          provide: ApiService,
+          useValue: { get: vi.fn().mockResolvedValue({ totalRecipes: 0, recentRecipes: [] }) },
+        },
+        { provide: MatDialog, useValue: { open: vi.fn() } },
+        { provide: AuthService, useValue: fakeAuth },
+      ],
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(HomeComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+
+    expect(component.showAdminView()).toBe(true);
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.textContent).toContain('Administrator Control Center');
+    expect(compiled.textContent).toContain('Open Users & Tenant Directory');
+  });
+
+  it('should display Member view when admin is impersonating', async () => {
+    const fakeAuth = {
+      isAdmin: vi.fn().mockReturnValue(true),
+      isImpersonating: vi.fn().mockReturnValue(true),
+    };
+    TestBed.resetTestingModule();
+    await TestBed.configureTestingModule({
+      imports: [HomeComponent],
+      providers: [
+        provideRouter([]),
+        {
+          provide: ApiService,
+          useValue: { get: vi.fn().mockResolvedValue({ totalRecipes: 5, recentRecipes: [] }) },
+        },
+        { provide: MatDialog, useValue: { open: vi.fn() } },
+        { provide: AuthService, useValue: fakeAuth },
+      ],
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(HomeComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+
+    expect(component.showAdminView()).toBe(false);
   });
 });

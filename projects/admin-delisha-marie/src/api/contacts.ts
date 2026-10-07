@@ -1,17 +1,29 @@
 import { Router } from 'express';
 import { backendService } from './supabase-backend.service';
+import { authMiddleware, AuthRequest } from './middleware/auth.middleware';
 
 const contactsRouter = Router();
 
+contactsRouter.use(authMiddleware);
+
 contactsRouter.get('/contacts', async (req, res) => {
   try {
+    const authReq = req as AuthRequest;
     const page = Number.parseInt(req.query['page'] as string) || 1;
     const pageSize = Number.parseInt(req.query['pageSize'] as string) || 25;
     const start = (page - 1) * pageSize;
     const end = start + pageSize - 1;
     const folder = (req.query['folder'] as string) || 'inbox';
     const supabase = backendService.supabaseAdmin;
-    let query = supabase.from('contacts').select('*', { count: 'exact' });
+
+    if (!authReq.tenantId) {
+      return res.json({ data: [], count: 0 });
+    }
+
+    let query = supabase
+      .from('contacts')
+      .select('*', { count: 'exact' })
+      .eq('tenant_id', authReq.tenantId);
 
     if (folder === 'trash') {
       query = query.not('deleted_at', 'is', null);
@@ -43,12 +55,15 @@ contactsRouter.get('/contacts', async (req, res) => {
 
 contactsRouter.get('/contacts/:id', async (req, res) => {
   try {
+    const authReq = req as AuthRequest;
     const supabase = backendService.supabaseAdmin;
-    const { data, error } = await supabase
-      .from('contacts')
-      .select('*')
-      .eq('id', req.params.id)
-      .single();
+    let query = supabase.from('contacts').select('*').eq('id', req.params.id);
+
+    if (authReq.tenantId) {
+      query = query.eq('tenant_id', authReq.tenantId);
+    }
+
+    const { data, error } = await query.single();
 
     if (error) {
       console.error('Error fetching contact:', error);
@@ -64,6 +79,7 @@ contactsRouter.get('/contacts/:id', async (req, res) => {
 
 contactsRouter.put('/contacts/:id', async (req, res) => {
   try {
+    const authReq = req as AuthRequest;
     const { is_read, is_archived, snoozed_until, deleted_at, isSpam } = req.body;
     const supabase = backendService.supabaseAdmin;
 
@@ -75,12 +91,13 @@ contactsRouter.put('/contacts/:id', async (req, res) => {
     const spamVal = isSpam !== undefined ? isSpam : req.body['is_spam'];
     if (spamVal !== undefined) updateData['isSpam'] = spamVal;
 
-    const { data, error } = await supabase
-      .from('contacts')
-      .update(updateData)
-      .eq('id', req.params.id)
-      .select()
-      .single();
+    let query = supabase.from('contacts').update(updateData).eq('id', req.params.id);
+
+    if (authReq.tenantId) {
+      query = query.eq('tenant_id', authReq.tenantId);
+    }
+
+    const { data, error } = await query.select().single();
 
     if (error) {
       console.error('Error updating contact:', error);
@@ -96,8 +113,15 @@ contactsRouter.put('/contacts/:id', async (req, res) => {
 
 contactsRouter.delete('/contacts/trash/empty', async (req, res) => {
   try {
+    const authReq = req as AuthRequest;
     const supabase = backendService.supabaseAdmin;
-    const { error } = await supabase.from('contacts').delete().not('deleted_at', 'is', null);
+    let query = supabase.from('contacts').delete().not('deleted_at', 'is', null);
+
+    if (authReq.tenantId) {
+      query = query.eq('tenant_id', authReq.tenantId);
+    }
+
+    const { error } = await query;
 
     if (error) {
       console.error('Error emptying trash:', error);
@@ -110,10 +134,18 @@ contactsRouter.delete('/contacts/trash/empty', async (req, res) => {
     return res.status(500).json({ error: 'Internal server error' });
   }
 });
+
 contactsRouter.delete('/contacts/:id', async (req, res) => {
   try {
+    const authReq = req as AuthRequest;
     const supabase = backendService.supabaseAdmin;
-    const { error } = await supabase.from('contacts').delete().eq('id', req.params.id);
+    let query = supabase.from('contacts').delete().eq('id', req.params.id);
+
+    if (authReq.tenantId) {
+      query = query.eq('tenant_id', authReq.tenantId);
+    }
+
+    const { error } = await query;
 
     if (error) {
       console.error('Error deleting contact:', error);

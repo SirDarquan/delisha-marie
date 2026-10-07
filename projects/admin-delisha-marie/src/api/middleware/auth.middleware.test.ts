@@ -18,7 +18,12 @@ vi.mock('@supabase/supabase-js', () => ({
 import express from 'express';
 import request from 'supertest';
 import cookieParser from 'cookie-parser';
-import { authMiddleware } from './auth.middleware';
+import {
+  adminOnlyMiddleware,
+  authMiddleware,
+  memberOnlyMiddleware,
+  setAuthCookies,
+} from './auth.middleware';
 import { backendService } from '../supabase-backend.service';
 
 // 4. Instrument backendService methods so they can be mocked dynamically
@@ -36,6 +41,17 @@ describe('Auth Middleware', () => {
         refreshSession: mockRefreshSession,
       },
     } as unknown as typeof backendService.supabase;
+
+    backendService.supabaseAdmin = {
+      from: vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        maybeSingle: vi.fn().mockResolvedValue({
+          data: { role: 'member', status: 'active' },
+          error: null,
+        }),
+      }),
+    } as unknown as typeof backendService.supabaseAdmin;
 
     app = express();
     app.use(express.json());
@@ -227,5 +243,163 @@ describe('Auth Middleware', () => {
 
     expect(res.status).toBe(401);
     expect(res.body.error).toBe('Unauthorized: Fatal non-Error raw string');
+  });
+
+  it('should return 403 when user account is pending approval', async () => {
+    const mockUser = { id: 'user-pending', email: 'pending@example.com' };
+    vi.mocked(backendService.verifyToken).mockResolvedValue(
+      mockUser as unknown as Awaited<ReturnType<typeof backendService.verifyToken>>,
+    );
+
+    backendService.supabaseAdmin = {
+      from: vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        maybeSingle: vi.fn().mockResolvedValue({
+          data: { role: 'unassigned', status: 'pending' },
+          error: null,
+        }),
+      }),
+    } as unknown as typeof backendService.supabaseAdmin;
+
+    const res = await request(app)
+      .get('/test-secure')
+      .set('Cookie', ['admin_access_token=valid-token']);
+
+    expect(res.status).toBe(403);
+    expect(res.body.code).toBe('ACCOUNT_PENDING');
+  });
+
+  it('should return 403 when user account is blocked', async () => {
+    const mockUser = { id: 'user-blocked', email: 'blocked@example.com' };
+    vi.mocked(backendService.verifyToken).mockResolvedValue(
+      mockUser as unknown as Awaited<ReturnType<typeof backendService.verifyToken>>,
+    );
+
+    backendService.supabaseAdmin = {
+      from: vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        maybeSingle: vi.fn().mockResolvedValue({
+          data: { role: 'member', status: 'blocked' },
+          error: null,
+        }),
+      }),
+    } as unknown as typeof backendService.supabaseAdmin;
+
+    const res = await request(app)
+      .get('/test-secure')
+      .set('Cookie', ['admin_access_token=valid-token']);
+
+    expect(res.status).toBe(403);
+    expect(res.body.code).toBe('ACCOUNT_BLOCKED');
+  });
+
+  it('should load tenant and detect impersonation for active member', async () => {
+    const mockUser = { id: 'user-member', email: 'member@example.com' };
+    vi.mocked(backendService.verifyToken).mockResolvedValue(
+      mockUser as unknown as Awaited<ReturnType<typeof backendService.verifyToken>>,
+    );
+
+    backendService.supabaseAdmin = {
+      from: vi.fn().mockImplementation((table: string) => ({
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        maybeSingle: vi.fn().mockResolvedValue({
+          data:
+            table === 'user_profiles'
+              ? { role: 'member', status: 'active' }
+              : { id: 't-123', name: 'My Kitchen', slug: 'my-kitchen' },
+          error: null,
+        }),
+      })),
+    } as unknown as typeof backendService.supabaseAdmin;
+
+    const res = await request(app)
+      .get('/test-secure')
+      .set('Cookie', ['admin_access_token=valid-token', 'admin_original_token=orig-token']);
+
+    expect(res.status).toBe(200);
+  });
+
+  describe('Role Guards', () => {
+    it('adminOnlyMiddleware should allow admin and block non-admin', () => {
+      const mockReq = { role: 'admin' } as unknown as express.Request;
+      const mockRes = {
+        status: vi.fn().mockReturnThis(),
+        json: vi.fn(),
+      } as unknown as express.Response;
+      const nextFn = vi.fn();
+
+      adminOnlyMiddleware(mockReq, mockRes, nextFn);
+      expect(nextFn).toHaveBeenCalled();
+
+      const nonAdminReq = { role: 'member' } as unknown as express.Request;
+      adminOnlyMiddleware(nonAdminReq, mockRes, vi.fn());
+      expect(mockRes.status).toHaveBeenCalledWith(403);
+    });
+
+    it('memberOnlyMiddleware should allow member and block non-member', () => {
+      const mockReq = { role: 'member' } as unknown as express.Request;
+      const mockRes = {
+        status: vi.fn().mockReturnThis(),
+        json: vi.fn(),
+      } as unknown as express.Response;
+      const nextFn = vi.fn();
+
+      memberOnlyMiddleware(mockReq, mockRes, nextFn);
+      expect(nextFn).toHaveBeenCalled();
+
+      const nonMemberReq = { role: 'admin' } as unknown as express.Request;
+      memberOnlyMiddleware(nonMemberReq, mockRes, vi.fn());
+      expect(mockRes.status).toHaveBeenCalledWith(403);
+    });
+  });
+
+  describe('Edge Case Branches & Fallbacks', () => {
+    it('should handle setAuthCookies without refresh_token', () => {
+      const mockRes = { cookie: vi.fn() } as unknown as express.Response;
+      setAuthCookies(mockRes, { access_token: 'token-only', expires_in: 3600 });
+      expect(mockRes.cookie).toHaveBeenCalledTimes(1);
+    });
+
+    it('should fallback to default role when adminClient.from is missing or throws', async () => {
+      const mockUser = { id: 'user-err', email: 'err@example.com' };
+      vi.mocked(backendService.verifyToken).mockResolvedValue(
+        mockUser as unknown as Awaited<ReturnType<typeof backendService.verifyToken>>,
+      );
+
+      backendService.supabaseAdmin = {} as unknown as typeof backendService.supabaseAdmin;
+
+      const res = await request(app)
+        .get('/test-secure')
+        .set('Cookie', ['admin_access_token=valid-token']);
+
+      expect(res.status).toBe(200);
+    });
+
+    it('should fallback when user profile is null or has no role/status', async () => {
+      const mockUser = { id: 'user-null-prof', email: 'nullprof@example.com' };
+      vi.mocked(backendService.verifyToken).mockResolvedValue(
+        mockUser as unknown as Awaited<ReturnType<typeof backendService.verifyToken>>,
+      );
+
+      backendService.supabaseAdmin = {
+        from: vi.fn().mockReturnValue({
+          select: vi.fn().mockReturnThis(),
+          eq: vi.fn().mockReturnThis(),
+          maybeSingle: vi.fn().mockResolvedValue({
+            data: null,
+            error: null,
+          }),
+        }),
+      } as unknown as typeof backendService.supabaseAdmin;
+
+      const res = await request(app)
+        .get('/test-secure')
+        .set('Cookie', ['admin_access_token=valid-token']);
+
+      expect(res.status).toBe(200);
+    });
   });
 });

@@ -56,13 +56,21 @@ export class RecipeService {
   }
 
   private _cachedRecipesList: Recipe[] = [];
+  private _cachedTenantId: string | null = null;
 
-  getCachedRecipesList(): Recipe[] {
+  getCachedRecipesList(tenantId?: string | null): Recipe[] {
+    if (tenantId !== undefined && tenantId !== this._cachedTenantId) {
+      this._cachedRecipesList = [];
+      this._cachedTenantId = tenantId;
+    }
     return this._cachedRecipesList;
   }
 
-  setCachedRecipesList(recipes: Recipe[]): void {
+  setCachedRecipesList(recipes: Recipe[], tenantId?: string | null): void {
     this._cachedRecipesList = recipes;
+    if (tenantId !== undefined) {
+      this._cachedTenantId = tenantId;
+    }
   }
 
   fetchRecipes(offset?: number, limit?: number, search?: string): Promise<Recipe[]> {

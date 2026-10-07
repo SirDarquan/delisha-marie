@@ -70,11 +70,31 @@ import { backendService } from './supabase-backend.service';
 vi.spyOn(backendService, 'getClient');
 vi.spyOn(backendService, 'verifyToken');
 
+const originalSupabaseAdmin = backendService.supabaseAdmin;
+
 describe('Recipes Router API', () => {
   let app: express.Express;
 
+  afterEach(() => {
+    backendService.supabaseAdmin = originalSupabaseAdmin;
+  });
+
   beforeEach(() => {
     vi.resetAllMocks();
+
+    mockChain.select = mockSelect;
+    mockChain.order = mockOrder;
+    mockChain.insert = mockInsert;
+    mockChain.update = mockUpdate;
+    mockChain.delete = mockDelete;
+    mockChain.eq = mockEq;
+    mockChain.single = mockSingle;
+    mockChain.maybeSingle = mockMaybeSingle;
+    mockChain.upsert = mockUpsert;
+    mockChain.limit = mockLimit;
+    mockChain.range = mockRange;
+    mockChain.ilike = mockIlike;
+    mockChain.in = mockIn;
 
     // Reset default chain return values before each test run
     mockFrom.mockReturnValue(mockChain);
@@ -345,7 +365,7 @@ describe('Recipes Router API', () => {
         .mockImplementationOnce((resolve) => resolve({ data: [{ id: '1' }], error: null }));
 
       mockSelect.mockReturnValueOnce(mockChain);
-      mockChain.in = vi.fn().mockResolvedValueOnce({ data: null, error: new Error('Page error') });
+      mockIn.mockResolvedValueOnce({ data: null, error: new Error('Page error') });
 
       const res = await request(app).get('/recipes?offset=0&limit=10');
       expect(res.status).toBe(500);
@@ -418,6 +438,9 @@ describe('Recipes Router API', () => {
         .fn()
         .mockImplementationOnce(<T>(resolve: (val: T) => void) =>
           resolve({ data: messyData, error: null } as unknown as T),
+        )
+        .mockImplementation(<T>(resolve: (val: T) => void) =>
+          resolve({ data: null, error: null } as unknown as T),
         );
       await request(app).get('/recipes?limit=1');
 
@@ -425,6 +448,9 @@ describe('Recipes Router API', () => {
         .fn()
         .mockImplementationOnce(<T>(resolve: (val: T) => void) =>
           resolve({ data: messyData, error: null } as unknown as T),
+        )
+        .mockImplementation(<T>(resolve: (val: T) => void) =>
+          resolve({ data: null, error: null } as unknown as T),
         );
       await request(app).get('/recipes?offset=0');
 
@@ -503,6 +529,109 @@ describe('Recipes Router API', () => {
 
       expect(res.status).toBe(200);
       expect(res.body).toHaveLength(1001);
+    });
+
+    it('should filter recipes by tenant_id when user has tenantId', async () => {
+      backendService.supabaseAdmin = {
+        from: vi.fn().mockImplementation((table: string) => {
+          if (table === 'user_profiles') {
+            return {
+              select: () => ({
+                eq: () => ({
+                  maybeSingle: () =>
+                    Promise.resolve({ data: { role: 'member', status: 'active' } }),
+                }),
+              }),
+            };
+          }
+          if (table === 'tenants') {
+            return {
+              select: () => ({
+                eq: () => ({
+                  maybeSingle: () =>
+                    Promise.resolve({
+                      data: { id: 'tenant-abc', name: 'Tenant ABC', slug: 'tenant-abc' },
+                    }),
+                }),
+              }),
+            };
+          }
+          return {};
+        }),
+      } as unknown as SupabaseClient;
+
+      vi.mocked(backendService.verifyToken).mockResolvedValueOnce({
+        id: 'member-user-id',
+        email: 'member@example.com',
+      } as unknown as User);
+
+      const mockList = [{ id: 'recipe-1', title: 'Salad', updated_at: new Date().toISOString() }];
+      mockRange.mockResolvedValueOnce({ data: mockList, error: null });
+
+      const res = await request(app).get('/recipes');
+      expect(res.status).toBe(200);
+      expect(mockEq).toHaveBeenCalledWith('tenant_id', 'tenant-abc');
+    });
+
+    it('should filter paginated recipes by tenant_id when user has tenantId', async () => {
+      backendService.supabaseAdmin = {
+        from: vi.fn().mockImplementation((table: string) => {
+          if (table === 'user_profiles') {
+            return {
+              select: () => ({
+                eq: () => ({
+                  maybeSingle: () =>
+                    Promise.resolve({ data: { role: 'member', status: 'active' } }),
+                }),
+              }),
+            };
+          }
+          if (table === 'tenants') {
+            return {
+              select: () => ({
+                eq: () => ({
+                  maybeSingle: () =>
+                    Promise.resolve({
+                      data: { id: 'tenant-abc', name: 'Tenant ABC', slug: 'tenant-abc' },
+                    }),
+                }),
+              }),
+            };
+          }
+          return {};
+        }),
+      } as unknown as SupabaseClient;
+
+      vi.mocked(backendService.verifyToken).mockResolvedValueOnce({
+        id: 'member-user-id',
+        email: 'member@example.com',
+      } as unknown as User);
+
+      mockSelect.mockReturnValue(mockChain);
+      mockEq.mockReturnValue(mockChain);
+      mockChain.then = vi
+        .fn()
+        .mockImplementationOnce((resolve) =>
+          resolve({
+            data: [{ id: 'recipe-1', status: 'published', updated_at: '2026-06-01' }],
+            error: null,
+          }),
+        )
+        .mockImplementation((resolve) => resolve({ data: null, error: null } as never));
+
+      mockIn
+        .mockResolvedValueOnce({
+          data: [{ id: 'recipe-1', title: 'Salad', status: 'published' }],
+          error: null,
+        })
+        .mockResolvedValueOnce({
+          data: [],
+          error: null,
+        });
+
+      const res = await request(app).get('/recipes?offset=0&limit=10');
+      expect(res.status).toBe(200);
+      expect(mockEq).toHaveBeenCalledWith('tenant_id', 'tenant-abc');
     });
   });
 
@@ -612,6 +741,52 @@ describe('Recipes Router API', () => {
       expect(res.body.recentRecipes[0].prepTime).toBe('');
       expect(res.body.recentRecipes[0].category).toBe('Uncategorized');
       expect(res.body.recentRecipes[1].category).toBe('Uncategorized');
+    });
+
+    it('should filter home stats by tenant_id when user has tenantId', async () => {
+      backendService.supabaseAdmin = {
+        from: vi.fn().mockImplementation((table: string) => {
+          if (table === 'user_profiles') {
+            return {
+              select: () => ({
+                eq: () => ({
+                  maybeSingle: () =>
+                    Promise.resolve({ data: { role: 'member', status: 'active' } }),
+                }),
+              }),
+            };
+          }
+          if (table === 'tenants') {
+            return {
+              select: () => ({
+                eq: () => ({
+                  maybeSingle: () =>
+                    Promise.resolve({
+                      data: { id: 'tenant-abc', name: 'Tenant ABC', slug: 'tenant-abc' },
+                    }),
+                }),
+              }),
+            };
+          }
+          return {};
+        }),
+      } as unknown as SupabaseClient;
+
+      vi.mocked(backendService.verifyToken).mockResolvedValueOnce({
+        id: 'member-user-id',
+        email: 'member@example.com',
+      } as unknown as User);
+
+      mockSelect.mockReturnValue(mockChain);
+      mockEq.mockReturnValue(mockChain);
+      mockChain.then = vi
+        .fn()
+        .mockImplementationOnce((resolve) => resolve({ count: 5, error: null }));
+      mockLimit.mockResolvedValueOnce({ data: [], error: null });
+
+      const res = await request(app).get('/home');
+      expect(res.status).toBe(200);
+      expect(mockEq).toHaveBeenCalledWith('tenant_id', 'tenant-abc');
     });
   });
 

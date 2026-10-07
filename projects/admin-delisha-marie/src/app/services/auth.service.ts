@@ -5,6 +5,7 @@ import { firstValueFrom } from 'rxjs';
 import { ApiService } from './api.service';
 
 export interface AdminUser {
+  id?: string;
   username: string;
   email: string;
   password?: string;
@@ -12,6 +13,18 @@ export interface AdminUser {
     username?: string;
   };
 }
+
+export interface TenantInfo {
+  id: string;
+  name: string;
+  slug: string;
+  custom_domain?: string | null;
+  is_public?: boolean;
+  owner_id?: string;
+}
+
+export type UserRole = 'admin' | 'member' | 'unassigned';
+export type UserStatus = 'pending' | 'active' | 'blocked';
 
 @Injectable({
   providedIn: 'root',
@@ -36,6 +49,10 @@ export class AuthService {
 
   private readonly _isAuthenticated = signal<boolean>(false);
   private readonly _currentUser = signal<AdminUser | null>(null);
+  private readonly _userRole = signal<UserRole>('member');
+  private readonly _userStatus = signal<UserStatus>('active');
+  private readonly _tenant = signal<TenantInfo | null>(null);
+  private readonly _isImpersonating = signal<boolean>(false);
   private readonly _authError = signal<string | null>(null);
   private readonly _descopeToken = signal<string>('');
   private readonly _descopeEmail = signal<string>('');
@@ -43,6 +60,11 @@ export class AuthService {
 
   readonly isAuthenticated = computed(() => this._isAuthenticated());
   readonly currentUser = computed(() => this._currentUser());
+  readonly userRole = computed(() => this._userRole());
+  readonly userStatus = computed(() => this._userStatus());
+  readonly tenant = computed(() => this._tenant());
+  readonly isImpersonating = computed(() => this._isImpersonating());
+  readonly isAdmin = computed(() => this._userRole() === 'admin');
   readonly authError = computed(() => this._authError());
   readonly descopeToken = computed(() => this._descopeToken());
   readonly descopeEmail = computed(() => this._descopeEmail());
@@ -61,9 +83,32 @@ export class AuthService {
 
   async checkSession(): Promise<void> {
     try {
-      const resp = await this.api.get<{ user: AdminUser }>(`/auth/me?t=${Date.now()}`);
+      const resp = await this.api.get<{
+        user: AdminUser;
+        role?: UserRole;
+        status?: UserStatus;
+        tenant?: TenantInfo | null;
+        isImpersonating?: boolean;
+      }>(`/auth/me?t=${Date.now()}`);
       if (resp?.user) {
-        this.setSession(resp.user);
+        let sessionInfo: {
+          role?: UserRole;
+          status?: UserStatus;
+          tenant?: TenantInfo | null;
+          isImpersonating?: boolean;
+        } | null = null;
+        try {
+          sessionInfo = await this.api.get(`/auth/session?t=${Date.now()}`);
+        } catch {
+          // ignore if session endpoint is not available or in simple unit tests
+        }
+        this.setSession(
+          resp.user,
+          sessionInfo?.role || resp.role || 'member',
+          sessionInfo?.status || resp.status || 'active',
+          sessionInfo?.tenant || resp.tenant || null,
+          !!(sessionInfo?.isImpersonating ?? resp.isImpersonating),
+        );
       } else {
         this.logout();
       }
@@ -327,19 +372,43 @@ export class AuthService {
     return false;
   }
 
-  private setSession(user: AdminUser): void {
+  setSession(
+    user: AdminUser,
+    role: UserRole = 'member',
+    status: UserStatus = 'active',
+    tenant: TenantInfo | null = null,
+    isImpersonating = false,
+  ): void {
     this._isAuthenticated.set(true);
     this._currentUser.set(user);
+    this._userRole.set(role);
+    this._userStatus.set(status);
+    this._tenant.set(tenant);
+    this._isImpersonating.set(isImpersonating);
   }
-  logout(): void {
-    if (!isPlatformBrowser(this.platformId)) {
-      return;
-    }
 
-    this.api.post('/auth/signout', {}).catch(() => {
-      /* ignore */
-    });
+  async exitImpersonation(): Promise<boolean> {
+    try {
+      await this.api.post('/auth/exit-impersonation', {});
+      await this.checkSession();
+      return true;
+    } catch (err) {
+      console.error('Exit impersonation error:', err);
+      return false;
+    }
+  }
+
+  logout(): void {
+    if (isPlatformBrowser(this.platformId)) {
+      this.api.post('/auth/signout', {}).catch(() => {
+        /* ignore */
+      });
+    }
     this._isAuthenticated.set(false);
     this._currentUser.set(null);
+    this._userRole.set('member');
+    this._userStatus.set('active');
+    this._tenant.set(null);
+    this._isImpersonating.set(false);
   }
 }

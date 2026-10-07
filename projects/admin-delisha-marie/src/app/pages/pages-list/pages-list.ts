@@ -5,6 +5,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { RouterLink } from '@angular/router';
 import { PagesService } from '../../services/pages.service';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-pages-list',
@@ -13,7 +14,9 @@ import { PagesService } from '../../services/pages.service';
     <div class="px-4 md:px-8 py-8 space-y-8">
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 class="text-3xl font-extrabold tracking-tight text-white">Other Pages</h1>
+          <div class="flex items-center gap-3">
+            <h1 class="text-3xl font-extrabold tracking-tight text-white">Other Pages</h1>
+          </div>
           <p class="text-slate-400 mt-1">Manage static and dynamic pages for your site</p>
         </div>
       </div>
@@ -83,6 +86,11 @@ import { PagesService } from '../../services/pages.service';
 })
 export class PagesListComponent {
   private readonly pagesService = inject(PagesService);
+  private readonly authService = inject(AuthService);
+
+  readonly tenant = computed(() =>
+    typeof this.authService.tenant === 'function' ? this.authService.tenant() : null,
+  );
 
   private readonly _pagesResource = resource({
     loader: () => this.pagesService.getPages(),

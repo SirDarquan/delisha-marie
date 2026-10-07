@@ -21,6 +21,7 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ContactMessage, ContactService } from '../../services/contact.service';
+import { AuthService } from '../../services/auth.service';
 import { ConfirmDialogComponent } from './confirm-dialog';
 import { SnoozeDialogComponent } from './snooze-dialog';
 
@@ -39,372 +40,379 @@ import { SnoozeDialogComponent } from './snooze-dialog';
     FormsModule,
   ],
   template: `
-    <div class="max-w-[1400px] mx-auto py-8 px-4 sm:px-6 lg:px-8 flex gap-6">
-      <!-- Left Sidebar (Folders) -->
-      <div class="w-64 flex-shrink-0 flex flex-col gap-2">
-        <button
-          mat-button
-          class="!justify-start !px-4 !py-6 w-full text-left rounded-xl transition-colors"
-          [class]="
-            currentFolder() === 'inbox'
-              ? 'bg-blue-600/20 text-blue-400 font-bold'
-              : 'text-slate-400 hover:bg-slate-800'
-          "
-          (click)="setFolder('inbox')">
-          <mat-icon class="mr-3">inbox</mat-icon> Inbox
-        </button>
-        <button
-          mat-button
-          class="!justify-start !px-4 !py-6 w-full text-left rounded-xl transition-colors"
-          [class]="
-            currentFolder() === 'snoozed'
-              ? 'bg-blue-600/20 text-blue-400 font-bold'
-              : 'text-slate-400 hover:bg-slate-800'
-          "
-          (click)="setFolder('snoozed')">
-          <mat-icon class="mr-3">schedule</mat-icon> Snoozed
-        </button>
-        <button
-          mat-button
-          class="!justify-start !px-4 !py-6 w-full text-left rounded-xl transition-colors"
-          [class]="
-            currentFolder() === 'all'
-              ? 'bg-blue-600/20 text-blue-400 font-bold'
-              : 'text-slate-400 hover:bg-slate-800'
-          "
-          (click)="setFolder('all')">
-          <mat-icon class="mr-3">all_inbox</mat-icon> All Mail
-        </button>
-        <button
-          mat-button
-          class="!justify-start !px-4 !py-6 w-full text-left rounded-xl transition-colors"
-          [class]="
-            currentFolder() === 'trash'
-              ? 'bg-blue-600/20 text-blue-400 font-bold'
-              : 'text-slate-400 hover:bg-slate-800'
-          "
-          (click)="setFolder('trash')">
-          <mat-icon class="mr-3">delete</mat-icon> Trash
-        </button>
+    <div class="max-w-[1400px] mx-auto py-8 px-4 sm:px-6 lg:px-8 flex flex-col gap-6">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <h1 class="text-3xl font-extrabold tracking-tight text-white">Contacts & Inquiries</h1>
+        </div>
       </div>
-
-      <!-- Main Inbox Content -->
-      <div
-        class="flex-1 min-w-0 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl overflow-hidden flex flex-col h-[80vh]">
-        <!-- Top Toolbar -->
-        <div
-          class="flex items-center justify-between p-4 border-b border-slate-800 bg-slate-900/50">
-          <div class="flex items-center gap-2">
-            <!-- Master Checkbox -->
-            <mat-checkbox
-              [checked]="selectionState() === 'all'"
-              [indeterminate]="selectionState() === 'some'"
-              (change)="$event.checked ? selectAll() : selectNone()"
-              class="mr-2">
-            </mat-checkbox>
-
-            <!-- Selection Menu -->
-            <button mat-icon-button [matMenuTriggerFor]="selectionMenu" class="text-slate-400">
-              <mat-icon>arrow_drop_down</mat-icon>
-            </button>
-            <mat-menu #selectionMenu="matMenu" class="bg-slate-800 border border-slate-700">
-              <button mat-menu-item (click)="selectAll()">All</button>
-              <button mat-menu-item (click)="selectNone()">None</button>
-              <button mat-menu-item (click)="selectRead()">Read</button>
-              <button mat-menu-item (click)="selectUnread()">Unread</button>
-            </mat-menu>
-
-            <!-- Snooze Menu -->
-            <mat-menu
-              #snoozeMenu="matMenu"
-              class="bg-slate-800 border border-slate-700 min-w-[250px]">
-              <ng-template matMenuContent let-msg="msg">
-                <div class="px-4 py-2 text-xs font-bold text-slate-500 uppercase tracking-wider">
-                  Snooze until...
-                </div>
-                @for (opt of getSnoozeOptions(); track opt.label) {
-                  <button
-                    mat-menu-item
-                    (click)="applySnooze(opt.date, msg)"
-                    class="text-slate-300 hover:bg-slate-700">
-                    <div class="flex justify-between items-center w-full">
-                      <span>{{ opt.label }}</span>
-                      <span class="text-slate-500 text-sm ml-4">{{ opt.subLabel }}</span>
-                    </div>
-                  </button>
-                }
-                <div class="h-px bg-slate-700 my-1 mx-2"></div>
-                <button
-                  mat-menu-item
-                  (click)="openSnoozeDialog(msg)"
-                  class="text-slate-300 hover:bg-slate-700">
-                  <div class="flex items-center">
-                    <mat-icon class="text-slate-400 mr-2 !w-5 !h-5 !text-[20px]"
-                      >calendar_today</mat-icon
-                    >
-                    <span>Pick date & time</span>
-                  </div>
-                </button>
-              </ng-template>
-            </mat-menu>
-          </div>
-
-          <div class="flex items-center gap-2">
-            @if (selectedIds().length === 0) {
-              <!-- Default state -->
-              <button
-                mat-icon-button
-                matTooltip="Refresh"
-                (click)="refresh()"
-                class="text-slate-400 hover:text-white">
-                <mat-icon>refresh</mat-icon>
-              </button>
-              @if (currentFolder() !== 'trash') {
-                <button
-                  mat-icon-button
-                  matTooltip="Mark all as read"
-                  (click)="markAllAsRead()"
-                  class="text-slate-400 hover:text-white">
-                  <mat-icon>done_all</mat-icon>
-                </button>
-              }
-            } @else {
-              <!-- Bulk Actions State -->
-              @if (currentFolder() === 'trash') {
-                <button
-                  mat-icon-button
-                  matTooltip="Mark as unread"
-                  (click)="bulkToggleRead()"
-                  class="text-slate-400 hover:text-white">
-                  <mat-icon>mark_email_unread</mat-icon>
-                </button>
-                <button
-                  mat-icon-button
-                  matTooltip="Delete Forever"
-                  (click)="bulkHardDelete()"
-                  class="text-slate-400 hover:text-rose-400">
-                  <mat-icon>delete_forever</mat-icon>
-                </button>
-              } @else {
-                <button
-                  mat-icon-button
-                  matTooltip="Mark as read/unread"
-                  (click)="bulkToggleRead()"
-                  class="text-slate-400 hover:text-white">
-                  <mat-icon>mark_email_read</mat-icon>
-                </button>
-                <button
-                  mat-icon-button
-                  matTooltip="Snooze"
-                  [matMenuTriggerFor]="snoozeMenu"
-                  [matMenuTriggerData]="{ msg: null }"
-                  class="text-slate-400 hover:text-white">
-                  <mat-icon>schedule</mat-icon>
-                </button>
-                <button
-                  mat-icon-button
-                  matTooltip="Archive"
-                  (click)="bulkArchive()"
-                  class="text-slate-400 hover:text-white">
-                  <mat-icon>archive</mat-icon>
-                </button>
-                <button
-                  mat-icon-button
-                  matTooltip="Move to Trash"
-                  (click)="bulkDelete()"
-                  class="text-rose-400 hover:text-rose-300">
-                  <mat-icon>delete</mat-icon>
-                </button>
-              }
-            }
-
-            <!-- Pagination -->
-            <div class="flex items-center pl-4 ml-2 border-l border-slate-700 contacts-paginator">
-              <mat-paginator
-                [length]="contactService.totalCount()"
-                [pageSize]="pageSize()"
-                [pageIndex]="currentPage() - 1"
-                [hidePageSize]="true"
-                (page)="onPageChange($event)">
-              </mat-paginator>
-            </div>
-          </div>
+      <div class="flex gap-6">
+        <!-- Left Sidebar (Folders) -->
+        <div class="w-64 flex-shrink-0 flex flex-col gap-2">
+          <button
+            mat-button
+            class="!justify-start !px-4 !py-6 w-full text-left rounded-xl transition-colors"
+            [class]="
+              currentFolder() === 'inbox'
+                ? 'bg-blue-600/20 text-blue-400 font-bold'
+                : 'text-slate-400 hover:bg-slate-800'
+            "
+            (click)="setFolder('inbox')">
+            <mat-icon class="mr-3">inbox</mat-icon> Inbox
+          </button>
+          <button
+            mat-button
+            class="!justify-start !px-4 !py-6 w-full text-left rounded-xl transition-colors"
+            [class]="
+              currentFolder() === 'snoozed'
+                ? 'bg-blue-600/20 text-blue-400 font-bold'
+                : 'text-slate-400 hover:bg-slate-800'
+            "
+            (click)="setFolder('snoozed')">
+            <mat-icon class="mr-3">schedule</mat-icon> Snoozed
+          </button>
+          <button
+            mat-button
+            class="!justify-start !px-4 !py-6 w-full text-left rounded-xl transition-colors"
+            [class]="
+              currentFolder() === 'all'
+                ? 'bg-blue-600/20 text-blue-400 font-bold'
+                : 'text-slate-400 hover:bg-slate-800'
+            "
+            (click)="setFolder('all')">
+            <mat-icon class="mr-3">all_inbox</mat-icon> All Mail
+          </button>
+          <button
+            mat-button
+            class="!justify-start !px-4 !py-6 w-full text-left rounded-xl transition-colors"
+            [class]="
+              currentFolder() === 'trash'
+                ? 'bg-blue-600/20 text-blue-400 font-bold'
+                : 'text-slate-400 hover:bg-slate-800'
+            "
+            (click)="setFolder('trash')">
+            <mat-icon class="mr-3">delete</mat-icon> Trash
+          </button>
         </div>
 
-        <!-- Trash Banner -->
-        @if (currentFolder() === 'trash') {
+        <!-- Main Inbox Content -->
+        <div
+          class="flex-1 min-w-0 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl overflow-hidden flex flex-col h-[80vh]">
+          <!-- Top Toolbar -->
           <div
-            class="flex items-center justify-between p-4 bg-slate-800/80 text-slate-300 border-b border-slate-700">
-            <span
-              >Messages that have been in Trash more than 30 days will be automatically
-              deleted.</span
-            >
-            <button
-              mat-button
-              class="text-blue-400 hover:bg-blue-900/30 font-bold"
-              (click)="emptyTrash()">
-              Empty Trash now
-            </button>
-          </div>
-        }
+            class="flex items-center justify-between p-4 border-b border-slate-800 bg-slate-900/50">
+            <div class="flex items-center gap-2">
+              <!-- Master Checkbox -->
+              <mat-checkbox
+                [checked]="selectionState() === 'all'"
+                [indeterminate]="selectionState() === 'some'"
+                (change)="$event.checked ? selectAll() : selectNone()"
+                class="mr-2">
+              </mat-checkbox>
 
-        <!-- Messages List -->
-        <div class="flex-1 overflow-y-auto bg-slate-900 relative">
-          @if (contactService.isLoading()) {
-            <div class="absolute top-4 left-1/2 -translate-x-1/2 z-10">
-              <div
-                class="bg-blue-600 text-white rounded-full px-4 py-1.5 shadow-lg flex items-center gap-2 text-sm font-bold shadow-blue-500/20">
-                Loading messages...
+              <!-- Selection Menu -->
+              <button mat-icon-button [matMenuTriggerFor]="selectionMenu" class="text-slate-400">
+                <mat-icon>arrow_drop_down</mat-icon>
+              </button>
+              <mat-menu #selectionMenu="matMenu" class="bg-slate-800 border border-slate-700">
+                <button mat-menu-item (click)="selectAll()">All</button>
+                <button mat-menu-item (click)="selectNone()">None</button>
+                <button mat-menu-item (click)="selectRead()">Read</button>
+                <button mat-menu-item (click)="selectUnread()">Unread</button>
+              </mat-menu>
+
+              <!-- Snooze Menu -->
+              <mat-menu
+                #snoozeMenu="matMenu"
+                class="bg-slate-800 border border-slate-700 min-w-[250px]">
+                <ng-template matMenuContent let-msg="msg">
+                  <div class="px-4 py-2 text-xs font-bold text-slate-500 uppercase tracking-wider">
+                    Snooze until...
+                  </div>
+                  @for (opt of getSnoozeOptions(); track opt.label) {
+                    <button
+                      mat-menu-item
+                      (click)="applySnooze(opt.date, msg)"
+                      class="text-slate-300 hover:bg-slate-700">
+                      <div class="flex justify-between items-center w-full">
+                        <span>{{ opt.label }}</span>
+                        <span class="text-slate-500 text-sm ml-4">{{ opt.subLabel }}</span>
+                      </div>
+                    </button>
+                  }
+                  <div class="h-px bg-slate-700 my-1 mx-2"></div>
+                  <button
+                    mat-menu-item
+                    (click)="openSnoozeDialog(msg)"
+                    class="text-slate-300 hover:bg-slate-700">
+                    <div class="flex items-center">
+                      <mat-icon class="text-slate-400 mr-2 !w-5 !h-5 !text-[20px]"
+                        >calendar_today</mat-icon
+                      >
+                      <span>Pick date & time</span>
+                    </div>
+                  </button>
+                </ng-template>
+              </mat-menu>
+            </div>
+
+            <div class="flex items-center gap-2">
+              @if (selectedIds().length === 0) {
+                <!-- Default state -->
+                <button
+                  mat-icon-button
+                  matTooltip="Refresh"
+                  (click)="refresh()"
+                  class="text-slate-400 hover:text-white">
+                  <mat-icon>refresh</mat-icon>
+                </button>
+                @if (currentFolder() !== 'trash') {
+                  <button
+                    mat-icon-button
+                    matTooltip="Mark all as read"
+                    (click)="markAllAsRead()"
+                    class="text-slate-400 hover:text-white">
+                    <mat-icon>done_all</mat-icon>
+                  </button>
+                }
+              } @else {
+                <!-- Bulk Actions State -->
+                @if (currentFolder() === 'trash') {
+                  <button
+                    mat-icon-button
+                    matTooltip="Mark as unread"
+                    (click)="bulkToggleRead()"
+                    class="text-slate-400 hover:text-white">
+                    <mat-icon>mark_email_unread</mat-icon>
+                  </button>
+                  <button
+                    mat-icon-button
+                    matTooltip="Delete Forever"
+                    (click)="bulkHardDelete()"
+                    class="text-slate-400 hover:text-rose-400">
+                    <mat-icon>delete_forever</mat-icon>
+                  </button>
+                } @else {
+                  <button
+                    mat-icon-button
+                    matTooltip="Mark as read/unread"
+                    (click)="bulkToggleRead()"
+                    class="text-slate-400 hover:text-white">
+                    <mat-icon>mark_email_read</mat-icon>
+                  </button>
+                  <button
+                    mat-icon-button
+                    matTooltip="Snooze"
+                    [matMenuTriggerFor]="snoozeMenu"
+                    [matMenuTriggerData]="{ msg: null }"
+                    class="text-slate-400 hover:text-white">
+                    <mat-icon>schedule</mat-icon>
+                  </button>
+                  <button
+                    mat-icon-button
+                    matTooltip="Archive"
+                    (click)="bulkArchive()"
+                    class="text-slate-400 hover:text-white">
+                    <mat-icon>archive</mat-icon>
+                  </button>
+                  <button
+                    mat-icon-button
+                    matTooltip="Move to Trash"
+                    (click)="bulkDelete()"
+                    class="text-rose-400 hover:text-rose-300">
+                    <mat-icon>delete</mat-icon>
+                  </button>
+                }
+              }
+
+              <!-- Pagination -->
+              <div class="flex items-center pl-4 ml-2 border-l border-slate-700 contacts-paginator">
+                <mat-paginator
+                  [length]="contactService.totalCount()"
+                  [pageSize]="pageSize()"
+                  [pageIndex]="currentPage() - 1"
+                  [hidePageSize]="true"
+                  (page)="onPageChange($event)">
+                </mat-paginator>
               </div>
             </div>
-          }
+          </div>
 
-          @if (filteredMessages().length === 0 && !contactService.isLoading()) {
-            <div class="flex flex-col items-center justify-center p-16 text-slate-500">
-              <mat-icon class="text-6xl mb-4 opacity-50">
-                {{
-                  currentFolder() === 'trash'
-                    ? 'delete'
-                    : currentFolder() === 'snoozed'
-                      ? 'schedule'
-                      : currentFolder() === 'all'
-                        ? 'all_inbox'
-                        : 'inbox'
-                }}
-              </mat-icon>
-              <h3 class="text-xl">
-                {{
-                  currentFolder() === 'trash'
-                    ? 'Your trash is empty'
-                    : currentFolder() === 'snoozed'
-                      ? 'No snoozed messages'
-                      : currentFolder() === 'all'
-                        ? 'No messages found'
-                        : 'Your inbox is empty'
-                }}
-              </h3>
-            </div>
-          } @else if (filteredMessages().length === 0 && contactService.isLoading()) {
-            <div class="flex flex-col divide-y divide-slate-800/50">
-              @for (i of [1, 2, 3, 4, 5, 6, 7]; track i) {
-                <div class="flex items-center px-4 py-3 animate-pulse">
-                  <div class="w-12 flex justify-center">
-                    <div class="w-4 h-4 bg-slate-800 rounded"></div>
-                  </div>
-                  <div class="flex-1 flex items-center pr-32">
-                    <div class="w-48 pr-4"><div class="h-4 bg-slate-800 rounded w-24"></div></div>
-                    <div class="flex-1"><div class="h-4 bg-slate-800 rounded w-1/2"></div></div>
-                  </div>
-                </div>
-              }
-            </div>
-          }
-
-          @if (filteredMessages().length > 0) {
+          <!-- Trash Banner -->
+          @if (currentFolder() === 'trash') {
             <div
-              class="flex flex-col divide-y divide-slate-800/50 transition-opacity duration-200"
-              [class.opacity-50]="contactService.isLoading()">
-              @for (msg of filteredMessages(); track msg.id) {
-                <div
-                  class="group flex items-center px-4 py-2 hover:bg-slate-800/50 transition-colors cursor-pointer relative pr-4"
-                  [class]="{
-                    'bg-blue-900/20': isSelected(msg.id),
-                    'bg-slate-900': !isSelected(msg.id),
-                  }">
-                  <!-- Checkbox (visible on hover or if checked) -->
-                  <div
-                    class="w-12 flex items-center justify-center"
-                    [class]="{ 'opacity-0 group-hover:opacity-100': !isSelected(msg.id) }">
-                    <mat-checkbox
-                      [checked]="isSelected(msg.id)"
-                      (change)="$event.checked ? selectItem(msg.id) : deselectItem(msg.id)"
-                      (click)="$event.stopPropagation()">
-                    </mat-checkbox>
-                  </div>
+              class="flex items-center justify-between p-4 bg-slate-800/80 text-slate-300 border-b border-slate-700">
+              <span
+                >Messages that have been in Trash more than 30 days will be automatically
+                deleted.</span
+              >
+              <button
+                mat-button
+                class="text-blue-400 hover:bg-blue-900/30 font-bold"
+                (click)="emptyTrash()">
+                Empty Trash now
+              </button>
+            </div>
+          }
 
-                  <!-- Clickable Row Area -->
+          <!-- Messages List -->
+          <div class="flex-1 overflow-y-auto bg-slate-900 relative">
+            @if (contactService.isLoading()) {
+              <div class="absolute top-4 left-1/2 -translate-x-1/2 z-10">
+                <div
+                  class="bg-blue-600 text-white rounded-full px-4 py-1.5 shadow-lg flex items-center gap-2 text-sm font-bold shadow-blue-500/20">
+                  Loading messages...
+                </div>
+              </div>
+            }
+
+            @if (filteredMessages().length === 0 && !contactService.isLoading()) {
+              <div class="flex flex-col items-center justify-center p-16 text-slate-500">
+                <mat-icon class="text-6xl mb-4 opacity-50">
+                  {{
+                    currentFolder() === 'trash'
+                      ? 'delete'
+                      : currentFolder() === 'snoozed'
+                        ? 'schedule'
+                        : currentFolder() === 'all'
+                          ? 'all_inbox'
+                          : 'inbox'
+                  }}
+                </mat-icon>
+                <h3 class="text-xl">
+                  {{
+                    currentFolder() === 'trash'
+                      ? 'Your trash is empty'
+                      : currentFolder() === 'snoozed'
+                        ? 'No snoozed messages'
+                        : currentFolder() === 'all'
+                          ? 'No messages found'
+                          : 'Your inbox is empty'
+                  }}
+                </h3>
+              </div>
+            } @else if (filteredMessages().length === 0 && contactService.isLoading()) {
+              <div class="flex flex-col divide-y divide-slate-800/50">
+                @for (i of [1, 2, 3, 4, 5, 6, 7]; track i) {
+                  <div class="flex items-center px-4 py-3 animate-pulse">
+                    <div class="w-12 flex justify-center">
+                      <div class="w-4 h-4 bg-slate-800 rounded"></div>
+                    </div>
+                    <div class="flex-1 flex items-center pr-32">
+                      <div class="w-48 pr-4"><div class="h-4 bg-slate-800 rounded w-24"></div></div>
+                      <div class="flex-1"><div class="h-4 bg-slate-800 rounded w-1/2"></div></div>
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+
+            @if (filteredMessages().length > 0) {
+              <div
+                class="flex flex-col divide-y divide-slate-800/50 transition-opacity duration-200"
+                [class.opacity-50]="contactService.isLoading()">
+                @for (msg of filteredMessages(); track msg.id) {
                   <div
-                    class="flex-1 flex items-center min-w-0 pr-32 group-hover:pr-48 transition-all outline-none cursor-pointer"
-                    tabindex="0"
-                    (keydown.enter)="viewMessage(msg.id)"
-                    (click)="viewMessage(msg.id)">
-                    <!-- Sender Name -->
+                    class="group flex items-center px-4 py-2 hover:bg-slate-800/50 transition-colors cursor-pointer relative pr-4"
+                    [class]="{
+                      'bg-blue-900/20': isSelected(msg.id),
+                      'bg-slate-900': !isSelected(msg.id),
+                    }">
+                    <!-- Checkbox (visible on hover or if checked) -->
                     <div
-                      class="w-48 pr-4 truncate"
-                      [class]="{
-                        'font-bold text-white': !msg.is_read,
-                        'text-slate-300': msg.is_read,
-                      }">
-                      {{ msg.name }}
+                      class="w-12 flex items-center justify-center"
+                      [class]="{ 'opacity-0 group-hover:opacity-100': !isSelected(msg.id) }">
+                      <mat-checkbox
+                        [checked]="isSelected(msg.id)"
+                        (change)="$event.checked ? selectItem(msg.id) : deselectItem(msg.id)"
+                        (click)="$event.stopPropagation()">
+                      </mat-checkbox>
                     </div>
 
-                    <!-- Subject and Snippet -->
-                    <div class="flex-1 truncate">
-                      <span
+                    <!-- Clickable Row Area -->
+                    <div
+                      class="flex-1 flex items-center min-w-0 pr-32 group-hover:pr-48 transition-all outline-none cursor-pointer"
+                      tabindex="0"
+                      (keydown.enter)="viewMessage(msg.id)"
+                      (click)="viewMessage(msg.id)">
+                      <!-- Sender Name -->
+                      <div
+                        class="w-48 pr-4 truncate"
                         [class]="{
                           'font-bold text-white': !msg.is_read,
                           'text-slate-300': msg.is_read,
                         }">
-                        {{ msg.subject || '(No Subject)' }}
-                      </span>
-                      <span class="text-slate-500 mx-2">-</span>
-                      <span class="text-slate-400">{{ msg.message }}</span>
+                        {{ msg.name }}
+                      </div>
+
+                      <!-- Subject and Snippet -->
+                      <div class="flex-1 truncate">
+                        <span
+                          [class]="{
+                            'font-bold text-white': !msg.is_read,
+                            'text-slate-300': msg.is_read,
+                          }">
+                          {{ msg.subject || '(No Subject)' }}
+                        </span>
+                        <span class="text-slate-500 mx-2">-</span>
+                        <span class="text-slate-400">{{ msg.message }}</span>
+                      </div>
+
+                      <!-- Date (hidden on hover) -->
+                      <div
+                        class="absolute right-4 w-24 text-right text-xs group-hover:opacity-0 transition-opacity"
+                        [class]="{
+                          'font-bold text-white': !msg.is_read,
+                          'text-slate-500': msg.is_read,
+                        }">
+                        {{ msg.created_at | date: 'MMM d' }}
+                      </div>
                     </div>
 
-                    <!-- Date (hidden on hover) -->
+                    <!-- Hover Actions (absolute over the right side) -->
                     <div
-                      class="absolute right-4 w-24 text-right text-xs group-hover:opacity-0 transition-opacity"
-                      [class]="{
-                        'font-bold text-white': !msg.is_read,
-                        'text-slate-500': msg.is_read,
-                      }">
-                      {{ msg.created_at | date: 'MMM d' }}
+                      class="absolute right-4 flex items-center justify-end opacity-0 group-hover:opacity-100 transition-opacity space-x-1 pl-4 outline-none"
+                      tabindex="0"
+                      (keydown.enter)="$event.stopPropagation()"
+                      (click)="$event.stopPropagation()">
+                      <button
+                        mat-icon-button
+                        [matTooltip]="msg.is_read ? 'Mark as unread' : 'Mark as read'"
+                        (click)="toggleRead(msg)"
+                        class="text-slate-400 hover:text-white !scale-75">
+                        <mat-icon>{{ msg.is_read ? 'mark_email_unread' : 'drafts' }}</mat-icon>
+                      </button>
+                      <button
+                        mat-icon-button
+                        matTooltip="Snooze"
+                        (click)="$event.stopPropagation()"
+                        [matMenuTriggerFor]="snoozeMenu"
+                        [matMenuTriggerData]="{ msg: msg }"
+                        class="text-slate-400 hover:text-white !scale-75">
+                        <mat-icon>schedule</mat-icon>
+                      </button>
+                      <button
+                        mat-icon-button
+                        matTooltip="Archive"
+                        (click)="archive(msg)"
+                        class="text-slate-400 hover:text-white !scale-75"
+                        [disabled]="currentFolder() === 'trash'">
+                        <mat-icon>archive</mat-icon>
+                      </button>
+                      <button
+                        mat-icon-button
+                        matTooltip="Move to Trash"
+                        (click)="deleteMsg(msg)"
+                        class="text-slate-400 hover:text-rose-400 !scale-75"
+                        [disabled]="currentFolder() === 'trash'">
+                        <mat-icon>delete</mat-icon>
+                      </button>
                     </div>
                   </div>
-
-                  <!-- Hover Actions (absolute over the right side) -->
-                  <div
-                    class="absolute right-4 flex items-center justify-end opacity-0 group-hover:opacity-100 transition-opacity space-x-1 pl-4 outline-none"
-                    tabindex="0"
-                    (keydown.enter)="$event.stopPropagation()"
-                    (click)="$event.stopPropagation()">
-                    <button
-                      mat-icon-button
-                      [matTooltip]="msg.is_read ? 'Mark as unread' : 'Mark as read'"
-                      (click)="toggleRead(msg)"
-                      class="text-slate-400 hover:text-white !scale-75">
-                      <mat-icon>{{ msg.is_read ? 'mark_email_unread' : 'drafts' }}</mat-icon>
-                    </button>
-                    <button
-                      mat-icon-button
-                      matTooltip="Snooze"
-                      (click)="$event.stopPropagation()"
-                      [matMenuTriggerFor]="snoozeMenu"
-                      [matMenuTriggerData]="{ msg: msg }"
-                      class="text-slate-400 hover:text-white !scale-75">
-                      <mat-icon>schedule</mat-icon>
-                    </button>
-                    <button
-                      mat-icon-button
-                      matTooltip="Archive"
-                      (click)="archive(msg)"
-                      class="text-slate-400 hover:text-white !scale-75"
-                      [disabled]="currentFolder() === 'trash'">
-                      <mat-icon>archive</mat-icon>
-                    </button>
-                    <button
-                      mat-icon-button
-                      matTooltip="Move to Trash"
-                      (click)="deleteMsg(msg)"
-                      class="text-slate-400 hover:text-rose-400 !scale-75"
-                      [disabled]="currentFolder() === 'trash'">
-                      <mat-icon>delete</mat-icon>
-                    </button>
-                  </div>
-                </div>
-              }
-            </div>
-          }
+                }
+              </div>
+            }
+          </div>
         </div>
       </div>
     </div>
@@ -413,10 +421,15 @@ import { SnoozeDialogComponent } from './snooze-dialog';
 })
 export class ContactsPage implements OnInit {
   protected readonly contactService = inject(ContactService);
+  private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly snackBar = inject(MatSnackBar);
   private readonly dialog = inject(MatDialog);
+
+  readonly tenant = computed(() =>
+    typeof this.authService.tenant === 'function' ? this.authService.tenant() : null,
+  );
 
   private readonly destroyRef = inject(DestroyRef);
 

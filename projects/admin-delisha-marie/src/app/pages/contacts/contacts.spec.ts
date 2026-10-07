@@ -2,6 +2,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ContactsPage } from './contacts';
 import { ContactService, ContactMessage } from '../../services/contact.service';
+import { AuthService } from '../../services/auth.service';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -89,6 +90,12 @@ describe('ContactsPage', () => {
           useValue: {
             paramMap: paramMapSubject.asObservable(),
             queryParamMap: queryParamMapSubject.asObservable(),
+          },
+        },
+        {
+          provide: AuthService,
+          useValue: {
+            tenant: signal({ name: 'Sir Darquan DM' }),
           },
         },
       ],

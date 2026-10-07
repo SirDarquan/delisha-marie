@@ -192,7 +192,6 @@ import { ColoredHeaderComponent } from '../../components/colored-header/colored-
           </button>
         </div>
       </footer>
-      <!-- </div> -->
     </main>
   `,
   encapsulation: ViewEncapsulation.None,
