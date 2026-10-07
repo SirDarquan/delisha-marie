@@ -14,9 +14,38 @@ export const authGuard = async (_route: ActivatedRouteSnapshot, state: RouterSta
 
   await auth.waitForSessionInit();
 
-  if (auth.isAuthenticated()) {
-    return true;
+  if (!auth.isAuthenticated()) {
+    return router.createUrlTree(['/login'], { queryParams: { returnUrl: state.url } });
   }
 
-  return router.createUrlTree(['/login'], { queryParams: { returnUrl: state.url } });
+  // Handle waiting room / pending status
+  if (auth.userStatus() === 'pending') {
+    if (state.url.includes('/pending-approval')) {
+      return true;
+    }
+    return router.createUrlTree(['/pending-approval']);
+  }
+
+  // If active user visits /pending-approval, redirect to home
+  if (state.url.includes('/pending-approval')) {
+    return router.createUrlTree(['/']);
+  }
+
+  // Protect admin-only route (/users) from members
+  if (state.url.includes('/users') && !auth.isAdmin()) {
+    return router.createUrlTree(['/']);
+  }
+
+  // Admins cannot directly edit member recipes without impersonating
+  if (
+    (state.url.includes('/recipes') ||
+      state.url.includes('/pages') ||
+      state.url.includes('/contacts')) &&
+    auth.isAdmin() &&
+    !auth.isImpersonating()
+  ) {
+    return router.createUrlTree(['/users']);
+  }
+
+  return true;
 };

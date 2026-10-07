@@ -7,12 +7,22 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/auth/login/login').then((m) => m.LoginComponent),
   },
   {
+    path: 'pending-approval',
+    loadComponent: () =>
+      import('./pages/pending-approval/pending-approval').then((m) => m.PendingApprovalComponent),
+    canActivate: [authGuard],
+  },
+  {
+    path: 'users',
+    loadComponent: () => import('./pages/users/users').then((m) => m.UsersPageComponent),
+    canActivate: [authGuard],
+  },
+  {
     path: 'recipes',
     loadComponent: () =>
       import('./pages/recipes-list/recipes-list').then((m) => m.RecipesListComponent),
     canActivate: [authGuard],
   },
-
   {
     path: 'recipes/new',
     loadComponent: () =>
