@@ -51,7 +51,7 @@
     "multer": "^2.4.0",
     "ngx-pagination": "^6.0.3",
     "rxjs": "~7.8.0",
-    "sharp": "^0.35.4",
+    "sharp": "^0.35.5",
     "tailwindcss": "^4.3.0",
     "tslib": "^2.3.0"
   },
