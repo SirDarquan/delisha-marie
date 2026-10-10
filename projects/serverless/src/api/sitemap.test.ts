@@ -332,4 +332,24 @@ describe('sitemap', () => {
     await sitemapRouter(req, res);
     expect(res.statusCode).toBe(404);
   });
+
+  it('should trim trailing slash from SITE_URL', async () => {
+    process.env['SITE_URL'] = 'https://custom-domain.com/';
+    const res = await request(app).get('/sitemap.xml');
+    expect(res.status).toBe(200);
+    expect(res.text).toContain('<loc>https://custom-domain.com/sitemap-pages.xml</loc>');
+  });
+
+  it('should use request host and proto when SITE_URL and VERCEL envs are not set', async () => {
+    delete process.env['SITE_URL'];
+    delete process.env['VERCEL_ENV'];
+    delete process.env['VERCEL_PROJECT_PRODUCTION_URL'];
+    delete process.env['VERCEL_URL'];
+    const res = await request(app)
+      .get('/sitemap.xml')
+      .set('host', 'my-custom-host:3000')
+      .set('x-forwarded-proto', 'http');
+    expect(res.status).toBe(200);
+    expect(res.text).toContain('<loc>http://my-custom-host:3000/sitemap-pages.xml</loc>');
+  });
 });

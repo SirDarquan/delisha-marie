@@ -43,6 +43,12 @@ describe('Contacts 2 API (Vercel Node)', () => {
       expect(res.body).toEqual({ error: 'Name, email, subject, and message are required' });
     });
 
+    it('should return 400 if req.body is undefined', async () => {
+      const res = await request().post('/api/contacts');
+      expect(res.status).toBe(400);
+      expect(res.body).toEqual({ error: 'Name, email, subject, and message are required' });
+    });
+
     it('should successfully post a contact from human with isSpam=false and deleted_at=null', async () => {
       const mockSingle = vi.fn().mockResolvedValue({
         data: {

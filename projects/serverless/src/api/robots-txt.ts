@@ -4,6 +4,12 @@ interface Rule {
   userAgent: string | string[];
   allow?: string[];
   disallow?: string[];
+  crawlDelay?: number;
+  contentSignal?: {
+    search?: string;
+    aiInput?: string;
+    aiTrain?: string;
+  };
 }
 
 interface RobotsTxt {
@@ -28,11 +34,21 @@ function getBaseUrl(req: VercelRequest): string {
   return base.endsWith('/') ? base.slice(0, -1) : base;
 }
 
+function formatRobotsTxt(): RobotsTxt {
+  try {
+    return JSON.parse(process.env['ROBOTS_TXT'] || '') as RobotsTxt;
+  } catch {
+    return JSON.parse('{"rules":[{"userAgent":"*","disallow":["/"]}]}') as RobotsTxt;
+  }
+}
+
 export default function robotsTxt(req: VercelRequest, res: VercelResponse): void {
   const baseUrl = getBaseUrl(req);
-  const robotsTxt: RobotsTxt = JSON.parse(
-    process.env['ROBOTS_TXT'] || '{"rules":[{"userAgent":"*","disallow":["/"]}]}',
-  );
+  const robotsTxt = formatRobotsTxt();
+  if (!robotsTxt) {
+    res.status(200).end();
+    return;
+  }
   let robots = '# https://www.robotstxt.org/robotstxt.html\n';
 
   robotsTxt.rules?.forEach((rule) => {
@@ -43,15 +59,31 @@ export default function robotsTxt(req: VercelRequest, res: VercelResponse): void
     } else {
       robots += `User-agent: ${rule.userAgent}\n`;
     }
-    if (rule.allow) {
-      rule.allow.forEach((allow) => {
-        robots += `Allow: ${allow}\n`;
-      });
+    if (rule.contentSignal) {
+      const contentSignal = [];
+      if (rule.contentSignal.search) {
+        contentSignal.push(`search=${rule.contentSignal.search}`);
+      }
+      if (rule.contentSignal.aiInput) {
+        contentSignal.push(`ai-input=${rule.contentSignal.aiInput}`);
+      }
+      if (rule.contentSignal.aiTrain) {
+        contentSignal.push(`ai-train=${rule.contentSignal.aiTrain}`);
+      }
+      robots += `Content-Signal: ${contentSignal.join(', ')}\n`;
     }
     if (rule.disallow) {
       rule.disallow.forEach((disallow) => {
         robots += `Disallow: ${disallow}\n`;
       });
+    }
+    if (rule.allow) {
+      rule.allow.forEach((allow) => {
+        robots += `Allow: ${allow}\n`;
+      });
+    }
+    if (rule.crawlDelay) {
+      robots += `Crawl-delay: ${rule.crawlDelay}\n`;
     }
     robots += '\n';
   });
