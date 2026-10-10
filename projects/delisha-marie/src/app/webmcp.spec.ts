@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { DOCUMENT } from '@angular/core';
-import { initializeWebMCPPolyfill, cleanupWebMCPPolyfill } from '@mcp-b/webmcp-polyfill';
+import type {} from 'webmcp-types';
 import { withRecipes } from './webmcp';
 import { Api } from './services/api';
 import { vi, describe, beforeEach, afterEach, it, expect } from 'vitest';
@@ -10,13 +10,38 @@ interface ModelContextTesting {
   executeTool: (name: string, args: string) => Promise<unknown>;
 }
 
+interface RegisteredTool {
+  name: string;
+  description?: string;
+  inputSchema?: unknown;
+  execute: (args: Record<string, unknown>) => Promise<unknown>;
+}
+
 describe('WebMCP Integration', () => {
   let mockApi: Record<string, ReturnType<typeof vi.fn>>;
   let nav: { modelContextTesting?: ModelContextTesting };
+  let registeredTools: RegisteredTool[] = [];
 
   beforeEach(() => {
-    // Install the polyfill with testing shim so we can execute tools
-    initializeWebMCPPolyfill({ installTestingShim: true });
+    registeredTools = [];
+    (document as unknown as { modelContext?: unknown }).modelContext = {
+      registerTool: vi.fn((tool: RegisteredTool) => {
+        registeredTools.push(tool);
+      }),
+      unregisterTool: vi.fn((name: string) => {
+        registeredTools = registeredTools.filter((t) => t.name !== name);
+      }),
+    };
+
+    (navigator as unknown as { modelContextTesting?: ModelContextTesting }).modelContextTesting = {
+      listTools: vi.fn(async () => registeredTools.map((t) => ({ name: t.name }))),
+      executeTool: vi.fn(async (name: string, argsStr: string) => {
+        const found = registeredTools.find((t) => t.name === name);
+        if (!found) throw new Error(`Tool ${name} not found`);
+        const parsed = JSON.parse(argsStr);
+        return await found.execute(parsed);
+      }),
+    };
 
     nav = navigator as unknown as { modelContextTesting?: ModelContextTesting };
 
@@ -36,7 +61,8 @@ describe('WebMCP Integration', () => {
   });
 
   afterEach(() => {
-    cleanupWebMCPPolyfill();
+    delete (document as unknown as { modelContext?: unknown }).modelContext;
+    delete (navigator as unknown as { modelContextTesting?: unknown }).modelContextTesting;
     vi.clearAllMocks();
   });
 
