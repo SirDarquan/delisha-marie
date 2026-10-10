@@ -1,4 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+
+const { mockCheckBotId } = vi.hoisted(() => ({
+  mockCheckBotId: vi.fn().mockResolvedValue({ isBot: false }),
+}));
+
+vi.mock('botid/server', () => ({
+  checkBotId: mockCheckBotId,
+}));
+
 import subscriberHandler from './subscriber';
 
 describe('POST /subscriber', () => {
@@ -6,6 +15,7 @@ describe('POST /subscriber', () => {
     vi.unstubAllEnvs();
     vi.stubEnv('SENDER_API_TOKEN', 'fake_token');
     vi.restoreAllMocks();
+    mockCheckBotId.mockResolvedValue({ isBot: false });
   });
 
   it('returns 404 for non-POST methods', async () => {
@@ -162,5 +172,38 @@ describe('POST /subscriber', () => {
 
     expect(res.status).toHaveBeenCalledWith(500);
     expect(res.json).toHaveBeenCalledWith({ error: 'Internal server error' });
+  });
+
+  it('redirects to none provider if bot is detected', async () => {
+    mockCheckBotId.mockResolvedValueOnce({ isBot: true });
+    const req = {
+      method: 'POST',
+      body: { email: 'bot@example.com', provider: 'sender' },
+    } as unknown as import('@vercel/node').VercelRequest;
+    const res = {
+      status: vi.fn().mockReturnThis(),
+      json: vi.fn(),
+    } as unknown as import('@vercel/node').VercelResponse;
+
+    await subscriberHandler(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith({
+      success: true,
+      message: 'Mock subscription successful',
+    });
+  });
+
+  it('returns 400 if req.body is undefined', async () => {
+    const req = { method: 'POST' } as unknown as import('@vercel/node').VercelRequest;
+    const res = {
+      status: vi.fn().mockReturnThis(),
+      json: vi.fn(),
+    } as unknown as import('@vercel/node').VercelResponse;
+
+    await subscriberHandler(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({ error: 'Email is required' });
   });
 });

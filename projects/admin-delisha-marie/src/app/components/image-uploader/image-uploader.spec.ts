@@ -9,11 +9,16 @@ describe('ImageUploaderComponent', () => {
   let fixture: ComponentFixture<ImageUploaderComponent>;
 
   const originalImage = globalThis.Image;
+  const originalCreateObjectURL = globalThis.URL.createObjectURL;
+  const originalRevokeObjectURL = globalThis.URL.revokeObjectURL;
   let triggerImageLoadSuccess = true;
   let mockNaturalWidth = 800;
   let mockNaturalHeight = 600;
 
   beforeAll(() => {
+    globalThis.URL.createObjectURL = vi.fn(() => 'blob:mock-url');
+    globalThis.URL.revokeObjectURL = vi.fn();
+
     // Highly sophisticated jsdom image class mock to control onload/onerror dimensions synchronously
     class MockImage {
       private _src = '';
@@ -50,6 +55,8 @@ describe('ImageUploaderComponent', () => {
 
   afterAll(() => {
     globalThis.Image = originalImage;
+    globalThis.URL.createObjectURL = originalCreateObjectURL;
+    globalThis.URL.revokeObjectURL = originalRevokeObjectURL;
   });
 
   beforeEach(async () => {
@@ -120,10 +127,7 @@ describe('ImageUploaderComponent', () => {
 
     // Mock ObjectURL behavior
     const testBlobUrl = 'blob:http://localhost/mock-blob-uuid';
-    const originalCreateObjectURL = URL.createObjectURL;
-    const originalRevokeObjectURL = URL.revokeObjectURL;
-    URL.createObjectURL = () => testBlobUrl;
-    URL.revokeObjectURL = vi.fn();
+    const createSpy = vi.spyOn(URL, 'createObjectURL').mockReturnValue(testBlobUrl);
 
     // 1. Dragover
     const dragOverEvent = {
@@ -164,9 +168,7 @@ describe('ImageUploaderComponent', () => {
       imageHeight: '600',
       imageType: 'image/webp',
     });
-
-    URL.createObjectURL = originalCreateObjectURL;
-    URL.revokeObjectURL = originalRevokeObjectURL;
+    createSpy.mockRestore();
   });
 
   it('should process dropped URL string text, formatting names and extracting dimensions', async () => {
@@ -752,5 +754,64 @@ describe('ImageUploaderComponent', () => {
   it('should set previewError to true when onPreviewError is called', () => {
     component.onPreviewError();
     expect(component['previewError']()).toBe(true);
+  });
+
+  it('should handle URL.createObjectURL failure gracefully in processFile', async () => {
+    fixture.detectChanges();
+    const createObjectURLSpy = vi
+      .spyOn(globalThis.URL, 'createObjectURL')
+      .mockImplementation(() => {
+        throw new Error('createObjectURL failed');
+      });
+
+    const file = new File(['content'], 'error-image.jpg', { type: 'image/jpeg' });
+    const fileEvent = {
+      target: {
+        files: [file],
+      },
+    } as unknown as Event;
+
+    let previewUrlDuringProcess = 'unset';
+    const uploadSpy = vi
+      .spyOn(TestBed.inject(RecipeService), 'upload')
+      .mockImplementation(async () => {
+        previewUrlDuringProcess = component['previewUrl']();
+        return 'uploaded.jpg';
+      });
+
+    component.onFileSelected(fileEvent);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(previewUrlDuringProcess).toBe('');
+    createObjectURLSpy.mockRestore();
+    uploadSpy.mockRestore();
+  });
+
+  it('should render Image load failed when previewError is true and dimensions are empty', () => {
+    fixture.componentRef.setInput('initialImage', 'fake.jpg');
+    fixture.detectChanges();
+    component['previewError'].set(true);
+    component['currentWidth'].set('');
+    component['currentHeight'].set('');
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Image load failed');
+  });
+
+  it('should trigger dragleave and keydown.enter on template elements', () => {
+    fixture.componentRef.setInput('initialImage', 'fake.jpg');
+    fixture.detectChanges();
+
+    const dropZone = fixture.debugElement.query(By.css('[role="button"]'));
+    dropZone.triggerEventHandler('dragleave', {
+      preventDefault: vi.fn(),
+      stopPropagation: vi.fn(),
+    });
+    expect(component['dragOver']()).toBe(false);
+
+    const previewDiv = fixture.debugElement.query(By.css('.animate-fadeIn'));
+    const stopPropagation = vi.fn();
+    previewDiv.triggerEventHandler('keydown.enter', { stopPropagation });
+    expect(stopPropagation).toHaveBeenCalled();
   });
 });

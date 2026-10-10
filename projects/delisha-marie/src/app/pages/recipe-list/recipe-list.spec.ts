@@ -445,7 +445,22 @@ describe('RecipeList', () => {
     Object.defineProperty(router, 'url', { value: '/recipes/page/2' });
 
     const originalAt = Array.prototype.at;
-    Array.prototype.at = vi.fn().mockReturnValue(undefined);
+    const atSpy = vi.spyOn(Array.prototype, 'at').mockImplementation(function (
+      this: unknown[],
+      index: number,
+    ) {
+      if (
+        Array.isArray(this) &&
+        this.length > 0 &&
+        typeof this[0] === 'object' &&
+        this[0] !== null &&
+        'label' in this[0] &&
+        (this[0] as { label?: string }).label === 'Home'
+      ) {
+        return undefined;
+      }
+      return originalAt.call(this, index);
+    });
 
     try {
       paramsSubject.next({ page: '2' });
@@ -454,7 +469,7 @@ describe('RecipeList', () => {
       const breadcrumbs = component.breadcrumbItems();
       expect(breadcrumbs).toHaveLength(3);
     } finally {
-      Array.prototype.at = originalAt;
+      atSpy.mockRestore();
     }
   });
 
