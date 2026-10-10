@@ -9,11 +9,16 @@ describe('ImageUploaderComponent', () => {
   let fixture: ComponentFixture<ImageUploaderComponent>;
 
   const originalImage = globalThis.Image;
+  const originalCreateObjectURL = globalThis.URL.createObjectURL;
+  const originalRevokeObjectURL = globalThis.URL.revokeObjectURL;
   let triggerImageLoadSuccess = true;
   let mockNaturalWidth = 800;
   let mockNaturalHeight = 600;
 
   beforeAll(() => {
+    globalThis.URL.createObjectURL = vi.fn(() => 'blob:mock-url');
+    globalThis.URL.revokeObjectURL = vi.fn();
+
     // Highly sophisticated jsdom image class mock to control onload/onerror dimensions synchronously
     class MockImage {
       private _src = '';
@@ -50,6 +55,8 @@ describe('ImageUploaderComponent', () => {
 
   afterAll(() => {
     globalThis.Image = originalImage;
+    globalThis.URL.createObjectURL = originalCreateObjectURL;
+    globalThis.URL.revokeObjectURL = originalRevokeObjectURL;
   });
 
   beforeEach(async () => {

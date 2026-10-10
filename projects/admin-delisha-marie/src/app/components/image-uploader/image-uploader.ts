@@ -391,7 +391,12 @@ export class ImageUploaderComponent implements FormValueControl<string>, OnInit 
     this.isUploading.set(true);
 
     // Create a local blob URL to show the preview immediately
-    const objectUrl = URL.createObjectURL(file);
+    let objectUrl = '';
+    try {
+      objectUrl = URL.createObjectURL(file);
+    } catch {
+      objectUrl = '';
+    }
     this.previewUrl.set(objectUrl);
 
     // Extract natural width and height of the local file
