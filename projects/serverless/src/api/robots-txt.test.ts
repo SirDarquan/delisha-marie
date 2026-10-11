@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import type { VercelRequest } from '@vercel/node';
 import { createRequestMock } from './test-utils';
-import robotsTxtRouter from './robots-txt';
+import robotsTxtRouter, { buildSitemapUrl, getRobotsPrefix } from './robots-txt';
 
 describe('robotsTxtRouter', () => {
   let request: ReturnType<typeof createRequestMock>;
@@ -24,7 +25,7 @@ describe('robotsTxtRouter', () => {
 
     expect(res.status).toBe(200);
     expect(res.headers['content-type']).toContain('text/plain');
-    expect(res.headers['cache-control']).toBe('public, max-age=3600, s-maxage=86400');
+    expect(res.headers['cache-control']).toBe('no-cache, no-store, must-revalidate');
     expect(res.text).toContain('# https://www.robotstxt.org/robotstxt.html');
   });
 
@@ -262,5 +263,103 @@ describe('robotsTxtRouter', () => {
     const res = await request(app).get('/robots.txt');
     expect(res.status).toBe(200);
     expect(res.text).toContain('Sitemap: https://example.com/sitemap.xml');
+  });
+
+  it('should bend allowLlm to /kitchen/llms.txt when sitemap contains /kitchen', async () => {
+    process.env['SITE_URL'] = 'https://example.com';
+    process.env['ROBOTS_TXT'] = JSON.stringify({
+      rules: [{ userAgent: '*', allow: ['/'] }],
+      allowLlm: true,
+      sitemap: ['/kitchen/sitemap-pages.xml'],
+    });
+    const res = await request(app).get('/robots.txt');
+    expect(res.status).toBe(200);
+    expect(res.text).toContain('Allow: /kitchen/llms.txt\n');
+    expect(res.text).toContain('Sitemap: https://example.com/kitchen/sitemap-pages.xml\n');
+  });
+
+  it('should bend allowLlm to /kitchen/llms.txt when SITE_URL has /kitchen', async () => {
+    process.env['SITE_URL'] = 'https://example.com/kitchen';
+    process.env['ROBOTS_TXT'] = JSON.stringify({
+      rules: [{ userAgent: '*', allow: ['/'] }],
+      allowLlm: true,
+      sitemap: '/kitchen/sitemap.xml',
+    });
+    const res = await request(app).get('/robots.txt');
+    expect(res.status).toBe(200);
+    expect(res.text).toContain('Allow: /kitchen/llms.txt\n');
+    expect(res.text).toContain('Sitemap: https://example.com/kitchen/sitemap.xml');
+  });
+
+  it('should format Allow: /llms.txt when allowLlm is true without kitchen', async () => {
+    process.env['SITE_URL'] = 'https://example.com';
+    process.env['ROBOTS_TXT'] = JSON.stringify({
+      rules: [{ userAgent: '*', allow: ['/'] }],
+      allowLlm: true,
+      sitemap: '/sitemap.xml',
+    });
+    const res = await request(app).get('/robots.txt');
+    expect(res.status).toBe(200);
+    expect(res.text).toContain('Allow: /llms.txt\n');
+    expect(res.text).toContain('Sitemap: https://example.com/sitemap.xml');
+  });
+
+  it('should give robots a prefix via query param in prod rewrite', async () => {
+    process.env['SITE_URL'] = 'https://example.com';
+    process.env['ROBOTS_TXT'] = JSON.stringify({
+      rules: [{ userAgent: '*', allow: ['/'] }],
+      allowLlm: true,
+      sitemap: '/sitemap.xml',
+    });
+    const res = await request(app).get('/api/robots?prefix=/kitchen');
+    expect(res.status).toBe(200);
+    expect(res.text).toContain('Allow: /kitchen/llms.txt\n');
+    expect(res.text).toContain('Sitemap: https://example.com/kitchen/sitemap.xml');
+  });
+
+  it('should give robots a prefix via ROBOTS_PREFIX env var', async () => {
+    process.env['SITE_URL'] = 'https://example.com';
+    process.env['ROBOTS_PREFIX'] = '/kitchen';
+    process.env['ROBOTS_TXT'] = JSON.stringify({
+      rules: [{ userAgent: '*', allow: ['/'] }],
+      allowLlm: true,
+      sitemap: '/sitemap.xml',
+    });
+    const res = await request(app).get('/robots.txt');
+    expect(res.status).toBe(200);
+    expect(res.text).toContain('Allow: /kitchen/llms.txt\n');
+    expect(res.text).toContain('Sitemap: https://example.com/kitchen/sitemap.xml');
+  });
+
+  describe('helper edge cases', () => {
+    it('getRobotsPrefix handles query without leading slash, SITE_PREFIX, and empty values', () => {
+      const reqWithNoSlash = { query: { prefix: 'kitchen' } } as unknown as VercelRequest;
+      expect(getRobotsPrefix(reqWithNoSlash)).toBe('/kitchen');
+
+      delete process.env['ROBOTS_PREFIX'];
+      process.env['SITE_PREFIX'] = 'custom';
+      expect(getRobotsPrefix()).toBe('/custom');
+
+      process.env['SITE_PREFIX'] = '/custom-slash';
+      expect(getRobotsPrefix()).toBe('/custom-slash');
+      delete process.env['SITE_PREFIX'];
+
+      expect(getRobotsPrefix()).toBe('');
+    });
+
+    it('buildSitemapUrl handles trailing slash on baseUrl, relative sitemap without slash, and http sitemaps', () => {
+      expect(buildSitemapUrl('https://example.com/', 'sitemap.xml', 'kitchen')).toBe(
+        'https://example.com/kitchen/sitemap.xml',
+      );
+      expect(buildSitemapUrl('https://example.com', 'http://external.com/sitemap.xml')).toBe(
+        'http://external.com/sitemap.xml',
+      );
+      expect(buildSitemapUrl('https://example.com', '/sitemap.xml')).toBe(
+        'https://example.com/sitemap.xml',
+      );
+      expect(
+        buildSitemapUrl('https://example.com/kitchen', '/kitchen/sitemap.xml', '/kitchen'),
+      ).toBe('https://example.com/kitchen/sitemap.xml');
+    });
   });
 });

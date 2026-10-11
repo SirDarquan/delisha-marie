@@ -10,11 +10,27 @@
     },
     {
       "source": "/robots.txt",
-      "destination": "/api/robots"
+      "destination": "/api/robots?prefix=/kitchen"
     },
     {
       "source": "/:prefix+/sitemap(.*).xml",
       "destination": "/api/sitemap"
+    },
+    {
+      "source": "/llms.txt",
+      "destination": "/api/llms"
+    },
+    {
+      "source": "/llms-full.txt",
+      "destination": "/api/llms?full=true"
+    },
+    {
+      "source": "/kitchen/llms.txt",
+      "destination": "/api/llms?path=/kitchen/llms.txt"
+    },
+    {
+      "source": "/kitchen/llms-full.txt",
+      "destination": "/api/llms?full=true&path=/kitchen/llms-full.txt"
     },
     {
       "source": "/kitchen/api/recipes/(.*)",

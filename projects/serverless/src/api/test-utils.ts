@@ -55,6 +55,7 @@ export interface IndexItem {
 
 export interface MockResponseBody {
   error: string;
+  details?: string;
   items: {
     id: number | string;
     title: string;
