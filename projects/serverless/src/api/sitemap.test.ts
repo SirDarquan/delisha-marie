@@ -12,7 +12,11 @@ vi.mock('@supabase/supabase-js', () => ({
 }));
 
 import { createRequestMock } from './test-utils';
-import sitemapRouter from './sitemap';
+import sitemapRouter, {
+  getRecipesPerSitemap,
+  MAX_RECIPES_PER_SITEMAP,
+  DEFAULT_RECIPES_PER_SITEMAP,
+} from './sitemap';
 import { resetSupabaseClient } from './supabase';
 
 describe('sitemap', () => {
@@ -33,9 +37,81 @@ describe('sitemap', () => {
     resetSupabaseClient();
 
     request = createRequestMock(sitemapRouter);
-    mockFrom.mockReturnValue({ select: mockSelect });
+
+    mockFrom.mockImplementation((table: string) => {
+      const createBuilder = () => {
+        let theBestFilter = false;
+        const builder: Record<string, unknown> = {
+          select: vi.fn().mockImplementation(() => builder),
+          eq: vi.fn().mockImplementation((col: string, val: unknown) => {
+            if (col === 'the_best' && val === true) {
+              theBestFilter = true;
+            }
+            return builder;
+          }),
+          lte: vi.fn().mockImplementation(() => {
+            if (table === 'categories') {
+              return Promise.resolve({
+                data: [
+                  { url: '/recipes/dinner' },
+                  { url: '/recipes/dinner/pasta' },
+                  { url: '/recipes/desserts' },
+                ],
+                error: null,
+              });
+            }
+            if (table === 'holidays') {
+              return Promise.resolve({
+                data: [{ slug: 'thanksgiving' }, { slug: 'christmas' }],
+                error: null,
+              });
+            }
+            if (table === 'methods') {
+              return Promise.resolve({
+                data: [{ slug: 'baking' }, { slug: 'air-fryer' }],
+                error: null,
+              });
+            }
+            if (table === 'special_diets') {
+              return Promise.resolve({
+                data: [{ slug: 'gluten-free' }, { slug: 'vegan' }],
+                error: null,
+              });
+            }
+            if (table === 'recipes' && theBestFilter) {
+              return Promise.resolve({ count: 5, data: [], error: null });
+            }
+            return mockLte();
+          }),
+        };
+        return builder;
+      };
+
+      if (
+        table === 'categories' ||
+        table === 'holidays' ||
+        table === 'methods' ||
+        table === 'special_diets'
+      ) {
+        return createBuilder();
+      }
+
+      return { select: mockSelect };
+    });
+
     mockSelect.mockReturnValue({ eq: mockEq });
-    mockEq.mockReturnValue({ lte: mockLte });
+    mockEq.mockImplementation((col: string, val: unknown) => {
+      if (col === 'the_best' && val === true) {
+        return {
+          lte: vi.fn().mockResolvedValue({ count: 5, data: [], error: null }),
+        };
+      }
+      return { eq: mockEq, lte: mockLte };
+    });
+    mockLte.mockReturnValue({
+      data: [],
+      error: null,
+    });
   });
 
   afterEach(() => {
@@ -89,10 +165,28 @@ describe('sitemap', () => {
       delete process.env['SITE_URL'];
       delete process.env['VERCEL_PROJECT_PRODUCTION_URL'];
       const res = await request(app).get('/sitemap.xml');
-      // test-utils passes host: 'localhost' by default in createRequestMock if we don't clear it.
-      // So it will use https://localhost by default if x-forwarded-proto isn't set,
-      // but test-utils sets neither, except headers={}. Wait, let's see.
       expect(res.text).toContain('<loc>https://');
+    });
+
+    it('should fallback host to localhost when req.headers has no host', async () => {
+      delete process.env['SITE_URL'];
+      delete process.env['VERCEL_PROJECT_PRODUCTION_URL'];
+      delete process.env['VERCEL_URL'];
+      const req = {
+        url: '/sitemap.xml',
+        headers: { 'x-forwarded-proto': 'http' },
+      } as unknown as VercelRequest;
+      let sentBody = '';
+      const res = {
+        setHeader: vi.fn(),
+        status: vi.fn().mockReturnThis(),
+        send: vi.fn().mockImplementation((body: string) => {
+          sentBody = body;
+        }),
+      } as unknown as VercelResponse;
+
+      await sitemapRouter(req, res);
+      expect(sentBody).toContain('<loc>http://localhost/sitemap-pages.xml</loc>');
     });
 
     it('should respect custom SITE_URL env variable', async () => {
@@ -124,17 +218,66 @@ describe('sitemap', () => {
   });
 
   describe('GET /sitemap-categories.xml', () => {
-    it('should return category hub pages XML', async () => {
+    it('should return category hub and child pages XML for populated taxonomies', async () => {
       process.env['SITE_URL'] = 'https://custom-domain.com';
       const res = await request(app).get('/sitemap-categories.xml');
 
       expect(res.status).toBe(200);
       expect(res.headers['content-type']).toContain('application/xml');
       expect(res.text).toContain('<loc>https://custom-domain.com/recipes</loc>');
-      expect(res.text).toContain('<loc>https://custom-domain.com/methods</loc>');
+      expect(res.text).toContain('<loc>https://custom-domain.com/recipes/desserts</loc>');
+      expect(res.text).toContain('<loc>https://custom-domain.com/recipes/dinner</loc>');
+      expect(res.text).toContain('<loc>https://custom-domain.com/recipes/dinner/pasta</loc>');
       expect(res.text).toContain('<loc>https://custom-domain.com/holidays</loc>');
+      expect(res.text).toContain('<loc>https://custom-domain.com/holidays/thanksgiving</loc>');
+      expect(res.text).toContain('<loc>https://custom-domain.com/holidays/christmas</loc>');
+      expect(res.text).toContain('<loc>https://custom-domain.com/methods</loc>');
+      expect(res.text).toContain('<loc>https://custom-domain.com/methods/air-fryer</loc>');
+      expect(res.text).toContain('<loc>https://custom-domain.com/methods/baking</loc>');
       expect(res.text).toContain('<loc>https://custom-domain.com/special-diets</loc>');
+      expect(res.text).toContain('<loc>https://custom-domain.com/special-diets/gluten-free</loc>');
+      expect(res.text).toContain('<loc>https://custom-domain.com/special-diets/vegan</loc>');
       expect(res.text).toContain('<loc>https://custom-domain.com/the-best-recipes</loc>');
+    });
+
+    it('should omit empty taxonomies when no recipes exist for them', async () => {
+      mockFrom.mockImplementation(() => {
+        const builder = {
+          select: vi.fn().mockReturnThis(),
+          eq: vi.fn().mockReturnThis(),
+          lte: vi.fn().mockResolvedValue({ data: null, count: 0, error: null }),
+        };
+        return builder;
+      });
+
+      process.env['SITE_URL'] = 'https://custom-domain.com';
+      const res = await request(app).get('/sitemap-categories.xml');
+
+      expect(res.status).toBe(200);
+      expect(res.text).not.toContain('<loc>https://custom-domain.com/recipes</loc>');
+      expect(res.text).not.toContain('<loc>https://custom-domain.com/holidays</loc>');
+      expect(res.text).not.toContain('<loc>https://custom-domain.com/methods</loc>');
+      expect(res.text).not.toContain('<loc>https://custom-domain.com/special-diets</loc>');
+      expect(res.text).not.toContain('<loc>https://custom-domain.com/the-best-recipes</loc>');
+      expect(res.text).not.toContain('<loc>');
+    });
+
+    it('should handle database exception in categories sitemap gracefully', async () => {
+      mockFrom.mockImplementation(() => {
+        const builder = {
+          select: vi.fn().mockReturnThis(),
+          eq: vi.fn().mockReturnThis(),
+          lte: vi.fn().mockRejectedValue(new Error('Taxonomy failure')),
+        };
+        return builder;
+      });
+
+      process.env['SITE_URL'] = 'https://custom-domain.com';
+      const res = await request(app).get('/sitemap-categories.xml');
+
+      expect(res.status).toBe(200);
+      expect(res.text).toContain('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"');
+      expect(res.text).not.toContain('<loc>');
     });
   });
 
@@ -351,5 +494,314 @@ describe('sitemap', () => {
       .set('x-forwarded-proto', 'http');
     expect(res.status).toBe(200);
     expect(res.text).toContain('<loc>http://my-custom-host:3000/sitemap-pages.xml</loc>');
+  });
+
+  describe('scalable recipe pagination and limits', () => {
+    it('getRecipesPerSitemap respects limits and defaults', () => {
+      delete process.env['RECIPES_PER_SITEMAP'];
+      expect(getRecipesPerSitemap()).toBe(DEFAULT_RECIPES_PER_SITEMAP);
+      expect(getRecipesPerSitemap()).toBe(1000);
+
+      process.env['RECIPES_PER_SITEMAP'] = '2500';
+      expect(getRecipesPerSitemap()).toBe(2500);
+
+      process.env['RECIPES_PER_SITEMAP'] = '99999';
+      expect(getRecipesPerSitemap()).toBe(MAX_RECIPES_PER_SITEMAP);
+      expect(getRecipesPerSitemap()).toBe(50000);
+
+      process.env['RECIPES_PER_SITEMAP'] = '-10';
+      expect(getRecipesPerSitemap()).toBe(DEFAULT_RECIPES_PER_SITEMAP);
+
+      process.env['RECIPES_PER_SITEMAP'] = 'invalid';
+      expect(getRecipesPerSitemap()).toBe(DEFAULT_RECIPES_PER_SITEMAP);
+    });
+
+    it('should dynamically list multiple recipe chunks in master sitemap when count exceeds limit', async () => {
+      process.env['SITE_URL'] = 'https://custom-domain.com';
+      process.env['RECIPES_PER_SITEMAP'] = '1000';
+      mockLte.mockResolvedValueOnce({ count: 2500, data: [], error: null });
+
+      const res = await request(app).get('/sitemap.xml');
+
+      expect(res.status).toBe(200);
+      expect(res.text).toContain('<loc>https://custom-domain.com/sitemap-recipes.xml</loc>');
+      expect(res.text).toContain('<loc>https://custom-domain.com/sitemap-recipes-2.xml</loc>');
+      expect(res.text).toContain('<loc>https://custom-domain.com/sitemap-recipes-3.xml</loc>');
+      expect(res.text).not.toContain('<loc>https://custom-domain.com/sitemap-recipes-1.xml</loc>');
+      expect(res.text).not.toContain('<loc>https://custom-domain.com/sitemap-recipes-4.xml</loc>');
+    });
+
+    it('should list single sitemap-recipes.xml in master sitemap when count is within limit', async () => {
+      process.env['SITE_URL'] = 'https://custom-domain.com';
+      process.env['RECIPES_PER_SITEMAP'] = '1000';
+      mockLte.mockResolvedValueOnce({ count: 500, data: [], error: null });
+
+      const res = await request(app).get('/sitemap.xml');
+
+      expect(res.status).toBe(200);
+      expect(res.text).toContain('<loc>https://custom-domain.com/sitemap-recipes.xml</loc>');
+      expect(res.text).not.toContain('<loc>https://custom-domain.com/sitemap-recipes-2.xml</loc>');
+    });
+
+    it('should handle master sitemap count error gracefully', async () => {
+      process.env['SITE_URL'] = 'https://custom-domain.com';
+      mockLte.mockRejectedValueOnce(new Error('Count query failure'));
+
+      const res = await request(app).get('/sitemap.xml');
+
+      expect(res.status).toBe(200);
+      expect(res.text).toContain('<loc>https://custom-domain.com/sitemap-recipes.xml</loc>');
+    });
+
+    it('should support requesting /sitemap-recipes.xml as page 1 and /sitemap-recipes-2.xml as page 2', async () => {
+      process.env['SITE_URL'] = 'https://custom-domain.com';
+      process.env['RECIPES_PER_SITEMAP'] = '2';
+
+      mockLte.mockResolvedValueOnce({
+        data: [
+          { slug: 'recipe-1', title: 'Recipe 1' },
+          { slug: 'recipe-2', title: 'Recipe 2' },
+          { slug: 'recipe-3', title: 'Recipe 3' },
+          { slug: 'recipe-4', title: 'Recipe 4' },
+        ],
+        error: null,
+      });
+
+      const resPage1 = await request(app).get('/sitemap-recipes.xml');
+      expect(resPage1.status).toBe(200);
+      expect(resPage1.text).toContain('<loc>https://custom-domain.com/recipe/recipe-1</loc>');
+      expect(resPage1.text).toContain('<loc>https://custom-domain.com/recipe/recipe-2</loc>');
+      expect(resPage1.text).not.toContain('<loc>https://custom-domain.com/recipe/recipe-3</loc>');
+
+      mockLte.mockResolvedValueOnce({
+        data: [
+          { slug: 'recipe-1', title: 'Recipe 1' },
+          { slug: 'recipe-2', title: 'Recipe 2' },
+          { slug: 'recipe-3', title: 'Recipe 3' },
+          { slug: 'recipe-4', title: 'Recipe 4' },
+        ],
+        error: null,
+      });
+
+      const resPage2 = await request(app).get('/sitemap-recipes-2.xml');
+      expect(resPage2.status).toBe(200);
+      expect(resPage2.text).toContain('<loc>https://custom-domain.com/recipe/recipe-3</loc>');
+      expect(resPage2.text).toContain('<loc>https://custom-domain.com/recipe/recipe-4</loc>');
+      expect(resPage2.text).not.toContain('<loc>https://custom-domain.com/recipe/recipe-1</loc>');
+    });
+
+    it('should return 404 for /sitemap-recipes-1.xml because numbering starts on 2', async () => {
+      const res1 = await request(app).get('/sitemap-recipes-1.xml');
+      expect(res1.status).toBe(404);
+    });
+
+    it('should support pagination via ?page= query parameter', async () => {
+      process.env['SITE_URL'] = 'https://custom-domain.com';
+      process.env['RECIPES_PER_SITEMAP'] = '2';
+
+      mockLte.mockResolvedValueOnce({
+        data: [{ slug: 'recipe-1' }, { slug: 'recipe-2' }, { slug: 'recipe-3' }],
+        error: null,
+      });
+
+      const res = await request(app).get('/sitemap-recipes.xml?page=2');
+      expect(res.status).toBe(200);
+      expect(res.text).toContain('<loc>https://custom-domain.com/recipe/recipe-3</loc>');
+    });
+
+    it('should return 404 for invalid page number like 0 or negative', async () => {
+      const res0 = await request(app).get('/sitemap-recipes-0.xml');
+      expect(res0.status).toBe(404);
+
+      const resInvalid = await request(app).get('/sitemap-recipes.xml?page=-1');
+      expect(resInvalid.status).toBe(404);
+    });
+
+    it('should invoke order and range when provided on query builder', async () => {
+      process.env['SITE_URL'] = 'https://custom-domain.com';
+      const mockRange = vi.fn().mockResolvedValue({
+        data: [{ slug: 'ranged-cake' }],
+        error: null,
+      });
+      const mockOrderSlug = vi.fn().mockReturnValue({ range: mockRange });
+      const mockOrderDate = vi.fn().mockReturnValue({ order: mockOrderSlug });
+
+      mockLte.mockReturnValueOnce({
+        order: mockOrderDate,
+      });
+
+      const res = await request(app).get('/sitemap-recipes-2.xml');
+      expect(res.status).toBe(200);
+      expect(res.text).toContain('<loc>https://custom-domain.com/recipe/ranged-cake</loc>');
+      expect(mockOrderDate).toHaveBeenCalledWith('created_at', { ascending: false });
+      expect(mockOrderSlug).toHaveBeenCalledWith('slug', { ascending: true });
+      expect(mockRange).toHaveBeenCalledWith(1000, 1999);
+    });
+
+    it('should return 404 when page requested is beyond total recipes', async () => {
+      process.env['SITE_URL'] = 'https://custom-domain.com';
+      mockLte.mockResolvedValueOnce({
+        data: [],
+        error: null,
+      });
+
+      const res = await request(app).get('/sitemap-recipes-99.xml');
+      expect(res.status).toBe(404);
+    });
+
+    it('should support kitchen prefix with paginated chunks', async () => {
+      process.env['SITE_URL'] = 'https://custom-domain.com';
+      mockLte.mockResolvedValueOnce({
+        data: [{ slug: 'kitchen-pie' }],
+        error: null,
+      });
+
+      const res = await request(app).get('/kitchen/sitemap-recipes-2.xml');
+      expect(res.status).toBe(200);
+      expect(res.text).toContain('<loc>https://custom-domain.com/kitchen/recipe/kitchen-pie</loc>');
+    });
+
+    it('should support page 10 and beyond when requesting /sitemap-recipes-10.xml', async () => {
+      process.env['SITE_URL'] = 'https://custom-domain.com';
+      const mockRange = vi.fn().mockResolvedValue({
+        data: [{ slug: 'recipe-page-10' }],
+        error: null,
+      });
+      const mockOrderSlug = vi.fn().mockReturnValue({ range: mockRange });
+      const mockOrderDate = vi.fn().mockReturnValue({ order: mockOrderSlug });
+
+      mockLte.mockReturnValueOnce({
+        order: mockOrderDate,
+      });
+
+      const res = await request(app).get('/sitemap-recipes-10.xml');
+      expect(res.status).toBe(200);
+      expect(mockRange).toHaveBeenCalledWith(9000, 9999);
+    });
+
+    it('should list all chunks in master sitemap when there are 10 or more pages', async () => {
+      process.env['SITE_URL'] = 'https://custom-domain.com';
+      process.env['RECIPES_PER_SITEMAP'] = '1000';
+      mockLte.mockResolvedValueOnce({ count: 12000, data: [], error: null });
+
+      const res = await request(app).get('/sitemap.xml');
+
+      expect(res.status).toBe(200);
+      expect(res.text).toContain('<loc>https://custom-domain.com/sitemap-recipes.xml</loc>');
+      expect(res.text).toContain('<loc>https://custom-domain.com/sitemap-recipes-2.xml</loc>');
+      expect(res.text).toContain('<loc>https://custom-domain.com/sitemap-recipes-9.xml</loc>');
+      expect(res.text).toContain('<loc>https://custom-domain.com/sitemap-recipes-10.xml</loc>');
+      expect(res.text).toContain('<loc>https://custom-domain.com/sitemap-recipes-11.xml</loc>');
+      expect(res.text).toContain('<loc>https://custom-domain.com/sitemap-recipes-12.xml</loc>');
+      expect(res.text).not.toContain('<loc>https://custom-domain.com/sitemap-recipes-13.xml</loc>');
+    });
+
+    it('should omit sitemap-recipes.xml in master sitemap when recipe count is 0', async () => {
+      process.env['SITE_URL'] = 'https://custom-domain.com';
+      mockLte.mockResolvedValueOnce({ count: 0, data: [], error: null });
+
+      const res = await request(app).get('/sitemap.xml');
+
+      expect(res.status).toBe(200);
+      expect(res.text).toContain('<loc>https://custom-domain.com/sitemap-pages.xml</loc>');
+      expect(res.text).toContain('<loc>https://custom-domain.com/sitemap-categories.xml</loc>');
+      expect(res.text).not.toContain('<loc>https://custom-domain.com/sitemap-recipes.xml</loc>');
+    });
+
+    it('should handle items with empty or whitespace-only slugs or urls in taxonomies', async () => {
+      mockFrom.mockImplementation((table: string) => {
+        const builder: Record<string, unknown> = {
+          select: vi.fn().mockImplementation(() => builder),
+          eq: vi.fn().mockImplementation(() => builder),
+          lte: vi.fn().mockImplementation(() => {
+            if (table === 'categories') {
+              return Promise.resolve({
+                data: [{ url: null }, { url: '   ' }, { url: 'recipes' }, { url: 'dinner' }],
+                error: null,
+              });
+            }
+            if (table === 'holidays') {
+              return Promise.resolve({
+                data: [{ slug: null }, { slug: '' }],
+                error: null,
+              });
+            }
+            return Promise.resolve({ data: null, count: 0, error: null });
+          }),
+        };
+        return builder;
+      });
+
+      process.env['SITE_URL'] = 'https://custom-domain.com';
+      const res = await request(app).get('/sitemap-categories.xml');
+
+      expect(res.status).toBe(200);
+      expect(res.text).toContain('<loc>https://custom-domain.com/dinner</loc>');
+      expect(res.text).not.toContain('<loc>https://custom-domain.com/holidays');
+    });
+
+    it('should return 404 when database query fails for page >= 2', async () => {
+      mockLte.mockRejectedValueOnce(new Error('Pagination DB failure'));
+
+      process.env['SITE_URL'] = 'https://custom-domain.com';
+      const res = await request(app).get('/sitemap-recipes-2.xml');
+      expect(res.status).toBe(404);
+    });
+
+    it('should handle query builder when order does not return second order function', async () => {
+      process.env['SITE_URL'] = 'https://custom-domain.com';
+      const mockOrderDate = vi.fn().mockReturnValue({
+        range: vi.fn().mockResolvedValue({
+          data: [{ slug: 'single-order-cake' }],
+          error: null,
+        }),
+      });
+
+      mockLte.mockReturnValueOnce({
+        order: mockOrderDate,
+      });
+
+      const res = await request(app).get('/sitemap-recipes-2.xml');
+      expect(res.status).toBe(200);
+      expect(res.text).toContain('<loc>https://custom-domain.com/recipe/single-order-cake</loc>');
+    });
+
+    it('should format relative recipe image using OPTIMIZE_IMAGE via buildRecipeImageTag', async () => {
+      mockLte.mockResolvedValueOnce({
+        data: [
+          {
+            slug: 'relative-img-cake',
+            title: 'Cake',
+            image: '/images/relative-cake.jpg',
+            updated_at: '2026-08-01T12:00:00.000Z',
+          },
+        ],
+        error: null,
+      });
+
+      process.env['SITE_URL'] = 'https://custom-domain.com';
+      process.env['OPTIMIZE_IMAGE'] = 'https://ik.imagekit.io/delishamarie';
+      const res = await request(app).get('/sitemap-recipes.xml');
+      expect(res.status).toBe(200);
+      expect(res.text).toContain(
+        '<image:loc>https://ik.imagekit.io/delishamarie/images/relative-cake.jpg</image:loc>',
+      );
+    });
+
+    it('should handle query builder without range function', async () => {
+      process.env['SITE_URL'] = 'https://custom-domain.com';
+      mockLte.mockReturnValueOnce({
+        order: vi.fn().mockReturnValue({
+          order: vi.fn().mockResolvedValue({
+            data: [{ slug: 'no-range-cake' }],
+            error: null,
+          }),
+        }),
+      });
+
+      const res = await request(app).get('/sitemap-recipes-2.xml');
+      expect(res.status).toBe(200);
+      expect(res.text).toContain('<loc>https://custom-domain.com/recipe/no-range-cake</loc>');
+    });
   });
 });
