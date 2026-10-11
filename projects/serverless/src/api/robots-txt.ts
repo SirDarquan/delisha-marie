@@ -10,6 +10,7 @@ interface Rule {
     aiInput?: string;
     aiTrain?: string;
   };
+  prefix?: boolean;
 }
 
 interface RobotsTxt {
@@ -43,40 +44,12 @@ function formatRobotsTxt(): RobotsTxt {
   }
 }
 
-export function getRobotsPrefix(
-  req?: VercelRequest,
-  sitemaps: string[] = [],
-  baseUrl = '',
-): string {
+export function getRobotsPrefix(req?: VercelRequest): string {
   const queryPrefix = (req?.query?.['prefix'] as string | undefined)?.trim();
   if (queryPrefix) {
     return queryPrefix.startsWith('/') ? queryPrefix : `/${queryPrefix}`;
   }
-  const envPrefix = (process.env['ROBOTS_PREFIX'] || process.env['SITE_PREFIX'])?.trim();
-  if (envPrefix) {
-    return envPrefix.startsWith('/') ? envPrefix : `/${envPrefix}`;
-  }
-  const hasKitchen =
-    baseUrl.includes('/kitchen') ||
-    Boolean(process.env['SITE_URL']?.includes('/kitchen')) ||
-    sitemaps.some((s) => s.includes('/kitchen'));
-  return hasKitchen ? '/kitchen' : '';
-}
-
-export function buildSitemapUrl(baseUrl: string, sitemap: string, prefix = ''): string {
-  if (sitemap.startsWith('http://') || sitemap.startsWith('https://')) {
-    return sitemap;
-  }
-  const cleanBase = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
-  let cleanSitemap = sitemap.startsWith('/') ? sitemap : `/${sitemap}`;
-  const cleanPrefix = prefix ? (prefix.startsWith('/') ? prefix : `/${prefix}`) : '';
-
-  if (cleanPrefix && !cleanBase.endsWith(cleanPrefix) && !cleanSitemap.startsWith(cleanPrefix)) {
-    cleanSitemap = `${cleanPrefix}${cleanSitemap}`;
-  } else if (cleanBase.endsWith(cleanPrefix) && cleanSitemap.startsWith(cleanPrefix)) {
-    cleanSitemap = cleanSitemap.slice(cleanPrefix.length);
-  }
-  return `${cleanBase}${cleanSitemap}`;
+  return '';
 }
 
 export default function robotsTxt(req: VercelRequest, res: VercelResponse): void {
@@ -87,13 +60,7 @@ export default function robotsTxt(req: VercelRequest, res: VercelResponse): void
     return;
   }
 
-  const sitemaps = Array.isArray(robotsTxt.sitemap)
-    ? robotsTxt.sitemap
-    : robotsTxt.sitemap
-      ? [robotsTxt.sitemap]
-      : [];
-
-  const prefix = getRobotsPrefix(req, sitemaps, baseUrl);
+  const prefix = getRobotsPrefix(req);
 
   let robots = '# https://www.robotstxt.org/robotstxt.html\n';
 
@@ -121,12 +88,12 @@ export default function robotsTxt(req: VercelRequest, res: VercelResponse): void
     }
     if (rule.disallow) {
       rule.disallow.forEach((disallow) => {
-        robots += `Disallow: ${disallow}\n`;
+        robots += `Disallow: ${rule.prefix ? prefix : ''}${disallow}\n`;
       });
     }
     if (rule.allow) {
       rule.allow.forEach((allow) => {
-        robots += `Allow: ${allow}\n`;
+        robots += `Allow: ${rule.prefix ? prefix : ''}${allow}\n`;
       });
     }
     if (rule.crawlDelay) {
@@ -135,18 +102,17 @@ export default function robotsTxt(req: VercelRequest, res: VercelResponse): void
   });
 
   if (robotsTxt.allowLlm) {
-    const llmPath = prefix ? `${prefix}/llms.txt` : '/llms.txt';
-    robots += `Allow: ${llmPath}\n`;
+    robots += `Allow: ${prefix}/llms.txt\n`;
   }
 
   if (robotsTxt.sitemap) {
     robots += '\n';
     if (Array.isArray(robotsTxt.sitemap)) {
       robotsTxt.sitemap.forEach((sitemap) => {
-        robots += `Sitemap: ${buildSitemapUrl(baseUrl, sitemap, prefix)}\n`;
+        robots += `Sitemap: ${baseUrl}${prefix}${sitemap}\n`;
       });
     } else {
-      robots += `Sitemap: ${buildSitemapUrl(baseUrl, robotsTxt.sitemap, prefix)}`;
+      robots += `Sitemap: ${baseUrl}${prefix}${robotsTxt.sitemap}\n`;
     }
   }
 

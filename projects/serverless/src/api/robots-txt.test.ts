@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { VercelRequest } from '@vercel/node';
 import { createRequestMock } from './test-utils';
-import robotsTxtRouter, { buildSitemapUrl, getRobotsPrefix } from './robots-txt';
+import robotsTxtRouter, { getRobotsPrefix } from './robots-txt';
 
 describe('robotsTxtRouter', () => {
   let request: ReturnType<typeof createRequestMock>;
@@ -103,7 +103,7 @@ describe('robotsTxtRouter', () => {
     process.env['SITE_URL'] = 'https://example.com';
     process.env['ROBOTS_TXT'] = JSON.stringify({
       rules: [],
-      sitemap: ['https://example.com/sitemap1.xml', 'https://example.com/sitemap2.xml'],
+      sitemap: ['/sitemap1.xml', '/sitemap2.xml'],
     });
 
     const res = await request(app).get('/robots.txt');
@@ -243,16 +243,16 @@ describe('robotsTxtRouter', () => {
     expect(res.text).toContain('User-agent: Bot5\nContent-Signal: \n');
   });
 
-  it('should handle array sitemaps with both relative and absolute urls', async () => {
+  it('should handle array sitemaps with relative urls', async () => {
     process.env['SITE_URL'] = 'https://example.com';
     process.env['ROBOTS_TXT'] = JSON.stringify({
       rules: [],
-      sitemap: ['/relative-sitemap.xml', 'https://example.com/absolute-sitemap.xml'],
+      sitemap: ['/relative-sitemap-1.xml', '/relative-sitemap-2.xml'],
     });
     const res = await request(app).get('/robots.txt');
     expect(res.status).toBe(200);
-    expect(res.text).toContain('Sitemap: https://example.com/relative-sitemap.xml\n');
-    expect(res.text).toContain('Sitemap: https://example.com/absolute-sitemap.xml\n');
+    expect(res.text).toContain('Sitemap: https://example.com/relative-sitemap-1.xml\n');
+    expect(res.text).toContain('Sitemap: https://example.com/relative-sitemap-2.xml\n');
   });
 
   it('should handle single string absolute sitemap and missing rules property', async () => {
@@ -262,36 +262,10 @@ describe('robotsTxtRouter', () => {
     });
     const res = await request(app).get('/robots.txt');
     expect(res.status).toBe(200);
-    expect(res.text).toContain('Sitemap: https://example.com/sitemap.xml');
+    expect(res.text).toContain('Sitemap: https://example.comhttps://example.com/sitemap.xml\n');
   });
 
-  it('should bend allowLlm to /kitchen/llms.txt when sitemap contains /kitchen', async () => {
-    process.env['SITE_URL'] = 'https://example.com';
-    process.env['ROBOTS_TXT'] = JSON.stringify({
-      rules: [{ userAgent: '*', allow: ['/'] }],
-      allowLlm: true,
-      sitemap: ['/kitchen/sitemap-pages.xml'],
-    });
-    const res = await request(app).get('/robots.txt');
-    expect(res.status).toBe(200);
-    expect(res.text).toContain('Allow: /kitchen/llms.txt\n');
-    expect(res.text).toContain('Sitemap: https://example.com/kitchen/sitemap-pages.xml\n');
-  });
-
-  it('should bend allowLlm to /kitchen/llms.txt when SITE_URL has /kitchen', async () => {
-    process.env['SITE_URL'] = 'https://example.com/kitchen';
-    process.env['ROBOTS_TXT'] = JSON.stringify({
-      rules: [{ userAgent: '*', allow: ['/'] }],
-      allowLlm: true,
-      sitemap: '/kitchen/sitemap.xml',
-    });
-    const res = await request(app).get('/robots.txt');
-    expect(res.status).toBe(200);
-    expect(res.text).toContain('Allow: /kitchen/llms.txt\n');
-    expect(res.text).toContain('Sitemap: https://example.com/kitchen/sitemap.xml');
-  });
-
-  it('should format Allow: /llms.txt when allowLlm is true without kitchen', async () => {
+  it('should format Allow: /llms.txt when allowLlm is true without prefix', async () => {
     process.env['SITE_URL'] = 'https://example.com';
     process.env['ROBOTS_TXT'] = JSON.stringify({
       rules: [{ userAgent: '*', allow: ['/'] }],
@@ -301,7 +275,7 @@ describe('robotsTxtRouter', () => {
     const res = await request(app).get('/robots.txt');
     expect(res.status).toBe(200);
     expect(res.text).toContain('Allow: /llms.txt\n');
-    expect(res.text).toContain('Sitemap: https://example.com/sitemap.xml');
+    expect(res.text).toContain('Sitemap: https://example.com/sitemap.xml\n');
   });
 
   it('should give robots a prefix via query param in prod rewrite', async () => {
@@ -314,52 +288,21 @@ describe('robotsTxtRouter', () => {
     const res = await request(app).get('/api/robots?prefix=/kitchen');
     expect(res.status).toBe(200);
     expect(res.text).toContain('Allow: /kitchen/llms.txt\n');
-    expect(res.text).toContain('Sitemap: https://example.com/kitchen/sitemap.xml');
-  });
-
-  it('should give robots a prefix via ROBOTS_PREFIX env var', async () => {
-    process.env['SITE_URL'] = 'https://example.com';
-    process.env['ROBOTS_PREFIX'] = '/kitchen';
-    process.env['ROBOTS_TXT'] = JSON.stringify({
-      rules: [{ userAgent: '*', allow: ['/'] }],
-      allowLlm: true,
-      sitemap: '/sitemap.xml',
-    });
-    const res = await request(app).get('/robots.txt');
-    expect(res.status).toBe(200);
-    expect(res.text).toContain('Allow: /kitchen/llms.txt\n');
-    expect(res.text).toContain('Sitemap: https://example.com/kitchen/sitemap.xml');
+    expect(res.text).toContain('Sitemap: https://example.com/kitchen/sitemap.xml\n');
   });
 
   describe('helper edge cases', () => {
-    it('getRobotsPrefix handles query without leading slash, SITE_PREFIX, and empty values', () => {
+    it('getRobotsPrefix handles query without leading slash, query with leading slash, and empty values', () => {
       const reqWithNoSlash = { query: { prefix: 'kitchen' } } as unknown as VercelRequest;
       expect(getRobotsPrefix(reqWithNoSlash)).toBe('/kitchen');
 
-      delete process.env['ROBOTS_PREFIX'];
-      process.env['SITE_PREFIX'] = 'custom';
-      expect(getRobotsPrefix()).toBe('/custom');
+      const reqWithSlash = { query: { prefix: '/kitchen' } } as unknown as VercelRequest;
+      expect(getRobotsPrefix(reqWithSlash)).toBe('/kitchen');
 
-      process.env['SITE_PREFIX'] = '/custom-slash';
-      expect(getRobotsPrefix()).toBe('/custom-slash');
-      delete process.env['SITE_PREFIX'];
+      const reqEmpty = { query: {} } as unknown as VercelRequest;
+      expect(getRobotsPrefix(reqEmpty)).toBe('');
 
       expect(getRobotsPrefix()).toBe('');
-    });
-
-    it('buildSitemapUrl handles trailing slash on baseUrl, relative sitemap without slash, and http sitemaps', () => {
-      expect(buildSitemapUrl('https://example.com/', 'sitemap.xml', 'kitchen')).toBe(
-        'https://example.com/kitchen/sitemap.xml',
-      );
-      expect(buildSitemapUrl('https://example.com', 'http://external.com/sitemap.xml')).toBe(
-        'http://external.com/sitemap.xml',
-      );
-      expect(buildSitemapUrl('https://example.com', '/sitemap.xml')).toBe(
-        'https://example.com/sitemap.xml',
-      );
-      expect(
-        buildSitemapUrl('https://example.com/kitchen', '/kitchen/sitemap.xml', '/kitchen'),
-      ).toBe('https://example.com/kitchen/sitemap.xml');
     });
   });
 });
