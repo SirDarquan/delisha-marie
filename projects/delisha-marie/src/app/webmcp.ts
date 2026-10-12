@@ -49,15 +49,16 @@ export function withRecipes() {
         // Add fully-qualified URLs purely for the AI assistant
         const itemsWithUrl = res.items.map((r) => {
           let imageUrl = r.image;
-          if (imageUrl && typeof imageUrl === 'string') {
-            if (imageUrl.startsWith('https://') || imageUrl.startsWith('http://')) {
-              // External absolute URL: already absolute
-            } else if (imageLoader) {
-              imageUrl = imageLoader({ src: imageUrl, width: 300 });
-            } else if (origin) {
-              const path = imageUrl.startsWith('/') ? imageUrl : '/' + imageUrl;
-              imageUrl = `${origin}${path}`;
-            }
+          if (
+            imageUrl &&
+            typeof imageUrl === 'string' &&
+            !imageUrl.startsWith('http://') &&
+            !imageUrl.startsWith('https://')
+          ) {
+            const path = imageUrl.startsWith('/') ? imageUrl : '/' + imageUrl;
+            imageUrl = imageLoader
+              ? imageLoader({ src: imageUrl, width: 300 })
+              : `${origin}${path}`;
           }
 
           return {
