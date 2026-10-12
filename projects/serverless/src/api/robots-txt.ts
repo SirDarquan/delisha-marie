@@ -9,6 +9,7 @@ interface Rule {
     search?: string;
     aiInput?: string;
     aiTrain?: string;
+    use?: 'immedate' | 'reference' | 'full';
   };
   prefix?: boolean;
 }
@@ -83,6 +84,9 @@ export default function robotsTxt(req: VercelRequest, res: VercelResponse): void
       }
       if (rule.contentSignal.aiTrain) {
         contentSignal.push(`ai-train=${rule.contentSignal.aiTrain}`);
+      }
+      if (rule.contentSignal.use) {
+        contentSignal.push(`use=${rule.contentSignal.use}`);
       }
       robots += `Content-Signal: ${contentSignal.join(', ')}\n`;
     }
