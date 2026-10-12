@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { DOCUMENT } from '@angular/core';
+import { IMAGE_LOADER } from '@angular/common';
 import type {} from 'webmcp-types';
 import { withRecipes } from './webmcp';
 import { Api } from './services/api';
@@ -19,6 +20,7 @@ interface RegisteredTool {
 
 describe('WebMCP Integration', () => {
   let mockApi: Record<string, ReturnType<typeof vi.fn>>;
+  let mockImageLoader: ReturnType<typeof vi.fn>;
   let nav: { modelContextTesting?: ModelContextTesting };
   let registeredTools: RegisteredTool[] = [];
 
@@ -52,10 +54,18 @@ describe('WebMCP Integration', () => {
       }),
     };
 
+    mockImageLoader = vi
+      .fn()
+      .mockImplementation(
+        (config: { src: string; width?: number }) =>
+          `https://ik.imagekit.io/delishamarie/tr:w-${config.width || 300}/${config.src}`,
+      );
+
     TestBed.configureTestingModule({
       providers: [
         { provide: Api, useValue: mockApi },
         { provide: DOCUMENT, useValue: document },
+        { provide: IMAGE_LOADER, useValue: mockImageLoader },
       ],
     });
   });
@@ -132,10 +142,12 @@ describe('WebMCP Integration', () => {
       }
       result = text;
     }
-    const finalResult = result as { items?: { title: string; url: string }[] };
+    const finalResult = result as { items?: { title: string; url: string; image?: string }[] };
     expect(finalResult.items).toBeDefined();
     expect(finalResult.items![0].title).toBe('Cake');
     expect(finalResult.items![0].url).toContain('/recipe/cake');
+    expect(finalResult.items![0].image).toContain('tr:w-300/cake.jpg');
+    expect(mockImageLoader).toHaveBeenCalledWith({ src: 'cake.jpg', width: 300 });
 
     expect(mockApi['post']).toHaveBeenCalledWith('/search', {
       query: 'cake',
@@ -231,5 +243,56 @@ describe('WebMCP Integration', () => {
     expect(finalResult.items![0].image).toBeUndefined();
     expect(finalResult.items![1].title).toBe('Ext Image');
     expect(finalResult.items![1].image).toBe('https://example.com/img.jpg');
+  });
+
+  it('should fallback to origin when IMAGE_LOADER is not provided', async () => {
+    registeredTools = [];
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      providers: [
+        { provide: Api, useValue: mockApi },
+        { provide: DOCUMENT, useValue: document },
+      ],
+    });
+
+    const tools = withRecipes();
+    const tool = { ...tools[0] };
+    const originalExecute = tool.execute as (args: {
+      query?: string;
+      page?: number;
+      pageSize?: number;
+    }) => Promise<string>;
+    tool.execute = (args: { query?: string; page?: number; pageSize?: number }) =>
+      TestBed.runInInjectionContext(() => originalExecute(args));
+
+    document.modelContext?.registerTool(
+      tool as unknown as Parameters<NonNullable<typeof document.modelContext>['registerTool']>[0],
+    );
+
+    const responseJson = await nav.modelContextTesting?.executeTool(
+      'searchRecipes',
+      JSON.stringify({ query: 'cake' }),
+    );
+
+    let result: unknown = responseJson;
+    while (typeof result === 'string') {
+      result = JSON.parse(result);
+    }
+    const resObj = result as {
+      content?: { text: unknown }[];
+    };
+    if (resObj?.content?.[0]?.text) {
+      let text = resObj.content[0].text;
+      while (typeof text === 'string') {
+        try {
+          text = JSON.parse(text);
+        } catch {
+          break;
+        }
+      }
+      result = text;
+    }
+    const finalResult = result as { items?: { title: string; url: string; image?: string }[] };
+    expect(finalResult.items![0].image).toBe('cake.jpg');
   });
 });

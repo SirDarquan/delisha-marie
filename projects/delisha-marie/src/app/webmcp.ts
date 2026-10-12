@@ -1,3 +1,4 @@
+import { IMAGE_LOADER } from '@angular/common';
 import { DOCUMENT, inject } from '@angular/core';
 import { Api } from './services/api';
 import type { Recipe } from './services/recipe.service';
@@ -36,6 +37,7 @@ export function withRecipes() {
         pageSize?: number;
       }) => {
         const api = inject(Api);
+        const imageLoader = inject(IMAGE_LOADER, { optional: true });
         const window = inject(DOCUMENT).defaultView;
         const origin = window?.location.origin;
 
@@ -45,14 +47,26 @@ export function withRecipes() {
           pageSize,
         });
         // Add fully-qualified URLs purely for the AI assistant
-        const itemsWithUrl = res.items.map((r) => ({
-          ...r,
-          image:
-            r.image && typeof r.image === 'string' && !r.image.startsWith('https://')
-              ? `${origin}${r.image}`
-              : r.image,
-          url: `${origin}/recipe/${r.slug}`,
-        }));
+        const itemsWithUrl = res.items.map((r) => {
+          let imageUrl = r.image;
+          if (
+            imageUrl &&
+            typeof imageUrl === 'string' &&
+            !imageUrl.startsWith('http://') &&
+            !imageUrl.startsWith('https://')
+          ) {
+            const path = imageUrl.startsWith('/') ? imageUrl : '/' + imageUrl;
+            imageUrl = imageLoader
+              ? imageLoader({ src: imageUrl, width: 300 })
+              : `${origin}${path}`;
+          }
+
+          return {
+            ...r,
+            image: imageUrl,
+            url: `${origin}/recipe/${r.slug}`,
+          };
+        });
 
         // Return JSON string to the AI agent
         return JSON.stringify({ ...res, items: itemsWithUrl });

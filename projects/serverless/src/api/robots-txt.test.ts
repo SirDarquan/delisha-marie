@@ -231,6 +231,12 @@ describe('robotsTxtRouter', () => {
         },
         {
           userAgent: 'Bot5',
+          contentSignal: {
+            use: 'full',
+          },
+        },
+        {
+          userAgent: 'Bot6',
           contentSignal: {},
         },
       ],
@@ -240,7 +246,8 @@ describe('robotsTxtRouter', () => {
     expect(res.text).toContain('Content-Signal: search=no\n');
     expect(res.text).toContain('Content-Signal: ai-input=yes\n');
     expect(res.text).toContain('Content-Signal: ai-train=yes\n');
-    expect(res.text).toContain('User-agent: Bot5\nContent-Signal: \n');
+    expect(res.text).toContain('Content-Signal: use=full\n');
+    expect(res.text).toContain('User-agent: Bot6\nContent-Signal: \n');
   });
 
   it('should handle array sitemaps with relative urls', async () => {
