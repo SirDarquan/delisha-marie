@@ -1,0 +1,19 @@
+{
+  "name": "Delisha Marie",
+  "image": "delisha-dev:latest",
+  "workspaceFolder": "/delisha-marie",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/delisha-marie,type=bind,consistency=cached",
+  "mounts": [
+    "source=delisha-node-modules,target=/delisha-marie/node_modules,type=volume",
+    "source=delisha-npm-cache,target=/root/.npm,type=volume",
+    "source=delisha-angular-cache,target=/delisha-marie/.angular,type=volume"
+  ],
+  "forwardPorts": [4200, 4220, 8080, 4001],
+  "appPort": [
+    "4200:4200",
+    "4220:4220",
+    "8080:8080",
+    "4001:4001"
+  ],
+  "postCreateCommand": "npm ci --ignore-scripts"
+}

@@ -4,8 +4,8 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
-    "start:vercel": "npx vercel dev projects/delisha-marie -l 4200",
-    "start:home": "npx vercel dev projects/delisha-home -l 4220",
+    "start:vercel": "vercel dev projects/delisha-marie -l 4200",
+    "start:home": "vercel dev projects/delisha-home -l 4220",
     "build": "ng build",
     "build:home": "ng build delisha-home",
     "watch": "ng build --watch --configuration development",
@@ -21,7 +21,11 @@
     "serve:ssr:admin-delisha-marie": "node dist/admin-delisha-marie/server/server.mjs",
     "lint": "ng lint",
     "cypress:open": "cypress open",
-    "cypress:run": "cypress run"
+    "cypress:run": "cypress run",
+    "emit:agents": "node -e \"const { pathToFileURL } = require('node:url'); const path = require('node:path'); const fs = require('node:fs'); Promise.all([import(pathToFileURL(path.resolve('./agentsjson.config.js')).href), import('@agentstxtdev/herald-core')]).then(([c, core]) => { const out = path.resolve('projects/delisha-marie/public'); fs.mkdirSync(out, { recursive: true }); fs.writeFileSync(path.join(out, 'agents.txt'), core.generateAgentsTxt(c.default), 'utf-8'); const j = core.generateAgentsJson(c.default); fs.writeFileSync(path.join(out, 'agents.json'), typeof j === 'string' ? j : JSON.stringify(j, null, 2), 'utf-8'); console.log('Emitted agents.txt and agents.json to', out); });\"",
+    "docker:dev": "docker compose -f docker-compose.dev.yml up -d --build",
+    "docker:shell": "docker exec -it delisha-marie-dev bash",
+    "docker:down": "docker compose -f docker-compose.dev.yml down"
   },
   "private": true,
   "dependencies": {

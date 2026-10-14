@@ -1,0 +1,23 @@
+FROM node:26-bookworm
+
+# Install required tools for development and remote server (git, curl, wget, procps)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git \
+    curl \
+    wget \
+    procps \
+    ca-certificates \
+  && rm -rf /var/lib/apt/lists/*
+
+# Create dedicated workspace directory /delisha-marie and remove any default workspace folders
+RUN mkdir -p /delisha-marie \
+  && rm -rf /workspace /workspaces
+
+WORKDIR /delisha-marie
+
+# Install global Angular CLI and Vercel CLI
+RUN npm install -g @angular/cli@22.2.2 vercel@latest
+
+EXPOSE 4200 4220 8080 4001
+
+CMD ["sleep", "infinity"]
