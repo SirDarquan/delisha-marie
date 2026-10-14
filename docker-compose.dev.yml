@@ -1,0 +1,30 @@
+services:
+  dev:
+    build:
+      context: .
+      dockerfile: .devcontainer/Dockerfile.dev
+    image: delisha-dev:latest
+    container_name: delisha-marie-dev
+    volumes:
+      # Mount current workspace directory live into container
+      - .:/delisha-marie
+      - delisha-node-modules:/delisha-marie/node_modules
+      - delisha-npm-cache:/root/.npm
+      - delisha-angular-cache:/delisha-marie/.angular
+    working_dir: /delisha-marie
+    ports:
+      - "4200:4200" # delisha-marie (kitchen)
+      - "4220:4220" # delisha-home (home)
+      - "8080:8080" # admin-delisha-marie
+      - "4001:4001" # admin backend
+    environment:
+      - NODE_ENV=development
+    command: sleep infinity
+
+volumes:
+  delisha-node-modules:
+    name: delisha-node-modules
+  delisha-npm-cache:
+    name: delisha-npm-cache
+  delisha-angular-cache:
+    name: delisha-angular-cache

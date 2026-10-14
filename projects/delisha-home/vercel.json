@@ -1,4 +1,5 @@
 {
+  "devCommand": "env -u PORT ng serve delisha-home --host 0.0.0.0 --port $PORT",
   "rewrites": [
     {
       "source": "/config",
