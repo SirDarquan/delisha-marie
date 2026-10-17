@@ -519,7 +519,7 @@ export class StoryHtmlEditorComponent implements FormValueControl<string> {
         this.applyBlockTag(canvasEl, range, 'div', 'recipe-tip');
         break;
       case 'formatBlock': {
-        const cleanTag = (value || 'p').replace(/[<>]/g, '').toLowerCase();
+        const cleanTag = (value || 'p').replaceAll('<', '').replaceAll('>', '').toLowerCase();
         this.applyBlockTag(canvasEl, range, cleanTag);
         break;
       }
@@ -578,7 +578,7 @@ export class StoryHtmlEditorComponent implements FormValueControl<string> {
     if (curr === canvasEl) {
       return canvasEl.lastElementChild as HTMLElement | null;
     }
-    while (curr && curr.parentNode && curr.parentNode !== canvasEl) {
+    while (curr?.parentNode && curr.parentNode !== canvasEl) {
       curr = curr.parentNode;
     }
     return curr instanceof HTMLElement && curr.parentNode === canvasEl ? curr : null;
