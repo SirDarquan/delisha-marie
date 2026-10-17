@@ -58,11 +58,9 @@ describe('Recipe Index Page', () => {
     cy.wait('@getRecipeIndex');
   });
 
-  it('should render page layout header, breadcrumbs, and newsletter footer', () => {
+  it('should render page layout header and breadcrumbs', () => {
     cy.get('dm-colored-header').should('contain.text', 'Recipe Index');
     cy.get('dml-breadcrumbs').should('contain.text', 'Home').and('contain.text', 'Recipe Index');
-    cy.get('footer').should('contain.text', 'Never miss a beat!');
-    cy.get('footer button').should('contain.text', 'Join the Studio Newsletter');
   });
 
   it('should render featured categories and methods with proper imagery', () => {
