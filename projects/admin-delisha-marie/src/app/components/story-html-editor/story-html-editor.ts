@@ -64,9 +64,41 @@ import { FigureDialogComponent, FigureDialogData } from '../figure-dialog/figure
           title="Underline">
           <mat-icon class="!w-5 !h-5 !text-[20px]">format_underlined</mat-icon>
         </button>
+        <button
+          type="button"
+          mat-icon-button
+          class="!w-9 !h-9 text-slate-300 hover:text-white"
+          (click)="execCmd('strikeThrough')"
+          title="Strikethrough">
+          <mat-icon class="!w-5 !h-5 !text-[20px]">strikethrough_s</mat-icon>
+        </button>
+        <button
+          type="button"
+          mat-icon-button
+          class="!w-9 !h-9 text-slate-300 hover:text-white"
+          (click)="execCmd('highlight')"
+          title="Highlight">
+          <mat-icon class="!w-5 !h-5 !text-[20px]">border_color</mat-icon>
+        </button>
+        <button
+          type="button"
+          mat-icon-button
+          class="!w-9 !h-9 text-slate-300 hover:text-white"
+          (click)="execCmd('code')"
+          title="Inline Code">
+          <mat-icon class="!w-5 !h-5 !text-[20px]">code</mat-icon>
+        </button>
 
         <div class="w-px h-6 bg-slate-700 mx-1"></div>
 
+        <button
+          type="button"
+          mat-icon-button
+          class="!w-9 !h-9 text-slate-300 hover:text-white"
+          (click)="execCmd('formatBlock', '<p>')"
+          title="Paragraph">
+          <mat-icon class="!w-5 !h-5 !text-[20px]">notes</mat-icon>
+        </button>
         <button
           type="button"
           mat-icon-button
@@ -87,9 +119,25 @@ import { FigureDialogComponent, FigureDialogData } from '../figure-dialog/figure
           type="button"
           mat-icon-button
           class="!w-9 !h-9 text-slate-300 hover:text-white"
+          (click)="execCmd('formatBlock', '<h4>')"
+          title="Heading 4">
+          <mat-icon class="!w-5 !h-5 !text-[20px]">short_text</mat-icon>
+        </button>
+        <button
+          type="button"
+          mat-icon-button
+          class="!w-9 !h-9 text-slate-300 hover:text-white"
           (click)="execCmd('formatBlock', '<blockquote>')"
           title="Quote">
           <mat-icon class="!w-5 !h-5 !text-[20px]">format_quote</mat-icon>
+        </button>
+        <button
+          type="button"
+          mat-icon-button
+          class="!w-9 !h-9 text-slate-300 hover:text-white"
+          (click)="execCmd('callout')"
+          title="Pro Tip Callout">
+          <mat-icon class="!w-5 !h-5 !text-[20px]">lightbulb</mat-icon>
         </button>
 
         <div class="w-px h-6 bg-slate-700 mx-1"></div>
@@ -109,6 +157,14 @@ import { FigureDialogComponent, FigureDialogData } from '../figure-dialog/figure
           (click)="execCmd('insertOrderedList')"
           title="Numbered List">
           <mat-icon class="!w-5 !h-5 !text-[20px]">format_list_numbered</mat-icon>
+        </button>
+        <button
+          type="button"
+          mat-icon-button
+          class="!w-9 !h-9 text-slate-300 hover:text-white"
+          (click)="execCmd('insertHorizontalRule')"
+          title="Horizontal Divider">
+          <mat-icon class="!w-5 !h-5 !text-[20px]">horizontal_rule</mat-icon>
         </button>
 
         <div class="w-px h-6 bg-slate-700 mx-1"></div>
@@ -180,12 +236,46 @@ import { FigureDialogComponent, FigureDialogData } from '../figure-dialog/figure
         margin-bottom: 0.75rem;
         color: #f1f5f9;
       }
+      .story h4 {
+        font-size: 1.15rem;
+        font-weight: 600;
+        margin-top: 1.25rem;
+        margin-bottom: 0.5rem;
+        color: #e2e8f0;
+      }
       .story blockquote {
         border-left: 4px solid #a855f7;
         padding-left: 1rem;
         font-style: italic;
         margin: 1.5rem 0;
         color: #cbd5e1;
+      }
+      .story .recipe-tip {
+        background: rgba(168, 85, 247, 0.12);
+        border-left: 4px solid #c084fc;
+        border-radius: 0.75rem;
+        padding: 1rem 1.25rem;
+        margin: 1.5rem 0;
+        color: #f1f5f9;
+      }
+      .story mark {
+        background: rgba(250, 204, 21, 0.25);
+        color: #fef08a;
+        padding: 0.1rem 0.35rem;
+        border-radius: 0.25rem;
+      }
+      .story code {
+        background: rgba(30, 41, 59, 0.85);
+        color: #e2e8f0;
+        padding: 0.15rem 0.4rem;
+        border-radius: 0.35rem;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-size: 0.9em;
+      }
+      .story hr {
+        border: 0;
+        border-top: 1px solid rgba(148, 163, 184, 0.3);
+        margin: 2rem 0;
       }
       .story ul {
         list-style-type: disc;
@@ -378,8 +468,174 @@ export class StoryHtmlEditorComponent implements FormValueControl<string> {
   }
 
   execCmd(command: string, value: string | undefined = undefined): void {
-    document.execCommand(command, false, value);
+    const canvasEl = this.editorCanvas()?.nativeElement;
+    if (!canvasEl) return;
+
+    const range = this.getActiveRangeInCanvas(canvasEl);
+
+    switch (command) {
+      case 'bold':
+        this.wrapRangeWithInline(range, 'strong');
+        break;
+      case 'italic':
+        this.wrapRangeWithInline(range, 'em');
+        break;
+      case 'underline':
+        this.wrapRangeWithInline(range, 'u');
+        break;
+      case 'strikeThrough':
+        this.wrapRangeWithInline(range, 's');
+        break;
+      case 'highlight':
+        this.wrapRangeWithInline(range, 'mark');
+        break;
+      case 'code':
+        this.wrapRangeWithInline(range, 'code');
+        break;
+      case 'createLink':
+        if (value) {
+          this.wrapRangeWithInline(range, 'a', { href: value });
+        }
+        break;
+      case 'insertImage':
+        if (value) {
+          const img = document.createElement('img');
+          img.src = value;
+          this.insertNodeAtRange(range, img);
+        }
+        break;
+      case 'insertHorizontalRule': {
+        const hr = document.createElement('hr');
+        this.insertNodeAtRange(range, hr);
+        break;
+      }
+      case 'insertUnorderedList':
+        this.wrapBlockAsList(canvasEl, range, 'ul');
+        break;
+      case 'insertOrderedList':
+        this.wrapBlockAsList(canvasEl, range, 'ol');
+        break;
+      case 'callout':
+        this.applyBlockTag(canvasEl, range, 'div', 'recipe-tip');
+        break;
+      case 'formatBlock': {
+        const cleanTag = (value || 'p').replace(/[<>]/g, '').toLowerCase();
+        this.applyBlockTag(canvasEl, range, cleanTag);
+        break;
+      }
+      case 'removeFormat':
+        this.clearRangeFormatting(canvasEl, range);
+        break;
+    }
+
     this.onInput();
+  }
+
+  private getActiveRangeInCanvas(canvasEl: HTMLElement): Range {
+    const selection = window.getSelection();
+    if (selection && selection.rangeCount > 0) {
+      const r = selection.getRangeAt(0);
+      if (canvasEl.contains(r.commonAncestorContainer)) {
+        return r;
+      }
+    }
+    const fallbackRange = document.createRange();
+    fallbackRange.selectNodeContents(canvasEl);
+    fallbackRange.collapse(false);
+    return fallbackRange;
+  }
+
+  private wrapRangeWithInline(
+    range: Range,
+    tagName: string,
+    attrs: Record<string, string> = {},
+  ): void {
+    const el = document.createElement(tagName);
+    for (const [k, v] of Object.entries(attrs)) {
+      el.setAttribute(k, v);
+    }
+
+    if (range.collapsed) {
+      el.textContent = attrs['href'] || '';
+      range.insertNode(el);
+      return;
+    }
+
+    const contents = range.extractContents();
+    el.appendChild(contents);
+    range.insertNode(el);
+  }
+
+  private insertNodeAtRange(range: Range, node: Node): void {
+    range.deleteContents();
+    range.insertNode(node);
+    range.setStartAfter(node);
+    range.collapse(true);
+  }
+
+  private findDirectBlockChild(canvasEl: HTMLElement, range: Range): HTMLElement | null {
+    let curr: Node | null = range.commonAncestorContainer;
+    if (curr === canvasEl) {
+      return canvasEl.lastElementChild as HTMLElement | null;
+    }
+    while (curr && curr.parentNode && curr.parentNode !== canvasEl) {
+      curr = curr.parentNode;
+    }
+    return curr instanceof HTMLElement && curr.parentNode === canvasEl ? curr : null;
+  }
+
+  private applyBlockTag(
+    canvasEl: HTMLElement,
+    range: Range,
+    tagName: string,
+    className?: string,
+  ): void {
+    const blockEl = document.createElement(tagName);
+    if (className) blockEl.className = className;
+
+    const existingBlock = this.findDirectBlockChild(canvasEl, range);
+    if (existingBlock) {
+      blockEl.innerHTML = existingBlock.innerHTML;
+      existingBlock.replaceWith(blockEl);
+    } else if (!range.collapsed) {
+      blockEl.appendChild(range.extractContents());
+      range.insertNode(blockEl);
+    } else {
+      canvasEl.appendChild(blockEl);
+    }
+  }
+
+  private wrapBlockAsList(canvasEl: HTMLElement, range: Range, listTag: 'ul' | 'ol'): void {
+    const listEl = document.createElement(listTag);
+    const li = document.createElement('li');
+
+    const existingBlock = this.findDirectBlockChild(canvasEl, range);
+    if (existingBlock) {
+      li.innerHTML = existingBlock.innerHTML;
+      listEl.appendChild(li);
+      existingBlock.replaceWith(listEl);
+    } else {
+      if (!range.collapsed) {
+        li.appendChild(range.extractContents());
+      }
+      listEl.appendChild(li);
+      range.insertNode(listEl);
+    }
+  }
+
+  private clearRangeFormatting(canvasEl: HTMLElement, range: Range): void {
+    if (!range.collapsed) {
+      const text = range.toString();
+      range.deleteContents();
+      range.insertNode(document.createTextNode(text));
+      return;
+    }
+    const existingBlock = this.findDirectBlockChild(canvasEl, range);
+    if (existingBlock) {
+      const p = document.createElement('p');
+      p.textContent = existingBlock.textContent || '';
+      existingBlock.replaceWith(p);
+    }
   }
 
   promptLink(): void {
