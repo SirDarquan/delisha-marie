@@ -435,4 +435,33 @@ describe('RecipesListComponent', () => {
 
     fakeIsAdmin.set(false);
   });
+
+  it('should refetch on tenant change and restore scroll index or offset afterNextRender', async () => {
+    fakeRecipeService.getLastActiveRecipeId = () => 1;
+    fakeRecipeService.getLastScrollOffset = () => 0;
+    fakeRecipeService.getCachedRecipesList = () => mockRecipesData;
+
+    const f1 = TestBed.createComponent(RecipesListComponent);
+    f1.detectChanges();
+    await new Promise((r) => setTimeout(r, 80));
+    expect(f1.componentInstance['highlightedRecipeId']()).toBe(1);
+
+    // Also test lastOffset > 0 when lastActiveId is null
+    fakeRecipeService.getLastActiveRecipeId = () => null;
+    fakeRecipeService.getLastScrollOffset = () => 120;
+    const f2 = TestBed.createComponent(RecipesListComponent);
+    f2.detectChanges();
+    await new Promise((r) => setTimeout(r, 80));
+
+    // Also trigger tenant signal change
+    fakeRecipeService.fetchRecipes.mockClear();
+    fakeTenant.set({ name: 'New Tenant', id: 't-2' });
+    await new Promise((r) => setTimeout(r, 20));
+    expect(fakeRecipeService.fetchRecipes).toHaveBeenCalled();
+
+    // Reset
+    fakeRecipeService.getLastScrollOffset = () => 0;
+    fakeRecipeService.getCachedRecipesList = () => [];
+    fakeTenant.set(null);
+  });
 });

@@ -344,7 +344,8 @@ import { ColoredHeaderComponent } from '../../components/colored-header/colored-
 
               <a
                 mat-button
-                routerLink="/search"
+                routerLink="/recipe-index"
+                fragment="search"
                 class="h-12 px-6 rounded-full font-semibold flex items-center gap-2 text-[var(--mat-sys-primary)] hover:bg-[var(--mat-sys-surface-container)] transition-all">
                 <mat-icon>search</mat-icon>
                 <span>Search Recipes</span>
@@ -743,7 +744,7 @@ export class NotFoundPage {
 
     if (/(?:^|\/)recipe(?:\/|$|\?)/.test(url)) return 'recipe';
     if (/(?:^|\/)tag(?:\/|$|\?)/.test(url)) return 'tag';
-    if (url.includes('/search')) return 'search result';
+    if (/[?&]q=/.test(url)) return 'search result';
     if (
       /(?:^|\/)(?:recipes|methods|holidays|special-diets|the-best-recipes)(?:\/|$|\?)/.test(url)
     ) {

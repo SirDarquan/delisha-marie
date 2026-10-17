@@ -209,12 +209,51 @@ dm-sidebar-search .search-field .mat-mdc-form-field-flex {
   color: var(--mat-sys-on-surface);
 }
 
+.story h4 {
+  font-size: 1.15rem;
+  font-weight: 600;
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+  color: var(--mat-sys-on-surface);
+}
+
 .story blockquote {
   border-left: 4px solid var(--mat-sys-primary);
   padding-left: 1.25rem;
   font-style: italic;
   margin: 2rem 0;
   color: var(--mat-sys-on-surface-variant);
+}
+
+.story .recipe-tip {
+  background: var(--mat-sys-surface-container-low);
+  border-left: 4px solid var(--mat-sys-primary);
+  border-radius: 0.75rem;
+  padding: 1rem 1.25rem;
+  margin: 2rem 0;
+  color: var(--mat-sys-on-surface);
+}
+
+.story mark {
+  background: rgba(250, 204, 21, 0.25);
+  color: inherit;
+  padding: 0.1rem 0.35rem;
+  border-radius: 0.25rem;
+}
+
+.story code {
+  background: var(--mat-sys-surface-container-highest);
+  color: var(--mat-sys-on-surface);
+  padding: 0.15rem 0.4rem;
+  border-radius: 0.35rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.9em;
+}
+
+.story hr {
+  border: 0;
+  border-top: 1px solid var(--mat-sys-outline-variant);
+  margin: 2rem 0;
 }
 
 .story ul {

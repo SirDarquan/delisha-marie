@@ -69,7 +69,7 @@ describe('RecipeIndexCategoryImages', () => {
     vi.spyOn(router, 'navigate');
     component.searchControl.setValue('  Chocolate  ');
     component.search();
-    expect(router.navigate).toHaveBeenCalledWith(['/search'], { queryParams: { q: 'Chocolate' } });
+    expect(router.navigate).toHaveBeenCalledWith(['/'], { queryParams: { q: 'Chocolate' } });
   });
 
   it('should not navigate on empty query', () => {
@@ -78,5 +78,20 @@ describe('RecipeIndexCategoryImages', () => {
     component.searchControl.setValue('   ');
     component.search();
     expect(router.navigate).not.toHaveBeenCalled();
+  });
+
+  it('should trigger search when pressing Enter on input or clicking Search button', () => {
+    const router = TestBed.inject(Router);
+    vi.spyOn(router, 'navigate');
+    component.searchControl.setValue('Pasta');
+    fixture.detectChanges();
+
+    const inputElement = fixture.nativeElement.querySelector('input') as HTMLInputElement;
+    inputElement.dispatchEvent(new KeyboardEvent('keyup', { key: 'Enter' }));
+    expect(router.navigate).toHaveBeenCalledWith(['/'], { queryParams: { q: 'Pasta' } });
+
+    const buttonElement = fixture.nativeElement.querySelector('button') as HTMLButtonElement;
+    buttonElement.click();
+    expect(router.navigate).toHaveBeenCalledTimes(2);
   });
 });

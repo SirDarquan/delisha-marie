@@ -50,14 +50,19 @@ describe('StoryHtmlEditorComponent', () => {
     expect(component.content()).toBe('<p>Updated content</p>');
   });
 
-  it('should execute execCmd', () => {
-    if (typeof document.execCommand !== 'function') {
-      document.execCommand = () => true;
-    }
-    const execSpy = vi.spyOn(document, 'execCommand').mockImplementation(() => true);
-    component.execCmd('bold');
+  it('should execute execCmd using Selection and Range on selected text', () => {
+    const canvasEl = component.editorCanvas()!.nativeElement;
+    canvasEl.innerHTML = '<p>Hello World</p>';
+    const textNode = canvasEl.querySelector('p')!.firstChild!;
+    const range = document.createRange();
+    range.setStart(textNode, 0);
+    range.setEnd(textNode, 5);
+    const sel = window.getSelection()!;
+    sel.removeAllRanges();
+    sel.addRange(range);
 
-    expect(execSpy).toHaveBeenCalledWith('bold', false, undefined);
+    component.execCmd('bold');
+    expect(component.value()).toContain('<strong>Hello</strong> World');
   });
 
   it('should expand relative image src with base URL for display canvas', async () => {
@@ -89,14 +94,10 @@ describe('StoryHtmlEditorComponent', () => {
   });
 
   it('should handle onFileSelected when file is selected', async () => {
-    if (typeof document.execCommand !== 'function') {
-      document.execCommand = () => true;
-    }
     if (typeof URL.createObjectURL !== 'function') {
       URL.createObjectURL = () => 'blob:http://localhost/test';
     }
-    const execSpy = vi.spyOn(document, 'execCommand').mockImplementation(() => true);
-    execSpy.mockClear();
+    const execSpy = vi.spyOn(component, 'execCmd');
 
     const fakeFile = new File(['fake content'], 'test.png', { type: 'image/png' });
     const event = {
@@ -109,9 +110,9 @@ describe('StoryHtmlEditorComponent', () => {
 
     expect(execSpy).toHaveBeenCalledWith(
       'insertImage',
-      false,
       'https://ik.imagekit.io/delishamarie/2026/07/uploaded.webp',
     );
+    expect(component.value()).toContain('src="/2026/07/uploaded.webp"');
   });
 
   it('should open figure dialog and wrap image into nested figures on save', async () => {
@@ -170,24 +171,25 @@ describe('StoryHtmlEditorComponent', () => {
 
   it('should prompt for link URL and execute createLink command', () => {
     const promptSpy = vi.spyOn(window, 'prompt').mockReturnValue('https://example.com');
-    const execSpy = vi.spyOn(document, 'execCommand');
+    const execSpy = vi.spyOn(component, 'execCmd');
 
     component.promptLink();
     expect(promptSpy).toHaveBeenCalledWith('Enter URL:');
-    expect(execSpy).toHaveBeenCalledWith('createLink', false, 'https://example.com');
+    expect(execSpy).toHaveBeenCalledWith('createLink', 'https://example.com');
+    expect(component.value()).toContain('<a href="https://example.com">https://example.com</a>');
   });
 
   it('should handle onFileSelected when recipeService is undefined', async () => {
     (component as unknown as { recipeService: unknown }).recipeService = undefined;
     const createObjectURLSpy = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:test');
-    const execSpy = vi.spyOn(document, 'execCommand');
+    const execSpy = vi.spyOn(component, 'execCmd');
 
     const fakeFile = new File(['fake'], 'test.jpg', { type: 'image/jpeg' });
     const event = { target: { files: [fakeFile] } } as unknown as Event;
 
     await component.onFileSelected(event);
     expect(createObjectURLSpy).toHaveBeenCalledWith(fakeFile);
-    expect(execSpy).toHaveBeenCalledWith('insertImage', false, 'blob:test');
+    expect(execSpy).toHaveBeenCalledWith('insertImage', 'blob:test');
   });
 
   it('should handle onFileSelected error gracefully', async () => {
@@ -307,15 +309,119 @@ describe('StoryHtmlEditorComponent', () => {
     expect(component).toBeTruthy();
   });
 
-  it('should exercise execCmd formatting actions', () => {
-    const docExecSpy = vi.spyOn(document, 'execCommand').mockImplementation(() => true);
-    component.execCmd('bold');
-    component.execCmd('italic');
-    component.execCmd('formatBlock', 'h2');
-    component.execCmd('insertUnorderedList');
+  it('should exercise all Selection/Range inline, block, list, divider, and clear formatting actions', () => {
+    const canvasEl = component.editorCanvas()!.nativeElement;
 
-    expect(docExecSpy).toHaveBeenCalled();
-    docExecSpy.mockRestore();
+    // 1. Non-collapsed inline formatting (italic, underline, strikeThrough, highlight, code, createLink)
+    for (const [cmd, tag, val] of [
+      ['italic', 'em', undefined],
+      ['underline', 'u', undefined],
+      ['strikeThrough', 's', undefined],
+      ['highlight', 'mark', undefined],
+      ['code', 'code', undefined],
+      ['createLink', 'a', 'https://delishamarie.com'],
+    ] as const) {
+      canvasEl.innerHTML = '<p>Format me</p>';
+      const textNode = canvasEl.querySelector('p')!.firstChild!;
+      const range = document.createRange();
+      range.setStart(textNode, 0);
+      range.setEnd(textNode, 6);
+      const sel = window.getSelection()!;
+      sel.removeAllRanges();
+      sel.addRange(range);
+
+      component.execCmd(cmd, val);
+      expect(component.value()).toContain(`<${tag}`);
+    }
+
+    // 2. Block formatting when an existing block is selected vs non-collapsed text node directly in canvas vs empty canvas
+    canvasEl.innerHTML = '<p>Heading text</p>';
+    const pText = canvasEl.querySelector('p')!.firstChild!;
+    const blockRange = document.createRange();
+    blockRange.setStart(pText, 0);
+    blockRange.setEnd(pText, 7);
+    window.getSelection()!.removeAllRanges();
+    window.getSelection()!.addRange(blockRange);
+
+    component.execCmd('formatBlock', '<h2>');
+    expect(component.value()).toContain('<h2>Heading text</h2>');
+
+    component.execCmd('formatBlock', '<h3>');
+    expect(component.value()).toContain('<h3>Heading text</h3>');
+
+    component.execCmd('formatBlock', '<h4>');
+    expect(component.value()).toContain('<h4>Heading text</h4>');
+
+    component.execCmd('formatBlock', '<blockquote>');
+    expect(component.value()).toContain('<blockquote>Heading text</blockquote>');
+
+    component.execCmd('callout');
+    expect(component.value()).toContain('<div class="recipe-tip">Heading text</div>');
+
+    component.execCmd('formatBlock');
+    expect(component.value()).toContain('<p>Heading text</p>');
+
+    // 3. List formatting on existing block & on raw text selection
+    component.execCmd('insertUnorderedList');
+    expect(component.value()).toContain('<ul><li>Heading text</li></ul>');
+
+    component.execCmd('insertOrderedList');
+    expect(component.value()).toContain('<ol><li>');
+
+    // Non-collapsed range directly on text child of canvasEl (no existing Element block)
+    canvasEl.innerHTML = 'Raw text in canvas';
+    const rawText = canvasEl.firstChild!;
+    const rawRange = document.createRange();
+    rawRange.setStart(rawText, 0);
+    rawRange.setEnd(rawText, 8);
+    window.getSelection()!.removeAllRanges();
+    window.getSelection()!.addRange(rawRange);
+    component.execCmd('formatBlock', '<h2>');
+    expect(component.value()).toContain('<h2>Raw text</h2>');
+
+    canvasEl.innerHTML = 'Raw list item';
+    const rawListText = canvasEl.firstChild!;
+    const rawListRange = document.createRange();
+    rawListRange.setStart(rawListText, 0);
+    rawListRange.setEnd(rawListText, 13);
+    window.getSelection()!.removeAllRanges();
+    window.getSelection()!.addRange(rawListRange);
+    component.execCmd('insertUnorderedList');
+    expect(component.value()).toContain('<ul><li>Raw list item</li></ul>');
+
+    // 4. Clear formatting on non-collapsed selection and on collapsed selection with existing block
+    canvasEl.innerHTML = '<p><strong>Bold text</strong></p>';
+    const strongText = canvasEl.querySelector('strong')!.firstChild!;
+    const clearRange = document.createRange();
+    clearRange.setStart(strongText, 0);
+    clearRange.setEnd(strongText, 9);
+    window.getSelection()!.removeAllRanges();
+    window.getSelection()!.addRange(clearRange);
+    component.execCmd('removeFormat');
+    expect(component.value()).toContain('Bold text');
+
+    canvasEl.innerHTML = '<h2>Title to reset</h2>';
+    window.getSelection()!.removeAllRanges();
+    component.execCmd('removeFormat');
+    expect(component.value()).toBe('<p>Title to reset</p>');
+
+    // 5. Horizontal rule & empty canvas block/list fallback
+    canvasEl.innerHTML = '';
+    window.getSelection()!.removeAllRanges();
+    component.execCmd('formatBlock', '<h2>');
+    expect(component.value()).toContain('<h2></h2>');
+
+    canvasEl.innerHTML = '';
+    component.execCmd('insertUnorderedList');
+    expect(component.value()).toContain('<ul><li></li></ul>');
+
+    component.execCmd('insertHorizontalRule');
+    expect(component.value()).toContain('<hr>');
+
+    // 6. Guard when editorCanvas is null
+    const spyCanvas = vi.spyOn(component, 'editorCanvas').mockReturnValue(undefined);
+    component.execCmd('bold');
+    spyCanvas.mockRestore();
   });
 
   it('should fallback to window.getSelection() in openFigureDialog when no active highlight', async () => {
@@ -380,10 +486,9 @@ describe('StoryHtmlEditorComponent', () => {
     component.triggerImageUpload();
   });
 
-  it('should click all toolbar buttons and trigger canvas input/blur events', () => {
+  it('should click all toolbar buttons and trigger canvas input, blur, and keyup events', () => {
     fixture.detectChanges();
     vi.spyOn(window, 'prompt').mockReturnValue(null);
-    vi.spyOn(document, 'execCommand').mockImplementation(() => true);
 
     const buttons = Array.from(
       fixture.nativeElement.querySelectorAll('button'),
@@ -394,8 +499,9 @@ describe('StoryHtmlEditorComponent', () => {
     if (canvasEl) {
       canvasEl.dispatchEvent(new Event('input'));
       canvasEl.dispatchEvent(new Event('blur'));
+      canvasEl.dispatchEvent(new KeyboardEvent('keyup', { key: 'ArrowRight' }));
     }
-    expect(buttons.length).toBeGreaterThan(0);
+    expect(buttons.length).toBeGreaterThanOrEqual(17);
   });
 
   it('should ignore canvas click if target is not inside canvas', () => {

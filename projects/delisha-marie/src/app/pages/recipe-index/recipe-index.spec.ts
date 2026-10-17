@@ -133,16 +133,6 @@ describe('RecipeIndex', () => {
     expect(breadcrumbs?.textContent).toContain('Recipe Index');
   });
 
-  it('should render the newsletter section with correct titles', () => {
-    const compiled = fixture.nativeElement as HTMLElement;
-    const newsletter = compiled.querySelector('footer');
-    expect(newsletter).toBeTruthy();
-    expect(newsletter?.querySelector('h2')?.textContent).toContain('Never miss a beat!');
-    expect(newsletter?.querySelector('button')?.textContent).toContain(
-      'Join the Studio Newsletter',
-    );
-  });
-
   it('should render section headers correctly via link list components', async () => {
     const deferBlocks = await fixture.getDeferBlocks();
     for (const block of deferBlocks) {

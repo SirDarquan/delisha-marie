@@ -605,4 +605,28 @@ describe('RecipeList', () => {
   it('should reflect isLoading state from resource', async () => {
     expect(component.isLoading()).toBe(false);
   });
+
+  it('should render pagination-controls and handle pageChange event when totalItems > pageSize', async () => {
+    const { By } = await import('@angular/platform-browser');
+    recipeServiceMock.getRecipes.mockResolvedValueOnce({
+      items: Array.from({ length: 12 }, (_, i) => ({
+        id: String(i + 1),
+        title: `Recipe ${i + 1}`,
+        slug: `recipe-${i + 1}`,
+        description: 'Desc',
+        image: 'img.jpg',
+      })),
+      total: 25,
+    });
+    paramsSubject.next({ category: 'desserts' });
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const paginationDebug = fixture.debugElement.query(By.css('pagination-controls'));
+    expect(paginationDebug).toBeTruthy();
+    const navSpy = vi.spyOn(router, 'navigateByUrl');
+    paginationDebug.triggerEventHandler('pageChange', 2);
+    expect(navSpy).toHaveBeenCalled();
+  });
 });

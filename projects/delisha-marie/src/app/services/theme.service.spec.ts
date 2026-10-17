@@ -135,4 +135,21 @@ describe('ThemeService', () => {
       expect(document.documentElement.classList.contains('dark-theme')).toBe(false);
     });
   });
+
+  it('should handle missing window.matchMedia and null document.defaultView gracefully', () => {
+    Object.defineProperty(window, 'matchMedia', {
+      writable: true,
+      value: undefined,
+    });
+    const noMediaService = TestBed.runInInjectionContext(() => new ThemeService());
+    expect(noMediaService.isDark()).toBe(false);
+
+    const origDefaultView = document.defaultView;
+    Object.defineProperty(document, 'defaultView', { value: null, configurable: true });
+    const noWinService = TestBed.runInInjectionContext(() => new ThemeService());
+    expect(noWinService.isDark()).toBe(false);
+    noWinService.toggle();
+    TestBed.flushEffects();
+    Object.defineProperty(document, 'defaultView', { value: origDefaultView, configurable: true });
+  });
 });

@@ -191,5 +191,32 @@ describe('CreateRecipeDialogComponent', () => {
       expect(component['isSubmitting']()).toBe(false);
       spy.mockRestore();
     });
+
+    it('should execute async slug validation loader, onSuccess, onError, and template events', async () => {
+      const slugInput = fixture.nativeElement.querySelector('#slug') as HTMLInputElement;
+      slugInput.dispatchEvent(new Event('input'));
+
+      const cancelBtn = fixture.nativeElement.querySelector('button[type="button"]') as HTMLElement;
+      cancelBtn.click();
+      expect(mockDialogRef.close).toHaveBeenCalled();
+
+      // Trigger debounced validateAsync loader (1000ms)
+      mockRecipeService.checkSlugAvailability.mockResolvedValueOnce(true);
+      component['createForm'].slug().value.set('taken-slug-2');
+      fixture.detectChanges();
+      await new Promise((r) => setTimeout(r, 1100));
+      await fixture.whenStable();
+      fixture.detectChanges();
+      expect(mockRecipeService.checkSlugAvailability).toHaveBeenCalledWith('taken-slug-2');
+
+      // Also trigger error path on validateAsync
+      const errSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+      mockRecipeService.checkSlugAvailability.mockRejectedValueOnce(new Error('Network fail'));
+      component['createForm'].slug().value.set('err-slug-2');
+      fixture.detectChanges();
+      await new Promise((r) => setTimeout(r, 1100));
+      await fixture.whenStable();
+      errSpy.mockRestore();
+    });
   });
 });

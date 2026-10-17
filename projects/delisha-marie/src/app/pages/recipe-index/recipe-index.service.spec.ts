@@ -70,4 +70,50 @@ describe('RecipeIndexService', () => {
     expect(data.featuredCategories).toHaveLength(0);
     expect(data.cookingMethods).toHaveLength(0);
   });
+
+  it('should clear cachedData when getData fails so subsequent calls retry', async () => {
+    const promise1 = service.getData();
+    const req1 = httpMock.expectOne('/api/recipe-index');
+    req1.flush('Error', { status: 500, statusText: 'Server Error' });
+
+    await expect(promise1).rejects.toBeTruthy();
+
+    const mockResponse: RecipeIndexResponse = {
+      featuredCategories: [],
+      cookingMethods: [],
+      holidays: [],
+      specialDiets: [],
+      bestRecipes: [],
+      categoriesList: [],
+      methodsList: [],
+      ingredients: [],
+    };
+    const promise2 = service.getData();
+    const req2 = httpMock.expectOne('/api/recipe-index');
+    req2.flush(mockResponse);
+
+    await expect(promise2).resolves.toEqual(mockResponse);
+  });
+
+  it('should load data through indexResource', async () => {
+    const mockResponse: RecipeIndexResponse = {
+      featuredCategories: [],
+      cookingMethods: [],
+      holidays: [],
+      specialDiets: [],
+      bestRecipes: [],
+      categoriesList: [],
+      methodsList: [],
+      ingredients: [],
+    };
+
+    service.indexResource.reload();
+    TestBed.tick();
+
+    const req = httpMock.expectOne('/api/recipe-index');
+    req.flush(mockResponse);
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    TestBed.tick();
+    expect(service.indexResource.value()).toEqual(mockResponse);
+  });
 });

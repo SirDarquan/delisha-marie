@@ -95,4 +95,30 @@ describe('PageEditorComponent', () => {
       keywords: [],
     });
   });
+
+  it('should load slug from route in ngOnInit, submit form, and handle cancel button clicks', async () => {
+    const route = TestBed.inject((await import('@angular/router')).ActivatedRoute);
+    vi.spyOn(route.snapshot.paramMap, 'get').mockReturnValue('about');
+    component.ngOnInit();
+    expect(component['slug']()).toBe('about');
+
+    // Trigger form submission action when valid
+    component['pageModel'].set({
+      title: 'Valid Title',
+      content: '<p>Body</p>',
+      description: 'Desc',
+      keywords: ['tag'],
+    });
+    fixture.detectChanges();
+    const formEl = fixture.nativeElement.querySelector('form') as HTMLFormElement;
+    formEl.dispatchEvent(new Event('submit'));
+    await fixture.whenStable();
+
+    // Trigger cancel buttons in template
+    const location = TestBed.inject(Location);
+    const locationSpy = vi.spyOn(location, 'back');
+    const cancelBtns = fixture.nativeElement.querySelectorAll('button[type="button"]');
+    cancelBtns.forEach((btn: HTMLElement) => btn.click());
+    expect(locationSpy).toHaveBeenCalled();
+  });
 });

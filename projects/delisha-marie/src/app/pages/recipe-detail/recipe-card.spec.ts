@@ -167,12 +167,12 @@ describe('RecipeCard', () => {
 
   describe('openPinterest', () => {
     it('should open Pinterest share dialog with recipe parameters', () => {
-      const mockEvent = { preventDefault: vi.fn() } as unknown as Event;
       const windowSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
+      const buttons = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('button'));
+      const pinterestBtn = buttons.find((b) => b.textContent?.includes('Pinterest'));
+      expect(pinterestBtn).toBeTruthy();
+      pinterestBtn!.click();
 
-      component.openPinterest(mockEvent);
-
-      expect(mockEvent.preventDefault).toHaveBeenCalled();
       expect(windowSpy).toHaveBeenCalledWith(
         expect.stringContaining('https://pinterest.com/pin/create/button/'),
         'pinterestShare',

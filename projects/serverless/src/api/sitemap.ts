@@ -118,7 +118,6 @@ export class PagesSitemap implements ISitemap {
     const pages = [
       { url: '/', changefreq: 'weekly', priority: '1.0' },
       { url: '/recipe-index', changefreq: 'weekly', priority: '0.9' },
-      { url: '/search', changefreq: 'weekly', priority: '0.7' },
       { url: '/faq', changefreq: 'monthly', priority: '0.6' },
       { url: '/privacy-policy', changefreq: 'yearly', priority: '0.3' },
     ];

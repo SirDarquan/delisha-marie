@@ -190,4 +190,68 @@ describe('vercelAbsoluteUrlInterceptor with REQUEST token', () => {
     req.flush({});
     httpMock.verify();
   });
+
+  it('should join array header values and handle missing headers on REQUEST', () => {
+    const mockRequest = {
+      headers: {
+        cookie: ['a=1', 'b=2'],
+      },
+    };
+
+    TestBed.configureTestingModule({
+      providers: [
+        provideHttpClient(withInterceptors([vercelAbsoluteUrlInterceptor])),
+        provideHttpClientTesting(),
+        { provide: PLATFORM_ID, useValue: 'server' },
+        { provide: REQUEST, useValue: mockRequest },
+      ],
+    });
+
+    const httpMock = TestBed.inject(HttpTestingController);
+    const httpClient = TestBed.inject(HttpClient);
+
+    httpClient.get('/api/array-cookie').subscribe();
+    const req = httpMock.expectOne('http://localhost:4200/api/array-cookie');
+    expect(req.request.headers.get('cookie')).toBe('a=1; b=2');
+    req.flush({});
+    httpMock.verify();
+  });
+
+  it('should handle REQUEST object without headers property or non-object REQUEST', () => {
+    TestBed.configureTestingModule({
+      providers: [
+        provideHttpClient(withInterceptors([vercelAbsoluteUrlInterceptor])),
+        provideHttpClientTesting(),
+        { provide: PLATFORM_ID, useValue: 'server' },
+        { provide: REQUEST, useValue: {} },
+      ],
+    });
+
+    const httpMock = TestBed.inject(HttpTestingController);
+    const httpClient = TestBed.inject(HttpClient);
+
+    httpClient.get('/api/empty-req').subscribe();
+    const req = httpMock.expectOne('http://localhost:4200/api/empty-req');
+    expect(req.request.headers.has('cookie')).toBe(false);
+    req.flush({});
+    httpMock.verify();
+
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      providers: [
+        provideHttpClient(withInterceptors([vercelAbsoluteUrlInterceptor])),
+        provideHttpClientTesting(),
+        { provide: PLATFORM_ID, useValue: 'server' },
+        { provide: REQUEST, useValue: 'invalid-request' },
+      ],
+    });
+
+    const httpMock2 = TestBed.inject(HttpTestingController);
+    const httpClient2 = TestBed.inject(HttpClient);
+    httpClient2.get('/api/string-req').subscribe();
+    const req2 = httpMock2.expectOne('http://localhost:4200/api/string-req');
+    expect(req2.request.headers.has('cookie')).toBe(false);
+    req2.flush({});
+    httpMock2.verify();
+  });
 });

@@ -1,12 +1,12 @@
 describe('Search Page', () => {
   it('should display search input and handle searching', () => {
-    cy.visit('/search');
+    cy.visit('/?q=pasta');
 
     // Check page title
     cy.get('h1').should('contain', 'Recipe Search');
 
     // Type in search query
-    cy.get('input[placeholder*="craving"]').type('chicken');
+    cy.get('input[placeholder*="craving"]').clear().type('chicken');
 
     // Click search button
     cy.get('form').first().find('button[type="submit"]').click();
@@ -20,7 +20,7 @@ describe('Search Page', () => {
   });
 
   it('should load initial search from url params', () => {
-    cy.visit('/search?q=beef');
+    cy.visit('/?q=beef');
 
     // Input should be populated with beef
     cy.get('input[placeholder*="craving"]').should('have.value', 'beef');

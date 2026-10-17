@@ -9,7 +9,11 @@ import {
   provideExperimentalWebMcpTools,
   provideZonelessChangeDetection,
 } from '@angular/core';
-import { provideClientHydration, withHttpTransferCacheOptions } from '@angular/platform-browser';
+import {
+  provideClientHydration,
+  withEventReplay,
+  withHttpTransferCacheOptions,
+} from '@angular/platform-browser';
 import { provideRouter, withComponentInputBinding, withInMemoryScrolling } from '@angular/router';
 import { provideServiceWorker } from '@angular/service-worker';
 import { PluginRegistry } from '@dm/library';
@@ -36,6 +40,7 @@ export const appConfig: ApplicationConfig = {
     provideTitleStrategy(TemplatePageTitleStrategy),
     provideClientHydration(
       withHttpTransferCacheOptions({ filter: (request) => request.method === 'GET' }),
+      withEventReplay(),
     ),
     provideHttpClient(withInterceptors([])),
     provideExperimentalWebMcpTools(withRecipes()),
