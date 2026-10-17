@@ -121,7 +121,7 @@ describe('SearchPage', () => {
     formEl.triggerEventHandler('submit', new Event('submit'));
 
     await fixture.whenStable();
-    expect(mockRouter['navigate']).toHaveBeenCalledWith(['/search'], {
+    expect(mockRouter['navigate']).toHaveBeenCalledWith(['/'], {
       queryParams: { q: 'pasta ' },
       queryParamsHandling: 'merge',
     });
@@ -140,19 +140,33 @@ describe('SearchPage', () => {
     component.searchModel.set({ q: 'fish' });
     component.onPageChange(3);
 
-    expect(mockRouter['navigate']).toHaveBeenCalledWith(['/search/page/3'], {
+    expect(mockRouter['navigate']).toHaveBeenCalledWith(['/page/3'], {
       queryParams: { q: 'fish' },
       queryParamsHandling: 'merge',
     });
     expect(mockWindow['scrollTo']).toHaveBeenCalledWith({ top: 0, behavior: 'smooth' });
   });
 
-  it('should navigate to /search on page 1', () => {
+  it('should navigate to / on page 1', () => {
     component.searchModel.set({ q: 'fish' });
     component.onPageChange(1);
 
-    expect(mockRouter['navigate']).toHaveBeenCalledWith(['/search'], {
+    expect(mockRouter['navigate']).toHaveBeenCalledWith(['/'], {
       queryParams: { q: 'fish' },
+      queryParamsHandling: 'merge',
+    });
+  });
+
+  it('should handle pageChange event from pagination-controls in template', async () => {
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    fixture.detectChanges();
+
+    const paginationDebug = fixture.debugElement.query(By.css('pagination-controls'));
+    expect(paginationDebug).toBeTruthy();
+    paginationDebug.triggerEventHandler('pageChange', 3);
+
+    expect(mockRouter['navigate']).toHaveBeenCalledWith(['/page/3'], {
+      queryParams: { q: 'chicken' },
       queryParamsHandling: 'merge',
     });
   });

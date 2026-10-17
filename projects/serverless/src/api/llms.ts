@@ -280,7 +280,6 @@ export function generateLlmsTxt(
     'privacy-policy',
     'home',
     'recipe-index',
-    'search',
     'thank-you',
     '404',
     'not-found',

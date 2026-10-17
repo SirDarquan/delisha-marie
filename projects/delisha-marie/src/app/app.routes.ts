@@ -1,21 +1,50 @@
-import { Routes } from '@angular/router';
+import { PartialMatchRouteSnapshot, Routes } from '@angular/router';
 import { Home } from './pages/home/home';
+import { dynamicPageResolver } from './resolvers/dynamic-page.resolver';
+import { schemaRecipeResolver } from './resolvers/recipe-schema.resolver';
+import { seoRecipeResolver } from './resolvers/recipe-seo.resolver';
 import {
   recipeListTitleResolver,
   recipeResolver,
   recipeTitleResolver,
 } from './resolvers/recipe.resolver';
 import { schemaDynamicPageResolver, schemaResolver } from './resolvers/schema.resolver';
-import { schemaRecipeResolver } from './resolvers/recipe-schema.resolver';
 import {
   seoDynamicPageResolver,
   seoRecipeListResolver,
   seoResolver,
 } from './resolvers/seo.resolver';
-import { seoRecipeResolver } from './resolvers/recipe-seo.resolver';
-import { dynamicPageResolver } from './resolvers/dynamic-page.resolver';
+
+function isSearch(snapshot: PartialMatchRouteSnapshot) {
+  const query = snapshot.queryParamMap.get('q');
+  return !!query;
+}
 
 export const routes: Routes = [
+  {
+    path: '',
+    loadComponent: () => import('./pages/search/search').then((m) => m.SearchPage),
+    title: 'Search Recipes',
+    resolve: { seo: seoResolver, schema: schemaResolver },
+    canMatch: [(_, __, currentSnapshot) => isSearch(currentSnapshot)],
+    data: {
+      description: 'Search for semantic matches across all Delisha Marie recipes.',
+      keywords: ['recipe search', 'find recipe'],
+      content: 'noindex,nofollow',
+    },
+  },
+  {
+    path: 'page/:page',
+    loadComponent: () => import('./pages/search/search').then((m) => m.SearchPage),
+    title: 'Search Recipes',
+    resolve: { seo: seoResolver, schema: schemaResolver },
+    canMatch: [(_, __, currentSnapshot) => isSearch(currentSnapshot)],
+    data: {
+      description: 'Search for semantic matches across all Delisha Marie recipes.',
+      keywords: ['recipe search', 'find recipe'],
+      content: 'noindex,nofollow',
+    },
+  },
   {
     path: '',
     component: Home,
@@ -111,28 +140,6 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/not-found/not-found').then((m) => m.NotFoundPage),
     resolve: { seo: seoResolver },
     data: { content: 'noindex,nofollow', itemType: 'recipe', title: 'Recipe Not Found' },
-  },
-  {
-    path: 'search',
-    loadComponent: () => import('./pages/search/search').then((m) => m.SearchPage),
-    title: 'Search Recipes',
-    resolve: { seo: seoResolver, schema: schemaResolver },
-    data: {
-      description: 'Search for semantic matches across all Delisha Marie recipes.',
-      keywords: ['recipe search', 'find recipe'],
-      content: 'noindex,nofollow',
-    },
-  },
-  {
-    path: 'search/page/:page',
-    loadComponent: () => import('./pages/search/search').then((m) => m.SearchPage),
-    title: 'Search Recipes',
-    resolve: { seo: seoResolver, schema: schemaResolver },
-    data: {
-      description: 'Search for semantic matches across all Delisha Marie recipes.',
-      keywords: ['recipe search', 'find recipe'],
-      content: 'noindex,nofollow',
-    },
   },
   {
     path: 'thank-you',

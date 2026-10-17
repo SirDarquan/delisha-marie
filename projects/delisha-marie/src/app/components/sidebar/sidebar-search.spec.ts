@@ -51,7 +51,7 @@ describe('SidebarSearch', () => {
 
     await fixture.whenStable();
 
-    expect(navigateSpy).toHaveBeenCalledWith(['/search'], {
+    expect(navigateSpy).toHaveBeenCalledWith(['/'], {
       queryParams: { q: 'Pasta' },
     });
   });
@@ -76,7 +76,7 @@ describe('SidebarSearch', () => {
     form.triggerEventHandler('submit', new Event('submit'));
     await fixture.whenStable();
 
-    expect(navigateSpy).toHaveBeenCalledWith(['/search'], {
+    expect(navigateSpy).toHaveBeenCalledWith(['/'], {
       queryParams: { q: 'Salad' },
     });
   });

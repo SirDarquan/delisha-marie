@@ -3,6 +3,7 @@ import { RenderMode, ServerRoute } from '@angular/ssr';
 export const serverRoutes: ServerRoute[] = [
   // SEO-critical routes → SSR (resolvers fetch data at runtime on Vercel)
   { path: '', renderMode: RenderMode.Server },
+  { path: 'page/:page', renderMode: RenderMode.Server },
   { path: 'recipe-index', renderMode: RenderMode.Server },
   { path: 'recipes', renderMode: RenderMode.Server },
   { path: 'recipes/**', renderMode: RenderMode.Server },
@@ -31,8 +32,6 @@ export const serverRoutes: ServerRoute[] = [
   },
   { path: 'faq', renderMode: RenderMode.Server },
   { path: 'privacy-policy', renderMode: RenderMode.Server },
-  { path: 'search', renderMode: RenderMode.Server },
-  { path: 'search/page/:page', renderMode: RenderMode.Server },
 
   // Noindex / utility routes → CSR (no SEO value, skip server work)
   { path: 'recipe/:slug/print', renderMode: RenderMode.Client },

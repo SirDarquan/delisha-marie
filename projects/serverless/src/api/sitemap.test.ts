@@ -207,7 +207,7 @@ describe('sitemap', () => {
       expect(res.headers['content-type']).toContain('application/xml');
       expect(res.text).toContain('<loc>https://custom-domain.com/</loc>');
       expect(res.text).toContain('<loc>https://custom-domain.com/recipe-index</loc>');
-      expect(res.text).toContain('<loc>https://custom-domain.com/search</loc>');
+      expect(res.text).not.toContain('<loc>https://custom-domain.com/search</loc>');
       expect(res.text).toContain('<loc>https://custom-domain.com/faq</loc>');
       expect(res.text).toContain('<loc>https://custom-domain.com/privacy-policy</loc>');
       expect(res.text).not.toContain('<loc>https://custom-domain.com/about</loc>');

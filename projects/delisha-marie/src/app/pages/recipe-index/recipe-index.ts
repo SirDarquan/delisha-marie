@@ -129,69 +129,40 @@ import { ColoredHeaderComponent } from '../../components/colored-header/colored-
         <dm-recipe-index-method-images [methods]="featuredMethods()" />
 
         <!-- Full Link Index Sections -->
-        @defer (on idle) {
-          <section class="space-y-4">
-            <dm-recipe-index-link-list
-              [items]="categoriesList()"
-              titlePrefix="Recipes By"
-              titleHighlight="Category"
-              titleId="category-list-title" />
+        <section class="space-y-4">
+          <dm-recipe-index-link-list
+            [items]="categoriesList()"
+            titlePrefix="Recipes By"
+            titleHighlight="Category"
+            titleId="category-list-title" />
 
-            <dm-recipe-index-link-list
-              [items]="methodsList()"
-              titlePrefix="Recipes By"
-              titleHighlight="Method"
-              titleId="methods-list-title" />
+          <dm-recipe-index-link-list
+            [items]="methodsList()"
+            titlePrefix="Recipes By"
+            titleHighlight="Method"
+            titleId="methods-list-title" />
 
-            <dm-recipe-index-link-list
-              [items]="holidays()"
-              titlePrefix="Recipes By"
-              titleHighlight="Holiday"
-              titleId="holidays-title" />
+          <dm-recipe-index-link-list
+            [items]="holidays()"
+            titlePrefix="Recipes By"
+            titleHighlight="Holiday"
+            titleId="holidays-title" />
 
-            <dm-recipe-index-link-list
-              [items]="specialDiets()"
-              titlePrefix="Special"
-              titleHighlight="Diets"
-              titleId="diets-title" />
+          <dm-recipe-index-link-list
+            [items]="specialDiets()"
+            titlePrefix="Special"
+            titleHighlight="Diets"
+            titleId="diets-title" />
 
-            <dm-recipe-index-link-list
-              [items]="bestRecipes()"
-              titlePrefix="The Best"
-              titleHighlight="Recipes"
-              titleId="best-recipes-title" />
+          <dm-recipe-index-link-list
+            [items]="bestRecipes()"
+            titlePrefix="The Best"
+            titleHighlight="Recipes"
+            titleId="best-recipes-title" />
 
-            <dm-recipe-index-ingredients [ingredients]="ingredients()" />
-          </section>
-        } @placeholder {
-          <div class="h-[1000px] flex items-center justify-center opacity-50">
-            <div class="animate-pulse flex flex-col space-y-4 items-center">
-              <div class="h-8 w-64 bg-[var(--mat-sys-surface-container-highest)] rounded"></div>
-              <div class="h-4 w-48 bg-[var(--mat-sys-surface-container-highest)] rounded"></div>
-            </div>
-          </div>
-        }
+          <dm-recipe-index-ingredients [ingredients]="ingredients()" />
+        </section>
       }
-      <!-- Newsletter CTA -->
-      <footer
-        class="mt-24 mb-12 p-16 bg-[var(--mat-sys-on-surface)] text-[var(--mat-sys-surface)] rounded-[3rem] text-center space-y-8 relative overflow-hidden group/footer">
-        <div
-          class="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -mr-32 -mt-32 blur-3xl group-hover/footer:bg-white/10 transition-colors duration-500"></div>
-
-        <h2 class="text-4xl md:text-5xl font-black tracking-tight relative z-10">
-          Never miss a beat!
-        </h2>
-        <p class="text-xl max-w-2xl mx-auto opacity-70 font-medium relative z-10">
-          Subscribe to get new updates and cooking tips delivered straight to your inbox.
-        </p>
-        <div class="pt-4 relative z-10">
-          <button
-            mat-flat-button
-            class="!bg-[var(--mat-sys-primary)] !text-white !px-12 !py-8 !text-lg !rounded-2xl !font-bold shadow-2xl hover:scale-105 transition-transform">
-            Join the Studio Newsletter
-          </button>
-        </div>
-      </footer>
     </main>
   `,
   encapsulation: ViewEncapsulation.None,

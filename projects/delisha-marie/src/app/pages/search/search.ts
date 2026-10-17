@@ -189,7 +189,7 @@ export class SearchPage {
         action: async (forms) => {
           const vals = forms().value();
           if (vals.q?.trim()) {
-            await this.router.navigate(['/search'], {
+            await this.router.navigate(['/'], {
               queryParams: { q: vals.q },
               queryParamsHandling: 'merge',
             });
@@ -238,7 +238,7 @@ export class SearchPage {
   onPageChange(p: number): void {
     const window = this.document.defaultView;
     const query = this.searchModel().q;
-    const path = p === 1 ? '/search' : `/search/page/${p}`;
+    const path = p === 1 ? '/' : `/page/${p}`;
 
     this.router.navigate([path], {
       queryParams: { q: query?.trim() },

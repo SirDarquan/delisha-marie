@@ -132,11 +132,37 @@ describe('NotFoundPage', () => {
     expect(collectionFixture.componentInstance.resolvedNoun()).toBe('collection');
     expect(collectionFixture.componentInstance.resolvedTitle()).toBe('Collection Not Found');
 
-    Object.defineProperty(router, 'url', { value: '/search', configurable: true });
+    Object.defineProperty(router, 'url', { value: '/page/2?q=chicken', configurable: true });
     const searchFixture = TestBed.createComponent(NotFoundPage);
     searchFixture.detectChanges();
     expect(searchFixture.componentInstance.resolvedNoun()).toBe('search result');
     expect(searchFixture.componentInstance.resolvedTitle()).toBe('Search Result Not Found');
+  });
+
+  it('should resolve noun from history.state and deduceNounFromTitle keyword branches', () => {
+    const originalState = history.state;
+    window.history.replaceState({ itemType: 'dish' }, '');
+    const stateFixture = TestBed.createComponent(NotFoundPage);
+    stateFixture.detectChanges();
+    expect(stateFixture.componentInstance.resolvedNoun()).toBe('dish');
+    window.history.replaceState(originalState, '');
+
+    const keywords: [string, string][] = [
+      ['Missing Recipe Item', 'recipe'],
+      ['Unknown Tag Entry', 'tag'],
+      ['Seasonal Collection Missing', 'collection'],
+      ['Signature Dish Gone', 'dish'],
+      ['Empty Search Query', 'search result'],
+      ['Missing Page Content', 'page'],
+      ['   ', 'page'],
+      ['Completely Unrelated Heading', 'page'],
+    ];
+
+    for (const [customTitle, expectedNoun] of keywords) {
+      fixture.componentRef.setInput('title', customTitle);
+      fixture.detectChanges();
+      expect(component.resolvedNoun()).toBe(expectedNoun);
+    }
   });
 
   it('should render navigation links to Home, Recipe Index, and Search', () => {
@@ -149,7 +175,7 @@ describe('NotFoundPage', () => {
     );
     expect(hrefs).toContain('/');
     expect(hrefs).toContain('/recipe-index');
-    expect(hrefs).toContain('/search');
+    expect(hrefs).not.toContain('/search');
   });
 
   it('should trigger addSeasoning on card click and update message', () => {
