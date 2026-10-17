@@ -171,4 +171,13 @@ describe('WakeLock Component', () => {
     fixture.destroy();
     expect(releaseSpy).toHaveBeenCalled();
   });
+
+  it('should invoke toggle when mat-slide-toggle emits change event in template', async () => {
+    const { By } = await import('@angular/platform-browser');
+    fixture.detectChanges();
+    const slideToggle = fixture.debugElement.query(By.css('mat-slide-toggle'));
+    slideToggle.triggerEventHandler('change', { checked: true });
+    await Promise.resolve();
+    expect(requestSpy).toHaveBeenCalledWith('screen');
+  });
 });

@@ -34,4 +34,20 @@ describe('PagesService', () => {
     const result = await service.getPage('about');
     expect(result).toBeNull();
   });
+
+  it('should deduplicate in-flight requests and evict cache after 5000ms', async () => {
+    vi.useFakeTimers();
+    const mockPage = { title: 'FAQ', content: '<p>FAQ</p>', updated_at: '2026-08-01' };
+    apiSpy.get.mockResolvedValue(mockPage);
+
+    const p1 = service.getPage('faq');
+    const p2 = service.getPage('faq');
+    expect(apiSpy.get).toHaveBeenCalledTimes(1);
+    await Promise.all([p1, p2]);
+
+    vi.advanceTimersByTime(5000);
+    await service.getPage('faq');
+    expect(apiSpy.get).toHaveBeenCalledTimes(2);
+    vi.useRealTimers();
+  });
 });

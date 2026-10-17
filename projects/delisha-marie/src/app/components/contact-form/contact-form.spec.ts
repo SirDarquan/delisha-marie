@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ContactForm } from './contact-form';
 import { MatSnackBar } from '@angular/material/snack-bar';
 
-import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 
@@ -20,14 +20,16 @@ describe('ContactForm', () => {
       imports: [ContactForm],
       providers: [provideHttpClient(), provideHttpClientTesting()],
     })
-      .overrideComponent(ContactForm, {
-        set: { providers: [{ provide: MatSnackBar, useValue: mockSnackBar }] },
-      })
+      .overrideProvider(MatSnackBar, { useValue: mockSnackBar })
       .compileComponents();
 
     fixture = TestBed.createComponent(ContactForm);
     component = fixture.componentInstance;
     fixture.detectChanges();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it('should create', () => {
@@ -62,6 +64,8 @@ describe('ContactForm', () => {
 
     // It should immediately be submitting
     expect(component['isSubmitting']()).toBe(true);
+    fixture.detectChanges();
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Sending...');
 
     const httpTestingController = TestBed.inject(HttpTestingController);
     const req = httpTestingController.expectOne('/api/contacts');
@@ -87,6 +91,18 @@ describe('ContactForm', () => {
 
     vi.useRealTimers();
   });
+
+  it('should render validation errors when form fields are invalid and touched', async () => {
+    const { submit } = await import('@angular/forms/signals');
+    await submit(component['contactForm']);
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.textContent).toContain('Name is required');
+    expect(compiled.textContent).toContain('Email is required');
+    expect(compiled.textContent).toContain('Message is required');
+  });
+
   it('should handle submission failure', async () => {
     vi.useFakeTimers();
     component['userModel'].set({

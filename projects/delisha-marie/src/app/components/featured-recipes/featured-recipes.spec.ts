@@ -134,4 +134,35 @@ describe('FeaturedRecipes', () => {
     expect(component.recipes()).toEqual([]);
     resolvePromise({ items: [] }); // Cleanup
   });
+
+  it('should return empty array when getRecipes rejects', async () => {
+    fakeRecipeService.getRecipes.mockRejectedValueOnce(new Error('Network error'));
+    componentRef.setInput('link', '/recipes/dinner');
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(component.recipes()).toEqual([]);
+  });
+
+  it('should skip fetching and return empty items on server platform', async () => {
+    const { PLATFORM_ID } = await import('@angular/core');
+    TestBed.resetTestingModule();
+    await TestBed.configureTestingModule({
+      imports: [FeaturedRecipes],
+      providers: [
+        provideRouter([]),
+        { provide: RecipeService, useValue: fakeRecipeService },
+        { provide: PLATFORM_ID, useValue: 'server' },
+      ],
+    }).compileComponents();
+
+    const ssrFixture = TestBed.createComponent(FeaturedRecipes);
+    ssrFixture.componentRef.setInput('link', '/recipes/dinner');
+    ssrFixture.detectChanges();
+    await ssrFixture.whenStable();
+
+    expect(fakeRecipeService.getRecipes).not.toHaveBeenCalled();
+    expect(ssrFixture.componentInstance.recipes()).toEqual([]);
+  });
 });

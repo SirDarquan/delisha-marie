@@ -59,4 +59,17 @@ describe('Api', () => {
       expect(result).toEqual({});
     });
   });
+
+  it('should return cached TransferState value on second GET and remove the key', async () => {
+    const mockData = { id: 42, title: 'Cached' };
+    const firstPromise = service.get<typeof mockData>('/cached');
+    const req = httpMock.expectOne('/api/cached');
+    req.flush(mockData);
+    await firstPromise;
+
+    // Second call should hit TransferState cache without making an HTTP request
+    const secondResult = await service.get<typeof mockData>('/cached');
+    expect(secondResult).toEqual(mockData);
+    httpMock.expectNone('/api/cached');
+  });
 });

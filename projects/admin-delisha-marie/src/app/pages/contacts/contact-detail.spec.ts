@@ -179,4 +179,32 @@ describe('ContactDetail Component', () => {
       expect(mockRouter.navigate).not.toHaveBeenCalled();
     },
   );
+
+  it('should render loading, not-found, and message states and handle toolbar button clicks', async () => {
+    await component['loadMessage']();
+    fixture.detectChanges();
+
+    const buttons = fixture.nativeElement.querySelectorAll('button');
+    expect(buttons.length).toBeGreaterThanOrEqual(5);
+    buttons[1].click(); // markUnread
+    buttons[2].click(); // snooze
+    buttons[3].click(); // archive
+    buttons[4].click(); // deleteMsg
+
+    // Test loading state
+    component['isLoading'].set(true);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Loading message...');
+
+    // Test not found state
+    component['isLoading'].set(false);
+    component['message'].set(undefined);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Message not found');
+
+    // Test fallback subject and initial
+    component['message'].set({ ...mockMessage, subject: '', name: '' });
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('(No Subject)');
+  });
 });

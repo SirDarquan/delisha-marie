@@ -455,5 +455,70 @@ describe('ContactsPage', () => {
       (component as any).deselectItem('1');
       expect((component as any).isSelected('1')).toBe(false);
     });
+
+    it('should exercise template event bindings and edge branches', () => {
+      expect(component.tenant()?.name).toBe('Sir Darquan DM');
+
+      // Test folder buttons
+      const folderButtons = fixture.nativeElement.querySelectorAll('.w-64 button');
+      folderButtons.forEach((btn: HTMLElement) => btn.click());
+      expect(mockRouter.navigate).toHaveBeenCalledWith(['/contacts'], {
+        queryParams: { folder: 'trash' },
+      });
+
+      // Test filteredMessages for 'all' and unknown folder, and deleted message in inbox
+      mockContactService.messages.set([
+        ...mockMessages,
+        {
+          ...mockMessages[0],
+          id: 'del-1',
+          deleted_at: new Date().toISOString(),
+        },
+      ]);
+      (component as any).currentFolder.set('all');
+      expect((component as any).filteredMessages()).toHaveLength(2);
+      (component as any).currentFolder.set('unknown');
+      expect((component as any).filteredMessages()).toHaveLength(0);
+      (component as any).currentFolder.set('inbox');
+
+      // Test onPageChange to page 1
+      (component as any).onPageChange({ pageIndex: 0 });
+      expect(mockRouter.navigate).toHaveBeenCalledWith(['/contacts'], {
+        queryParams: { folder: 'inbox' },
+      });
+
+      // Test row click, keydown.enter, and hover actions in template
+      fixture.detectChanges();
+      const rowArea = fixture.nativeElement.querySelector('[tabindex="0"]');
+      rowArea?.click();
+      rowArea?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+
+      const hoverArea = fixture.nativeElement.querySelectorAll('[tabindex="0"]')[1];
+      hoverArea?.click();
+      hoverArea?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+
+      const hoverBtns = hoverArea?.querySelectorAll('button');
+      hoverBtns?.forEach((b: HTMLElement) => b.click());
+
+      // Test bulk actions in inbox when selectedIds is non-empty
+      (component as any).selectAll();
+      fixture.detectChanges();
+      const toolbarBtns = fixture.nativeElement.querySelectorAll(
+        '.border-b.border-slate-800 .flex.items-center.gap-2:last-child button[mat-icon-button]',
+      );
+      toolbarBtns.forEach((b: HTMLElement) => b.click());
+
+      // Test bulk actions in trash when selectedIds is non-empty
+      (component as any).currentFolder.set('trash');
+      (component as any).selectedIds.set(['del-1']);
+      fixture.detectChanges();
+      const trashToolbarBtns = fixture.nativeElement.querySelectorAll(
+        '.border-b.border-slate-800 .flex.items-center.gap-2:last-child button[mat-icon-button]',
+      );
+      trashToolbarBtns.forEach((b: HTMLElement) => b.click());
+
+      const emptyTrashBtn = fixture.nativeElement.querySelector('.bg-slate-800\\/80 button');
+      emptyTrashBtn?.click();
+    });
   });
 });

@@ -67,4 +67,32 @@ describe('SnoozeDialogComponent', () => {
       .triggerEventHandler('click', null);
     expect(mockDialogRef.close).not.toHaveBeenCalled();
   });
+
+  it('should handle template two-way bindings and invalid/null dialog data', () => {
+    const calendar = fixture.debugElement.query(By.css('mat-calendar'));
+    const newDate = new Date(2026, 9, 15);
+    calendar.triggerEventHandler('selectedChange', newDate);
+    expect(component.selectedDate).toBe(newDate);
+
+    const dateInput = fixture.debugElement.query(By.css('#date-input'));
+    const anotherDate = new Date(2026, 9, 20);
+    dateInput.triggerEventHandler('ngModelChange', anotherDate);
+    expect(component.selectedDate).toBe(anotherDate);
+
+    const timeInput = fixture.debugElement.query(By.css('#time-input'));
+    timeInput.triggerEventHandler('ngModelChange', '15:45');
+    expect(component.selectedTime).toBe('15:45');
+
+    // Also test constructor when data is invalid or null
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      imports: [SnoozeDialogComponent, FormsModule],
+      providers: [
+        { provide: MatDialogRef, useValue: mockDialogRef },
+        { provide: MAT_DIALOG_DATA, useValue: { snoozed_until: 'invalid-date' } },
+      ],
+    });
+    const invalidFixture = TestBed.createComponent(SnoozeDialogComponent);
+    expect(invalidFixture.componentInstance.selectedTime).toBe('08:00');
+  });
 });
