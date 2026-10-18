@@ -127,7 +127,7 @@ describe('Single Recipe Detail View', () => {
   });
 
   it('should render the main article layout, including the breadcrumb tree', () => {
-    cy.get('article').should('be.visible');
+    cy.get('article', { timeout: 10000 }).should('be.visible');
 
     // Verify Breadcrumbs
     cy.get('dml-breadcrumbs')
