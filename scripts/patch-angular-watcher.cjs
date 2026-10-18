@@ -148,18 +148,47 @@ function patchAngularVitestPlugin() {
   );
   if (!fs.existsSync(file)) return false;
 
+  const markerV3 = '/* @dm-poll-ignore-patched-v3 */';
   let content = fs.readFileSync(file, 'utf8');
-  if (content.includes(PATCH_MARKER)) return false;
+  if (content.includes(markerV3)) return false;
 
-  const target = '                    isolate: false,\n                    sequence: { setupFiles: \'list\' },';
-  const replacement = [
+  // Upgrade earlier v1 or v2 patches
+  const v1Block = [
     `                    isolate: false, ${PATCH_MARKER}`,
     '                    fileParallelism: false,',
     "                    sequence: { setupFiles: 'list' },",
   ].join('\n');
 
-  if (content.includes(target)) {
-    fs.writeFileSync(file, content.replace(target, replacement), 'utf8');
+  const v2Block = [
+    '                    isolate: false, /* @dm-poll-ignore-patched-v2 */',
+    '                    fileParallelism: true,',
+    '                    maxWorkers: 4,',
+    '                    minWorkers: 2,',
+    "                    sequence: { setupFiles: 'list' },",
+  ].join('\n');
+
+  const unpatchedBlock =
+    "                    isolate: false,\n                    sequence: { setupFiles: 'list' },";
+
+  const replacement = [
+    `                    isolate: false, ${markerV3}`,
+    '                    fileParallelism: true,',
+    '                    maxWorkers: 2,',
+    '                    minWorkers: 1,',
+    "                    sequence: { setupFiles: 'list' },",
+  ].join('\n');
+
+  let updated = content;
+  if (updated.includes(v2Block)) {
+    updated = updated.replace(v2Block, replacement);
+  } else if (updated.includes(v1Block)) {
+    updated = updated.replace(v1Block, replacement);
+  } else if (updated.includes(unpatchedBlock)) {
+    updated = updated.replace(unpatchedBlock, replacement);
+  }
+
+  if (updated !== content) {
+    fs.writeFileSync(file, updated, 'utf8');
     return true;
   }
   return false;
@@ -176,7 +205,7 @@ function patchVitestTimeouts() {
   let anyPatched = false;
   for (const name of files) {
     const file = path.join(chunksDir, name);
-    let content = fs.readFileSync(file, 'utf8');
+    const content = fs.readFileSync(file, 'utf8');
     if (content.includes(PATCH_MARKER)) continue;
 
     const updated = content
@@ -191,10 +220,361 @@ function patchVitestTimeouts() {
   return anyPatched;
 }
 
+function patchNormalizeCache() {
+  const file = path.join(
+    ROOT,
+    'node_modules',
+    '@angular',
+    'build',
+    'src',
+    'utils',
+    'normalize-cache.js',
+  );
+  if (!fs.existsSync(file)) return false;
+
+  const marker = '/* @dm-cache-tmp-patched */';
+  const content = fs.readFileSync(file, 'utf8');
+  if (content.includes(marker)) return false;
+
+  const target = "    enabled = !process.versions.webcontainer, environment = 'local', path = '.angular/cache', } = cacheMetadata;";
+  const replacement =
+    `    enabled = !process.versions.webcontainer, environment = 'local', path = process.platform === 'linux' ? '/tmp/delisha-angular-cache' : '.angular/cache', } = cacheMetadata; ${marker}`;
+
+  if (content.includes(target)) {
+    fs.writeFileSync(file, content.replace(target, replacement), 'utf8');
+    return true;
+  }
+  return false;
+}
+
+function patchAngularHost() {
+  const file = path.join(
+    ROOT,
+    'node_modules',
+    '@angular',
+    'build',
+    'src',
+    'tools',
+    'angular',
+    'angular-host.js',
+  );
+  if (!fs.existsSync(file)) return false;
+
+  const marker = '/* @dm-host-snap-patched */';
+  const content = fs.readFileSync(file, 'utf8');
+  if (content.includes(marker)) return false;
+
+  const target =
+    'function createAngularCompilerHost(typescript, compilerOptions, hostOptions, packageJsonCache, sourceFileCache) {\n    // Create TypeScript compiler host\n    const host = typescript.createIncrementalCompilerHost(compilerOptions);';
+
+  const replacement = [
+    `const dmFs = require('node:fs'); ${marker}`,
+    "const dmV8 = require('node:v8');",
+    "const DM_HOST_SNAP = '/tmp/dm-ng-host-snap-v1.bin';",
+    'let dmHostSnapData = null;',
+    'let dmHostSnapDirty = false;',
+    'let dmHostSaveTimer = null;',
+    'function getDmHostSnap() {',
+    '    if (dmHostSnapData) return dmHostSnapData;',
+    "    if (process.platform === 'linux') {",
+    '        try {',
+    '            if (dmFs.existsSync(DM_HOST_SNAP)) {',
+    '                dmHostSnapData = dmV8.deserialize(dmFs.readFileSync(DM_HOST_SNAP));',
+    '                return dmHostSnapData;',
+    '            }',
+    '        } catch {}',
+    '    }',
+    '    dmHostSnapData = { dirs: new Map(), files: new Map() };',
+    '    return dmHostSnapData;',
+    '}',
+    'function scheduleDmHostSnapSave() {',
+    "    if (process.platform !== 'linux' || !dmHostSnapDirty || dmHostSaveTimer) return;",
+    '    dmHostSaveTimer = setTimeout(() => {',
+    '        dmHostSaveTimer = null;',
+    '        if (!dmHostSnapDirty || !dmHostSnapData) return;',
+    '        dmHostSnapDirty = false;',
+    '        try {',
+    '            const tmpFile = `${DM_HOST_SNAP}.${process.pid}.${Date.now()}`;',
+    '            dmFs.writeFileSync(tmpFile, dmV8.serialize(dmHostSnapData));',
+    '            dmFs.renameSync(tmpFile, DM_HOST_SNAP);',
+    '        } catch {}',
+    '    }, 250);',
+    '    dmHostSaveTimer.unref?.();',
+    '}',
+    'function getDmDirEntries(dir) {',
+    '    const snap = getDmHostSnap();',
+    '    let entries = snap.dirs.get(dir);',
+    '    if (entries !== undefined) return entries;',
+    '    try {',
+    '        entries = new Set(dmFs.readdirSync(dir));',
+    '    } catch {',
+    '        entries = null;',
+    '    }',
+    '    snap.dirs.set(dir, entries);',
+    '    dmHostSnapDirty = true;',
+    '    scheduleDmHostSnapSave();',
+    '    return entries;',
+    '}',
+    'function createAngularCompilerHost(typescript, compilerOptions, hostOptions, packageJsonCache, sourceFileCache) {',
+    '    // Create TypeScript compiler host',
+    '    const host = typescript.createIncrementalCompilerHost(compilerOptions);',
+    "    if (process.platform === 'linux') {",
+    '        if (!compilerOptions.preserveSymlinks) {',
+    '            host.realpath = (p) => p;',
+    '        }',
+    '        const origFileExists = host.fileExists.bind(host);',
+    '        const origDirExists = host.directoryExists.bind(host);',
+    '        const origReadFile = host.readFile.bind(host);',
+    '        host.fileExists = (fileName) => {',
+    "            if (fileName.includes('/node_modules/')) {",
+    "                const slashIdx = fileName.lastIndexOf('/');",
+    '                if (slashIdx > 0) {',
+    '                    const entries = getDmDirEntries(fileName.slice(0, slashIdx));',
+    '                    return entries !== null && entries.has(fileName.slice(slashIdx + 1));',
+    '                }',
+    '            }',
+    '            return origFileExists(fileName);',
+    '        };',
+    '        host.directoryExists = (dirName) => {',
+    "            if (dirName.includes('/node_modules')) {",
+    '                const clean = dirName.endsWith("/") && dirName.length > 1 ? dirName.slice(0, -1) : dirName;',
+    '                return getDmDirEntries(clean) !== null;',
+    '            }',
+    '            return origDirExists(dirName);',
+    '        };',
+    '        host.readFile = (fileName) => {',
+    "            if (fileName.includes('/node_modules/')) {",
+    '                const snap = getDmHostSnap();',
+    '                if (snap.files.has(fileName)) return snap.files.get(fileName);',
+    '                const text = origReadFile(fileName);',
+    '                snap.files.set(fileName, text);',
+    '                dmHostSnapDirty = true;',
+    '                scheduleDmHostSnapSave();',
+    '                return text;',
+    '            }',
+    '            return origReadFile(fileName);',
+    '        };',
+    '    }',
+  ].join('\n');
+
+  if (content.includes(target)) {
+    fs.writeFileSync(file, content.replace(target, replacement), 'utf8');
+    return true;
+  }
+  return false;
+}
+
+function patchJavaScriptTransformer() {
+  const file = path.join(
+    ROOT,
+    'node_modules',
+    '@angular',
+    'build',
+    'src',
+    'tools',
+    'javascript-transformer',
+    'javascript-transformer.js',
+  );
+  if (!fs.existsSync(file)) return false;
+
+  const marker = '/* @dm-jstransform-snap-patched */';
+  const content = fs.readFileSync(file, 'utf8');
+  if (content.includes(marker)) return false;
+
+  const target = [
+    '    async transformFile(filename, options) {',
+    '        return this.#runWithThrottle(async () => {',
+    '            const data = await (0, promises_1.readFile)(filename);',
+    '            return this.#transform(filename, data, options);',
+    '        });',
+    '    }',
+  ].join('\n');
+
+  const replacement = [
+    `    static #dmFs = require('node:fs'); ${marker}`,
+    "    static #dmV8 = require('node:v8');",
+    "    static #DM_SNAP_FILE = '/tmp/dm-ng-jstransform-snap-v1.bin';",
+    '    static #dmSnapMap = null;',
+    '    static #dmSnapDirty = false;',
+    '    static #dmSaveTimer = null;',
+    '    static #getDmSnap() {',
+    '        if (JavaScriptTransformer.#dmSnapMap) return JavaScriptTransformer.#dmSnapMap;',
+    "        if (process.platform === 'linux') {",
+    '            try {',
+    '                if (JavaScriptTransformer.#dmFs.existsSync(JavaScriptTransformer.#DM_SNAP_FILE)) {',
+    '                    JavaScriptTransformer.#dmSnapMap = JavaScriptTransformer.#dmV8.deserialize(JavaScriptTransformer.#dmFs.readFileSync(JavaScriptTransformer.#DM_SNAP_FILE));',
+    '                    return JavaScriptTransformer.#dmSnapMap;',
+    '                }',
+    '            } catch {}',
+    '        }',
+    '        JavaScriptTransformer.#dmSnapMap = new Map();',
+    '        return JavaScriptTransformer.#dmSnapMap;',
+    '    }',
+    '    static #saveDmSnap() {',
+    "        if (process.platform !== 'linux' || !JavaScriptTransformer.#dmSnapDirty || JavaScriptTransformer.#dmSaveTimer) return;",
+    '        JavaScriptTransformer.#dmSaveTimer = setTimeout(() => {',
+    '            JavaScriptTransformer.#dmSaveTimer = null;',
+    '            if (!JavaScriptTransformer.#dmSnapDirty || !JavaScriptTransformer.#dmSnapMap) return;',
+    '            JavaScriptTransformer.#dmSnapDirty = false;',
+    '            try {',
+    '                const tmp = `${JavaScriptTransformer.#DM_SNAP_FILE}.${process.pid}.${Date.now()}`;',
+    '                JavaScriptTransformer.#dmFs.writeFileSync(tmp, JavaScriptTransformer.#dmV8.serialize(JavaScriptTransformer.#dmSnapMap));',
+    '                JavaScriptTransformer.#dmFs.renameSync(tmp, JavaScriptTransformer.#DM_SNAP_FILE);',
+    '            } catch {}',
+    '        }, 250);',
+    '        JavaScriptTransformer.#dmSaveTimer.unref?.();',
+    '    }',
+    '    async transformFile(filename, options) {',
+    "        if (process.platform === 'linux' && filename.includes('/node_modules/') && !options?.instrumentForCoverage && !this.#commonOptions.advancedOptimizations) {",
+    '            const snap = JavaScriptTransformer.#getDmSnap();',
+    '            const key = `${filename}|${!!options?.skipLinker}|${this.#commonOptions.sourcemap}|${this.#commonOptions.thirdPartySourcemaps}|${this.#commonOptions.jit}`;',
+    '            const cached = snap.get(key);',
+    '            if (cached !== undefined) return cached;',
+    '            const res = await this.#runWithThrottle(async () => {',
+    '                const data = await (0, promises_1.readFile)(filename);',
+    '                return this.#transform(filename, data, options);',
+    '            });',
+    '            snap.set(key, res);',
+    '            JavaScriptTransformer.#dmSnapDirty = true;',
+    '            JavaScriptTransformer.#saveDmSnap();',
+    '            return res;',
+    '        }',
+    '        return this.#runWithThrottle(async () => {',
+    '            const data = await (0, promises_1.readFile)(filename);',
+    '            return this.#transform(filename, data, options);',
+    '        });',
+    '    }',
+  ].join('\n');
+
+  if (content.includes(target)) {
+    fs.writeFileSync(file, content.replace(target, replacement), 'utf8');
+    return true;
+  }
+  return false;
+}
+
+function patchVitestBuildOptions() {
+  const file = path.join(
+    ROOT,
+    'node_modules',
+    '@angular',
+    'build',
+    'src',
+    'builders',
+    'unit-test',
+    'runners',
+    'vitest',
+    'build-options.js',
+  );
+  if (!fs.existsSync(file)) return false;
+
+  const markerV2 = '/* @dm-vitest-no-styles-patched-v2 */';
+  let content = fs.readFileSync(file, 'utf8');
+  if (content.includes(markerV2)) return false;
+
+  const v1Block = [
+    '        ssr: false, /* @dm-vitest-no-styles-patched */',
+    '        prerender: false,',
+    '        styles: options.browsers?.length ? baseBuildOptions.styles : [],',
+  ].join('\n');
+
+  const unpatchedBlock = '        ssr: false,\n        prerender: false,';
+  const replacement = [
+    `        ssr: false, ${markerV2}`,
+    '        prerender: false,',
+    '        styles: options.browsers?.length ? baseBuildOptions.styles : [],',
+  ].join('\n');
+
+  if (content.includes(v1Block)) {
+    content = content.replace(v1Block, replacement);
+  } else if (content.includes(unpatchedBlock)) {
+    content = content.replace(unpatchedBlock, replacement);
+  }
+
+  content = content.replace(
+    '        disableCodeSplitting: !options.splitting,',
+    '        disableCodeSplitting: options.splitting === false,',
+  );
+
+  fs.writeFileSync(file, content, 'utf8');
+  return true;
+}
+
+function patchJsdomBundle() {
+  const file = path.join(ROOT, 'node_modules', 'jsdom', 'lib', 'api.js');
+  if (!fs.existsSync(file)) return false;
+
+  if (process.platform === 'linux' && !fs.existsSync('/tmp/jsdom-bundle.cjs')) {
+    try {
+      const { execFileSync } = require('node:child_process');
+      const esbuildBin = path.join(ROOT, 'node_modules', '@esbuild', 'linux-x64', 'bin', 'esbuild');
+      if (fs.existsSync(esbuildBin)) {
+        fs.copyFileSync(
+          path.join(ROOT, 'node_modules', 'jsdom', 'lib', 'jsdom', 'browser', 'default-stylesheet.css'),
+          '/tmp/default-stylesheet.css',
+        );
+        fs.copyFileSync(
+          path.join(ROOT, 'node_modules', 'jsdom', 'lib', 'jsdom', 'living', 'xhr', 'xhr-sync-worker.js'),
+          '/tmp/xhr-sync-worker.js',
+        );
+        execFileSync(esbuildBin, [
+          file,
+          '--bundle',
+          '--platform=node',
+          '--format=cjs',
+          '--outfile=/tmp/jsdom-bundle.cjs',
+          '--external:canvas',
+          '--external:bufferutil',
+          '--external:utf-8-validate',
+        ]);
+        const bundled = fs
+          .readFileSync('/tmp/jsdom-bundle.cjs', 'utf8')
+          .replaceAll('../../browser/default-stylesheet.css', '/tmp/default-stylesheet.css')
+          .replaceAll('./xhr-sync-worker.js', '/tmp/xhr-sync-worker.js');
+        fs.writeFileSync('/tmp/jsdom-bundle.cjs', bundled, 'utf8');
+      }
+    } catch {}
+  }
+
+  const marker = '/* @dm-jsdom-bundle-patched */';
+  const content = fs.readFileSync(file, 'utf8');
+  if (content.includes(marker)) return false;
+
+  const preamble = [
+    `"use strict"; ${marker}`,
+    "if (process.platform === 'linux' && require('node:fs').existsSync('/tmp/jsdom-bundle.cjs')) {",
+    "  module.exports = require('/tmp/jsdom-bundle.cjs');",
+    '  return;',
+    '}',
+  ].join('\n');
+
+  if (content.startsWith('"use strict";')) {
+    fs.writeFileSync(file, content.replace('"use strict";', preamble), 'utf8');
+    return true;
+  }
+  return false;
+}
+
 const chokidarPatched = patchChokidar();
 const angularPatched = patchAngularWatcher();
 const vitestPatched = patchAngularVitestPlugin();
 const vitestTimeoutPatched = patchVitestTimeouts();
-if (chokidarPatched || angularPatched || vitestPatched || vitestTimeoutPatched) {
-  console.log('[patch-angular-watcher] Applied polling ignore / Vitest parallelism patch.');
+const cachePatched = patchNormalizeCache();
+const hostPatched = patchAngularHost();
+const jsTransformPatched = patchJavaScriptTransformer();
+const vitestBuildOptionsPatched = patchVitestBuildOptions();
+const jsdomBundlePatched = patchJsdomBundle();
+if (
+  chokidarPatched ||
+  angularPatched ||
+  vitestPatched ||
+  vitestTimeoutPatched ||
+  cachePatched ||
+  hostPatched ||
+  jsTransformPatched ||
+  vitestBuildOptionsPatched ||
+  jsdomBundlePatched
+) {
+  console.log('[patch-angular-watcher] Applied polling ignore / Vitest parallelism / Linux /tmp cache patches.');
 }
+

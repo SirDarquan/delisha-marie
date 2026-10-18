@@ -14,11 +14,13 @@ services:
     working_dir: /delisha-marie
     ports:
       - "4200:4200" # delisha-marie (kitchen)
+      - "4201:4201" # admin-delisha-marie (ng serve)
       - "4220:4220" # delisha-home (home)
       - "8080:8080" # admin-delisha-marie
       - "4001:4001" # admin backend
     environment:
       - NODE_ENV=development
+      - NODE_OPTIONS=--max-old-space-size=4096
     command: sleep infinity
 
 volumes:

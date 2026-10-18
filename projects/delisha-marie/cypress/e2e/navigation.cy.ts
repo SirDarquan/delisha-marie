@@ -36,8 +36,17 @@ describe('Main Blog Global Navigation', () => {
 
   // Updated by Cypress Author on 2026-09-24 for multi-zone navigation
   it('should link to the About page from the header navigation menu', () => {
-    cy.get('dm-header').within(() => {
-      cy.contains('a', 'About').should('have.attr', 'href').and('include', '/about');
+    cy.get('dm-header').then(($header) => {
+      const desktopLink = $header.find('a:contains("About")');
+      if (desktopLink.length && desktopLink.is(':visible')) {
+        cy.wrap(desktopLink).should('have.attr', 'href').and('include', '/about');
+      } else {
+        cy.get('button[aria-label="Open navigation menu"]').click();
+        cy.get('.mat-mdc-menu-panel')
+          .contains('a', 'About')
+          .should('have.attr', 'href')
+          .and('include', '/about');
+      }
     });
   });
 
@@ -52,8 +61,17 @@ describe('Main Blog Global Navigation', () => {
 
   // Updated by Cypress Author on 2026-09-24 for multi-zone navigation
   it('should link to the Contact page from the header navigation menu', () => {
-    cy.get('dm-header').within(() => {
-      cy.contains('a', 'Contact').should('have.attr', 'href').and('include', '/contact');
+    cy.get('dm-header').then(($header) => {
+      const desktopLink = $header.find('a:contains("Contact")');
+      if (desktopLink.length && desktopLink.is(':visible')) {
+        cy.wrap(desktopLink).should('have.attr', 'href').and('include', '/contact');
+      } else {
+        cy.get('button[aria-label="Open navigation menu"]').click();
+        cy.get('.mat-mdc-menu-panel')
+          .contains('a', 'Contact')
+          .should('have.attr', 'href')
+          .and('include', '/contact');
+      }
     });
   });
 

@@ -120,6 +120,10 @@
         },
         "serve": {
           "builder": "@angular/build:dev-server",
+          "options": {
+            "host": "0.0.0.0",
+            "allowedHosts": true
+          },
           "configurations": {
             "production": {
               "buildTarget": "delisha-marie:build:production"
@@ -246,11 +250,14 @@
             "security": {
               "allowedHosts": [
                 "localhost",
+                "127.0.0.1",
+                "[::1]",
                 "admin-delisha-marie-644709001057.northamerica-south1.run.app",
                 "*.run.app"
               ]
             },
             "outputMode": "server",
+            "externalDependencies": ["sharp", "multer", "@imagekit/nodejs"],
             "ssr": {
               "entry": "projects/admin-delisha-marie/src/server.ts"
             }
@@ -274,7 +281,11 @@
             "development": {
               "optimization": false,
               "extractLicenses": false,
-              "sourceMap": true
+              "sourceMap": {
+                "scripts": true,
+                "styles": false,
+                "vendor": false
+              }
             },
             "e2e": {
               "optimization": false,
@@ -319,6 +330,8 @@
         "serve": {
           "builder": "@angular/build:dev-server",
           "options": {
+            "host": "0.0.0.0",
+            "allowedHosts": true,
             "port": 4201
           },
           "configurations": {
@@ -600,6 +613,10 @@
         },
         "serve": {
           "builder": "@angular/build:dev-server",
+          "options": {
+            "host": "0.0.0.0",
+            "allowedHosts": true
+          },
           "configurations": {
             "production": {
               "buildTarget": "delisha-home:build:production"

@@ -8,12 +8,16 @@
     "source=delisha-npm-cache,target=/root/.npm,type=volume",
     "source=delisha-angular-cache,target=/delisha-marie/.angular,type=volume"
   ],
-  "forwardPorts": [4200, 4220, 8080, 4001],
+  "forwardPorts": [4200, 4201, 4220, 8080, 4001],
   "appPort": [
     "4200:4200",
+    "4201:4201",
     "4220:4220",
     "8080:8080",
     "4001:4001"
   ],
+  "containerEnv": {
+    "NODE_OPTIONS": "--max-old-space-size=4096"
+  },
   "postCreateCommand": "npm ci --ignore-scripts && node scripts/patch-angular-watcher.cjs"
 }
