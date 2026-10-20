@@ -348,7 +348,8 @@ export interface RecipeFormModel {
               </mat-form-field>
 
               <div class="md:col-span-2 mb-4">
-                <app-story-html-editor [formField]="recipeForm.content"> </app-story-html-editor>
+                <app-story-html-editor [formField]="recipeForm.content" [hiddenButtons]="['font']">
+                </app-story-html-editor>
               </div>
 
               <mat-form-field appearance="outline" class="w-full md:col-span-2">
