@@ -743,7 +743,7 @@ describe('StoryHtmlEditorComponent', () => {
     window.getSelection()!.addRange(topLiRange);
 
     component.adjustIndent('decrease');
-    expect(canvasEl.querySelectorAll('li').length).toBe(1);
+    expect(canvasEl.querySelectorAll('li')).toHaveLength(1);
     expect(canvasEl.querySelector('p')?.textContent).toBe('Second');
   });
 
@@ -781,7 +781,7 @@ describe('StoryHtmlEditorComponent', () => {
 
     // Erase all classes
     component.eraseAllClassesFromInspected();
-    expect(component.inspectedClasses().length).toBe(0);
+    expect(component.inspectedClasses()).toHaveLength(0);
     expect(canvasEl.querySelector('p')!.getAttribute('class')).toBeNull();
   });
 
@@ -802,7 +802,7 @@ describe('StoryHtmlEditorComponent', () => {
     // Calling it again when already present shouldn't duplicate
     component.applyFirstLetterDropCap();
     const matches = component.value().match(/story-first-letter/g);
-    expect(matches?.length).toBe(1);
+    expect(matches).toHaveLength(1);
   });
 
   it('should update toolbar state on selection change in canvas', () => {
@@ -1094,7 +1094,7 @@ describe('StoryHtmlEditorComponent', () => {
       window.getSelection()!.addRange(r);
 
       component.adjustIndent('decrease');
-      expect(canvasEl.querySelectorAll('ul > li').length).toBe(2);
+      expect(canvasEl.querySelectorAll('ul > li')).toHaveLength(2);
     });
 
     it('should cover class inspector on span elements and removing all classes from attribute', () => {
@@ -1332,6 +1332,8 @@ describe('StoryHtmlEditorComponent', () => {
         localStorage.removeItem('dm_story_class_history');
         getPriv(component).loadClassHistory();
       }
+      expect(component.inspectedClasses()).toBeDefined();
+      expect(component.classHistory()).toBeDefined();
     });
 
     it('should cover promptLink when user cancels prompt', () => {

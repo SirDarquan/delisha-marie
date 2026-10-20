@@ -26,6 +26,8 @@ export interface FontOption {
   description?: string;
 }
 
+export type StoryTextAlign = 'left' | 'center' | 'right' | 'justify';
+
 @Component({
   selector: 'app-story-html-editor',
   standalone: true,
@@ -882,7 +884,7 @@ export class StoryHtmlEditorComponent implements FormValueControl<string> {
   readonly currentTypeLabel = signal<string>('Normal text');
   readonly currentFontLabel = signal<string>('Merriweather');
   readonly currentFontSize = signal<number>(18);
-  readonly currentAlign = signal<'left' | 'center' | 'right' | 'justify'>('left');
+  readonly currentAlign = signal<StoryTextAlign>('left');
 
   // Class Inspector state signals
   readonly inspectedElementTag = signal<string>('<p>');
@@ -1035,7 +1037,7 @@ export class StoryHtmlEditorComponent implements FormValueControl<string> {
         this.currentTypeLabel.set('Normal text');
       }
 
-      const align = block.style.textAlign as 'left' | 'center' | 'right' | 'justify';
+      const align = block.style.textAlign as StoryTextAlign;
       this.currentAlign.set(align || 'left');
     }
   }
@@ -1111,7 +1113,7 @@ export class StoryHtmlEditorComponent implements FormValueControl<string> {
     this.applyFontSize(nextSize);
   }
 
-  applyAlignment(align: 'left' | 'center' | 'right' | 'justify'): void {
+  applyAlignment(align: StoryTextAlign): void {
     this.currentAlign.set(align);
     const canvasEl = this.editorCanvas()?.nativeElement;
     if (!canvasEl) return;
@@ -1145,9 +1147,7 @@ export class StoryHtmlEditorComponent implements FormValueControl<string> {
         ul = newUl;
       }
     }
-    if (!ul) {
-      ul = this.wrapBlockAsList(canvasEl, range, 'ul');
-    }
+    ul ??= this.wrapBlockAsList(canvasEl, range, 'ul');
     if (ul) {
       ul.style.listStyleType = styleType;
     }
@@ -1171,9 +1171,7 @@ export class StoryHtmlEditorComponent implements FormValueControl<string> {
         ol = newOl;
       }
     }
-    if (!ol) {
-      ol = this.wrapBlockAsList(canvasEl, range, 'ol');
-    }
+    ol ??= this.wrapBlockAsList(canvasEl, range, 'ol');
     if (ol) {
       ol.style.listStyleType = styleType;
     }
@@ -1194,18 +1192,26 @@ export class StoryHtmlEditorComponent implements FormValueControl<string> {
         this.unNestListItem(canvasEl, li);
       }
     } else {
-      const block = this.findDirectBlockChild(canvasEl, range);
-      if (block) {
-        const curMargin = parseFloat(block.style.marginLeft || '0');
-        if (direction === 'increase') {
-          block.style.marginLeft = `${curMargin + 1.5}rem`;
-        } else {
-          const next = Math.max(0, curMargin - 1.5);
-          block.style.marginLeft = next > 0 ? `${next}rem` : '';
-        }
-      }
+      this.adjustBlockIndent(canvasEl, range, direction);
     }
     this.onInput();
+  }
+
+  private adjustBlockIndent(
+    canvasEl: HTMLElement,
+    range: Range,
+    direction: 'increase' | 'decrease',
+  ): void {
+    const block = this.findDirectBlockChild(canvasEl, range);
+    if (!block) return;
+
+    const curMargin = Number.parseFloat(block.style.marginLeft || '0');
+    if (direction === 'increase') {
+      block.style.marginLeft = `${curMargin + 1.5}rem`;
+    } else {
+      const next = Math.max(0, curMargin - 1.5);
+      block.style.marginLeft = next > 0 ? `${next}rem` : '';
+    }
   }
 
   private nestListItem(li: HTMLElement): void {
@@ -1218,61 +1224,55 @@ export class StoryHtmlEditorComponent implements FormValueControl<string> {
         prevLi.appendChild(subList);
       }
       subList.appendChild(li);
-
-      try {
-        const sel = window.getSelection();
-        if (sel) {
-          const newRange = document.createRange();
-          newRange.selectNodeContents(li);
-          sel.removeAllRanges();
-          sel.addRange(newRange);
-        }
-      } catch (err) {
-        void err;
-      }
+      this.selectNodeContentsSafe(li);
     }
   }
 
   private unNestListItem(canvasEl: HTMLElement, li: HTMLElement): void {
     const parentList = li.parentElement;
     if (parentList && parentList.parentElement instanceof HTMLLIElement) {
-      const grandParentLi = parentList.parentElement;
-      grandParentLi.after(li);
-      if (parentList.children.length === 0) parentList.remove();
-
-      try {
-        const sel = window.getSelection();
-        if (sel) {
-          const newRange = document.createRange();
-          newRange.selectNodeContents(li);
-          sel.removeAllRanges();
-          sel.addRange(newRange);
-        }
-      } catch (err) {
-        void err;
-      }
+      this.unNestFromGrandparent(li, parentList);
     } else {
-      // Outdenting top-level list item turns it into a paragraph
-      const p = document.createElement('p');
-      p.innerHTML = li.innerHTML;
-      if (parentList && parentList.children.length === 1) {
-        parentList.replaceWith(p);
-      } else {
-        li.remove();
-        canvasEl.appendChild(p);
-      }
+      this.outdentListItemToParagraph(canvasEl, li, parentList);
+    }
+  }
 
-      try {
-        const sel = window.getSelection();
-        if (sel) {
-          const newRange = document.createRange();
-          newRange.selectNodeContents(p);
-          sel.removeAllRanges();
-          sel.addRange(newRange);
-        }
-      } catch (err) {
-        void err;
+  private unNestFromGrandparent(li: HTMLElement, parentList: HTMLElement): void {
+    const grandParentLi = parentList.parentElement as HTMLLIElement;
+    grandParentLi.after(li);
+    if (parentList.children.length === 0) {
+      parentList.remove();
+    }
+    this.selectNodeContentsSafe(li);
+  }
+
+  private outdentListItemToParagraph(
+    canvasEl: HTMLElement,
+    li: HTMLElement,
+    parentList: HTMLElement | null,
+  ): void {
+    const p = document.createElement('p');
+    p.innerHTML = li.innerHTML;
+    if (parentList?.children.length === 1) {
+      parentList.replaceWith(p);
+    } else {
+      li.remove();
+      canvasEl.appendChild(p);
+    }
+    this.selectNodeContentsSafe(p);
+  }
+
+  private selectNodeContentsSafe(node: Node): void {
+    try {
+      const sel = window.getSelection();
+      if (sel) {
+        const newRange = document.createRange();
+        newRange.selectNodeContents(node);
+        sel.removeAllRanges();
+        sel.addRange(newRange);
       }
+    } catch {
+      // Ignore selection errors in non-browser or detached environments
     }
   }
 
@@ -1288,8 +1288,8 @@ export class StoryHtmlEditorComponent implements FormValueControl<string> {
             this.classHistory.set(parsed);
           }
         }
-      } catch (err) {
-        void err;
+      } catch {
+        // Ignore storage errors in restricted environments
       }
     }
   }
@@ -1302,8 +1302,8 @@ export class StoryHtmlEditorComponent implements FormValueControl<string> {
     if (typeof localStorage !== 'undefined') {
       try {
         localStorage.setItem(this.LOCAL_STORAGE_KEY, JSON.stringify(updated));
-      } catch (err) {
-        void err;
+      } catch {
+        // Ignore storage errors in restricted environments
       }
     }
   }
@@ -1337,7 +1337,7 @@ export class StoryHtmlEditorComponent implements FormValueControl<string> {
   private resolveActiveTargetForClasses(canvasEl: HTMLElement): HTMLElement | null {
     const range = this.getActiveRangeInCanvas(canvasEl);
     let node: Node | null = range.commonAncestorContainer;
-    if (node && node.nodeType === Node.TEXT_NODE) {
+    if (node?.nodeType === Node.TEXT_NODE) {
       node = node.parentElement;
     }
     if (node instanceof HTMLElement && canvasEl.contains(node)) {
@@ -1416,7 +1416,7 @@ export class StoryHtmlEditorComponent implements FormValueControl<string> {
     }
 
     const html = block.innerHTML;
-    const match = html.match(/^(\s*)([A-Za-z0-9])/);
+    const match = /^(\s*)([A-Za-z0-9])/.exec(html);
     if (match) {
       block.innerHTML = html.replace(
         /^(\s*)([A-Za-z0-9])/,
@@ -1663,17 +1663,7 @@ export class StoryHtmlEditorComponent implements FormValueControl<string> {
       range.insertNode(listEl);
     }
 
-    try {
-      const sel = window.getSelection();
-      if (sel) {
-        const newRange = document.createRange();
-        newRange.selectNodeContents(li);
-        sel.removeAllRanges();
-        sel.addRange(newRange);
-      }
-    } catch (err) {
-      void err;
-    }
+    this.selectNodeContentsSafe(li);
 
     return listEl;
   }
