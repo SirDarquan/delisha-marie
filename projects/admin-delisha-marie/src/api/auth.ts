@@ -1,6 +1,6 @@
 import DescopeClient from '@descope/node-sdk';
 import { Request, Response, Router } from 'express';
-import { setAuthCookies } from './middleware/auth.middleware';
+import { authMiddleware, AuthRequest, setAuthCookies } from './middleware/auth.middleware';
 import { backendService } from './supabase-backend.service';
 
 function cleanEnvValue(val: string | undefined): string {
@@ -192,6 +192,17 @@ authRouter.get('/auth/me', async (req: Request, res: Response) => {
   } catch {
     return res.status(401).json({ error: 'Token missing or invalid' });
   }
+});
+
+authRouter.get('/auth/session', authMiddleware, (req: Request, res: Response) => {
+  const authReq = req as AuthRequest;
+  return res.json({
+    user: authReq.user,
+    role: authReq.role,
+    status: authReq.status,
+    tenant: authReq.tenant,
+    isImpersonating: authReq.isImpersonating,
+  });
 });
 
 authRouter.get('/auth/check-username', async (req: Request, res: Response) => {

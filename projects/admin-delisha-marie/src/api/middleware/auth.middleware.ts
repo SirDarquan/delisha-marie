@@ -203,7 +203,21 @@ export const authMiddleware = async (
     authReq.status = profileInfo.status;
     authReq.tenantId = profileInfo.tenantId;
     authReq.tenant = profileInfo.tenant;
-    authReq.isImpersonating = !!req.cookies?.['admin_original_token'];
+
+    const hasOriginalToken = !!req.cookies?.['admin_original_token'];
+    const impersonatedUserId = req.cookies?.['admin_impersonated_user_id'];
+    const isActuallyImpersonating =
+      hasOriginalToken &&
+      profileInfo.role === 'member' &&
+      (!impersonatedUserId || verifiedUser.id === impersonatedUserId);
+
+    if (hasOriginalToken && !isActuallyImpersonating) {
+      res.clearCookie('admin_original_token', { path: '/' });
+      res.clearCookie('admin_original_refresh_token', { path: '/' });
+      res.clearCookie('admin_impersonated_user_id', { path: '/' });
+    }
+
+    authReq.isImpersonating = isActuallyImpersonating;
 
     next();
   } catch (err: unknown) {
