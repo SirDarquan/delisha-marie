@@ -1,6 +1,12 @@
 import DescopeClient from '@descope/node-sdk';
 import { Request, Response, Router } from 'express';
-import { authMiddleware, AuthRequest, setAuthCookies } from './middleware/auth.middleware';
+import {
+  authMiddleware,
+  AuthRequest,
+  clearAllAuthCookies,
+  clearImpersonationCookies,
+  setAuthCookies,
+} from './middleware/auth.middleware';
 import { backendService } from './supabase-backend.service';
 
 function cleanEnvValue(val: string | undefined): string {
@@ -108,6 +114,7 @@ authRouter.post('/auth/signup', async (req: Request, res: Response) => {
     }
     const data = await signUp(email, password, { username });
     if (data.session) {
+      clearImpersonationCookies(res);
       setAuthCookies(res, data.session);
     }
     return res.json({
@@ -145,11 +152,10 @@ authRouter.post('/auth/login', async (req: Request, res: Response) => {
 });
 
 authRouter.post('/auth/signout', async (req: Request, res: Response) => {
+  clearAllAuthCookies(res);
   try {
     const { error } = await getSupabase().auth.signOut();
     if (error) throw error;
-    res.clearCookie('admin_access_token', { path: '/' });
-    res.clearCookie('admin_refresh_token', { path: '/' });
     return res.json({ message: 'Signed out successfully' });
   } catch (err: unknown) {
     return res.status(500).json({ error: getErrorMessage(err) });
@@ -274,6 +280,7 @@ async function handleDescopeVerification(
   // Sign in passwordlessly by generating and verifying a magic link token hash on the backend
   const sessionData = await signInPasswordlessly(email);
   if (sessionData.session) {
+    clearImpersonationCookies(res);
     setAuthCookies(res, sessionData.session);
   }
 
@@ -417,6 +424,7 @@ authRouter.post('/auth/descope/register', async (req: Request, res: Response) =>
     // Sign in passwordlessly by generating and verifying a magic link token hash on the backend
     const sessionData = await signInPasswordlessly(email);
     if (sessionData.session) {
+      clearImpersonationCookies(res);
       setAuthCookies(res, sessionData.session);
     }
 

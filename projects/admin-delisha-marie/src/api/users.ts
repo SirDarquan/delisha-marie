@@ -1,5 +1,10 @@
 import { Request, Response, Router } from 'express';
-import { adminOnlyMiddleware, authMiddleware, AuthRequest } from './middleware/auth.middleware';
+import {
+  adminOnlyMiddleware,
+  authMiddleware,
+  AuthRequest,
+  clearImpersonationCookies,
+} from './middleware/auth.middleware';
 import { backendService } from './supabase-backend.service';
 
 const usersRouter = Router();
@@ -12,9 +17,7 @@ usersRouter.post('/auth/exit-impersonation', (req: Request, res: Response) => {
     return res.status(400).json({ error: 'No active impersonation session found' });
   }
 
-  res.clearCookie('admin_original_token', { path: '/' });
-  res.clearCookie('admin_original_refresh_token', { path: '/' });
-  res.clearCookie('admin_impersonated_user_id', { path: '/' });
+  clearImpersonationCookies(res);
 
   res.cookie('admin_access_token', originalToken, {
     httpOnly: true,

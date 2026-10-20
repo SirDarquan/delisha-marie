@@ -97,6 +97,18 @@ async function tryVerifyToken(
   }
 }
 
+export function clearImpersonationCookies(res: Response): void {
+  res.clearCookie('admin_original_token', { path: '/' });
+  res.clearCookie('admin_original_refresh_token', { path: '/' });
+  res.clearCookie('admin_impersonated_user_id', { path: '/' });
+}
+
+export function clearAllAuthCookies(res: Response): void {
+  res.clearCookie('admin_access_token', { path: '/' });
+  res.clearCookie('admin_refresh_token', { path: '/' });
+  clearImpersonationCookies(res);
+}
+
 export function setAuthCookies(
   res: Response,
   session: { access_token: string; refresh_token?: string; expires_in: number },
@@ -212,9 +224,7 @@ export const authMiddleware = async (
       (!impersonatedUserId || verifiedUser.id === impersonatedUserId);
 
     if (hasOriginalToken && !isActuallyImpersonating) {
-      res.clearCookie('admin_original_token', { path: '/' });
-      res.clearCookie('admin_original_refresh_token', { path: '/' });
-      res.clearCookie('admin_impersonated_user_id', { path: '/' });
+      clearImpersonationCookies(res);
     }
 
     authReq.isImpersonating = isActuallyImpersonating;

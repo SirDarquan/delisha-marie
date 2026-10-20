@@ -21,6 +21,8 @@ import cookieParser from 'cookie-parser';
 import {
   adminOnlyMiddleware,
   authMiddleware,
+  clearAllAuthCookies,
+  clearImpersonationCookies,
   memberOnlyMiddleware,
   setAuthCookies,
 } from './auth.middleware';
@@ -461,6 +463,28 @@ describe('Auth Middleware', () => {
         .set('Cookie', ['admin_access_token=valid-token']);
 
       expect(res.status).toBe(200);
+    });
+    it('should properly clear impersonation cookies and all auth cookies', () => {
+      const mockRes = {
+        clearCookie: vi.fn(),
+      } as unknown as express.Response;
+
+      clearImpersonationCookies(mockRes);
+      expect(mockRes.clearCookie).toHaveBeenCalledWith('admin_original_token', { path: '/' });
+      expect(mockRes.clearCookie).toHaveBeenCalledWith('admin_original_refresh_token', {
+        path: '/',
+      });
+      expect(mockRes.clearCookie).toHaveBeenCalledWith('admin_impersonated_user_id', { path: '/' });
+
+      vi.clearAllMocks();
+      clearAllAuthCookies(mockRes);
+      expect(mockRes.clearCookie).toHaveBeenCalledWith('admin_access_token', { path: '/' });
+      expect(mockRes.clearCookie).toHaveBeenCalledWith('admin_refresh_token', { path: '/' });
+      expect(mockRes.clearCookie).toHaveBeenCalledWith('admin_original_token', { path: '/' });
+      expect(mockRes.clearCookie).toHaveBeenCalledWith('admin_original_refresh_token', {
+        path: '/',
+      });
+      expect(mockRes.clearCookie).toHaveBeenCalledWith('admin_impersonated_user_id', { path: '/' });
     });
   });
 });
