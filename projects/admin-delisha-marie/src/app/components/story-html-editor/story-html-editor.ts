@@ -37,6 +37,9 @@ export type StoryTextAlign = 'left' | 'center' | 'right' | 'justify';
       <div class="flex items-center justify-between">
         <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">
           Live Story Editor (delisha-marie style)
+          @if (required()) {
+            <span class="text-rose-500 font-bold ml-0.5" aria-hidden="true">*</span>
+          }
         </span>
         @if (isHtmlMode()) {
           <span class="text-xs text-purple-400 font-mono flex items-center gap-1.5 font-semibold">
@@ -836,7 +839,7 @@ export type StoryTextAlign = 'left' | 'center' | 'right' | 'justify';
 export class StoryHtmlEditorComponent implements FormValueControl<string> {
   // FormValueControl value signal for [formField] binding
   readonly value = model<string>('');
-  required = input<boolean>(false);
+  readonly required = input<boolean>(false);
 
   /**
    * Hide buttons via parent input:
