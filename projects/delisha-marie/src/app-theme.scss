@@ -193,6 +193,37 @@ dm-sidebar-search .search-field .mat-mdc-form-field-flex {
   margin-bottom: 0;
 }
 
+.story h1.story-title,
+.story h1 {
+  font-size: 2.25rem;
+  font-weight: 800;
+  margin-top: 2.5rem;
+  margin-bottom: 1rem;
+  line-height: 1.25;
+  color: var(--mat-sys-on-surface);
+}
+
+.story .story-subtitle {
+  font-size: 1.25rem;
+  font-weight: 400;
+  color: var(--mat-sys-outline);
+  font-style: italic;
+  margin-top: -0.25rem;
+  margin-bottom: 2rem;
+}
+
+.story .story-first-letter,
+.story .drop-cap {
+  font-size: 3.5rem;
+  line-height: 0.85;
+  font-weight: 900;
+  float: left;
+  margin-right: 0.65rem;
+  margin-top: 0.15rem;
+  color: var(--mat-sys-primary);
+  font-family: 'Playfair Display', Georgia, serif;
+}
+
 .story h2 {
   font-size: 1.75rem;
   font-weight: 700;
