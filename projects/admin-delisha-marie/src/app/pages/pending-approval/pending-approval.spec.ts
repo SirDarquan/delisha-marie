@@ -81,8 +81,8 @@ describe('PendingApprovalComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('Unable to check status');
   });
 
-  it('should log out and navigate to login', () => {
-    component.onLogout();
+  it('should log out and navigate to login', async () => {
+    await component.onLogout();
     expect(authMock.logout).toHaveBeenCalled();
     expect(routerMock.navigate).toHaveBeenCalledWith(['/login']);
   });
