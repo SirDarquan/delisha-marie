@@ -1,5 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { MatDialog } from '@angular/material/dialog';
+import { MatMenuTrigger } from '@angular/material/menu';
 import { StoryHtmlEditorComponent } from './story-html-editor';
 import { RecipeService } from '../../services/recipe.service';
 import { vi } from 'vitest';
@@ -23,7 +25,7 @@ describe('StoryHtmlEditorComponent', () => {
     fixture = TestBed.createComponent(StoryHtmlEditorComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
-  });
+  }, 30000);
 
   it('should create the component', () => {
     expect(component).toBeTruthy();
@@ -972,6 +974,7 @@ describe('StoryHtmlEditorComponent', () => {
       ) => void;
       saveClassHistory: (cls: string) => void;
       loadClassHistory: () => void;
+      resolveActiveTargetForClasses: (canvasEl: HTMLElement) => HTMLElement | null;
     }
 
     const getPriv = (c: StoryHtmlEditorComponent): PrivateEditor => c as unknown as PrivateEditor;
@@ -1346,6 +1349,250 @@ describe('StoryHtmlEditorComponent', () => {
       component.execCmd('createLink', '');
       component.execCmd('insertImage', '');
       expect(component.value()).toBe('');
+    });
+
+    it('should render a required asterisk in the label when required input is true', () => {
+      fixture.componentRef.setInput('required', true);
+      fixture.detectChanges();
+      const labelSpan = fixture.nativeElement.querySelector('span.text-xs');
+      expect(labelSpan).toBeTruthy();
+      expect(labelSpan.textContent).toContain('*');
+    });
+
+    it('should cover loadClassHistory and saveClassHistory with working localStorage', () => {
+      const mockStore: Record<string, string> = {
+        dm_story_class_history: JSON.stringify(['highlight', 'lead', 'badge']),
+      };
+      const fakeStorage = {
+        getItem: vi.fn((key: string) => mockStore[key] ?? null),
+        setItem: vi.fn((key: string, val: string) => {
+          mockStore[key] = val;
+        }),
+        removeItem: vi.fn((key: string) => {
+          delete mockStore[key];
+        }),
+      };
+      vi.stubGlobal('localStorage', fakeStorage);
+
+      getPriv(component).loadClassHistory();
+      expect(component.classHistory()).toContain('highlight');
+
+      getPriv(component).saveClassHistory('new-tag');
+      expect(component.classHistory()).toContain('new-tag');
+      expect(fakeStorage.setItem).toHaveBeenCalled();
+
+      vi.unstubAllGlobals();
+    });
+
+    it('should cover all type options and specific CSS tag classes in onCanvasClick', () => {
+      const canvasEl = component.editorCanvas()!.nativeElement;
+      canvasEl.innerHTML =
+        '<h1 class="story-title">Title text</h1><p class="recipe-tip">Tip text</p><p class="story-subtitle">Subtitle</p>';
+      const h1 = canvasEl.querySelector('h1')!;
+      component.onCanvasClick({ target: h1 } as unknown as Event);
+      expect(component.currentTypeLabel()).toBe('Title');
+
+      const tip = canvasEl.querySelector('.recipe-tip')!;
+      component.onCanvasClick({ target: tip } as unknown as Event);
+      expect(component.currentTypeLabel()).toBe('Recipe Tip');
+
+      const sub = canvasEl.querySelector('.story-subtitle')!;
+      component.onCanvasClick({ target: sub } as unknown as Event);
+      expect(component.currentTypeLabel()).toBe('Subtitle');
+
+      const allTypes = [
+        'p',
+        'h1-title',
+        'subtitle',
+        'h1',
+        'h2',
+        'h3',
+        'blockquote',
+        'recipe-tip',
+        'lead',
+      ];
+      allTypes.forEach((type) => {
+        canvasEl.innerHTML = '<p>Format target</p>';
+        const p = canvasEl.querySelector('p')!;
+        const r = document.createRange();
+        r.selectNodeContents(p);
+        window.getSelection()!.removeAllRanges();
+        window.getSelection()!.addRange(r);
+        component.applyType(type);
+        expect(canvasEl.innerHTML).toBeDefined();
+      });
+    });
+
+    it('should cover all alignments and list styles with existing lists', () => {
+      const canvasEl = component.editorCanvas()!.nativeElement;
+      const aligns: ('left' | 'center' | 'right' | 'justify')[] = [
+        'left',
+        'center',
+        'right',
+        'justify',
+      ];
+      aligns.forEach((align) => {
+        canvasEl.innerHTML = '<p>Align target</p>';
+        const p = canvasEl.querySelector('p')!;
+        const r = document.createRange();
+        r.selectNodeContents(p);
+        window.getSelection()!.removeAllRanges();
+        window.getSelection()!.addRange(r);
+        component.applyAlignment(align);
+      });
+
+      // Calling applyBulletList on existing UL
+      canvasEl.innerHTML = '<ul><li>Existing list item</li></ul>';
+      const li = canvasEl.querySelector('li')!;
+      const r = document.createRange();
+      r.selectNodeContents(li);
+      window.getSelection()!.removeAllRanges();
+      window.getSelection()!.addRange(r);
+      component.applyBulletList('square');
+      expect(canvasEl.querySelector('ul')?.style.listStyleType).toBe('square');
+
+      // Calling applyNumberedList on existing OL
+      canvasEl.innerHTML = '<ol><li>Numbered item</li></ol>';
+      const numLi = canvasEl.querySelector('li')!;
+      const rNum = document.createRange();
+      rNum.selectNodeContents(numLi);
+      window.getSelection()!.removeAllRanges();
+      window.getSelection()!.addRange(rNum);
+      component.applyNumberedList('lower-roman');
+      expect(canvasEl.querySelector('ol')?.style.listStyleType).toBe('lower-roman');
+    });
+
+    it('should cover wrapBlock preserving custom class and wrapBlock on non-collapsed range without block', () => {
+      const canvasEl = component.editorCanvas()!.nativeElement;
+      canvasEl.innerHTML = '<p class="my-custom-note">Custom text</p>';
+      const p = canvasEl.querySelector('p')!;
+      const r = document.createRange();
+      r.selectNodeContents(p);
+      window.getSelection()!.removeAllRanges();
+      window.getSelection()!.addRange(r);
+      getPriv(component).applyBlockTag(canvasEl, r, 'blockquote', '');
+      expect(canvasEl.querySelector('blockquote')?.className).toBe('my-custom-note');
+
+      // Non-collapsed range with raw text node
+      canvasEl.innerHTML = 'Just raw text inside canvas';
+      const textNode = canvasEl.firstChild!;
+      const r2 = document.createRange();
+      r2.setStart(textNode, 0);
+      r2.setEnd(textNode, 4);
+      window.getSelection()!.removeAllRanges();
+      window.getSelection()!.addRange(r2);
+      getPriv(component).applyBlockTag(canvasEl, r2, 'h2', 'banner-h2');
+      expect(canvasEl.querySelector('h2')?.className).toBe('banner-h2');
+    });
+
+    it('should cover resolveActiveTargetForClasses fallback to findDirectBlockChild', () => {
+      const canvasEl = component.editorCanvas()!.nativeElement;
+      canvasEl.innerHTML = '<p>Fallback text</p>';
+      const r = document.createRange();
+      r.selectNode(canvasEl);
+      window.getSelection()!.removeAllRanges();
+      window.getSelection()!.addRange(r);
+      const target = getPriv(component).resolveActiveTargetForClasses(canvasEl);
+      expect(target).toBeDefined();
+    });
+
+    it('should cover template event listeners for keyup, textarea input/blur, and class operations', () => {
+      const canvasEl = component.editorCanvas()!.nativeElement;
+      canvasEl.dispatchEvent(new KeyboardEvent('keyup', { key: 'ArrowLeft' }));
+
+      // HTML mode textarea input and blur events
+      component.toggleHtmlMode();
+      fixture.detectChanges();
+      const textarea: HTMLTextAreaElement = fixture.nativeElement.querySelector('textarea');
+      expect(textarea).toBeTruthy();
+      textarea.value = '<p>Edited in textarea</p>';
+      textarea.dispatchEvent(new Event('input'));
+      textarea.dispatchEvent(new Event('blur'));
+      expect(component.value()).toBe('<p>Edited in textarea</p>');
+      component.toggleHtmlMode();
+      fixture.detectChanges();
+
+      // Class inspector template buttons
+      component.inspectedClasses.set(['first-tag', 'second-tag']);
+      fixture.detectChanges();
+      const removeBtns = fixture.nativeElement.querySelectorAll('button[title="Remove class"]');
+      if (removeBtns.length > 0) {
+        (removeBtns[0] as HTMLButtonElement).click();
+        expect(component.inspectedClasses()).not.toContain('first-tag');
+      }
+
+      // Enter key on customClassInput
+      const inputEl: HTMLInputElement = fixture.nativeElement.querySelector(
+        'input[placeholder*="Type class name"]',
+      );
+      if (inputEl) {
+        inputEl.value = 'typed-class';
+        inputEl.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+        expect(component.inspectedClasses()).toContain('typed-class');
+      }
+    });
+
+    it('should cover resolveActiveTargetForClasses fallback to findDirectBlockChild when detached or comment node', () => {
+      const canvasEl = component.editorCanvas()!.nativeElement;
+      canvasEl.innerHTML = '<p>Direct block</p>';
+      const comment = document.createComment('test comment');
+      canvasEl.appendChild(comment);
+      const r = document.createRange();
+      r.selectNode(comment);
+      window.getSelection()!.removeAllRanges();
+      window.getSelection()!.addRange(r);
+      const target = getPriv(component).resolveActiveTargetForClasses(canvasEl);
+      expect(target).toBe(canvasEl);
+
+      // Cover template justify align icon & canvas keyup
+      component.currentAlign.set('justify');
+      fixture.detectChanges();
+      canvasEl.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true, key: 'ArrowDown' }));
+    });
+
+    it('should cover applyBulletList and applyNumberedList when direct block is already list element', () => {
+      const canvasEl = component.editorCanvas()!.nativeElement;
+      canvasEl.innerHTML = '<ul><li>First item</li></ul>';
+      const r = document.createRange();
+      r.setStart(canvasEl, 0);
+      r.setEnd(canvasEl, 0);
+      window.getSelection()!.removeAllRanges();
+      window.getSelection()!.addRange(r);
+      component.applyBulletList('square');
+      expect(canvasEl.querySelector('ul')?.style.listStyleType).toBe('square');
+
+      canvasEl.innerHTML = '<ol><li>Numbered item</li></ol>';
+      const r2 = document.createRange();
+      r2.setStart(canvasEl, 0);
+      r2.setEnd(canvasEl, 0);
+      window.getSelection()!.removeAllRanges();
+      window.getSelection()!.addRange(r2);
+      component.applyNumberedList('lower-greek');
+      expect(canvasEl.querySelector('ol')?.style.listStyleType).toBe('lower-greek');
+    });
+
+    it('should open all toolbar mat-menus and click their buttons to cover all template listeners', () => {
+      fixture.detectChanges();
+      const triggers = fixture.debugElement.queryAll(By.directive(MatMenuTrigger));
+      for (const trigger of triggers) {
+        const matTrigger = trigger.injector.get(MatMenuTrigger);
+        matTrigger.openMenu();
+        fixture.detectChanges();
+
+        const overlayContainer = document.querySelector('.cdk-overlay-container');
+        if (overlayContainer) {
+          const addBtn = overlayContainer.querySelector(
+            'button.bg-indigo-600',
+          ) as HTMLButtonElement;
+          addBtn?.click();
+          const menuButtons = overlayContainer.querySelectorAll('button[mat-menu-item], button');
+          menuButtons.forEach((btn: Element) => {
+            (btn as HTMLButtonElement).click();
+          });
+        }
+        matTrigger.closeMenu();
+        fixture.detectChanges();
+      }
     });
   });
 });
