@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 
@@ -26,18 +26,31 @@ import { AuthService } from '../../services/auth.service';
         </div>
         <button
           type="button"
+          [disabled]="isExiting()"
           (click)="onExitImpersonation()"
-          class="px-3 py-1 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-lg text-xs transition cursor-pointer flex items-center gap-1 shadow-sm">
+          class="px-3 py-1 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-lg text-xs transition cursor-pointer flex items-center gap-1 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
           <span class="material-icons text-xs">arrow_back</span>
           Return to Admin
         </button>
       </article>
+    }
+
+    @if (isExiting()) {
+      <div
+        class="fixed inset-0 z-[100] bg-slate-950/80 backdrop-blur-md flex flex-col items-center justify-center p-4">
+        <div
+          class="w-12 h-12 rounded-full border-4 border-amber-500 border-t-transparent animate-spin mb-4"></div>
+        <h3 class="text-white text-lg font-bold">Returning to Administrator Session</h3>
+        <p class="text-slate-400 text-sm mt-1">Restoring platform permissions...</p>
+      </div>
     }
   `,
 })
 export class ImpersonationBannerComponent {
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
+
+  readonly isExiting = signal<boolean>(false);
 
   readonly user = computed(() =>
     typeof this.authService.currentUser === 'function' ? this.authService.currentUser() : null,
@@ -52,7 +65,12 @@ export class ImpersonationBannerComponent {
   );
 
   async onExitImpersonation(): Promise<void> {
-    await this.authService.exitImpersonation();
-    await this.router.navigate(['/users']);
+    this.isExiting.set(true);
+    try {
+      await this.authService.exitImpersonation();
+      await this.router.navigate(['/users']);
+    } finally {
+      this.isExiting.set(false);
+    }
   }
 }

@@ -84,4 +84,12 @@ describe('ImpersonationBannerComponent', () => {
     expect(fakeAuthService.exitImpersonation).toHaveBeenCalled();
     expect(router.navigate).toHaveBeenCalledWith(['/users']);
   });
+
+  it('should render blocking overlay when isExiting is true', () => {
+    component.isExiting.set(true);
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.textContent).toContain('Returning to Administrator Session');
+  });
 });
