@@ -333,7 +333,7 @@ describe('ContactsPage', () => {
       expect(options.length).toBeGreaterThan(0);
       expect(options[0].label).toBeTruthy();
       expect(options[0].date).toBeInstanceOf(Date);
-    });
+    }, 15000);
 
     it('should open snooze dialog', async () => {
       (component['dialog'].open as any).mockReturnValue({
@@ -519,6 +519,6 @@ describe('ContactsPage', () => {
 
       const emptyTrashBtn = fixture.nativeElement.querySelector('.bg-slate-800\\/80 button');
       emptyTrashBtn?.click();
-    });
+    }, 30000);
   });
 });

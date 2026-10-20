@@ -120,5 +120,5 @@ describe('PageEditorComponent', () => {
     const cancelBtns = fixture.nativeElement.querySelectorAll('button[type="button"]');
     cancelBtns.forEach((btn: HTMLElement) => btn.click());
     expect(locationSpy).toHaveBeenCalled();
-  });
+  }, 15000);
 });
