@@ -7,6 +7,7 @@
     "start": "node scripts/patch-angular-watcher.cjs && ng serve",
     "start:vercel": "node scripts/patch-angular-watcher.cjs && vercel dev projects/delisha-marie -l 4200",
     "start:home": "node scripts/patch-angular-watcher.cjs && vercel dev projects/delisha-home -l 4220",
+    "start:admin": "node scripts/patch-angular-watcher.cjs && ng serve admin-delisha-marie",
     "build": "ng build",
     "build:home": "ng build delisha-home",
     "watch": "ng build --watch --configuration development",
