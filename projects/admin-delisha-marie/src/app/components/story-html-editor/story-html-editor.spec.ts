@@ -949,4 +949,401 @@ describe('StoryHtmlEditorComponent', () => {
       expect(component.value()).toBe(before);
     });
   });
+
+  describe('extended branch coverage tests', () => {
+    interface PrivateEditor {
+      resolveImageSrc: (html: string) => string;
+      stripImageBaseUrl: (html: string) => string;
+      applyBlockTag: (
+        canvasEl: HTMLElement,
+        range: Range,
+        tagName: string,
+        className?: string,
+      ) => void;
+      wrapBlockAsList: (canvasEl: HTMLElement, range: Range, listTag: 'ul' | 'ol') => HTMLElement;
+      clearRangeFormatting: (canvasEl: HTMLElement, range: Range) => void;
+      getTargetImage: (canvasEl: HTMLElement) => HTMLImageElement | null;
+      applyDialogResult: (
+        result: unknown,
+        targetImg: HTMLImageElement,
+        innerFigure: HTMLElement | null,
+        outerFigure: HTMLElement | null,
+        isGalleryContainer: boolean,
+      ) => void;
+      saveClassHistory: (cls: string) => void;
+      loadClassHistory: () => void;
+    }
+
+    const getPriv = (c: StoryHtmlEditorComponent): PrivateEditor => c as unknown as PrivateEditor;
+    it('should cover all block types and alignment in updateToolbarStateFromSelection', () => {
+      const canvasEl = component.editorCanvas()!.nativeElement;
+
+      // Subtitle
+      canvasEl.innerHTML = '<p class="story-subtitle">My Subtitle</p>';
+      component.onCanvasClick({ target: canvasEl.querySelector('p') } as unknown as Event);
+      expect(component.currentTypeLabel()).toBe('Subtitle');
+
+      // Recipe Tip
+      canvasEl.innerHTML = '<div class="recipe-tip">Cooking Tip</div>';
+      component.onCanvasClick({ target: canvasEl.querySelector('div') } as unknown as Event);
+      expect(component.currentTypeLabel()).toBe('Recipe Tip');
+
+      // Heading 1
+      canvasEl.innerHTML = '<h1>Main Header</h1>';
+      component.onCanvasClick({ target: canvasEl.querySelector('h1') } as unknown as Event);
+      expect(component.currentTypeLabel()).toBe('Heading 1');
+
+      // Heading 3
+      canvasEl.innerHTML = '<h3 style="text-align: center;">Small Header</h3>';
+      component.onCanvasClick({ target: canvasEl.querySelector('h3') } as unknown as Event);
+      expect(component.currentTypeLabel()).toBe('Heading 3');
+      expect(component.currentAlign()).toBe('center');
+
+      // Quote / blockquote with justify
+      canvasEl.innerHTML = '<blockquote style="text-align: justify;">Quote text</blockquote>';
+      component.onCanvasClick({ target: canvasEl.querySelector('blockquote') } as unknown as Event);
+      expect(component.currentTypeLabel()).toBe('Quote');
+      expect(component.currentAlign()).toBe('justify');
+
+      // Normal text with left alignment clearing style
+      canvasEl.innerHTML = '<p style="text-align: left;">Paragraph text</p>';
+      component.onCanvasClick({ target: canvasEl.querySelector('p') } as unknown as Event);
+      expect(component.currentTypeLabel()).toBe('Normal text');
+    });
+
+    it('should cover applyAlignment branches (left clears style, center, justify)', () => {
+      const canvasEl = component.editorCanvas()!.nativeElement;
+      canvasEl.innerHTML = '<p style="text-align: right;">Text</p>';
+      const textNode = canvasEl.querySelector('p')!.firstChild!;
+      const range = document.createRange();
+      range.selectNodeContents(textNode);
+      window.getSelection()!.removeAllRanges();
+      window.getSelection()!.addRange(range);
+
+      component.applyAlignment('left');
+      expect(canvasEl.querySelector('p')!.style.textAlign).toBe('');
+
+      component.applyAlignment('center');
+      expect(canvasEl.querySelector('p')!.style.textAlign).toBe('center');
+
+      component.applyAlignment('justify');
+      expect(canvasEl.querySelector('p')!.style.textAlign).toBe('justify');
+    });
+
+    it('should cover changeFontSize bounds clamping', () => {
+      component.currentFontSize.set(60);
+      component.changeFontSize(10);
+      expect(component.currentFontSize()).toBe(64); // Clamped at 64
+
+      component.currentFontSize.set(15);
+      component.changeFontSize(-10);
+      expect(component.currentFontSize()).toBe(10); // Clamped at 10
+    });
+
+    it('should cover converting lists between OL and UL', () => {
+      const canvasEl = component.editorCanvas()!.nativeElement;
+
+      // 1. Convert OL to UL
+      canvasEl.innerHTML = '<ol><li>Numbered item</li></ol>';
+      const olLi = canvasEl.querySelector('li')!;
+      const r1 = document.createRange();
+      r1.selectNodeContents(olLi);
+      window.getSelection()!.removeAllRanges();
+      window.getSelection()!.addRange(r1);
+
+      component.applyBulletList('disc');
+      expect(canvasEl.querySelector('ul')).toBeTruthy();
+      expect(canvasEl.querySelector('ol')).toBeNull();
+
+      // 2. Convert UL to OL
+      const ulLi = canvasEl.querySelector('li')!;
+      const r2 = document.createRange();
+      r2.selectNodeContents(ulLi);
+      window.getSelection()!.removeAllRanges();
+      window.getSelection()!.addRange(r2);
+
+      component.applyNumberedList('decimal');
+      expect(canvasEl.querySelector('ol')).toBeTruthy();
+      expect(canvasEl.querySelector('ul')).toBeNull();
+
+      // 3. Update existing OL style
+      component.applyNumberedList('upper-roman');
+      expect(canvasEl.querySelector('ol')!.style.listStyleType).toBe('upper-roman');
+    });
+
+    it('should cover list nesting when sublist already exists', () => {
+      const canvasEl = component.editorCanvas()!.nativeElement;
+      canvasEl.innerHTML = '<ul><li>First<ul><li>Sub 1</li></ul></li><li>Second</li></ul>';
+      const secondLi = canvasEl.querySelector('ul')!.children[1] as HTMLElement;
+      const r = document.createRange();
+      r.selectNodeContents(secondLi);
+      window.getSelection()!.removeAllRanges();
+      window.getSelection()!.addRange(r);
+
+      component.adjustIndent('increase');
+      expect(canvasEl.innerHTML).toContain('<ul><li>Sub 1</li><li>Second</li></ul>');
+    });
+
+    it('should cover unnesting when nested inside grandparent LI', () => {
+      const canvasEl = component.editorCanvas()!.nativeElement;
+      canvasEl.innerHTML = '<ul><li>Parent<ul><li id="child">Nested</li></ul></li></ul>';
+      const childLi = canvasEl.querySelector('#child')!;
+      const r = document.createRange();
+      r.selectNodeContents(childLi);
+      window.getSelection()!.removeAllRanges();
+      window.getSelection()!.addRange(r);
+
+      component.adjustIndent('decrease');
+      expect(canvasEl.querySelectorAll('ul > li').length).toBe(2);
+    });
+
+    it('should cover class inspector on span elements and removing all classes from attribute', () => {
+      const canvasEl = component.editorCanvas()!.nativeElement;
+      canvasEl.innerHTML = '<p><span class="story-first-letter">W</span>ord</p>';
+      const span = canvasEl.querySelector('span')!;
+      const r = document.createRange();
+      r.selectNodeContents(span);
+      window.getSelection()!.removeAllRanges();
+      window.getSelection()!.addRange(r);
+
+      component.onClassMenuOpened();
+      expect(component.inspectedClasses()).toContain('story-first-letter');
+
+      component.removeClassFromInspected('story-first-letter');
+      expect(span.getAttribute('class')).toBeNull();
+    });
+
+    it('should cover applyFirstLetterDropCap with empty text or no alphanumeric match', () => {
+      const canvasEl = component.editorCanvas()!.nativeElement;
+      canvasEl.innerHTML = '<p>---</p>';
+      const r = document.createRange();
+      r.selectNodeContents(canvasEl.querySelector('p')!);
+      window.getSelection()!.removeAllRanges();
+      window.getSelection()!.addRange(r);
+
+      component.applyFirstLetterDropCap();
+      expect(canvasEl.innerHTML).toBe('<p>---</p>');
+    });
+
+    it('should cover resolveImageSrc with relative path missing leading slash and data/http URIs', () => {
+      expect(getPriv(component).resolveImageSrc('<img src="2026/08/cake.webp">')).toContain(
+        'https://ik.imagekit.io/delishamarie/2026/08/cake.webp',
+      );
+
+      expect(getPriv(component).resolveImageSrc('<img alt="no src">')).toBe('<img alt="no src">');
+
+      expect(getPriv(component).resolveImageSrc('')).toBe('');
+    });
+
+    it('should cover stripImageBaseUrl with non-base image and missing src', () => {
+      expect(
+        getPriv(component).stripImageBaseUrl('<img src="https://example.com/pic.jpg">'),
+      ).toContain('https://example.com/pic.jpg');
+
+      expect(getPriv(component).stripImageBaseUrl('<img alt="no src">')).toBe('<img alt="no src">');
+
+      expect(getPriv(component).stripImageBaseUrl('')).toBe('');
+    });
+
+    it('should cover execCmd commands (formatBlock, callout, insertUnorderedList, insertOrderedList)', () => {
+      const canvasEl = component.editorCanvas()!.nativeElement;
+      canvasEl.innerHTML = '<p>Block command test</p>';
+      const r = document.createRange();
+      r.selectNodeContents(canvasEl.querySelector('p')!);
+      window.getSelection()!.removeAllRanges();
+      window.getSelection()!.addRange(r);
+
+      component.execCmd('callout');
+      expect(canvasEl.querySelector('.recipe-tip')).toBeTruthy();
+
+      component.execCmd('formatBlock', '<h3>');
+      expect(canvasEl.querySelector('h3')).toBeTruthy();
+
+      component.execCmd('insertUnorderedList');
+      expect(canvasEl.querySelector('ul')).toBeTruthy();
+
+      component.execCmd('insertOrderedList');
+      expect(canvasEl.querySelector('ol')).toBeTruthy();
+    });
+
+    it('should cover applyBlockTag when non-collapsed selection has no existing block', () => {
+      const canvasEl = component.editorCanvas()!.nativeElement;
+      canvasEl.innerHTML = '';
+      const text = document.createTextNode('Floating text without block');
+      canvasEl.appendChild(text);
+
+      const r = document.createRange();
+      r.selectNodeContents(text);
+      window.getSelection()!.removeAllRanges();
+      window.getSelection()!.addRange(r);
+
+      getPriv(component).applyBlockTag(canvasEl, r, 'h2', 'custom-h2');
+      expect(canvasEl.querySelector('h2.custom-h2')).toBeTruthy();
+    });
+
+    it('should cover applyBlockTag when range is collapsed and appends to canvas', () => {
+      const canvasEl = component.editorCanvas()!.nativeElement;
+      canvasEl.innerHTML = '';
+      const r = document.createRange();
+      r.setStart(canvasEl, 0);
+      r.collapse(true);
+      window.getSelection()!.removeAllRanges();
+      window.getSelection()!.addRange(r);
+
+      getPriv(component).applyBlockTag(canvasEl, r, 'p', 'appended-p');
+      expect(canvasEl.querySelector('p.appended-p')).toBeTruthy();
+    });
+
+    it('should cover wrapBlockAsList with non-collapsed text without existing block', () => {
+      const canvasEl = component.editorCanvas()!.nativeElement;
+      canvasEl.innerHTML = '';
+      const text = document.createTextNode('Item without block');
+      canvasEl.appendChild(text);
+
+      const r = document.createRange();
+      r.selectNodeContents(text);
+      window.getSelection()!.removeAllRanges();
+      window.getSelection()!.addRange(r);
+
+      const list = getPriv(component).wrapBlockAsList(canvasEl, r, 'ul');
+      expect(list.tagName.toLowerCase()).toBe('ul');
+      expect(canvasEl.querySelector('li')?.textContent).toBe('Item without block');
+    });
+
+    it('should cover clearRangeFormatting on collapsed selection', () => {
+      const canvasEl = component.editorCanvas()!.nativeElement;
+      canvasEl.innerHTML = '<h2 class="some-title">Heading text</h2>';
+      const r = document.createRange();
+      r.selectNodeContents(canvasEl.querySelector('h2')!);
+      r.collapse(true);
+      window.getSelection()!.removeAllRanges();
+      window.getSelection()!.addRange(r);
+
+      getPriv(component).clearRangeFormatting(canvasEl, r);
+      expect(canvasEl.querySelector('p')?.textContent).toBe('Heading text');
+      expect(canvasEl.querySelector('h2')).toBeNull();
+    });
+
+    it('should cover getTargetImage via selection range containing image', () => {
+      const canvasEl = component.editorCanvas()!.nativeElement;
+      canvasEl.innerHTML = '<p><img src="/test.jpg" alt="test"></p>';
+      const img = canvasEl.querySelector('img')!;
+      const r = document.createRange();
+      r.selectNode(img);
+      window.getSelection()!.removeAllRanges();
+      window.getSelection()!.addRange(r);
+
+      const found = getPriv(component).getTargetImage(canvasEl);
+      expect(found).toBe(img);
+    });
+
+    it('should cover applyDialogResult with outerFigureClass without gallery', () => {
+      const targetImg = document.createElement('img');
+      targetImg.src = '/image.webp';
+      const container = document.createElement('div');
+      container.appendChild(targetImg);
+
+      getPriv(component).applyDialogResult(
+        {
+          imgClass: 'custom-img',
+          innerFigureClass: 'inner-fig',
+          outerFigureClass: 'outer-fig',
+          captionText: 'My Caption',
+          captionClass: 'cap-style',
+        },
+        targetImg,
+        null,
+        null,
+        false,
+      );
+
+      const outerFig = container.querySelector('figure.outer-fig');
+      expect(outerFig).toBeTruthy();
+      expect(outerFig?.querySelector('figure.inner-fig')).toBeTruthy();
+      expect(outerFig?.querySelector('figcaption.cap-style')?.textContent).toBe('My Caption');
+    });
+
+    it('should cover formatHtmlForEditor with empty string, figures, hr and div tags', () => {
+      expect(component.formatHtmlForEditor('')).toBe('');
+      const raw =
+        '<figure><img src="/pic.webp"><figcaption>Cap</figcaption></figure><hr><div>Note</div>';
+      const formatted = component.formatHtmlForEditor(raw);
+      expect(formatted).toContain('<figure>\n<img');
+      expect(formatted).toContain('<hr>\n<div>');
+    });
+
+    it('should cover _syncEffect updating rawHtmlValue when in HTML mode', () => {
+      component.isHtmlMode.set(true);
+      component.rawHtmlValue.set('<p>Initial</p>');
+      fixture.componentRef.setInput('value', '<p>Externally updated value</p>');
+      fixture.detectChanges();
+
+      expect(component.rawHtmlValue()).toContain('Externally updated value');
+    });
+
+    it('should cover aliases in isButtonVisible for all groups', () => {
+      fixture.componentRef.setInput('hiddenButtons', [
+        'font-family',
+        'font-size',
+        'headings',
+        'alignment',
+        'indents',
+        'classinspector',
+      ]);
+      fixture.detectChanges();
+
+      expect(component.isButtonVisible('fontFamily')).toBe(false);
+      expect(component.isButtonVisible('fontSize')).toBe(false);
+      expect(component.isButtonVisible('type')).toBe(false);
+      expect(component.isButtonVisible('align')).toBe(false);
+      expect(component.isButtonVisible('indent')).toBe(false);
+      expect(component.isButtonVisible('classes')).toBe(false);
+    });
+
+    it('should cover template alignment icon switch branches', () => {
+      component.currentAlign.set('center');
+      fixture.detectChanges();
+      expect(fixture.nativeElement.textContent).toContain('format_align_center');
+
+      component.currentAlign.set('justify');
+      fixture.detectChanges();
+      expect(fixture.nativeElement.textContent).toContain('format_align_justify');
+    });
+
+    it('should cover reverse alias check when key is hidden', () => {
+      fixture.componentRef.setInput('hiddenButtons', ['align']);
+      fixture.detectChanges();
+      expect(component.isButtonVisible('text-align')).toBe(false);
+      expect(component.isButtonVisible('alignment')).toBe(false);
+    });
+
+    it('should cover empty inputs and edge cases for class adding/removing', () => {
+      const emptyInput = document.createElement('input');
+      emptyInput.value = '   ';
+      component.addClassFromInput(emptyInput);
+
+      component.addClassToInspected('');
+      component.removeClassFromInspected('');
+
+      getPriv(component).saveClassHistory('');
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('dm_story_class_history', JSON.stringify({ invalid: true }));
+        getPriv(component).loadClassHistory();
+        localStorage.removeItem('dm_story_class_history');
+        getPriv(component).loadClassHistory();
+      }
+    });
+
+    it('should cover promptLink when user cancels prompt', () => {
+      vi.spyOn(window, 'prompt').mockReturnValue(null);
+      component.promptLink();
+      expect(component.value()).not.toContain('<a href');
+    });
+
+    it('should cover execCmd createLink and insertImage with empty values', () => {
+      component.execCmd('createLink', '');
+      component.execCmd('insertImage', '');
+      expect(component.value()).toBe('');
+    });
+  });
 });
