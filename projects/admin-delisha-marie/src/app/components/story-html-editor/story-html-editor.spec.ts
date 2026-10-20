@@ -1574,6 +1574,7 @@ describe('StoryHtmlEditorComponent', () => {
     it('should open all toolbar mat-menus and click their buttons to cover all template listeners', () => {
       fixture.detectChanges();
       const triggers = fixture.debugElement.queryAll(By.directive(MatMenuTrigger));
+      expect(triggers.length).toBeGreaterThan(0);
       for (const trigger of triggers) {
         const matTrigger = trigger.injector.get(MatMenuTrigger);
         matTrigger.openMenu();
@@ -1593,6 +1594,7 @@ describe('StoryHtmlEditorComponent', () => {
         matTrigger.closeMenu();
         fixture.detectChanges();
       }
+      expect(component).toBeTruthy();
     });
   });
 });
