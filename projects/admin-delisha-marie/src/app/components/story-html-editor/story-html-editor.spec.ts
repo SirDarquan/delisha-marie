@@ -441,7 +441,7 @@ describe('StoryHtmlEditorComponent', () => {
       getRangeAt: () => mockRange,
     } as unknown as Selection;
 
-    vi.spyOn(window, 'getSelection').mockReturnValue(mockSelection);
+    const selSpy = vi.spyOn(window, 'getSelection').mockReturnValue(mockSelection);
 
     const dialog = (component as unknown as { dialog: MatDialog }).dialog;
     const openSpy = vi.spyOn(dialog, 'open').mockReturnValue({
@@ -450,6 +450,7 @@ describe('StoryHtmlEditorComponent', () => {
 
     component.openFigureDialog();
     expect(openSpy).toHaveBeenCalled();
+    selSpy.mockRestore();
   });
 
   it('should handle openFigureDialog when outer figure is highlighted with child figure and result has caption', async () => {
@@ -561,7 +562,7 @@ describe('StoryHtmlEditorComponent', () => {
     const selection = {
       rangeCount: 0,
     } as unknown as Selection;
-    vi.spyOn(window, 'getSelection').mockReturnValue(selection);
+    const selSpy2 = vi.spyOn(window, 'getSelection').mockReturnValue(selection);
 
     fixture.componentRef.setInput('value', '<p>No image here</p>');
     fixture.detectChanges();
@@ -569,5 +570,383 @@ describe('StoryHtmlEditorComponent', () => {
 
     component.openFigureDialog();
     expect(component).toBeTruthy();
+    selSpy2.mockRestore();
+  });
+
+  it('should apply paragraph and heading types and update type labels', () => {
+    const canvasEl = component.editorCanvas()!.nativeElement;
+    canvasEl.innerHTML = '<p>Sample Text</p>';
+    const textNode = canvasEl.querySelector('p')!.firstChild!;
+    const range = document.createRange();
+    range.setStart(textNode, 0);
+    range.setEnd(textNode, 6);
+    const sel = window.getSelection()!;
+    sel.removeAllRanges();
+    sel.addRange(range);
+
+    component.applyType('h1-title');
+    expect(component.value()).toContain('<h1 class="story-title">Sample Text</h1>');
+    expect(component.currentTypeLabel()).toBe('Title');
+
+    component.applyType('subtitle');
+    expect(component.value()).toContain('<p class="story-subtitle">Sample Text</p>');
+    expect(component.currentTypeLabel()).toBe('Subtitle');
+
+    component.applyType('h1');
+    expect(component.value()).toContain('<h1>Sample Text</h1>');
+    expect(component.currentTypeLabel()).toBe('Heading 1');
+
+    component.applyType('h2');
+    expect(component.value()).toContain('<h2>Sample Text</h2>');
+    expect(component.currentTypeLabel()).toBe('Heading 2');
+
+    component.applyType('h3');
+    expect(component.value()).toContain('<h3>Sample Text</h3>');
+    expect(component.currentTypeLabel()).toBe('Heading 3');
+
+    component.applyType('blockquote');
+    expect(component.value()).toContain('<blockquote>Sample Text</blockquote>');
+    expect(component.currentTypeLabel()).toBe('Quote');
+
+    component.applyType('recipe-tip');
+    expect(component.value()).toContain('<div class="recipe-tip">Sample Text</div>');
+    expect(component.currentTypeLabel()).toBe('Recipe Tip');
+
+    component.applyType('p');
+    expect(component.value()).toContain('<p>Sample Text</p>');
+    expect(component.currentTypeLabel()).toBe('Normal text');
+  });
+
+  it('should apply font family and font size inline styles', () => {
+    const canvasEl = component.editorCanvas()!.nativeElement;
+    canvasEl.innerHTML = '<p>Styled Text</p>';
+    const textNode = canvasEl.querySelector('p')!.firstChild!;
+    const range = document.createRange();
+    range.setStart(textNode, 0);
+    range.setEnd(textNode, 6);
+    const sel = window.getSelection()!;
+    sel.removeAllRanges();
+    sel.addRange(range);
+
+    component.applyFontFamily("'Inter', sans-serif", 'Inter');
+    expect(component.currentFontLabel()).toBe('Inter');
+    expect(component.value()).toContain('style="font-family: \'Inter\', sans-serif;"');
+
+    component.applyFontSize(24);
+    expect(component.currentFontSize()).toBe(24);
+    expect(component.value()).toContain('style="font-size: 24px;"');
+
+    component.changeFontSize(2);
+    expect(component.currentFontSize()).toBe(26);
+
+    component.changeFontSize(-4);
+    expect(component.currentFontSize()).toBe(22);
+  });
+
+  it('should apply text alignments to enclosing blocks', () => {
+    const canvasEl = component.editorCanvas()!.nativeElement;
+    canvasEl.innerHTML = '<p>Aligned Text</p>';
+    const textNode = canvasEl.querySelector('p')!.firstChild!;
+    const range = document.createRange();
+    range.setStart(textNode, 0);
+    range.setEnd(textNode, 7);
+    const sel = window.getSelection()!;
+    sel.removeAllRanges();
+    sel.addRange(range);
+
+    component.applyAlignment('center');
+    expect(component.currentAlign()).toBe('center');
+    expect(canvasEl.querySelector('p')!.style.textAlign).toBe('center');
+
+    component.applyAlignment('right');
+    expect(component.currentAlign()).toBe('right');
+    expect(canvasEl.querySelector('p')!.style.textAlign).toBe('right');
+
+    component.applyAlignment('justify');
+    expect(component.currentAlign()).toBe('justify');
+    expect(canvasEl.querySelector('p')!.style.textAlign).toBe('justify');
+
+    component.applyAlignment('left');
+    expect(component.currentAlign()).toBe('left');
+    expect(canvasEl.querySelector('p')!.style.textAlign).toBe('');
+  });
+
+  it('should apply bulleted and numbered list variants', () => {
+    const canvasEl = component.editorCanvas()!.nativeElement;
+    canvasEl.innerHTML = '<p>List item text</p>';
+    const textNode = canvasEl.querySelector('p')!.firstChild!;
+    const range = document.createRange();
+    range.setStart(textNode, 0);
+    range.setEnd(textNode, 4);
+    const sel = window.getSelection()!;
+    sel.removeAllRanges();
+    sel.addRange(range);
+
+    component.applyBulletList('circle');
+    expect(component.value()).toContain('list-style-type: circle');
+
+    component.applyBulletList('square');
+    expect(component.value()).toContain('list-style-type: square');
+
+    component.applyNumberedList('lower-alpha');
+    expect(component.value()).toContain('list-style-type: lower-alpha');
+
+    component.applyNumberedList('upper-alpha');
+    expect(component.value()).toContain('list-style-type: upper-alpha');
+
+    component.applyNumberedList('lower-roman');
+    expect(component.value()).toContain('list-style-type: lower-roman');
+  });
+
+  it('should adjust block and list indentation', () => {
+    const canvasEl = component.editorCanvas()!.nativeElement;
+    canvasEl.innerHTML = '<p>Indented paragraph</p>';
+    const textNode = canvasEl.querySelector('p')!.firstChild!;
+    const range = document.createRange();
+    range.setStart(textNode, 0);
+    range.setEnd(textNode, 8);
+    const sel = window.getSelection()!;
+    sel.removeAllRanges();
+    sel.addRange(range);
+
+    component.adjustIndent('increase');
+    expect(canvasEl.querySelector('p')!.style.marginLeft).toBe('1.5rem');
+
+    component.adjustIndent('increase');
+    expect(canvasEl.querySelector('p')!.style.marginLeft).toBe('3rem');
+
+    component.adjustIndent('decrease');
+    expect(canvasEl.querySelector('p')!.style.marginLeft).toBe('1.5rem');
+
+    component.adjustIndent('decrease');
+    expect(canvasEl.querySelector('p')!.style.marginLeft).toBe('');
+
+    // List indentation nesting
+    canvasEl.innerHTML = '<ul><li>First</li><li>Second</li></ul>';
+    const secondLi = canvasEl.querySelectorAll('li')[1];
+    const liRange = document.createRange();
+    liRange.selectNodeContents(secondLi);
+    window.getSelection()!.removeAllRanges();
+    window.getSelection()!.addRange(liRange);
+
+    component.adjustIndent('increase');
+    expect(canvasEl.innerHTML).toContain('<ul><li>First<ul><li>Second</li></ul></li></ul>');
+
+    component.adjustIndent('decrease');
+    expect(canvasEl.innerHTML).toBe('<ul><li>First</li><li>Second</li></ul>');
+
+    // Outdenting top-level list item turns it into a paragraph
+    const topLi = canvasEl.querySelectorAll('li')[1];
+    const topLiRange = document.createRange();
+    topLiRange.selectNodeContents(topLi);
+    window.getSelection()!.removeAllRanges();
+    window.getSelection()!.addRange(topLiRange);
+
+    component.adjustIndent('decrease');
+    expect(canvasEl.querySelectorAll('li').length).toBe(1);
+    expect(canvasEl.querySelector('p')?.textContent).toBe('Second');
+  });
+
+  it('should inspect, add, remove, and erase CSS classes on elements', () => {
+    const canvasEl = component.editorCanvas()!.nativeElement;
+    canvasEl.innerHTML = '<p class="lead">Styled intro paragraph</p>';
+    const textNode = canvasEl.querySelector('p')!.firstChild!;
+    const range = document.createRange();
+    range.setStart(textNode, 0);
+    range.setEnd(textNode, 6);
+    const sel = window.getSelection()!;
+    sel.removeAllRanges();
+    sel.addRange(range);
+
+    component.onClassMenuOpened();
+    expect(component.inspectedElementTag()).toBe('<p>');
+    expect(component.inspectedClasses()).toContain('lead');
+
+    // Add class via method
+    component.addClassToInspected('text-center');
+    expect(component.inspectedClasses()).toContain('text-center');
+    expect(canvasEl.querySelector('p')!.classList.contains('text-center')).toBe(true);
+    expect(component.classHistory()).toContain('text-center');
+
+    // Add class via input element
+    const fakeInput = document.createElement('input');
+    fakeInput.value = 'custom-badge';
+    component.addClassFromInput(fakeInput);
+    expect(component.inspectedClasses()).toContain('custom-badge');
+    expect(fakeInput.value).toBe('');
+
+    // Remove single class
+    component.removeClassFromInspected('lead');
+    expect(component.inspectedClasses()).not.toContain('lead');
+
+    // Erase all classes
+    component.eraseAllClassesFromInspected();
+    expect(component.inspectedClasses().length).toBe(0);
+    expect(canvasEl.querySelector('p')!.getAttribute('class')).toBeNull();
+  });
+
+  it('should apply first-letter drop cap to initial block letter and preserve it', () => {
+    const canvasEl = component.editorCanvas()!.nativeElement;
+    canvasEl.innerHTML = '<p>Once upon a time in the kitchen</p>';
+    const textNode = canvasEl.querySelector('p')!.firstChild!;
+    const range = document.createRange();
+    range.setStart(textNode, 0);
+    range.setEnd(textNode, 4);
+    window.getSelection()!.removeAllRanges();
+    window.getSelection()!.addRange(range);
+
+    component.applyFirstLetterDropCap();
+    expect(component.value()).toContain('<span class="story-first-letter">O</span>nce upon');
+    expect(component.inspectedClasses()).toContain('story-first-letter');
+
+    // Calling it again when already present shouldn't duplicate
+    component.applyFirstLetterDropCap();
+    const matches = component.value().match(/story-first-letter/g);
+    expect(matches?.length).toBe(1);
+  });
+
+  it('should update toolbar state on selection change in canvas', () => {
+    const canvasEl = component.editorCanvas()!.nativeElement;
+    canvasEl.innerHTML = '<h2 style="text-align: right;">Heading Two</h2><p>Normal text</p>';
+    const h2El = canvasEl.querySelector('h2')!;
+
+    component.onCanvasClick({ target: h2El } as unknown as Event);
+    expect(component.currentTypeLabel()).toBe('Heading 2');
+    expect(component.currentAlign()).toBe('right');
+  });
+
+  describe('button visibility control (hiddenButtons & disabledButtons)', () => {
+    it('should show all buttons by default', () => {
+      expect(component.isButtonVisible('bold')).toBe(true);
+      expect(component.isButtonVisible('code')).toBe(true);
+      expect(component.isButtonVisible('figure')).toBe(true);
+      expect(component.isButtonVisible('horizontalRule')).toBe(true);
+      expect(component.isButtonVisible('classes')).toBe(true);
+    });
+
+    it('should hide button when specified in hiddenButtons input', () => {
+      fixture.componentRef.setInput('hiddenButtons', ['code', 'figure']);
+      fixture.detectChanges();
+
+      expect(component.isButtonVisible('code')).toBe(false);
+      expect(component.isButtonVisible('figure')).toBe(false);
+      expect(component.isButtonVisible('bold')).toBe(true);
+    });
+
+    it('should hide button when specified in disabledButtons signal', () => {
+      component.disabledButtons.set(['highlight', 'clearFormat']);
+      fixture.detectChanges();
+
+      expect(component.isButtonVisible('highlight')).toBe(false);
+      expect(component.isButtonVisible('clearFormat')).toBe(false);
+      expect(component.isButtonVisible('bold')).toBe(true);
+    });
+
+    it('should handle case-insensitivity and aliases properly', () => {
+      // Test alias 'divider' for 'horizontalRule'
+      fixture.componentRef.setInput('hiddenButtons', ['divider']);
+      fixture.detectChanges();
+      expect(component.isButtonVisible('horizontalRule')).toBe(false);
+
+      // Test alias 'bullets' for 'bulletList'
+      fixture.componentRef.setInput('hiddenButtons', ['bullets']);
+      fixture.detectChanges();
+      expect(component.isButtonVisible('bulletList')).toBe(false);
+
+      // Test alias 'strike' for 'strikeThrough'
+      fixture.componentRef.setInput('hiddenButtons', ['STRIKE']);
+      fixture.detectChanges();
+      expect(component.isButtonVisible('strikeThrough')).toBe(false);
+    });
+
+    it('should remove the hidden button elements from the DOM', () => {
+      const compiled = fixture.nativeElement as HTMLElement;
+      // Initially, code button exists
+      expect(compiled.querySelector('button[matTooltip="Inline code"]')).toBeTruthy();
+
+      // Hide code button
+      fixture.componentRef.setInput('hiddenButtons', ['code']);
+      fixture.detectChanges();
+
+      expect(compiled.querySelector('button[matTooltip="Inline code"]')).toBeNull();
+    });
+
+    it('should support hiding the html button via aliases', () => {
+      expect(component.isButtonVisible('html')).toBe(true);
+
+      fixture.componentRef.setInput('hiddenButtons', ['source']);
+      fixture.detectChanges();
+      expect(component.isButtonVisible('html')).toBe(false);
+    });
+  });
+
+  describe('HTML source mode toggle', () => {
+    it('should render HTML toggle button by default', () => {
+      const compiled = fixture.nativeElement as HTMLElement;
+      const htmlBtn = compiled.querySelector(
+        'button[data-testid="html-toggle-btn"]',
+      ) as HTMLButtonElement;
+      expect(htmlBtn).toBeTruthy();
+      expect(component.isHtmlMode()).toBe(false);
+    });
+
+    it('should toggle between visual canvas and raw HTML textarea', () => {
+      const compiled = fixture.nativeElement as HTMLElement;
+      const canvasEl = compiled.querySelector('.story') as HTMLDivElement;
+      const textareaEl = compiled.querySelector('textarea') as HTMLTextAreaElement;
+
+      expect(canvasEl.classList.contains('hidden')).toBe(false);
+      expect(textareaEl.classList.contains('hidden')).toBe(true);
+
+      component.toggleHtmlMode();
+      fixture.detectChanges();
+
+      expect(component.isHtmlMode()).toBe(true);
+      expect(canvasEl.classList.contains('hidden')).toBe(true);
+      expect(textareaEl.classList.contains('hidden')).toBe(false);
+    });
+
+    it('should format HTML content when toggling into HTML mode', async () => {
+      fixture.componentRef.setInput('value', '<p>First line</p><p>Second line</p>');
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      component.toggleHtmlMode();
+      fixture.detectChanges();
+
+      expect(component.rawHtmlValue()).toContain('<p>First line</p>');
+      expect(component.rawHtmlValue()).toContain('<p>Second line</p>');
+    });
+
+    it('should update component value when typing in HTML source mode', () => {
+      component.toggleHtmlMode();
+      fixture.detectChanges();
+
+      const textareaEl = component.htmlTextarea()?.nativeElement;
+      if (textareaEl) {
+        textareaEl.value = '<h3>Custom raw heading</h3><p>Direct HTML edit</p>';
+        component.onHtmlSourceInput({ target: textareaEl } as unknown as Event);
+      }
+
+      expect(component.value()).toBe('<h3>Custom raw heading</h3><p>Direct HTML edit</p>');
+
+      // Toggle back to visual mode and verify canvas innerHTML
+      component.toggleHtmlMode();
+      fixture.detectChanges();
+
+      expect(component.isHtmlMode()).toBe(false);
+      const canvasEl = component.editorCanvas()?.nativeElement;
+      expect(canvasEl?.innerHTML).toContain('<h3>Custom raw heading</h3><p>Direct HTML edit</p>');
+    });
+
+    it('should prevent execCmd execution while in HTML mode', () => {
+      component.value.set('<p>Protected text</p>');
+      component.isHtmlMode.set(true);
+
+      const before = component.value();
+      component.execCmd('bold');
+
+      expect(component.value()).toBe(before);
+    });
   });
 });
