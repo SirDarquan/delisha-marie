@@ -1,15 +1,43 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  OnInit,
+  signal,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
+import { MatDialog } from '@angular/material/dialog';
+import { MatTabsModule } from '@angular/material/tabs';
 import { Router } from '@angular/router';
+import { ConfirmDialogComponent } from '../../components/confirm-dialog/confirm-dialog';
 import { AuthService } from '../../services/auth.service';
 import { UserProfileItem, UsersService } from '../../services/users.service';
 
 @Component({
   selector: 'app-users-page',
-  imports: [CommonModule, FormsModule, MatButtonModule],
+  imports: [CommonModule, FormsModule, MatButtonModule, MatTabsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  styles: [
+    `
+      ::ng-deep .custom-users-tabs .mat-mdc-tab-header {
+        border-bottom: 1px solid rgb(30 41 59);
+      }
+      ::ng-deep .custom-users-tabs .mat-mdc-tab {
+        color: rgb(148 163 184) !important;
+        font-weight: 600;
+        letter-spacing: 0.025em;
+      }
+      ::ng-deep .custom-users-tabs .mat-mdc-tab.mdc-tab--active {
+        color: rgb(192 132 252) !important;
+      }
+      ::ng-deep .custom-users-tabs .mat-mdc-tab-indicator .mdc-tab-indicator__content--underline {
+        border-color: rgb(168 85 247) !important;
+      }
+    `,
+  ],
   template: `
     <div class="p-4 md:p-8 max-w-7xl mx-auto">
       <!-- Page Header -->
@@ -55,291 +83,311 @@ import { UserProfileItem, UsersService } from '../../services/users.service';
         </div>
       }
 
-      <!-- Tabs Navigation -->
-      <div class="flex border-b border-slate-800 mb-6 gap-2">
-        <button
-          (click)="activeTab.set('all-users')"
-          class="py-3 px-5 text-sm font-bold border-b-2 transition flex items-center gap-2 cursor-pointer"
-          [ngClass]="{
-            'border-purple-500 text-purple-400': activeTab() === 'all-users',
-            'border-transparent text-slate-400 hover:text-slate-200': activeTab() !== 'all-users',
-          }">
-          <span class="material-icons text-base">group</span>
-          All Users & Tenants
-          <span
-            class="ml-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-slate-800 text-slate-400">
-            {{ users().length }}
-          </span>
-        </button>
-
-        <button
-          (click)="activeTab.set('waiting-room')"
-          class="py-3 px-5 text-sm font-bold border-b-2 transition flex items-center gap-2 cursor-pointer"
-          [ngClass]="{
-            'border-purple-500 text-purple-400': activeTab() === 'waiting-room',
-            'border-transparent text-slate-400 hover:text-slate-200':
-              activeTab() !== 'waiting-room',
-          }">
-          <span class="material-icons text-base">hourglass_top</span>
-          Waiting Room
-          @if (pendingUsers().length > 0) {
-            <span
-              class="ml-1 px-2 py-0.5 rounded-full text-xs font-black bg-amber-500/20 text-amber-300 border border-amber-500/30">
-              {{ pendingUsers().length }}
-            </span>
-          }
-        </button>
-      </div>
-
-      <!-- Tab 1: All Users & Tenants -->
-      @if (activeTab() === 'all-users') {
-        @if (isLoading()) {
-          <div class="p-12 text-center text-slate-500">Loading user directory...</div>
-        } @else {
-          <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl">
-            <div class="overflow-x-auto">
-              <table class="w-full text-left text-sm text-slate-300">
-                <thead
-                  class="bg-slate-950/80 text-xs uppercase tracking-wider text-slate-400 border-b border-slate-800">
-                  <tr>
-                    <th class="py-4 px-6">User</th>
-                    <th class="py-4 px-6">Role</th>
-                    <th class="py-4 px-6">Status</th>
-                    <th class="py-4 px-6">Tenant Sandbox</th>
-                    <th class="py-4 px-6 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-800">
-                  @for (user of users(); track user.id) {
-                    <tr class="hover:bg-slate-800/40 transition">
-                      <td class="py-4 px-6">
-                        <div class="font-bold text-white">{{ user.email }}</div>
-                        <div class="text-xs text-slate-500 font-mono">{{ user.userId }}</div>
-                      </td>
-                      <td class="py-4 px-6">
-                        @if (user.role === 'admin') {
-                          <span
-                            class="px-2.5 py-1 text-xs font-bold rounded-lg bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
-                            Administrator
-                          </span>
-                        } @else if (user.role === 'member') {
-                          <span
-                            class="px-2.5 py-1 text-xs font-bold rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                            Member
-                          </span>
-                        } @else {
-                          <span
-                            class="px-2.5 py-1 text-xs font-bold rounded-lg bg-slate-800 text-slate-400">
-                            Unassigned
-                          </span>
-                        }
-                      </td>
-                      <td class="py-4 px-6">
-                        @if (user.status === 'active') {
-                          <span
-                            class="px-2 py-0.5 text-xs font-semibold rounded-full bg-emerald-500/10 text-emerald-400">
-                            Active
-                          </span>
-                        } @else if (user.status === 'pending') {
-                          <span
-                            class="px-2 py-0.5 text-xs font-semibold rounded-full bg-amber-500/10 text-amber-400">
-                            Pending
-                          </span>
-                        } @else {
-                          <span
-                            class="px-2 py-0.5 text-xs font-semibold rounded-full bg-rose-500/10 text-rose-400">
-                            Blocked
-                          </span>
-                        }
-                      </td>
-                      <td class="py-4 px-6">
-                        @if (user.tenant) {
-                          <div>
-                            <div class="font-semibold text-white text-xs">
-                              {{ user.tenant.name }}
-                            </div>
-                            <div class="text-xs text-slate-400 font-mono">
-                              slug: {{ user.tenant.slug }}
-                            </div>
-                            @if (user.tenant.custom_domain) {
-                              <div class="text-xs text-purple-400 font-mono">
-                                domain: {{ user.tenant.custom_domain }}
-                              </div>
-                            }
-                          </div>
-                        } @else if (user.role === 'admin') {
-                          <span class="text-xs text-slate-500 italic"
-                            >Platform Admin (no tenant)</span
-                          >
-                        } @else {
-                          <span class="text-xs text-amber-500/80">No tenant provisioned</span>
-                        }
-                      </td>
-                      <td class="py-4 px-6 text-right">
-                        <div class="flex items-center justify-end gap-2">
-                          <!-- Impersonate Member (only for active members) -->
-                          @if (user.role === 'member' && user.status === 'active') {
-                            <button
-                              (click)="onImpersonate(user)"
-                              title="Log in as this member without password"
-                              class="px-3 py-1.5 rounded-lg bg-purple-600/20 hover:bg-purple-600/40 text-purple-300 font-bold text-xs border border-purple-500/30 transition flex items-center gap-1 cursor-pointer">
-                              <span class="material-icons text-xs">login</span>
-                              Login As
-                            </button>
-                          }
-
-                          <!-- Edit Tenant -->
-                          @if (user.tenant) {
-                            <button
-                              (click)="openEditTenant(user)"
-                              title="Edit Tenant Configuration"
-                              class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition cursor-pointer">
-                              <span class="material-icons text-sm">edit</span>
-                            </button>
-                          }
-
-                          <!-- Block / Unblock -->
-                          @if (user.role !== 'admin') {
-                            @if (user.status === 'blocked') {
-                              <button
-                                (click)="onUnblockUser(user)"
-                                class="px-2.5 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 text-xs font-semibold cursor-pointer">
-                                Unblock
-                              </button>
-                            } @else {
-                              <button
-                                (click)="onBlockUser(user)"
-                                class="px-2.5 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 text-xs font-semibold cursor-pointer">
-                                Block
-                              </button>
-                            }
-                          }
-                        </div>
-                      </td>
-                    </tr>
-                  }
-                </tbody>
-              </table>
+      <!-- Tabs Navigation with MatTabGroup -->
+      <mat-tab-group
+        animationDuration="200ms"
+        class="custom-users-tabs mb-6"
+        [selectedIndex]="selectedTabIndex()"
+        (selectedIndexChange)="onTabChange($event)">
+        <!-- Tab 1: All Users & Tenants -->
+        <mat-tab>
+          <ng-template mat-tab-label>
+            <div class="flex items-center gap-2 py-1">
+              <span class="material-icons text-base text-purple-400">group</span>
+              <span>All Users & Tenants</span>
+              <span
+                class="ml-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-slate-800 text-slate-300">
+                {{ users().length }}
+              </span>
             </div>
-          </div>
-        }
-      }
+          </ng-template>
 
-      <!-- Tab 2: Waiting Room (Pending Approvals) -->
-      @if (activeTab() === 'waiting-room') {
-        @if (isLoading()) {
-          <div class="p-12 text-center text-slate-500">Loading pending signups...</div>
-        } @else if (pendingUsers().length === 0) {
-          <div class="p-12 text-center bg-slate-900 border border-slate-800 rounded-3xl">
-            <div
-              class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
-              <span class="material-icons text-3xl">done_all</span>
-            </div>
-            <h3 class="text-lg font-bold text-white mb-1">Waiting room is clear!</h3>
-            <p class="text-slate-400 text-sm">There are no pending user approvals at this time.</p>
-          </div>
-        } @else {
-          <div class="grid grid-cols-1 gap-4">
-            @for (user of pendingUsers(); track user.id) {
+          <div class="pt-6">
+            @if (isLoading()) {
+              <div class="p-12 text-center text-slate-500">Loading user directory...</div>
+            } @else {
               <div
-                class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col gap-4">
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                  <div>
-                    <div class="flex items-center gap-2">
-                      <span class="font-bold text-white text-base">{{ user.email }}</span>
-                      <span
-                        class="px-2.5 py-0.5 text-xs font-bold rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                        Pending Approval
-                      </span>
-                    </div>
-                    <p class="text-xs text-slate-500 mt-1">
-                      Signed up on {{ user.createdAt | date: 'medium' }}
-                    </p>
-                  </div>
+                class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl">
+                <div class="overflow-x-auto">
+                  <table class="w-full text-left text-sm text-slate-300">
+                    <thead
+                      class="bg-slate-950/80 text-xs uppercase tracking-wider text-slate-400 border-b border-slate-800">
+                      <tr>
+                        <th class="py-4 px-6">User</th>
+                        <th class="py-4 px-6">Role</th>
+                        <th class="py-4 px-6">Status</th>
+                        <th class="py-4 px-6">Tenant Sandbox</th>
+                        <th class="py-4 px-6 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-800">
+                      @for (user of users(); track user.id) {
+                        <tr class="hover:bg-slate-800/40 transition">
+                          <td class="py-4 px-6">
+                            <div class="font-bold text-white">{{ user.email }}</div>
+                            <div class="text-xs text-slate-500 font-mono">{{ user.userId }}</div>
+                          </td>
+                          <td class="py-4 px-6">
+                            @if (user.role === 'admin') {
+                              <span
+                                class="px-2.5 py-1 text-xs font-bold rounded-lg bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                                Administrator
+                              </span>
+                            } @else if (user.role === 'member') {
+                              <span
+                                class="px-2.5 py-1 text-xs font-bold rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                                Member
+                              </span>
+                            } @else {
+                              <span
+                                class="px-2.5 py-1 text-xs font-bold rounded-lg bg-slate-800 text-slate-400">
+                                Unassigned
+                              </span>
+                            }
+                          </td>
+                          <td class="py-4 px-6">
+                            @if (user.status === 'active') {
+                              <span
+                                class="px-2 py-0.5 text-xs font-semibold rounded-full bg-emerald-500/10 text-emerald-400">
+                                Active
+                              </span>
+                            } @else if (user.status === 'pending') {
+                              <span
+                                class="px-2 py-0.5 text-xs font-semibold rounded-full bg-amber-500/10 text-amber-400">
+                                Pending
+                              </span>
+                            } @else {
+                              <span
+                                class="px-2 py-0.5 text-xs font-semibold rounded-full bg-rose-500/10 text-rose-400">
+                                Blocked
+                              </span>
+                            }
+                          </td>
+                          <td class="py-4 px-6">
+                            @if (user.tenant) {
+                              <div>
+                                <div class="font-semibold text-white text-xs">
+                                  {{ user.tenant.name }}
+                                </div>
+                                <div class="text-xs text-slate-400 font-mono">
+                                  slug: {{ user.tenant.slug }}
+                                </div>
+                                @if (user.tenant.custom_domain) {
+                                  <div class="text-xs text-purple-400 font-mono">
+                                    domain: {{ user.tenant.custom_domain }}
+                                  </div>
+                                }
+                              </div>
+                            } @else if (user.role === 'admin') {
+                              <span class="text-xs text-slate-500 italic"
+                                >Platform Admin (no tenant)</span
+                              >
+                            } @else {
+                              <span class="text-xs text-amber-500/80">No tenant provisioned</span>
+                            }
+                          </td>
+                          <td class="py-4 px-6 text-right">
+                            <div class="flex items-center justify-end gap-2">
+                              <!-- Impersonate Member (only for active members) -->
+                              @if (user.role === 'member' && user.status === 'active') {
+                                <button
+                                  (click)="onImpersonate(user)"
+                                  [disabled]="isImpersonatingLoading()"
+                                  title="Log in as this member without password"
+                                  class="px-3 py-1.5 rounded-lg bg-purple-600/20 hover:bg-purple-600/40 text-purple-300 font-bold text-xs border border-purple-500/30 transition flex items-center gap-1 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
+                                  <span class="material-icons text-xs">login</span>
+                                  Login As
+                                </button>
+                              }
 
-                  <div class="flex items-center gap-2">
-                    <button
-                      mat-flat-button
-                      (click)="toggleApproveForm(user.id)"
-                      class="bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs py-2 px-3 rounded-xl cursor-pointer">
-                      {{ selectedUserIdForApproval() === user.id ? 'Cancel' : 'Approve as Member' }}
-                    </button>
-                    <button
-                      mat-stroked-button
-                      (click)="onApproveAdmin(user)"
-                      class="border-indigo-500 text-indigo-400 hover:bg-indigo-500/10 text-xs py-2 px-3 rounded-xl cursor-pointer">
-                      Make Admin
-                    </button>
-                    <button
-                      mat-stroked-button
-                      (click)="onBlockUser(user)"
-                      class="border-rose-500 text-rose-400 hover:bg-rose-500/10 text-xs py-2 px-3 rounded-xl cursor-pointer">
-                      Block
-                    </button>
-                  </div>
+                              <!-- Edit Tenant -->
+                              @if (user.tenant) {
+                                <button
+                                  (click)="openEditTenant(user)"
+                                  title="Edit Tenant Configuration"
+                                  class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition cursor-pointer">
+                                  <span class="material-icons text-sm">edit</span>
+                                </button>
+                              }
+
+                              <!-- Block / Unblock -->
+                              @if (user.role !== 'admin') {
+                                @if (user.status === 'blocked') {
+                                  <button
+                                    (click)="onUnblockUser(user)"
+                                    class="px-2.5 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 text-xs font-semibold cursor-pointer">
+                                    Unblock
+                                  </button>
+                                } @else {
+                                  <button
+                                    (click)="onBlockUser(user)"
+                                    class="px-2.5 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 text-xs font-semibold cursor-pointer">
+                                    Block
+                                  </button>
+                                }
+                              }
+                            </div>
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
                 </div>
+              </div>
+            }
+          </div>
+        </mat-tab>
 
-                <!-- Expanded Member Tenant Configuration -->
-                @if (selectedUserIdForApproval() === user.id) {
+        <!-- Tab 2: Waiting Room -->
+        <mat-tab>
+          <ng-template mat-tab-label>
+            <div class="flex items-center gap-2 py-1">
+              <span class="material-icons text-base text-amber-400">hourglass_top</span>
+              <span>Waiting Room</span>
+              @if (pendingUsers().length > 0) {
+                <span
+                  class="ml-1 px-2 py-0.5 rounded-full text-xs font-black bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                  {{ pendingUsers().length }}
+                </span>
+              }
+            </div>
+          </ng-template>
+
+          <div class="pt-6">
+            @if (isLoading()) {
+              <div class="p-12 text-center text-slate-500">Loading pending signups...</div>
+            } @else if (pendingUsers().length === 0) {
+              <div class="p-12 text-center bg-slate-900 border border-slate-800 rounded-3xl">
+                <div
+                  class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+                  <span class="material-icons text-3xl">done_all</span>
+                </div>
+                <h3 class="text-lg font-bold text-white mb-1">Waiting room is clear!</h3>
+                <p class="text-slate-400 text-sm">
+                  There are no pending user approvals at this time.
+                </p>
+              </div>
+            } @else {
+              <div class="grid grid-cols-1 gap-4">
+                @for (user of pendingUsers(); track user.id) {
                   <div
-                    class="mt-2 p-4 rounded-xl bg-slate-950/60 border border-purple-500/30 flex flex-col gap-3">
-                    <h4 class="text-xs font-bold uppercase tracking-wider text-purple-400">
-                      Provision Member Tenant Sandbox
-                    </h4>
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col gap-4">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                       <div>
-                        <label
-                          for="approvalTenantName_{{ user.id }}"
-                          class="block text-xs font-medium text-slate-400 mb-1"
-                          >Kitchen / Tenant Name</label
-                        >
-                        <input
-                          id="approvalTenantName_{{ user.id }}"
-                          type="text"
-                          [(ngModel)]="approvalTenantName"
-                          placeholder="e.g. Delisha's Kitchen"
-                          class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500" />
+                        <div class="flex items-center gap-2">
+                          <span class="font-bold text-white text-base">{{ user.email }}</span>
+                          <span
+                            class="px-2.5 py-0.5 text-xs font-bold rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                            Pending Approval
+                          </span>
+                        </div>
+                        <p class="text-xs text-slate-500 mt-1">
+                          Signed up on {{ user.createdAt | date: 'medium' }}
+                        </p>
                       </div>
-                      <div>
-                        <label
-                          for="approvalSlug_{{ user.id }}"
-                          class="block text-xs font-medium text-slate-400 mb-1"
-                          >Slug (Tenant URL ID)</label
-                        >
-                        <input
-                          id="approvalSlug_{{ user.id }}"
-                          type="text"
-                          [(ngModel)]="approvalSlug"
-                          placeholder="e.g. delisha-kitchen"
-                          class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500" />
-                      </div>
-                      <div>
-                        <label
-                          for="approvalCustomDomain_{{ user.id }}"
-                          class="block text-xs font-medium text-slate-400 mb-1"
-                          >Custom Domain (Optional)</label
-                        >
-                        <input
-                          id="approvalCustomDomain_{{ user.id }}"
-                          type="text"
-                          [(ngModel)]="approvalCustomDomain"
-                          placeholder="e.g. myrecipes.com"
-                          class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500" />
+
+                      <div class="flex items-center gap-2">
+                        <button
+                          mat-flat-button
+                          (click)="toggleApproveForm(user.id)"
+                          class="bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs py-2 px-3 rounded-xl cursor-pointer">
+                          {{
+                            selectedUserIdForApproval() === user.id ? 'Cancel' : 'Approve as Member'
+                          }}
+                        </button>
+                        <button
+                          mat-stroked-button
+                          (click)="onApproveAdmin(user)"
+                          class="border-indigo-500 text-indigo-400 hover:bg-indigo-500/10 text-xs py-2 px-3 rounded-xl cursor-pointer">
+                          Make Admin
+                        </button>
+                        <button
+                          mat-stroked-button
+                          (click)="onBlockUser(user)"
+                          class="border-rose-500 text-rose-400 hover:bg-rose-500/10 text-xs py-2 px-3 rounded-xl cursor-pointer">
+                          Block
+                        </button>
                       </div>
                     </div>
-                    <div class="flex justify-end gap-2 mt-2">
-                      <button
-                        (click)="submitMemberApproval(user.id)"
-                        class="px-4 py-2 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold text-xs hover:brightness-110 cursor-pointer">
-                        Confirm & Provision Tenant
-                      </button>
-                    </div>
+
+                    <!-- Expanded Member Tenant Configuration -->
+                    @if (selectedUserIdForApproval() === user.id) {
+                      <div
+                        class="mt-2 p-4 rounded-xl bg-slate-950/60 border border-purple-500/30 flex flex-col gap-3">
+                        <h4 class="text-xs font-bold uppercase tracking-wider text-purple-400">
+                          Provision Member Tenant Sandbox
+                        </h4>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                          <div>
+                            <label
+                              for="approvalTenantName_{{ user.id }}"
+                              class="block text-xs font-medium text-slate-400 mb-1"
+                              >Kitchen / Tenant Name</label
+                            >
+                            <input
+                              id="approvalTenantName_{{ user.id }}"
+                              type="text"
+                              [(ngModel)]="approvalTenantName"
+                              placeholder="e.g. Delisha's Kitchen"
+                              class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500" />
+                          </div>
+                          <div>
+                            <label
+                              for="approvalSlug_{{ user.id }}"
+                              class="block text-xs font-medium text-slate-400 mb-1"
+                              >Slug (Tenant URL ID)</label
+                            >
+                            <input
+                              id="approvalSlug_{{ user.id }}"
+                              type="text"
+                              [(ngModel)]="approvalSlug"
+                              placeholder="e.g. delisha-kitchen"
+                              class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500" />
+                          </div>
+                          <div>
+                            <label
+                              for="approvalCustomDomain_{{ user.id }}"
+                              class="block text-xs font-medium text-slate-400 mb-1"
+                              >Custom Domain (Optional)</label
+                            >
+                            <input
+                              id="approvalCustomDomain_{{ user.id }}"
+                              type="text"
+                              [(ngModel)]="approvalCustomDomain"
+                              placeholder="e.g. myrecipes.com"
+                              class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500" />
+                          </div>
+                        </div>
+                        <div class="flex justify-end gap-2 mt-2">
+                          <button
+                            (click)="submitMemberApproval(user.id)"
+                            class="px-4 py-2 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold text-xs hover:brightness-110 cursor-pointer">
+                            Confirm & Provision Tenant
+                          </button>
+                        </div>
+                      </div>
+                    }
                   </div>
                 }
               </div>
             }
           </div>
-        }
+        </mat-tab>
+      </mat-tab-group>
+
+      <!-- Loading Overlay for Impersonation -->
+      @if (isImpersonatingLoading()) {
+        <div
+          class="fixed inset-0 z-[100] bg-slate-950/80 backdrop-blur-md flex flex-col items-center justify-center p-4">
+          <div
+            class="w-12 h-12 rounded-full border-4 border-purple-500 border-t-transparent animate-spin mb-4"></div>
+          <h3 class="text-white text-lg font-bold">
+            Switching to {{ impersonatingUserEmail() }}'s Session
+          </h3>
+          <p class="text-slate-400 text-sm mt-1">
+            Establishing tenant sandbox and loading recipes...
+          </p>
+        </div>
       }
 
       <!-- Edit Tenant Modal / Overlay -->
@@ -411,11 +459,15 @@ export class UsersPageComponent implements OnInit {
   private readonly usersService = inject(UsersService);
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
+  private readonly dialog = inject(MatDialog);
 
   readonly users = signal<UserProfileItem[]>([]);
   readonly pendingUsers = signal<UserProfileItem[]>([]);
   readonly isLoading = signal<boolean>(false);
   readonly activeTab = signal<'waiting-room' | 'all-users'>('all-users');
+  readonly selectedTabIndex = computed(() => (this.activeTab() === 'all-users' ? 0 : 1));
+  readonly isImpersonatingLoading = signal<boolean>(false);
+  readonly impersonatingUserEmail = signal<string | null>(null);
   readonly actionMessage = signal<string | null>(null);
   readonly isErrorMessage = signal<boolean>(false);
 
@@ -430,6 +482,10 @@ export class UsersPageComponent implements OnInit {
   editTenantName = '';
   editTenantSlug = '';
   editTenantDomain = '';
+
+  onTabChange(index: number): void {
+    this.activeTab.set(index === 0 ? 'all-users' : 'waiting-room');
+  }
 
   ngOnInit(): void {
     void this.loadData();
@@ -497,19 +553,27 @@ export class UsersPageComponent implements OnInit {
     }
   }
 
-  async onBlockUser(user: UserProfileItem): Promise<void> {
-    if (
-      !confirm(`Are you sure you want to block ${user.email}? They will not be able to log in.`)
-    ) {
-      return;
-    }
-    try {
-      await this.usersService.blockUser(user.id);
-      this.showMessage(`User ${user.email} has been blocked.`);
-      await this.loadData();
-    } catch {
-      this.showMessage('Failed to block user', true);
-    }
+  onBlockUser(user: UserProfileItem): void {
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      data: {
+        title: 'Block User',
+        message: `Are you sure you want to block ${user.email}? They will not be able to log in.`,
+        stayLabel: 'Cancel',
+        leaveLabel: 'Block',
+        icon: 'block',
+      },
+    });
+
+    dialogRef.afterClosed().subscribe(async (confirmed: boolean | undefined) => {
+      if (!confirmed) return;
+      try {
+        await this.usersService.blockUser(user.id);
+        this.showMessage(`User ${user.email} has been blocked.`);
+        await this.loadData();
+      } catch {
+        this.showMessage('Failed to block user', true);
+      }
+    });
   }
 
   async onUnblockUser(user: UserProfileItem): Promise<void> {
@@ -523,6 +587,8 @@ export class UsersPageComponent implements OnInit {
   }
 
   async onImpersonate(user: UserProfileItem): Promise<void> {
+    this.isImpersonatingLoading.set(true);
+    this.impersonatingUserEmail.set(user.email);
     try {
       await this.usersService.impersonateUser(user.id);
       await this.auth.checkSession();
@@ -530,6 +596,9 @@ export class UsersPageComponent implements OnInit {
       await this.router.navigate(['/recipes']);
     } catch {
       this.showMessage(`Failed to impersonate ${user.email}`, true);
+    } finally {
+      this.isImpersonatingLoading.set(false);
+      this.impersonatingUserEmail.set(null);
     }
   }
 
