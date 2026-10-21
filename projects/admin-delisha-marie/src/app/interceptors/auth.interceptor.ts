@@ -15,7 +15,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
         !req.url.includes('/auth/me') &&
         !req.url.includes('/auth/signout')
       ) {
-        injector.get(AuthService).logout();
+        void injector.get(AuthService).logout();
       }
       return throwError(() => error);
     }),
