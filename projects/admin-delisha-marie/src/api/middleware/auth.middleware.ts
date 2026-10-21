@@ -159,6 +159,46 @@ async function tryRefreshSession(
   };
 }
 
+async function authenticateUser(
+  req: Request,
+  res: Response,
+): Promise<{
+  user: { id?: string; email?: string; [key: string]: unknown };
+  token: string;
+} | null> {
+  const token = req.cookies?.['admin_access_token'];
+  const refreshToken = req.cookies?.['admin_refresh_token'];
+
+  if (token) {
+    const verified = await tryVerifyToken(token, refreshToken);
+    if (verified) {
+      return { user: verified, token };
+    }
+  }
+
+  if (refreshToken) {
+    const session = await tryRefreshSession(res, refreshToken);
+    if (session) {
+      return { user: session.user, token: session.token };
+    }
+  }
+
+  return null;
+}
+
+function checkImpersonation(req: Request, res: Response, userId?: string, role?: string): boolean {
+  const hasOriginalToken = Boolean(req.cookies?.['admin_original_token']);
+  const impersonatedUserId = req.cookies?.['admin_impersonated_user_id'];
+  const isMatch = !impersonatedUserId || userId === impersonatedUserId;
+  const isActuallyImpersonating = hasOriginalToken && role === 'member' && isMatch;
+
+  if (hasOriginalToken && !isActuallyImpersonating) {
+    clearImpersonationCookies(res);
+  }
+
+  return isActuallyImpersonating;
+}
+
 export const authMiddleware = async (
   req: Request,
   res: Response,
@@ -166,32 +206,13 @@ export const authMiddleware = async (
 ): Promise<void> => {
   const authReq = req as AuthRequest;
   try {
-    const token = req.cookies?.['admin_access_token'];
-    const refreshToken = req.cookies?.['admin_refresh_token'];
-    let verifiedUser: { id?: string; email?: string; [key: string]: unknown } | null = null;
-    let activeToken = '';
-
-    if (token) {
-      verifiedUser = await tryVerifyToken(token, refreshToken);
-      if (verifiedUser) {
-        activeToken = token;
-      }
-    }
-
-    if (!verifiedUser && refreshToken) {
-      const session = await tryRefreshSession(res, refreshToken);
-      if (session) {
-        verifiedUser = session.user;
-        activeToken = session.token;
-      }
-    }
-
-    if (!verifiedUser) {
+    const authResult = await authenticateUser(req, res);
+    if (!authResult) {
       res.status(401).json({ error: 'Token missing or invalid' });
       return;
     }
 
-    const profileInfo = await resolveUserProfile(verifiedUser);
+    const profileInfo = await resolveUserProfile(authResult.user);
 
     if (profileInfo.status === 'pending') {
       res.status(403).json({
@@ -209,25 +230,13 @@ export const authMiddleware = async (
       return;
     }
 
-    authReq.user = verifiedUser;
-    authReq.token = activeToken;
+    authReq.user = authResult.user;
+    authReq.token = authResult.token;
     authReq.role = profileInfo.role;
     authReq.status = profileInfo.status;
     authReq.tenantId = profileInfo.tenantId;
     authReq.tenant = profileInfo.tenant;
-
-    const hasOriginalToken = !!req.cookies?.['admin_original_token'];
-    const impersonatedUserId = req.cookies?.['admin_impersonated_user_id'];
-    const isActuallyImpersonating =
-      hasOriginalToken &&
-      profileInfo.role === 'member' &&
-      (!impersonatedUserId || verifiedUser.id === impersonatedUserId);
-
-    if (hasOriginalToken && !isActuallyImpersonating) {
-      clearImpersonationCookies(res);
-    }
-
-    authReq.isImpersonating = isActuallyImpersonating;
+    authReq.isImpersonating = checkImpersonation(req, res, authResult.user.id, profileInfo.role);
 
     next();
   } catch (err: unknown) {
