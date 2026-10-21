@@ -35,15 +35,16 @@ import { RecipeService } from '../../services/recipe.service';
         }
       </span>
 
+      <!-- [class.border-slate-700/60]="!dragOver() && !previewUrl()" -->
+
       <!-- 1. DRAG & DROP ZONE / PREVIEW PANEL -->
       <div
-        class="relative min-h-[220px] rounded-2xl border-2 border-dashed flex flex-col items-center justify-center p-6 transition-all duration-300 backdrop-blur-md cursor-pointer group"
+        class="relative min-h-[220px] rounded-2xl border-2 border-dashed border-[var(--mat-sys-outline)] flex flex-col items-center justify-center p-6 transition-all duration-300 backdrop-blur-md cursor-pointer group"
         [class.bg-purple-500/10]="dragOver()"
         [class.border-purple-500]="dragOver() || (previewUrl() && !dragOver())"
         [class.ring-4]="dragOver()"
         [class.ring-purple-500/20]="dragOver()"
         [class.bg-slate-950/40]="!dragOver()"
-        [class.border-slate-700/60]="!dragOver() && !previewUrl()"
         [class.hover:border-purple-400]="!previewUrl()"
         (dragover)="onDragOver($event)"
         (dragleave)="onDragLeave($event)"

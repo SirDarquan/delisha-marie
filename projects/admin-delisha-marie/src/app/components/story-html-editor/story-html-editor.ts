@@ -33,12 +33,12 @@ export type StoryTextAlign = 'left' | 'center' | 'right' | 'justify';
   standalone: true,
   imports: [MatButtonModule, MatIconModule, MatDialogModule, MatMenuModule, MatTooltipModule],
   template: `
-    <div class="flex flex-col gap-2 w-full">
-      <div class="flex items-center justify-between">
-        <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">
+    <div class="flex flex-col gap-2 w-full border border-[var(--mat-sys-outline)] rounded-2xl">
+      <div class="flex items-center justify-between p-3">
+        <span class="text-xs font-semibold uppercase tracking-wider text-white-400">
           Live Story Editor (delisha-marie style)
           @if (required()) {
-            <span class="text-rose-500 font-bold ml-0.5" aria-hidden="true">*</span>
+            <span class="text-white-500 font-bold ml-0.5" aria-hidden="true">*</span>
           }
         </span>
         @if (isHtmlMode()) {
@@ -47,7 +47,7 @@ export type StoryTextAlign = 'left' | 'center' | 'right' | 'justify';
             Raw HTML Mode Active
           </span>
         } @else {
-          <span class="text-xs text-slate-500 italic">Visually rich text & class management</span>
+          <span class="text-xs text-white-500 italic">Visually rich text & class management</span>
         }
       </div>
 
@@ -60,8 +60,7 @@ export type StoryTextAlign = 'left' | 'center' | 'right' | 'justify';
         (change)="onFileSelected($event)" />
 
       <!-- Formatting Toolbar -->
-      <div
-        class="flex flex-wrap items-center gap-1.5 p-2 bg-slate-900 border border-slate-700/80 rounded-2xl shadow-lg select-none">
+      <div class="flex flex-wrap items-center gap-1.5 p-2 bg-slate-900 shadow-lg select-none">
         <div
           class="flex flex-wrap items-center gap-1.5 flex-1"
           [class.opacity-40]="isHtmlMode()"
@@ -640,7 +639,7 @@ export type StoryTextAlign = 'left' | 'center' | 'right' | 'justify';
         (blur)="onInput()"
         (click)="onCanvasClick($event)"
         (keyup)="onCanvasClick($event)"
-        class="story text-lg md:text-xl text-slate-200 leading-relaxed font-serif p-6 rounded-2xl bg-slate-900/60 border border-slate-700/50 min-h-[250px] max-h-[600px] overflow-y-auto focus:outline-none focus:ring-2 focus:ring-purple-500/80 transition-all"></div>
+        class="story text-lg md:text-xl text-slate-200 leading-relaxed font-serif p-6 rounded-2xl bg-slate-900/60 min-h-[250px] max-h-[600px] overflow-y-auto focus:outline-none transition-all"></div>
 
       <!-- Raw HTML Source Code Textarea -->
       <textarea
