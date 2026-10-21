@@ -54,4 +54,14 @@ beforeEach(() => {
     statusCode: 200,
     body: [],
   }).as('getSpecialDiets');
+
+  cy.intercept('GET', '**/auth/session*', {
+    statusCode: 200,
+    body: {
+      role: 'member',
+      status: 'active',
+      tenant: null,
+      isImpersonating: false,
+    },
+  }).as('getAuthSession');
 });
