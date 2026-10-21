@@ -110,10 +110,10 @@ export class AuthService {
           !!(sessionInfo?.isImpersonating ?? resp.isImpersonating),
         );
       } else {
-        this.logout();
+        await this.logout();
       }
     } catch {
-      this.logout();
+      await this.logout();
     }
   }
 
