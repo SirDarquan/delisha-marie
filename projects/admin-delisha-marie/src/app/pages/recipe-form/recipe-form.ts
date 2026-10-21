@@ -1,3 +1,4 @@
+import { Location } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -7,37 +8,37 @@ import {
   signal,
   ViewEncapsulation,
 } from '@angular/core';
-import { Location } from '@angular/common';
 import { form, FormField, FormRoot, required } from '@angular/forms/signals';
 import { MatButtonModule } from '@angular/material/button';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatDialog } from '@angular/material/dialog';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { ActivatedRoute, Router } from '@angular/router';
 import {
   BaseTrail,
+  capitalizeIngredient,
   CategoryTrails,
   extractYouTubeVideoId,
   parseIngredientName,
-  capitalizeIngredient,
 } from '@dm/library';
+import { firstValueFrom } from 'rxjs';
 import { CategoryBoardComponent } from '../../components/category-board/category-board';
 import { ConfirmDialogComponent } from '../../components/confirm-dialog/confirm-dialog';
-import { SchedulePublicationDialogComponent } from '../../components/schedule-publication-dialog/schedule-publication-dialog';
-import { firstValueFrom } from 'rxjs';
 import { CookingMethodSelectorComponent } from '../../components/cooking-method-selector/cooking-method-selector';
+import { EquipmentManagerComponent } from '../../components/equipment-manager/equipment-manager';
 import { HolidaysSelectorComponent } from '../../components/holidays-selector/holidays-selector';
 import { ImageUploaderComponent } from '../../components/image-uploader/image-uploader';
+import { KeywordsComponent } from '../../components/keywords/keywords';
+import { SchedulePublicationDialogComponent } from '../../components/schedule-publication-dialog/schedule-publication-dialog';
+import { SearchIngredientsComponent } from '../../components/search-ingredients/search-ingredients';
 import { SpecialDietsSelectorComponent } from '../../components/special-diets-selector/special-diets-selector';
 import { StoryHtmlEditorComponent } from '../../components/story-html-editor/story-html-editor';
 import { Recipe } from '../../models/recipe.model';
 import { RecipeService } from '../../services/recipe.service';
-import { EquipmentManagerComponent } from '../../components/equipment-manager/equipment-manager';
-import { SearchIngredientsComponent } from '../../components/search-ingredients/search-ingredients';
 
 export interface RecipeFormModel {
   title: string;
@@ -100,6 +101,7 @@ export interface RecipeFormModel {
     StoryHtmlEditorComponent,
     EquipmentManagerComponent,
     SearchIngredientsComponent,
+    KeywordsComponent,
   ],
   template: `
     <div class="p-4 md:p-8">
@@ -266,51 +268,8 @@ export interface RecipeFormModel {
                   placeholder="e.g., dQw4w9WgXcQ" />
               </mat-form-field>
 
-              <div class="flex flex-col gap-3 md:col-span-2">
-                <div class="flex justify-between items-center">
-                  <span class="text-xs font-bold text-slate-200 uppercase tracking-wider"
-                    >Keywords</span
-                  >
-                  <button
-                    type="button"
-                    (click)="addKeyword()"
-                    class="px-4 py-1.5 text-xs font-bold rounded-xl border border-purple-500/30 bg-purple-500/10 text-purple-300 hover:bg-purple-500/20 transition cursor-pointer flex items-center gap-1 shadow-sm leading-none">
-                    <span class="material-icons text-sm">add</span>
-                    Add Keyword
-                  </button>
-                </div>
-
-                <div
-                  class="flex flex-wrap gap-2.5 items-center min-h-[46px] p-3 bg-slate-950/40 border border-slate-800 rounded-2xl">
-                  <mat-chip-set class="flex flex-wrap gap-2 items-center w-full">
-                    @for (kw of recipeModel().keyword; track $index; let i = $index) {
-                      <mat-chip
-                        class="!bg-purple-500/10 !border !border-purple-500/20 !rounded-xl !h-auto !py-1.5 !px-3">
-                        <div class="flex items-center gap-1.5">
-                          <input
-                            [id]="'keyword-' + i"
-                            type="text"
-                            [value]="kw"
-                            (input)="onKeywordInput(i, $event)"
-                            [size]="kw.length > 8 ? kw.length + 2 : 10"
-                            placeholder="Keyword..."
-                            class="bg-transparent border-0 p-0 text-xs font-semibold text-white focus:outline-none placeholder-slate-500 transition-all" />
-                          <button
-                            type="button"
-                            (click)="removeKeyword(i)"
-                            class="text-slate-400 hover:text-rose-400 cursor-pointer flex items-center transition border-0 bg-transparent p-0 leading-none">
-                            <span class="material-icons text-sm">close</span>
-                          </button>
-                        </div>
-                      </mat-chip>
-                    }
-                    @if (!recipeModel().keyword || recipeModel().keyword.length === 0) {
-                      <span class="text-slate-500 text-xs italic"
-                        >No keywords added yet. Click "Add Keyword" to start.</span
-                      >
-                    }
-                  </mat-chip-set>
-                </div>
+              <div class="md:col-span-2">
+                <app-keywords [formField]="recipeForm.keyword"></app-keywords>
               </div>
 
               <div class="flex flex-col gap-1 md:col-span-2">
@@ -333,17 +292,6 @@ export interface RecipeFormModel {
                   [formField]="recipeForm.description"
                   rows="2"
                   placeholder="Brief summary of the recipe..."
-                  class="resize-y"></textarea>
-              </mat-form-field>
-
-              <mat-form-field appearance="outline" class="w-full md:col-span-2">
-                <mat-label>Full Content/Story (HTML or Text)</mat-label>
-                <textarea
-                  matInput
-                  id="content"
-                  [formField]="recipeForm.content"
-                  rows="4"
-                  placeholder="Detailed story or description..."
                   class="resize-y"></textarea>
               </mat-form-field>
 
@@ -1047,32 +995,6 @@ export class RecipeFormComponent implements OnInit {
       content: newContent,
     }));
     this.recipeForm.content().value.set(newContent);
-  }
-
-  addKeyword(): void {
-    this.recipeModel.update((model) => ({
-      ...model,
-      keyword: [...(model.keyword || []), ''],
-    }));
-  }
-
-  removeKeyword(idx: number): void {
-    this.recipeModel.update((model) => ({
-      ...model,
-      keyword: (model.keyword || []).filter((_, i) => i !== idx),
-    }));
-  }
-
-  onKeywordInput(idx: number, event: Event): void {
-    const value = (event.target as HTMLInputElement).value;
-    this.recipeModel.update((model) => {
-      const updated = [...(model.keyword || [])];
-      updated[idx] = value;
-      return {
-        ...model,
-        keyword: updated,
-      };
-    });
   }
 
   private serializeRecipe(
