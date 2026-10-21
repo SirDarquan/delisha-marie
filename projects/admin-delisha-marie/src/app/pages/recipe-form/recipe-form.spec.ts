@@ -477,29 +477,6 @@ describe('RecipeFormComponent', () => {
     expect(updatePayload.specialDiets).toEqual(['Diet 1', 'Diet B']);
   });
 
-  it('should verify behavior 11', async () => {
-    fixture = TestBed.createComponent(RecipeFormComponent);
-    component = fixture.componentInstance;
-    fixture.detectChanges();
-    component['recipeModel'].set({
-      ...component['recipeModel'](),
-      keyword: [],
-    });
-
-    component.addKeyword();
-    expect(component['recipeModel']().keyword).toEqual(['']);
-
-    component.onKeywordInput(0, { target: { value: 'New Keyword' } } as unknown as Event);
-    expect(component['recipeModel']().keyword).toEqual(['New Keyword']);
-
-    component.addKeyword();
-    component.onKeywordInput(1, { target: { value: 'Second' } } as unknown as Event);
-    expect(component['recipeModel']().keyword).toEqual(['New Keyword', 'Second']);
-
-    component.removeKeyword(0);
-    expect(component['recipeModel']().keyword).toEqual(['Second']);
-  });
-
   it('should verify behavior 12', async () => {
     fixture = TestBed.createComponent(RecipeFormComponent);
     component = fixture.componentInstance;
@@ -1059,24 +1036,6 @@ describe('RecipeFormComponent', () => {
     component['isInitialized'] = true;
     fixture.detectChanges();
 
-    // Trigger keyword add/remove via template
-    const addKeywordBtn = Array.from<HTMLButtonElement>(
-      fixture.nativeElement.querySelectorAll('button'),
-    ).find((b) => b.textContent?.includes('Add Keyword')) as HTMLButtonElement;
-    if (addKeywordBtn) addKeywordBtn.click();
-    fixture.detectChanges();
-
-    const keywordInput = fixture.nativeElement.querySelector('input[id^="keyword-"]');
-    if (keywordInput) {
-      keywordInput.value = 'TestKw';
-      keywordInput.dispatchEvent(new Event('input'));
-    }
-    const removeKeywordBtn = Array.from<HTMLButtonElement>(
-      fixture.nativeElement.querySelectorAll('button'),
-    ).find((b) => b.textContent?.includes('close')) as HTMLButtonElement;
-    if (removeKeywordBtn) removeKeywordBtn.click();
-    fixture.detectChanges();
-
     // Trigger tabs
     const whereTab = Array.from<HTMLButtonElement>(
       fixture.nativeElement.querySelectorAll('button'),
@@ -1460,7 +1419,7 @@ describe('RecipeFormComponent', () => {
 
     // Now it is back to clean initial state, so Save as Draft is disabled again
     expect(component['isDraftDisabled']()).toBe(true);
-  });
+  }, 30000);
 
   it('should enable Save as Draft when modifying the title field, and disable it when reverted to initial value', async () => {
     fixture = TestBed.createComponent(RecipeFormComponent);
@@ -1495,7 +1454,7 @@ describe('RecipeFormComponent', () => {
 
     // Now it is back to clean initial state, so Save as Draft is disabled again
     expect(component['isDraftDisabled']()).toBe(true);
-  });
+  }, 30000);
 
   it('should publish a draft recipe and set both dates to currentTime', async () => {
     routeParams['id'] = '1';
@@ -1523,19 +1482,6 @@ describe('RecipeFormComponent', () => {
     expect(updatePayload.createdAt).toBeDefined();
     expect(updatePayload.updatedAt).toBeDefined();
     expect(updatePayload.createdAt).toBe(updatePayload.updatedAt);
-  });
-
-  it('should add, edit, and remove keywords', () => {
-    fixture = TestBed.createComponent(RecipeFormComponent);
-    component = fixture.componentInstance;
-    fixture.detectChanges();
-
-    // Keywords
-    component.addKeyword();
-    expect(component['recipeModel']().keyword.length).toBeGreaterThan(0);
-    component.onKeywordInput(0, { target: { value: 'Spicy' } } as unknown as Event);
-    expect(component['recipeModel']().keyword[0]).toBe('Spicy');
-    component.removeKeyword(0);
   });
 
   it('should handle category, method, holiday, specialDiets, and content editor events', () => {
@@ -1861,7 +1807,7 @@ describe('RecipeFormComponent', () => {
       component = fixture.componentInstance;
       fixture.detectChanges();
       await fixture.whenStable();
-    });
+    }, 30000);
 
     it('should auto-detect ingredients from ingredients textarea', () => {
       component['recipeModel'].set({

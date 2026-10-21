@@ -1,5 +1,8 @@
+import { ANIMATION_MODULE_TYPE } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { MatDialog } from '@angular/material/dialog';
 import { Router } from '@angular/router';
+import { of } from 'rxjs';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { AuthService } from '../../services/auth.service';
 import { UsersService, UserProfileItem } from '../../services/users.service';
@@ -19,6 +22,7 @@ describe('UsersPageComponent', () => {
   };
   let authMock: { checkSession: ReturnType<typeof vi.fn> };
   let routerMock: { navigate: ReturnType<typeof vi.fn> };
+  let dialogMock: { open: ReturnType<typeof vi.fn> };
 
   const mockUsersList: UserProfileItem[] = [
     {
@@ -95,14 +99,22 @@ describe('UsersPageComponent', () => {
       navigate: vi.fn(),
     };
 
+    dialogMock = {
+      open: vi.fn().mockReturnValue({
+        afterClosed: () => of(true),
+      }),
+    };
+
     vi.spyOn(window, 'confirm').mockReturnValue(true);
 
     await TestBed.configureTestingModule({
       imports: [UsersPageComponent],
       providers: [
+        { provide: ANIMATION_MODULE_TYPE, useValue: 'NoopAnimations' },
         { provide: UsersService, useValue: usersServiceMock },
         { provide: AuthService, useValue: authMock },
         { provide: Router, useValue: routerMock },
+        { provide: MatDialog, useValue: dialogMock },
       ],
     }).compileComponents();
 
@@ -176,16 +188,57 @@ describe('UsersPageComponent', () => {
     expect(usersServiceMock.approveUser).not.toHaveBeenCalled();
   });
 
-  it('should block user when confirmed', async () => {
-    await component.onBlockUser(mockUsersList[1]);
+  it('should block user when confirmed via MatDialog', async () => {
+    dialogMock.open.mockReturnValueOnce({
+      afterClosed: () => of(true),
+    });
+    component.onBlockUser(mockUsersList[1]);
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(dialogMock.open).toHaveBeenCalled();
     expect(usersServiceMock.blockUser).toHaveBeenCalledWith('p2');
     expect(component.actionMessage()).toContain('has been blocked');
   });
 
-  it('should not block user if confirm cancelled', async () => {
-    vi.mocked(window.confirm).mockReturnValueOnce(false);
-    await component.onBlockUser(mockUsersList[1]);
+  it('should not block user if MatDialog confirm cancelled', async () => {
+    dialogMock.open.mockReturnValueOnce({
+      afterClosed: () => of(false),
+    });
+    component.onBlockUser(mockUsersList[1]);
+    expect(dialogMock.open).toHaveBeenCalled();
     expect(usersServiceMock.blockUser).not.toHaveBeenCalled();
+  });
+
+  it('should handle block user failure', async () => {
+    dialogMock.open.mockReturnValueOnce({
+      afterClosed: () => of(true),
+    });
+    usersServiceMock.blockUser.mockRejectedValueOnce(new Error('Failed to block'));
+    component.onBlockUser(mockUsersList[1]);
+    // Allow promise in subscribe to run
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(component.isErrorMessage()).toBe(true);
+    expect(component.actionMessage()).toContain('Failed to block user');
+  });
+
+  it('should switch activeTab and selectedTabIndex when onTabChange is called', () => {
+    component.onTabChange(1);
+    expect(component.activeTab()).toBe('waiting-room');
+    expect(component.selectedTabIndex()).toBe(1);
+
+    component.onTabChange(0);
+    expect(component.activeTab()).toBe('all-users');
+    expect(component.selectedTabIndex()).toBe(0);
+  });
+
+  it('should show loading overlay and disable login button while impersonating', () => {
+    component.isImpersonatingLoading.set(true);
+    component.impersonatingUserEmail.set('chef@example.com');
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.textContent).toContain("Switching to chef@example.com's Session");
   });
 
   it('should unblock user successfully', async () => {
@@ -236,38 +289,47 @@ describe('UsersPageComponent', () => {
     await component.loadData();
     fixture.detectChanges();
 
-    const buttons = fixture.nativeElement.querySelectorAll('.border-b button');
-    // Button 0: All Users & Tenants, Button 1: Waiting Room
-    expect(buttons).toHaveLength(2);
+    const tabs = fixture.nativeElement.querySelectorAll('.mat-mdc-tab');
+    expect(tabs).toHaveLength(2);
 
     // Switch to Waiting Room
-    buttons[1].click();
+    component.onTabChange(1);
+    fixture.detectChanges();
+    await fixture.whenStable();
     fixture.detectChanges();
     expect(component.activeTab()).toBe('waiting-room');
     expect(fixture.nativeElement.textContent).toContain('newbie@example.com');
 
     // Switch back to All Users
-    buttons[0].click();
+    component.onTabChange(0);
+    fixture.detectChanges();
+    await fixture.whenStable();
     fixture.detectChanges();
     expect(component.activeTab()).toBe('all-users');
     expect(fixture.nativeElement.textContent).toContain('sirdarquan@gmail.com');
   });
 
-  it('should render empty waiting room message when pendingUsers is empty', () => {
-    component.activeTab.set('waiting-room');
+  it('should render empty waiting room message when pendingUsers is empty', async () => {
+    component.onTabChange(1);
     component.pendingUsers.set([]);
+    fixture.detectChanges();
+    await fixture.whenStable();
     fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain('Waiting room is clear!');
   });
 
-  it('should render loading states for tabs', () => {
+  it('should render loading states for tabs', async () => {
     component.isLoading.set(true);
 
-    component.activeTab.set('waiting-room');
+    component.onTabChange(1);
+    fixture.detectChanges();
+    await fixture.whenStable();
     fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain('Loading pending signups...');
 
-    component.activeTab.set('all-users');
+    component.onTabChange(0);
+    fixture.detectChanges();
+    await fixture.whenStable();
     fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain('Loading user directory...');
   });
@@ -299,7 +361,9 @@ describe('UsersPageComponent', () => {
 
   it('should trigger approval and provisioning through template in waiting room', async () => {
     await component.loadData();
-    component.activeTab.set('waiting-room');
+    component.onTabChange(1);
+    fixture.detectChanges();
+    await fixture.whenStable();
     fixture.detectChanges();
 
     // Toggle approve form for newbie
@@ -318,9 +382,11 @@ describe('UsersPageComponent', () => {
     expect(provisionSpy).toHaveBeenCalledWith('p-new');
   });
 
-  it('should trigger onApproveAdmin and onBlockUser from waiting room buttons', () => {
-    component.activeTab.set('waiting-room');
+  it('should trigger onApproveAdmin and onBlockUser from waiting room buttons', async () => {
+    component.onTabChange(1);
     component.pendingUsers.set(mockPendingList);
+    fixture.detectChanges();
+    await fixture.whenStable();
     fixture.detectChanges();
 
     const adminSpy = vi.spyOn(component, 'onApproveAdmin');

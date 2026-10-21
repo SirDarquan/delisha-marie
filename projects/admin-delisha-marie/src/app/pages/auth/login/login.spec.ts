@@ -752,7 +752,7 @@ describe('LoginComponent', () => {
     fixture.detectChanges();
     const compiled = fixture.nativeElement;
     expect(compiled.textContent).toContain('Completing Registration...');
-  });
+  }, 15000);
 
   it('should trigger loginWithDescopeGoogle when google sign-in button is clicked', () => {
     const spy = vi

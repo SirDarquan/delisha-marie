@@ -82,13 +82,10 @@ describe('Admin Recipe Form Flow', () => {
   });
 
   it('should handle NEW Recipe creation form flow via dialog', () => {
-    // Seed empty array into localStorage BEFORE navigation so RecipeService reads it synchronously
-    // This completely bypasses the async GET recipes.json API call
-    cy.visit('/recipes', {
-      onBeforeLoad: (win) => {
-        win.localStorage.setItem('admin_recipes', JSON.stringify([]));
-      },
-    });
+    cy.intercept('GET', '**/api/recipes*', {
+      statusCode: 200,
+      body: [],
+    }).as('getRecipes');
 
     cy.intercept('GET', '**/api/check-slug*', {
       statusCode: 200,
@@ -104,6 +101,9 @@ describe('Admin Recipe Form Flow', () => {
       statusCode: 200,
       body: { ...mockRecipe, id: 100 },
     }).as('getNewRecipe');
+
+    cy.visit('/recipes');
+    cy.wait('@getRecipes');
 
     // Open the creation dialog
     cy.contains('button', 'New Recipe').click();
@@ -193,14 +193,16 @@ describe('Admin Recipe Form Flow', () => {
           ],
         });
         comp.recipeForm['equipment']().value.set(mockRecipe.equipment);
+        comp.recipeForm['content']().value.set(mockRecipe.content);
       }
     });
 
     cy.get('#description').should('not.be.disabled').type(mockRecipe.description, { force: true });
     cy.get('#description').blur();
 
-    cy.get('#content').should('not.be.disabled').type(mockRecipe.content, { force: true });
-    cy.get('#content').blur();
+    cy.get('app-story-html-editor .story')
+      .should('be.visible')
+      .type(mockRecipe.content, { force: true });
 
     cy.get('#ingredients')
       .should('not.be.disabled')

@@ -185,7 +185,11 @@ describe('Users API Router (Admin & Waiting Room)', () => {
           }
           return {
             data: {
-              session: { access_token: 'impersonated-session-token', expires_in: 3600 },
+              session: {
+                access_token: 'impersonated-session-token',
+                refresh_token: 'member-refresh-token',
+                expires_in: 3600,
+              },
               user: { id: 'member-id-1', email: 'member@example.com' },
             },
             error: null,
@@ -574,7 +578,7 @@ describe('Users API Router (Admin & Waiting Room)', () => {
 
       const res = await request(app)
         .post('/admin/users/p-member/impersonate')
-        .set('Cookie', ['admin_access_token=admin-token']);
+        .set('Cookie', ['admin_access_token=admin-token', 'admin_refresh_token=admin-refresh']);
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -602,7 +606,7 @@ describe('Users API Router (Admin & Waiting Room)', () => {
 
       const res = await request(app)
         .post('/admin/users/p-member/impersonate')
-        .set('Cookie', ['admin_access_token=admin-token']);
+        .set('Cookie', ['admin_access_token=admin-token', 'admin_refresh_token=admin-refresh']);
 
       expect(res.status).toBe(500);
       expect(res.body.error).toBe('Auth service unreachable');
@@ -620,7 +624,7 @@ describe('Users API Router (Admin & Waiting Room)', () => {
 
       const res = await request(app)
         .post('/admin/users/p-member/impersonate')
-        .set('Cookie', ['admin_access_token=admin-token']);
+        .set('Cookie', ['admin_access_token=admin-token', 'admin_refresh_token=admin-refresh']);
 
       expect(res.status).toBe(500);
       expect(res.body.error).toContain('Failed to generate verification token');
@@ -638,7 +642,7 @@ describe('Users API Router (Admin & Waiting Room)', () => {
 
       const res = await request(app)
         .post('/admin/users/p-member/impersonate')
-        .set('Cookie', ['admin_access_token=admin-token']);
+        .set('Cookie', ['admin_access_token=admin-token', 'admin_refresh_token=admin-refresh']);
 
       expect(res.status).toBe(500);
       expect(res.body.error).toBe('OTP verification rejected');
@@ -656,7 +660,7 @@ describe('Users API Router (Admin & Waiting Room)', () => {
 
       const res = await request(app)
         .post('/admin/users/p-member/impersonate')
-        .set('Cookie', ['admin_access_token=admin-token']);
+        .set('Cookie', ['admin_access_token=admin-token', 'admin_refresh_token=admin-refresh']);
 
       expect(res.status).toBe(500);
       expect(res.body.error).toBe('Failed to establish member session');
@@ -667,6 +671,7 @@ describe('Users API Router (Admin & Waiting Room)', () => {
         .post('/auth/exit-impersonation')
         .set('Cookie', [
           'admin_original_token=original-admin-jwt',
+          'admin_original_refresh_token=original-refresh-jwt',
           'admin_access_token=member-jwt',
         ]);
 

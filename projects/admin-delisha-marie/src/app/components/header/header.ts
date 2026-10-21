@@ -99,8 +99,8 @@ export class HeaderComponent {
       : false,
   );
 
-  onLogout(): void {
-    this.authService.logout();
-    this.router.navigate(['/login']);
+  async onLogout(): Promise<void> {
+    await this.authService.logout();
+    await this.router.navigate(['/login']);
   }
 }

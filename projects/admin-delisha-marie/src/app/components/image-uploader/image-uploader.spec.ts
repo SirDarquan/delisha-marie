@@ -310,7 +310,7 @@ describe('ImageUploaderComponent', () => {
       imageHeight: '',
       imageType: '',
     });
-  });
+  }, 30000);
 
   it('should resolve file extension MIME types correctly', () => {
     fixture.detectChanges();

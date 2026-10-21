@@ -160,7 +160,7 @@ describe('AuthService', () => {
     await service.login('johndoe', '123');
     expect(service.isAuthenticated()).toBe(true);
 
-    service.logout();
+    await service.logout();
     expect(service.isAuthenticated()).toBe(false);
     expect(service.currentUser()).toBeNull();
   });
@@ -450,7 +450,7 @@ describe('AuthService', () => {
       expect(logoutSpy).toHaveBeenCalled();
     });
 
-    it('should avoid network calls on logout if not in browser mode', () => {
+    it('should avoid network calls on logout if not in browser mode', async () => {
       TestBed.resetTestingModule();
       TestBed.configureTestingModule({
         providers: [
@@ -464,7 +464,7 @@ describe('AuthService', () => {
       const svc = TestBed.inject(AuthService);
       apiMock.post.mockClear();
 
-      svc.logout();
+      await svc.logout();
       expect(apiMock.post).not.toHaveBeenCalled();
     });
 
@@ -553,9 +553,23 @@ describe('AuthService', () => {
 
     it('should swallow errors when signout endpoint fails in logout', async () => {
       apiMock.post.mockRejectedValue(new Error('Signout failed'));
-      expect(() => service.logout()).not.toThrow();
+      await expect(service.logout()).resolves.toBeUndefined();
       expect(service.isAuthenticated()).toBe(false);
       expect(service.currentUser()).toBeNull();
+    });
+
+    it('should call descope sdk logout and reset sessionInitPromise on logout', async () => {
+      const mockDescopeLogout = vi.fn().mockResolvedValue(undefined);
+      (fakeDescopeAuthService.descopeSdk as Record<string, unknown>)['logout'] = mockDescopeLogout;
+      apiMock.post.mockResolvedValue({});
+
+      // Set sessionInitPromise by calling waitForSessionInit
+      apiMock.get.mockResolvedValue({ user: { id: 'u1' } });
+      await service.waitForSessionInit();
+
+      await service.logout();
+      expect(mockDescopeLogout).toHaveBeenCalled();
+      expect(service['sessionInitPromise']).toBeNull();
     });
 
     it('should correctly report descope availability based on config', () => {

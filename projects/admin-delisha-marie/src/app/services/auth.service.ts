@@ -110,10 +110,10 @@ export class AuthService {
           !!(sessionInfo?.isImpersonating ?? resp.isImpersonating),
         );
       } else {
-        this.logout();
+        await this.logout();
       }
     } catch {
-      this.logout();
+      await this.logout();
     }
   }
 
@@ -157,6 +157,7 @@ export class AuthService {
         username: user.username.trim(),
       });
       if (resp.session?.accessToken && resp.user) {
+        this.sessionInitPromise = null;
         this.setSession(resp.user);
       }
       return true;
@@ -177,6 +178,7 @@ export class AuthService {
       );
 
       if (resp.session?.accessToken && resp.user) {
+        this.sessionInitPromise = null;
         this.setSession(resp.user);
         return true;
       }
@@ -331,6 +333,7 @@ export class AuthService {
         displayName: displayName.trim(),
       });
       if (resp.success && resp.session?.accessToken && resp.user) {
+        this.sessionInitPromise = null;
         this.setSession(resp.user);
         return true;
       }
@@ -379,6 +382,7 @@ export class AuthService {
     tenant: TenantInfo | null = null,
     isImpersonating = false,
   ): void {
+    this.sessionInitPromise = null;
     this._isAuthenticated.set(true);
     this._currentUser.set(user);
     this._userRole.set(role);
@@ -398,12 +402,25 @@ export class AuthService {
     }
   }
 
-  logout(): void {
+  async logout(): Promise<void> {
     if (isPlatformBrowser(this.platformId)) {
-      this.api.post('/auth/signout', {}).catch(() => {
+      try {
+        await this.api.post('/auth/signout', {});
+      } catch {
         /* ignore */
-      });
+      }
+      try {
+        if (this.descopeAuth?.descopeSdk) {
+          const sdk = this.descopeAuth.descopeSdk as unknown as { logout?: () => Promise<unknown> };
+          if (typeof sdk.logout === 'function') {
+            await sdk.logout();
+          }
+        }
+      } catch {
+        /* ignore */
+      }
     }
+    this.sessionInitPromise = null;
     this._isAuthenticated.set(false);
     this._currentUser.set(null);
     this._userRole.set('member');

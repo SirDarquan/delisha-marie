@@ -19,7 +19,7 @@ import { MatChipsModule } from '@angular/material/chips';
       </div>
 
       <div
-        class="flex flex-wrap gap-2.5 items-center min-h-[46px] p-3 bg-slate-950/40 border border-slate-800 rounded-2xl">
+        class="flex flex-wrap gap-2.5 items-center min-h-[46px] p-3 bg-slate-950/40 border border-[var(--mat-sys-outline)] rounded-2xl">
         <mat-chip-set class="flex flex-wrap gap-2 items-center w-full">
           @for (kw of keywords(); track $index; let i = $index) {
             <mat-chip

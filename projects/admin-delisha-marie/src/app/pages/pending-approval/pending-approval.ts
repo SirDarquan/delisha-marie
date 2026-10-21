@@ -80,8 +80,8 @@ export class PendingApprovalComponent {
     }
   }
 
-  onLogout(): void {
-    this.auth.logout();
-    void this.router.navigate(['/login']);
+  async onLogout(): Promise<void> {
+    await this.auth.logout();
+    await this.router.navigate(['/login']);
   }
 }

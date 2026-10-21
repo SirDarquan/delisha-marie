@@ -21,6 +21,8 @@ import cookieParser from 'cookie-parser';
 import {
   adminOnlyMiddleware,
   authMiddleware,
+  clearAllAuthCookies,
+  clearImpersonationCookies,
   memberOnlyMiddleware,
   setAuthCookies,
 } from './auth.middleware';
@@ -322,6 +324,67 @@ describe('Auth Middleware', () => {
     expect(res.status).toBe(200);
   });
 
+  it('should set isImpersonating to true when admin_original_token is set and matches impersonated user', async () => {
+    vi.mocked(backendService.verifyToken).mockResolvedValueOnce({
+      id: 'member-123',
+      email: 'member@example.com',
+    } as unknown as Awaited<ReturnType<typeof backendService.verifyToken>>);
+
+    backendService.supabaseAdmin = {
+      from: vi.fn().mockImplementation((table: string) => ({
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        maybeSingle: vi.fn().mockResolvedValue({
+          data:
+            table === 'user_profiles'
+              ? { role: 'member', status: 'active' }
+              : { id: 't-123', name: 'My Kitchen', slug: 'my-kitchen' },
+          error: null,
+        }),
+      })),
+    } as unknown as typeof backendService.supabaseAdmin;
+
+    const res = await request(app)
+      .get('/test-secure')
+      .set('Cookie', [
+        'admin_access_token=valid-token',
+        'admin_original_token=orig-token',
+        'admin_impersonated_user_id=member-123',
+      ]);
+
+    expect(res.status).toBe(200);
+  });
+
+  it('should clear impersonation cookies when admin_original_token is set but user role is admin', async () => {
+    vi.mocked(backendService.verifyToken).mockResolvedValueOnce({
+      id: 'admin-123',
+      email: 'admin@example.com',
+    } as unknown as Awaited<ReturnType<typeof backendService.verifyToken>>);
+
+    backendService.supabaseAdmin = {
+      from: vi.fn().mockImplementation((table: string) => ({
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        maybeSingle: vi.fn().mockResolvedValue({
+          data: table === 'user_profiles' ? { role: 'admin', status: 'active' } : null,
+          error: null,
+        }),
+      })),
+    } as unknown as typeof backendService.supabaseAdmin;
+
+    const res = await request(app)
+      .get('/test-secure')
+      .set('Cookie', [
+        'admin_access_token=valid-token',
+        'admin_original_token=orig-token',
+        'admin_impersonated_user_id=member-123',
+      ]);
+
+    expect(res.status).toBe(200);
+    const cookies = res.headers['set-cookie'] as unknown as string[];
+    expect(cookies).toBeDefined();
+  });
+
   describe('Role Guards', () => {
     it('adminOnlyMiddleware should allow admin and block non-admin', () => {
       const mockReq = { role: 'admin' } as unknown as express.Request;
@@ -400,6 +463,28 @@ describe('Auth Middleware', () => {
         .set('Cookie', ['admin_access_token=valid-token']);
 
       expect(res.status).toBe(200);
+    });
+    it('should properly clear impersonation cookies and all auth cookies', () => {
+      const mockRes = {
+        clearCookie: vi.fn(),
+      } as unknown as express.Response;
+
+      clearImpersonationCookies(mockRes);
+      expect(mockRes.clearCookie).toHaveBeenCalledWith('admin_original_token', { path: '/' });
+      expect(mockRes.clearCookie).toHaveBeenCalledWith('admin_original_refresh_token', {
+        path: '/',
+      });
+      expect(mockRes.clearCookie).toHaveBeenCalledWith('admin_impersonated_user_id', { path: '/' });
+
+      vi.clearAllMocks();
+      clearAllAuthCookies(mockRes);
+      expect(mockRes.clearCookie).toHaveBeenCalledWith('admin_access_token', { path: '/' });
+      expect(mockRes.clearCookie).toHaveBeenCalledWith('admin_refresh_token', { path: '/' });
+      expect(mockRes.clearCookie).toHaveBeenCalledWith('admin_original_token', { path: '/' });
+      expect(mockRes.clearCookie).toHaveBeenCalledWith('admin_original_refresh_token', {
+        path: '/',
+      });
+      expect(mockRes.clearCookie).toHaveBeenCalledWith('admin_impersonated_user_id', { path: '/' });
     });
   });
 });

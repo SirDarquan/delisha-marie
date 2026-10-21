@@ -48,7 +48,7 @@ describe('HeaderComponent', () => {
     fixture = TestBed.createComponent(HeaderComponent);
     component = fixture.componentInstance;
     router = TestBed.inject(Router);
-    vi.spyOn(router, 'navigate');
+    vi.spyOn(router, 'navigate').mockResolvedValue(true);
     fixture.detectChanges();
   });
 
@@ -145,8 +145,8 @@ describe('HeaderComponent', () => {
     expect(headerEl?.classList.contains('top-[41px]')).toBe(false);
   });
 
-  it('should trigger logout and navigate to login page on onLogout()', () => {
-    component.onLogout();
+  it('should trigger logout and navigate to login page on onLogout()', async () => {
+    await component.onLogout();
     expect(fakeAuthService.logout).toHaveBeenCalled();
     expect(router.navigate).toHaveBeenCalledWith(['/login']);
   });
