@@ -95,8 +95,8 @@ describe('Main Blog Global Navigation', () => {
   it('should render the sidebar at 350px width on dynamic page on desktop viewport', () => {
     cy.viewport(1280, 800);
     cy.visit('/about');
-    cy.get('dml-page-layout aside').should('be.visible');
-    cy.get('dml-page-layout aside dml-sidebar').should('be.visible');
-    cy.get('dml-page-layout aside').invoke('width').should('be.closeTo', 350, 1);
+    cy.get('dm-dynamic-page aside').should('be.visible');
+    cy.get('dm-dynamic-page aside dml-sidebar').should('be.visible');
+    cy.get('dm-dynamic-page aside').invoke('width').should('be.closeTo', 350, 1);
   });
 });
