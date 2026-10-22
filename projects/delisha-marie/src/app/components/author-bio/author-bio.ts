@@ -1,11 +1,11 @@
 import { NgOptimizedImage } from '@angular/common';
 import { ChangeDetectionStrategy, Component, input, ViewEncapsulation } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
-import { RouterLink } from '@angular/router';
+import { getHomeUrl } from '../../utils/navigation';
 
 @Component({
   selector: 'dm-author-bio',
-  imports: [NgOptimizedImage, MatButtonModule, RouterLink],
+  imports: [NgOptimizedImage, MatButtonModule],
   template: `
     <section
       [class]="
@@ -51,7 +51,7 @@ import { RouterLink } from '@angular/router';
         </p>
         <a
           mat-stroked-button
-          routerLink="/about"
+          [href]="aboutUrl"
           [class]="
             layout() === 'vertical'
               ? 'rounded-full px-8 font-bold'
@@ -69,4 +69,6 @@ import { RouterLink } from '@angular/router';
 export class AuthorBio {
   readonly layout = input<'vertical' | 'horizontal'>('vertical');
   picture = input.required<string>();
+
+  readonly aboutUrl = getHomeUrl('/about');
 }

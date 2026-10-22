@@ -148,7 +148,7 @@ export const routes: Routes = [
     resolve: { seo: seoDynamicPageResolver, schema: schemaDynamicPageResolver },
     data: { slug: 'thank-you', content: 'noindex,nofollow' },
   },
-  ...['faq', 'privacy-policy'].flatMap((slug) => [
+  ...['faq', 'privacy-policy', 'about'].flatMap((slug) => [
     {
       path: slug,
       loadComponent: () => import('./pages/dynamic-page/dynamic-page').then((m) => m.DynamicPage),
