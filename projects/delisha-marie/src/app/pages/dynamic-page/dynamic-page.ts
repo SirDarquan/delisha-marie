@@ -18,9 +18,9 @@ import { ColoredHeaderComponent } from '../../components/colored-header/colored-
   imports: [Sidebar, ColoredHeaderComponent],
   template: `
     <div class="into-the-box py-12">
-      <div class="flex flex-col lg:flex-row gap-12">
+      <div class="grid grid-cols-1 lg:grid-cols-[1fr_350px] gap-8 lg:gap-12">
         <!-- Main Content -->
-        <div class="lg:w-2/3 space-y-16">
+        <div class="min-w-0 space-y-16">
           @if (page()) {
             <dm-colored-header [title]="page()!.title" />
             <div
@@ -46,7 +46,7 @@ import { ColoredHeaderComponent } from '../../components/colored-header/colored-
         </div>
 
         <!-- Sidebar -->
-        <aside class="lg:w-1/3">
+        <aside class="w-full shrink-0">
           <dml-sidebar />
         </aside>
       </div>

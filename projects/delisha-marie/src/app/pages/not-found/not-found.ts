@@ -20,9 +20,9 @@ import { ColoredHeaderComponent } from '../../components/colored-header/colored-
   imports: [RouterLink, MatButtonModule, MatIconModule, Sidebar, ColoredHeaderComponent],
   template: `
     <main class="into-the-box py-12">
-      <div class="flex flex-col lg:flex-row gap-12 items-start">
+      <div class="grid grid-cols-1 lg:grid-cols-[1fr_350px] gap-8 lg:gap-12 items-start">
         <!-- Main Content Area -->
-        <div class="lg:w-2/3 w-full flex flex-col items-center text-center">
+        <div class="w-full min-w-0 flex flex-col items-center text-center">
           <div
             class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider bg-[var(--mat-sys-error-container)] text-[var(--mat-sys-on-error-container)] self-start mb-2">
             Error 404 • Missing {{ resolvedLabel() }}
@@ -355,7 +355,7 @@ import { ColoredHeaderComponent } from '../../components/colored-header/colored-
         </div>
 
         <!-- Sidebar -->
-        <aside class="lg:w-1/3 w-full">
+        <aside class="w-full shrink-0">
           <dml-sidebar />
         </aside>
       </div>
