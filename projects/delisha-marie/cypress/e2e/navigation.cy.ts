@@ -81,4 +81,22 @@ describe('Main Blog Global Navigation', () => {
     cy.get('dm-not-found').should('be.visible');
     cy.contains("Something is simmering, but this page isn't on the menu!").should('be.visible');
   });
+
+  // Added by Cypress Author on 2026-10-22 for standardized 350px sidebar layout
+  it('should render the sidebar at 350px width on 404 Not Found page on desktop viewport', () => {
+    cy.viewport(1280, 800);
+    cy.visit('/non-existent-route-goes-here');
+    cy.get('dm-not-found aside').should('be.visible');
+    cy.get('dm-not-found aside dml-sidebar').should('be.visible');
+    cy.get('dm-not-found aside').invoke('width').should('be.closeTo', 350, 1);
+  });
+
+  // Added by Cypress Author on 2026-10-22 for standardized 350px sidebar layout
+  it('should render the sidebar at 350px width on dynamic page on desktop viewport', () => {
+    cy.viewport(1280, 800);
+    cy.visit('/about');
+    cy.get('dml-page-layout aside').should('be.visible');
+    cy.get('dml-page-layout aside dml-sidebar').should('be.visible');
+    cy.get('dml-page-layout aside').invoke('width').should('be.closeTo', 350, 1);
+  });
 });
