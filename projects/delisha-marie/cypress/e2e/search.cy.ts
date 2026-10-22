@@ -28,4 +28,13 @@ describe('Search Page', () => {
     // Results area or loading should be visible
     cy.get('dm-search').should('be.visible');
   });
+
+  // Added by Cypress Author on 2026-10-22 for standardized 350px sidebar layout
+  it('should render the sidebar at 350px width on desktop viewport', () => {
+    cy.viewport(1280, 800);
+    cy.visit('/?q=pasta');
+    cy.get('dm-search aside').should('be.visible');
+    cy.get('dm-search aside dml-sidebar').should('be.visible');
+    cy.get('dm-search aside').invoke('width').should('be.closeTo', 350, 1);
+  });
 });

@@ -66,9 +66,9 @@ interface SearchFormValue {
         </div>
 
         <!-- Content and Sidebar Layout -->
-        <div class="flex flex-col lg:flex-row gap-12">
+        <div class="grid grid-cols-1 lg:grid-cols-[1fr_350px] gap-8 lg:gap-12">
           <!-- Main Content -->
-          <div class="lg:w-2/3 w-full">
+          <div class="w-full min-w-0">
             <!-- 2 Column Results -->
             @if (loading()) {
               <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -166,7 +166,7 @@ interface SearchFormValue {
           </div>
 
           <!-- Sidebar -->
-          <aside class="lg:w-1/3 w-full">
+          <aside class="w-full shrink-0">
             <dml-sidebar />
           </aside>
         </div>

@@ -63,7 +63,7 @@ jobs:
         node-version: ${{ env.NODE_VERSION }}
         cache: 'npm'
     - name: Run Cypress E2E Parallel Matrix
-      uses: cypress-io/github-action@v6
+      uses: cypress-io/github-action@v7
       with:
         command: npm run e2e:${{ matrix.app }}
         install: true
