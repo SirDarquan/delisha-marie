@@ -1597,4 +1597,93 @@ describe('StoryHtmlEditorComponent', () => {
       expect(component).toBeTruthy();
     });
   });
+
+  describe('Component Block & Context Menu Controls', () => {
+    it('should insert component block into canvas and update value', () => {
+      component.insertComponentBlock();
+      const canvasEl = component.editorCanvas()?.nativeElement;
+      const blockEl = canvasEl?.querySelector('[data-component-block="true"]') as HTMLElement;
+      expect(blockEl).toBeTruthy();
+      expect(blockEl.getAttribute('data-block-height')).toBe('380');
+      expect(blockEl.getAttribute('data-block-align')).toBe('left');
+      expect(component.value()).toContain('data-component-block="true"');
+    });
+
+    it('should open context menu on right click on block and read attributes', () => {
+      component.insertComponentBlock();
+      const canvasEl = component.editorCanvas()?.nativeElement;
+      const blockEl = canvasEl?.querySelector('[data-component-block="true"]') as HTMLElement;
+      blockEl.setAttribute('data-block-height', '450');
+      blockEl.setAttribute('data-block-align', 'right');
+      blockEl.setAttribute('data-block-label', 'Featured Products');
+
+      const mockEvent = {
+        preventDefault: vi.fn(),
+        target: blockEl,
+        clientX: 100,
+        clientY: 200,
+      } as unknown as MouseEvent;
+
+      component.onCanvasContextMenu(mockEvent);
+
+      expect(mockEvent.preventDefault).toHaveBeenCalled();
+      expect(component.showBlockContextMenu()).toBe(true);
+      expect(component.blockHeight()).toBe(450);
+      expect(component.blockAlign()).toBe('right');
+      expect(component.blockLabel()).toBe('Featured Products');
+      expect(component.blockContextMenuPosition()).toEqual({ x: 105, y: 205 });
+    });
+
+    it('should change block alignment and sync styles', () => {
+      component.insertComponentBlock();
+      const canvasEl = component.editorCanvas()?.nativeElement;
+      const blockEl = canvasEl?.querySelector('[data-component-block="true"]') as HTMLElement;
+      component['activeBlockElement'].set(blockEl);
+
+      component.setBlockAlign('full');
+      expect(component.blockAlign()).toBe('full');
+      expect(blockEl.getAttribute('data-block-align')).toBe('full');
+      expect(blockEl.style.width).toBe('100%');
+      expect(blockEl.style.clear).toBe('both');
+
+      component.setBlockAlign('right');
+      expect(component.blockAlign()).toBe('right');
+      expect(blockEl.style.float).toBe('right');
+    });
+
+    it('should update block height and label on input', () => {
+      component.insertComponentBlock();
+      const canvasEl = component.editorCanvas()?.nativeElement;
+      const blockEl = canvasEl?.querySelector('[data-component-block="true"]') as HTMLElement;
+      component['activeBlockElement'].set(blockEl);
+
+      component.onBlockHeightInput({ target: { value: '550' } } as unknown as Event);
+      expect(component.blockHeight()).toBe(550);
+      expect(blockEl.style.height).toBe('550px');
+      expect(blockEl.getAttribute('data-block-height')).toBe('550');
+
+      component.onBlockLabelInput({ target: { value: 'Test Block' } } as unknown as Event);
+      expect(component.blockLabel()).toBe('Test Block');
+      expect(blockEl.getAttribute('data-block-label')).toBe('Test Block');
+    });
+
+    it('should remove active block and close menu', () => {
+      component.insertComponentBlock();
+      const canvasEl = component.editorCanvas()?.nativeElement;
+      const blockEl = canvasEl?.querySelector('[data-component-block="true"]') as HTMLElement;
+      component['activeBlockElement'].set(blockEl);
+      component.showBlockContextMenu.set(true);
+
+      component.removeActiveBlock();
+      expect(component.showBlockContextMenu()).toBe(false);
+      expect(canvasEl?.querySelector('[data-component-block="true"]')).toBeNull();
+    });
+
+    it('should close context menu', () => {
+      component.showBlockContextMenu.set(true);
+      component.closeBlockContextMenu();
+      expect(component.showBlockContextMenu()).toBe(false);
+      expect(component['activeBlockElement']()).toBeNull();
+    });
+  });
 });

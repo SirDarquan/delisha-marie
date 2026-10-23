@@ -584,6 +584,16 @@ export type StoryTextAlign = 'left' | 'center' | 'right' | 'justify';
               <mat-icon class="!w-4 !h-4 !text-[18px]">subtitles</mat-icon>
             </button>
           }
+          @if (isButtonVisible('block')) {
+            <button
+              type="button"
+              mat-icon-button
+              class="!w-8 !h-8 text-amber-400 hover:text-amber-300"
+              (click)="insertComponentBlock()"
+              matTooltip="Insert Component Block (Right-click to configure)">
+              <mat-icon class="!w-4 !h-4 !text-[18px]">widgets</mat-icon>
+            </button>
+          }
           @if (isButtonVisible('horizontalRule')) {
             <button
               type="button"
@@ -639,6 +649,7 @@ export type StoryTextAlign = 'left' | 'center' | 'right' | 'justify';
         (blur)="onInput()"
         (click)="onCanvasClick($event)"
         (keyup)="onCanvasClick($event)"
+        (contextmenu)="onCanvasContextMenu($event)"
         class="story text-lg md:text-xl text-slate-200 leading-relaxed font-serif p-6 rounded-2xl bg-slate-900/60 min-h-[250px] max-h-[600px] overflow-y-auto focus:outline-none transition-all"></div>
 
       <!-- Raw HTML Source Code Textarea -->
@@ -652,6 +663,145 @@ export type StoryTextAlign = 'left' | 'center' | 'right' | 'justify';
         rows="12"
         spellcheck="false"
         class="w-full p-6 rounded-2xl bg-slate-950 font-mono text-sm leading-relaxed text-emerald-300 border border-purple-500/60 min-h-[250px] max-h-[600px] overflow-y-auto focus:outline-none focus:ring-2 focus:ring-purple-500/80 transition-all resize-y selection:bg-purple-900 selection:text-white"></textarea>
+
+      <!-- Floating Right-Click Context Menu for Component Block -->
+      @if (showBlockContextMenu()) {
+        <!-- Backdrop to close on click outside -->
+        <button
+          type="button"
+          aria-label="Close menu"
+          class="fixed inset-0 z-40 bg-transparent border-0 cursor-default"
+          (click)="closeBlockContextMenu()"></button>
+
+        <!-- Floating Context Menu -->
+        <div
+          class="fixed bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl p-4 w-72 z-50 backdrop-blur-md space-y-4"
+          [style.left.px]="blockContextMenuPosition().x"
+          [style.top.px]="blockContextMenuPosition().y">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+            <div class="flex items-center gap-1.5 text-xs font-bold text-white uppercase">
+              <mat-icon class="!w-4 !h-4 !text-[16px] text-amber-400">settings</mat-icon>
+              Block Settings
+            </div>
+            <button
+              type="button"
+              (click)="closeBlockContextMenu()"
+              class="text-slate-400 hover:text-white border-0 bg-transparent cursor-pointer">
+              <mat-icon class="!w-4 !h-4 !text-[16px]">close</mat-icon>
+            </button>
+          </div>
+
+          <!-- 1. Layout & Wrapping (Float Left, Float Right, Full Width) -->
+          <div>
+            <span class="block text-[11px] font-semibold text-slate-400 uppercase mb-1.5">
+              Layout & Wrapping
+            </span>
+            <div
+              class="grid grid-cols-3 gap-1.5 bg-slate-950 p-1 rounded-xl border border-slate-800">
+              <button
+                type="button"
+                (click)="setBlockAlign('left')"
+                class="px-2 py-1.5 rounded-lg text-xs font-medium transition flex flex-col items-center gap-1 cursor-pointer border-0"
+                [class.bg-purple-600]="blockAlign() === 'left'"
+                [class.text-white]="blockAlign() === 'left'"
+                [class.font-bold]="blockAlign() === 'left'"
+                [class.text-slate-400]="blockAlign() !== 'left'"
+                [class.bg-transparent]="blockAlign() !== 'left'"
+                title="Float Left (Write on right side)">
+                <mat-icon class="!w-4 !h-4 !text-[16px]">format_align_left</mat-icon>
+                <span class="text-[10px]">Float Left</span>
+              </button>
+              <button
+                type="button"
+                (click)="setBlockAlign('right')"
+                class="px-2 py-1.5 rounded-lg text-xs font-medium transition flex flex-col items-center gap-1 cursor-pointer border-0"
+                [class.bg-purple-600]="blockAlign() === 'right'"
+                [class.text-white]="blockAlign() === 'right'"
+                [class.font-bold]="blockAlign() === 'right'"
+                [class.text-slate-400]="blockAlign() !== 'right'"
+                [class.bg-transparent]="blockAlign() !== 'right'"
+                title="Float Right (Write on left side)">
+                <mat-icon class="!w-4 !h-4 !text-[16px]">format_align_right</mat-icon>
+                <span class="text-[10px]">Float Right</span>
+              </button>
+              <button
+                type="button"
+                (click)="setBlockAlign('full')"
+                class="px-2 py-1.5 rounded-lg text-xs font-medium transition flex flex-col items-center gap-1 cursor-pointer border-0"
+                [class.bg-purple-600]="blockAlign() === 'full'"
+                [class.text-white]="blockAlign() === 'full'"
+                [class.font-bold]="blockAlign() === 'full'"
+                [class.text-slate-400]="blockAlign() !== 'full'"
+                [class.bg-transparent]="blockAlign() !== 'full'"
+                title="Full Width (Write under it)">
+                <mat-icon class="!w-4 !h-4 !text-[16px]">view_agenda</mat-icon>
+                <span class="text-[10px]">Full Width</span>
+              </button>
+            </div>
+            <p class="text-[10px] text-slate-400 mt-1">
+              @if (blockAlign() === 'left') {
+                Floats to left so you can write on the side.
+              } @else if (blockAlign() === 'right') {
+                Floats to right so you can write on the side.
+              } @else {
+                Full width block. Text flows directly under it.
+              }
+            </p>
+          </div>
+
+          <!-- 2. Block Height Size -->
+          <div>
+            <div class="flex items-center justify-between mb-1">
+              <label
+                for="blockHeightSlider"
+                class="text-[11px] font-semibold text-slate-400 uppercase">
+                Block Height
+              </label>
+              <span class="text-xs font-mono font-bold text-amber-300">{{ blockHeight() }}px</span>
+            </div>
+            <input
+              id="blockHeightSlider"
+              type="range"
+              min="150"
+              max="800"
+              step="25"
+              [value]="blockHeight()"
+              (input)="onBlockHeightInput($event)"
+              class="w-full accent-amber-400 cursor-pointer" />
+            <div class="flex justify-between text-[9px] text-slate-500 mt-0.5">
+              <span>150px (Compact)</span>
+              <span>380px (Default)</span>
+              <span>800px (Tall)</span>
+            </div>
+          </div>
+
+          <!-- 3. Block Label -->
+          <div>
+            <label
+              for="blockLabelInput"
+              class="block text-[11px] font-semibold text-slate-400 uppercase mb-1">
+              Component Label
+            </label>
+            <input
+              id="blockLabelInput"
+              type="text"
+              [value]="blockLabel()"
+              (input)="onBlockLabelInput($event)"
+              class="w-full bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-amber-400" />
+          </div>
+
+          <!-- 4. Remove Block Button -->
+          <div class="pt-2 border-t border-slate-800">
+            <button
+              type="button"
+              (click)="removeActiveBlock()"
+              class="w-full py-1.5 text-xs font-bold text-red-400 hover:bg-red-500/10 rounded-lg transition flex items-center justify-center gap-1 cursor-pointer border-0 bg-transparent">
+              <mat-icon class="!w-4 !h-4 !text-[16px]">delete</mat-icon>
+              Remove Block
+            </button>
+          </div>
+        </div>
+      }
     </div>
   `,
   styles: [
@@ -830,6 +980,26 @@ export type StoryTextAlign = 'left' | 'center' | 'right' | 'justify';
         text-align: center;
         font-style: italic;
       }
+      .story .story-component-block {
+        display: block;
+        box-sizing: border-box;
+        border: 2px dashed rgba(245, 158, 11, 0.7);
+        background: linear-gradient(
+          135deg,
+          rgba(245, 158, 11, 0.08) 0%,
+          rgba(168, 85, 247, 0.05) 50%,
+          rgba(15, 23, 42, 0.9) 100%
+        );
+        border-radius: 1rem;
+        padding: 1rem;
+        user-select: none;
+        cursor: context-menu;
+        transition: all 0.2s ease;
+      }
+      .story .story-component-block:hover {
+        border-color: rgba(245, 158, 11, 1);
+        box-shadow: 0 10px 25px -5px rgba(245, 158, 11, 0.15);
+      }
     `,
   ],
   encapsulation: ViewEncapsulation.None,
@@ -894,6 +1064,14 @@ export class StoryHtmlEditorComponent implements FormValueControl<string> {
   readonly classHistory = signal<string[]>([]);
   readonly scannedDocumentClasses = signal<string[]>([]);
 
+  // Component Block state signals
+  readonly showBlockContextMenu = signal<boolean>(false);
+  readonly blockContextMenuPosition = signal<{ x: number; y: number }>({ x: 0, y: 0 });
+  readonly blockHeight = signal<number>(380);
+  readonly blockAlign = signal<'left' | 'right' | 'full'>('left');
+  readonly blockLabel = signal<string>('My Favorite Things!');
+  protected readonly activeBlockElement = signal<HTMLElement | null>(null);
+
   // Font family options
   readonly fontFamilies: FontOption[] = [
     {
@@ -951,6 +1129,7 @@ export class StoryHtmlEditorComponent implements FormValueControl<string> {
       numberedlist: ['numbers', 'orderedlist', 'numbered-list', 'numbered_list'],
       align: ['alignment', 'textalign', 'text-align'],
       indent: ['indents', 'indentation'],
+      block: ['blocks', 'componentblock', 'component-block', 'widget', 'widgets'],
       html: ['source', 'codeview', 'sourcecode', 'htmlview', 'rawhtml', 'raw-html', 'html-source'],
     };
 
@@ -1890,5 +2069,154 @@ export class StoryHtmlEditorComponent implements FormValueControl<string> {
       .replace(/(<(figure|div|ul|ol)[^>]*>)/gi, '\n$1\n')
       .replace(/\n{2,}/g, '\n')
       .trim();
+  }
+
+  insertComponentBlock(): void {
+    const canvasEl = this.editorCanvas()?.nativeElement;
+    if (!canvasEl) return;
+
+    const blockEl = document.createElement('div');
+    this.renderBlockContent(blockEl, 380, 'left', 'My Favorite Things!');
+
+    // Insert at current selection if inside canvas, or append to canvas
+    const selection = window.getSelection();
+    if (selection && selection.rangeCount > 0 && canvasEl.contains(selection.anchorNode)) {
+      const range = selection.getRangeAt(0);
+      range.deleteContents();
+      range.insertNode(blockEl);
+    } else {
+      canvasEl.appendChild(blockEl);
+    }
+
+    this.onInput();
+  }
+
+  onCanvasContextMenu(event: MouseEvent): void {
+    const canvasEl = this.editorCanvas()?.nativeElement;
+    if (!canvasEl) return;
+
+    const target = event.target as HTMLElement;
+    const blockEl = target?.closest?.('[data-component-block="true"]') as HTMLElement | null;
+    if (blockEl && canvasEl.contains(blockEl)) {
+      event.preventDefault();
+      this.activeBlockElement.set(blockEl);
+
+      const height = parseInt(blockEl.getAttribute('data-block-height') || '380', 10);
+      const align = (blockEl.getAttribute('data-block-align') || 'left') as
+        'left' | 'right' | 'full';
+      const label = blockEl.getAttribute('data-block-label') || 'My Favorite Things!';
+
+      this.blockHeight.set(height);
+      this.blockAlign.set(align);
+      this.blockLabel.set(label);
+
+      let x = event.clientX + 5;
+      let y = event.clientY + 5;
+      if (typeof window !== 'undefined') {
+        if (x + 300 > window.innerWidth) x = Math.max(10, window.innerWidth - 310);
+        if (y + 360 > window.innerHeight) y = Math.max(10, window.innerHeight - 370);
+      }
+
+      this.blockContextMenuPosition.set({ x, y });
+      this.showBlockContextMenu.set(true);
+    }
+  }
+
+  closeBlockContextMenu(): void {
+    this.showBlockContextMenu.set(false);
+    this.activeBlockElement.set(null);
+  }
+
+  setBlockAlign(align: 'left' | 'right' | 'full'): void {
+    this.blockAlign.set(align);
+    const blockEl = this.activeBlockElement();
+    if (blockEl) {
+      this.renderBlockContent(blockEl, this.blockHeight(), align, this.blockLabel());
+      this.onInput();
+    }
+  }
+
+  onBlockHeightInput(event: Event): void {
+    const val = parseInt((event.target as HTMLInputElement).value, 10);
+    this.blockHeight.set(val);
+    const blockEl = this.activeBlockElement();
+    if (blockEl) {
+      this.renderBlockContent(blockEl, val, this.blockAlign(), this.blockLabel());
+      this.onInput();
+    }
+  }
+
+  onBlockLabelInput(event: Event): void {
+    const val = (event.target as HTMLInputElement).value;
+    this.blockLabel.set(val);
+    const blockEl = this.activeBlockElement();
+    if (blockEl) {
+      this.renderBlockContent(blockEl, this.blockHeight(), this.blockAlign(), val);
+      this.onInput();
+    }
+  }
+
+  removeActiveBlock(): void {
+    const blockEl = this.activeBlockElement();
+    if (blockEl) {
+      blockEl.remove();
+      this.closeBlockContextMenu();
+      this.onInput();
+    }
+  }
+
+  private renderBlockContent(
+    blockEl: HTMLElement,
+    height: number,
+    align: 'left' | 'right' | 'full',
+    label: string,
+  ): void {
+    blockEl.setAttribute('data-component-block', 'true');
+    blockEl.setAttribute('data-block-height', height.toString());
+    blockEl.setAttribute('data-block-align', align);
+    blockEl.setAttribute('data-block-label', label);
+    blockEl.setAttribute('contenteditable', 'false');
+    blockEl.className = 'story-component-block';
+
+    blockEl.style.height = `${height}px`;
+    if (align === 'left') {
+      blockEl.style.float = 'left';
+      blockEl.style.width = '340px';
+      blockEl.style.margin = '0 1.5rem 1.5rem 0';
+      blockEl.style.clear = 'none';
+    } else if (align === 'right') {
+      blockEl.style.float = 'right';
+      blockEl.style.width = '340px';
+      blockEl.style.margin = '0 0 1.5rem 1.5rem';
+      blockEl.style.clear = 'none';
+    } else {
+      blockEl.style.float = 'none';
+      blockEl.style.width = '100%';
+      blockEl.style.margin = '1.5rem 0';
+      blockEl.style.clear = 'both';
+    }
+
+    const alignText =
+      align === 'left' ? 'Float Left' : align === 'right' ? 'Float Right' : 'Full Width';
+
+    blockEl.innerHTML = `
+      <div class="flex items-center justify-between mb-3 border-b border-amber-500/20 pb-2 pointer-events-none select-none">
+        <div class="flex items-center gap-1.5 text-amber-300 font-bold text-xs">
+          <span class="material-icons text-base text-amber-400">widgets</span>
+          <span class="block-title-text">${label || 'Component Block'}</span>
+        </div>
+        <span class="text-[10px] font-mono font-bold bg-amber-500/20 text-amber-200 px-2 py-0.5 rounded-full border border-amber-500/30">
+          ${height}px • ${alignText}
+        </span>
+      </div>
+      <div class="flex flex-col justify-center items-center h-[calc(100%-50px)] space-y-2 opacity-60 pointer-events-none select-none">
+        <div class="text-[11px] text-center text-slate-300 font-medium px-2">
+          Component Block Footprint (${height}px)
+        </div>
+        <div class="text-[10px] text-amber-300/80">
+          Right-click block to configure size & alignment
+        </div>
+      </div>
+    `.trim();
   }
 }
