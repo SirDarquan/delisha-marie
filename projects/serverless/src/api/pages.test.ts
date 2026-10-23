@@ -50,6 +50,30 @@ describe('Public Pages Router API', () => {
       });
     });
 
+    it('should fall back to legacy slug when kitchen:slug is not found', async () => {
+      const mockSingle = vi
+        .fn()
+        .mockResolvedValueOnce({ data: null, error: { code: 'PGRST116' } }) // kitchen:about not found
+        .mockResolvedValueOnce({
+          data: { title: 'Legacy About', content: '<p>Legacy HTML</p>', updated_at: '2026-08-01' },
+          error: null,
+        }); // about found
+      const mockEq = vi.fn().mockReturnValue({ single: mockSingle });
+      const mockSelect = vi.fn().mockReturnValue({ eq: mockEq });
+      mockFrom.mockReturnValue({ select: mockSelect });
+
+      const res = await request(app).get('/api/pages/kitchen:about');
+
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual({
+        title: 'Legacy About',
+        content: '<p>Legacy HTML</p>',
+        updated_at: '2026-08-01',
+      });
+      expect(mockEq).toHaveBeenCalledWith('slug', 'kitchen:about');
+      expect(mockEq).toHaveBeenCalledWith('slug', 'about');
+    });
+
     it('should return 404 if page not found', async () => {
       const mockSingle = vi.fn().mockResolvedValue({ data: null, error: { code: 'PGRST116' } });
       const mockEq = vi.fn().mockReturnValue({ single: mockSingle });
