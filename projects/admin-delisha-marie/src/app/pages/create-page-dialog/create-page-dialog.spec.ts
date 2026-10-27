@@ -77,6 +77,7 @@ describe('CreatePageDialogComponent', () => {
     const inputEl = fixture.nativeElement.querySelector('#pageSlug') as HTMLInputElement;
     expect(inputEl).toBeTruthy();
     inputEl.value = 'Custom Live Slug!';
+    component.onSlugInput({ target: inputEl } as unknown as Event);
     inputEl.dispatchEvent(new Event('input'));
     fixture.detectChanges();
 
