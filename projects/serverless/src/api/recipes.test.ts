@@ -1,4 +1,4 @@
-import { createRequestMock } from './test-utils';
+import { createRequestMock, createMockRequest } from './test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.hoisted(() => {
@@ -6,12 +6,18 @@ vi.hoisted(() => {
   process.env['SUPABASE_KEY'] = 'test-key';
 });
 
-const { mockFrom, mockInvoke, mockRpc, mockChannel, mockRemoveChannel } = vi.hoisted(() => ({
-  mockFrom: vi.fn(),
-  mockInvoke: vi.fn(),
-  mockRpc: vi.fn(),
-  mockChannel: vi.fn(),
-  mockRemoveChannel: vi.fn(),
+const { mockFrom, mockInvoke, mockRpc, mockChannel, mockRemoveChannel, mockCheckBotId } =
+  vi.hoisted(() => ({
+    mockFrom: vi.fn(),
+    mockInvoke: vi.fn(),
+    mockRpc: vi.fn(),
+    mockChannel: vi.fn(),
+    mockRemoveChannel: vi.fn(),
+    mockCheckBotId: vi.fn().mockResolvedValue({ isBot: false }),
+  }));
+
+vi.mock('botid/server', () => ({
+  checkBotId: () => mockCheckBotId(),
 }));
 
 vi.mock('@supabase/supabase-js', () => {
@@ -91,6 +97,7 @@ describe('Recipes Router API', () => {
     shouldFail = false;
     shouldReturnNullData = false;
     mockIngredientsData = [];
+    mockCheckBotId.mockResolvedValue({ isBot: false });
     mockRpc.mockImplementation((rpcName: string) => {
       if (rpcName === 'get_top_rated_recipes') {
         const activeMockFrom =
@@ -220,6 +227,22 @@ describe('Recipes Router API', () => {
       .query({ method: 'the-best-recipes', rating: 'true' });
     expect(res.status).toBe(500);
     expect(res.body.error).toBe('Query failed');
+  });
+
+  it('should return 500 with stringified error when handleGetRecipes throws a non-Error plain object', async () => {
+    (globalThis as typeof globalThis & { supabaseMockFrom?: unknown }).supabaseMockFrom = () => ({
+      select: () => ({
+        eq: () => ({
+          range: () => Promise.reject({ customError: 'plain_object_failure' }),
+        }),
+        range: () => Promise.reject({ customError: 'plain_object_failure' }),
+        then: () => Promise.reject({ customError: 'plain_object_failure' }),
+      }),
+    });
+
+    const res = await createRequestMock(recipesRouter)().get('/api/recipes');
+    expect(res.status).toBe(500);
+    expect(res.body.error).toBe(JSON.stringify({ customError: 'plain_object_failure' }));
   });
 
   it('should filter by category for cooking methods', async () => {
@@ -2834,6 +2857,40 @@ describe('Recipes Router API', () => {
 
       expect(res.status).toBe(500);
       expect(res.body.error).toBe('String insert crash');
+    });
+
+    it('should catch error when checkBotId rejects on comment POST', async () => {
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockReturnValue();
+      mockCheckBotId.mockRejectedValueOnce(new Error('Bot check failed'));
+
+      const req = {
+        method: 'POST',
+        url: 'http://localhost/api/recipes/123/comments',
+        query: { slug: ['123', 'comments'] },
+        body: {
+          author: 'Tester',
+          email: 'tester@example.com',
+          content: 'Awesome!',
+        },
+        headers: { host: 'localhost' },
+      } as unknown as import('@vercel/node').VercelRequest;
+
+      const res = {
+        status: vi.fn().mockReturnThis(),
+        json: vi.fn(),
+      } as unknown as import('@vercel/node').VercelResponse;
+
+      await recipesRouter(req, res);
+
+      expect(consoleErrorSpy).toHaveBeenCalledWith(expect.any(Error));
+      consoleErrorSpy.mockRestore();
+
+      // Also exercise test-utils chain helpers (.set and .on)
+      const mockReq = createMockRequest('/api/recipes');
+      expect(mockReq.on('data', vi.fn())).toBe(mockReq);
+
+      const chain = createRequestMock(recipesRouter)().post('/api/recipes/123/comments');
+      expect(chain.set('x-test-header', 'test-val')).toBe(chain);
     });
   });
 

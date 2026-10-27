@@ -380,6 +380,15 @@ describe('sitemap', () => {
       );
     });
 
+    it('should rethrow error when OPTIMIZE_IMAGE is required is thrown inside recipes generator block', async () => {
+      process.env['OPTIMIZE_IMAGE'] = 'https://ik.imagekit.io/delishamarie';
+      mockLte.mockRejectedValueOnce(new Error('OPTIMIZE_IMAGE is required'));
+
+      await expect(request(app).get('/sitemap-recipes.xml')).rejects.toThrow(
+        'OPTIMIZE_IMAGE is required',
+      );
+    });
+
     it('should prepend OPTIMIZE_IMAGE to relative recipe images', async () => {
       mockLte.mockResolvedValueOnce({
         data: [

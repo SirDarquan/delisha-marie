@@ -247,6 +247,21 @@ describe('Contacts API Router', () => {
       const response = await request(app).get('/api/contacts/123');
       expect(response.status).toBe(500);
     });
+
+    it('should catch unexpected exception in GET /contacts/:id', async () => {
+      const mockSingle = vi.fn().mockRejectedValue(new Error('Unexpected fetch failure'));
+      const mockEqTenant = vi.fn().mockReturnValue({ single: mockSingle });
+      const mockEqId = vi.fn().mockReturnValue({ eq: mockEqTenant });
+      const mockSelect = vi.fn().mockReturnValue({ eq: mockEqId });
+
+      backendService.supabaseAdmin = {
+        from: createAuthFromMock({ select: mockSelect }),
+      } as unknown as SupabaseClient;
+
+      const response = await request(app).get('/api/contacts/123');
+      expect(response.status).toBe(500);
+      expect(response.body).toEqual({ error: 'Internal server error' });
+    });
   });
 
   describe('PUT /api/contacts/:id', () => {
@@ -329,6 +344,22 @@ describe('Contacts API Router', () => {
 
       const response = await request(app).put('/api/contacts/123').send({});
       expect(response.status).toBe(500);
+    });
+
+    it('should catch unexpected exception in PUT /contacts/:id', async () => {
+      const mockSingle = vi.fn().mockRejectedValue(new Error('Unexpected update failure'));
+      const mockSelect = vi.fn().mockReturnValue({ single: mockSingle });
+      const mockEqTenant = vi.fn().mockReturnValue({ select: mockSelect });
+      const mockEqId = vi.fn().mockReturnValue({ eq: mockEqTenant });
+      const mockUpdate = vi.fn().mockReturnValue({ eq: mockEqId });
+
+      backendService.supabaseAdmin = {
+        from: createAuthFromMock({ update: mockUpdate }),
+      } as unknown as SupabaseClient;
+
+      const response = await request(app).put('/api/contacts/123').send({});
+      expect(response.status).toBe(500);
+      expect(response.body).toEqual({ error: 'Internal server error' });
     });
   });
 

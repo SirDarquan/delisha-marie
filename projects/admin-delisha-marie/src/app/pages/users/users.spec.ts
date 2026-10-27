@@ -433,4 +433,82 @@ describe('UsersPageComponent', () => {
     unblockBtn?.click();
     expect(unblockSpy).toHaveBeenCalledWith(mockUsersList[2]);
   });
+
+  it('should fallback to default chef tenant name if pending user email is missing', () => {
+    component.pendingUsers.set([
+      {
+        id: 'no-email',
+        userId: 'u9',
+        email: '',
+        role: 'unassigned',
+        status: 'pending',
+        createdAt: '',
+        tenant: null,
+      },
+    ]);
+    component.toggleApproveForm('no-email');
+    expect(component.approvalTenantName).toBe("chef's Kitchen");
+    expect(component.approvalSlug).toBe('chef');
+  });
+
+  it('should handle onApproveAdmin failure', async () => {
+    usersServiceMock.approveUser.mockRejectedValueOnce(new Error('Admin error'));
+    await component.onApproveAdmin(mockPendingList[0]);
+    expect(component.isErrorMessage()).toBe(true);
+    expect(component.actionMessage()).toContain('Failed to approve administrator');
+  });
+
+  it('should handle unblockUser failure', async () => {
+    usersServiceMock.unblockUser.mockRejectedValueOnce(new Error('Unblock error'));
+    await component.onUnblockUser(mockUsersList[2]);
+    expect(component.isErrorMessage()).toBe(true);
+    expect(component.actionMessage()).toContain('Failed to unblock user');
+  });
+
+  it('should not open edit tenant if user has no tenant', () => {
+    component.openEditTenant(mockUsersList[0]);
+    expect(component.editingTenantUser()).toBeNull();
+  });
+
+  it('should not save tenant changes if no user is being edited', async () => {
+    component.editingTenantUser.set(null);
+    await component.saveTenantChanges();
+    expect(usersServiceMock.updateTenant).not.toHaveBeenCalled();
+  });
+
+  it('should reload data when header refresh button is clicked', async () => {
+    const loadSpy = vi.spyOn(component, 'loadData');
+    const refreshBtn = fixture.nativeElement.querySelector(
+      'button[mat-stroked-button]',
+    ) as HTMLButtonElement;
+    refreshBtn?.click();
+    expect(loadSpy).toHaveBeenCalled();
+  });
+
+  it('should submit member approval with undefined customDomain if not specified', async () => {
+    component.approvalTenantName = 'Default Kitchen';
+    component.approvalSlug = 'default-kitchen';
+    component.approvalCustomDomain = '';
+
+    await component.submitMemberApproval('p-new');
+
+    expect(usersServiceMock.approveUser).toHaveBeenCalledWith('p-new', {
+      role: 'member',
+      tenantName: 'Default Kitchen',
+      slug: 'default-kitchen',
+      customDomain: undefined,
+    });
+  });
+
+  it('should save tenant changes with undefined customDomain if empty', async () => {
+    component.openEditTenant(mockUsersList[1]);
+    component.editTenantDomain = '';
+    await component.saveTenantChanges();
+
+    expect(usersServiceMock.updateTenant).toHaveBeenCalledWith('t2', {
+      name: "Chef's Table",
+      slug: 'chefs-table',
+      customDomain: undefined,
+    });
+  });
 });

@@ -530,6 +530,59 @@ describe('Auth Router API', () => {
         .set('Cookie', ['admin_refresh_token=valid-only']);
       expect(res.status).toBe(401);
     });
+
+    it('should return 401 if accessing cookies throws an exception', async () => {
+      const customApp = express();
+      customApp.use((req, _res, next) => {
+        Object.defineProperty(req, 'cookies', {
+          get() {
+            throw new Error('Unexpected cookie error');
+          },
+        });
+        next();
+      });
+      customApp.use('/', authRouter);
+
+      const res = await request(customApp).get('/auth/me');
+      expect(res.status).toBe(401);
+      expect(res.body.error).toBe('Token missing or invalid');
+    });
+  });
+
+  describe('GET /auth/session', () => {
+    it('should return current session details for authenticated user', async () => {
+      const mockUser = { id: 'session-user-1', email: 'session@example.com' };
+      vi.mocked(backendService.verifyToken).mockResolvedValue(
+        mockUser as unknown as Awaited<ReturnType<typeof backendService.verifyToken>>,
+      );
+
+      backendService.supabaseAdmin.from = vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        maybeSingle: vi.fn().mockResolvedValue({
+          data: { role: 'admin', status: 'active' },
+          error: null,
+        }),
+      }) as unknown as typeof backendService.supabaseAdmin.from;
+
+      const res = await request(app)
+        .get('/auth/session')
+        .set('Cookie', ['admin_access_token=valid-session-token']);
+
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual({
+        user: mockUser,
+        role: 'admin',
+        status: 'active',
+        tenant: null,
+        isImpersonating: false,
+      });
+    });
+
+    it('should return 401 if unauthenticated', async () => {
+      const res = await request(app).get('/auth/session');
+      expect(res.status).toBe(401);
+    });
   });
 
   describe('GET /auth/check-username', () => {
