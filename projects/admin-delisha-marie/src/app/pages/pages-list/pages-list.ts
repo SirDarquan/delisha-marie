@@ -261,12 +261,12 @@ export class PagesListComponent {
       return { hasBlock: false };
     }
 
-    const heightMatch = content.match(/data-block-height=["']?(\d+)["']?/);
-    const labelMatch = content.match(/data-block-label=["']([^"']+)["']/);
+    const heightMatch = /data-block-height=["']?(\d+)["']?/.exec(content);
+    const labelMatch = /data-block-label=["']([^"']+)["']/.exec(content);
 
     return {
       hasBlock: true,
-      height: heightMatch ? parseInt(heightMatch[1], 10) : 380,
+      height: heightMatch ? Number.parseInt(heightMatch[1], 10) : 380,
       label: labelMatch ? labelMatch[1] : undefined,
     };
   }

@@ -180,7 +180,7 @@ describe('PinterestHoverDirective', () => {
     fixture.detectChanges();
 
     const buttons = document.querySelectorAll('#pinterest-hover-btn');
-    expect(buttons.length).toBe(1);
+    expect(buttons).toHaveLength(1);
     expect(buttons[0]).toBe(btn);
   });
 

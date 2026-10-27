@@ -117,6 +117,7 @@ export class CreatePageDialogComponent {
     {
       submission: {
         action: async () => {
+          await Promise.resolve();
           this.onSubmit();
         },
       },
@@ -142,10 +143,9 @@ export class CreatePageDialogComponent {
     this.createPageForm.slug().value.set(slugify(current || ''));
   }
 
-  onTitleChange(newTitle: string): void {
-    const titleVal = newTitle || '';
-    const slugVal = !this.userEditedSlug ? slugify(titleVal) : this.model().slug;
-    this.model.set({ title: titleVal, slug: slugVal });
+  onTitleChange(newTitle = ''): void {
+    const slugVal = !this.userEditedSlug ? slugify(newTitle) : this.model().slug;
+    this.model.set({ title: newTitle, slug: slugVal });
   }
 
   onSlugChange(newSlug: string): void {

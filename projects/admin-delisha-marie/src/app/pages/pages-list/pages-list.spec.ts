@@ -102,7 +102,7 @@ describe('PagesListComponent', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect(component['pages']().length).toBe(6);
+    expect(component['pages']()).toHaveLength(6);
     // Should include home, kitchen, and dynamically discovered garden
     expect(component['posts']()).toEqual(['home', 'kitchen', 'garden']);
   });
@@ -252,7 +252,7 @@ describe('PagesListComponent', () => {
     });
     const postsBefore = component['posts']().length;
     component.openAddPostDialog();
-    expect(component['posts']().length).toBe(postsBefore);
+    expect(component['posts']()).toHaveLength(postsBefore);
 
     // When add post dialog returns an existing post name
     dialogSpy.open.mockReturnValueOnce({
@@ -371,6 +371,6 @@ describe('PagesListComponent', () => {
 
     // Call again with same name
     component.openAddPostDialog();
-    expect(component['customPosts']().filter((p) => p === 'events').length).toBe(1);
+    expect(component['customPosts']().filter((p) => p === 'events')).toHaveLength(1);
   });
 });

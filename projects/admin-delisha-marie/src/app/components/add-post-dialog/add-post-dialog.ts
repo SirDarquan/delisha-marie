@@ -83,6 +83,7 @@ export class AddPostDialogComponent {
     {
       submission: {
         action: async () => {
+          await Promise.resolve();
           this.onSubmit();
         },
       },

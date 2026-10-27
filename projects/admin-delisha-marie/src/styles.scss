@@ -90,11 +90,11 @@ body {
 }
 
 /* Transparent Dialog Overrides */
-.transparent-dialog-panel .mdc-dialog__surface {
-  background: transparent !important;
-  box-shadow: none !important;
-  padding: 0 !important;
-  overflow: visible !important;
+.cdk-overlay-pane.transparent-dialog-panel .mat-mdc-dialog-container .mat-mdc-dialog-surface.mdc-dialog__surface {
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+  overflow: visible;
 }
 
 /* Contacts Paginator Overrides */

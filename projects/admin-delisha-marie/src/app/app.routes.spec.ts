@@ -5,7 +5,7 @@ import { authGuard } from './guards/auth.guard';
 describe('Admin App Routes', () => {
   it('should define expected number of routes and configuration', () => {
     expect(routes).toBeDefined();
-    expect(routes.length).toBe(15);
+    expect(routes).toHaveLength(15);
   });
 
   it('should protect administrative routes with authGuard', () => {
@@ -49,7 +49,7 @@ describe('Admin App Routes', () => {
 
   it('should lazy load all route components successfully', async () => {
     const lazyRoutes = routes.filter((r) => typeof r.loadComponent === 'function');
-    expect(lazyRoutes.length).toBe(13);
+    expect(lazyRoutes).toHaveLength(13);
 
     for (const route of lazyRoutes) {
       const comp = await (route.loadComponent as () => Promise<unknown>)();
