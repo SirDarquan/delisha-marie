@@ -62,7 +62,7 @@ export interface CreatePageModel {
             id="pageSlug"
             type="text"
             [formField]="createPageForm.slug"
-            (input)="onSlugInput()"
+            (input)="onSlugInput($event)"
             placeholder="e.g., faq" />
         </mat-form-field>
 
@@ -136,10 +136,15 @@ export class CreatePageDialogComponent {
     },
   );
 
-  onSlugInput(): void {
+  onSlugInput(event?: Event): void {
     this.userEditedSlug = true;
-    const current = this.createPageForm.slug().value();
-    this.createPageForm.slug().value.set(slugify(current || ''));
+    const targetVal =
+      event && (event.target as HTMLInputElement)?.value !== undefined
+        ? (event.target as HTMLInputElement).value
+        : this.createPageForm.slug().value();
+    const clean = slugify(targetVal || '');
+    this.createPageForm.slug().value.set(clean);
+    this.model.update((prev) => ({ ...prev, slug: clean }));
   }
 
   onTitleChange(newTitle: string): void {
