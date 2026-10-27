@@ -371,7 +371,7 @@
             "include": ["projects/admin-delisha-marie/src/api/**/*.test.ts"],
             "watch": false,
             "runnerConfig": "projects/admin-delisha-marie/src/api/vitest.config.ts",
-            "coverageExclude": ["projects/dm/backend-shared/**/*"],
+            "coverageExclude": ["projects/dm/backend-shared/**/*", "projects/dm/library/**/*"],
             "coverageThresholds": {
               "statements": 95,
               "branches": 94,
