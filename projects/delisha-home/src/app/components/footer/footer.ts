@@ -5,14 +5,12 @@ import {
   inject,
   ViewEncapsulation,
 } from '@angular/core';
-import { MatSnackBar } from '@angular/material/snack-bar';
-import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterLink } from '@angular/router';
 import { getKitchenUrl } from '../../utils/navigation';
 
 @Component({
   selector: 'dm-footer',
-  imports: [RouterLink, MatTooltipModule],
+  imports: [RouterLink],
   template: `
     <footer
       class="footer-bar w-full py-4 md:py-6 px-8 md:px-16 lg:px-24 xl:px-32 border-t border-white/15 bg-black/45 backdrop-blur-md text-white/90">
@@ -33,14 +31,11 @@ import { getKitchenUrl } from '../../utils/navigation';
           class="text-white/80 hover:text-[#ffb952] text-sm font-medium transition-colors no-underline">
           Contact
         </a>
-        <button
-          type="button"
-          (click)="onKitchenClick($event)"
-          matTooltip="Coming soon"
-          aria-label="Kitchen - Coming soon"
-          class="text-white/50 hover:text-white/70 text-sm font-medium transition-colors no-underline cursor-not-allowed bg-transparent border-none p-0 inline-flex items-center">
+        <a
+          [href]="kitchenUrl"
+          class="text-white/80 hover:text-[#ffb952] text-sm font-medium transition-colors no-underline">
           Kitchen
-        </button>
+        </a>
       </div>
 
       <div class="footer-copyright text-white/70 text-xs whitespace-nowrap">
@@ -76,7 +71,6 @@ import { getKitchenUrl } from '../../utils/navigation';
 })
 export class Footer {
   private readonly document = inject(DOCUMENT);
-  private readonly snackBar = inject(MatSnackBar);
 
   readonly year = new Date().getFullYear();
   readonly kitchenUrl = getKitchenUrl();
@@ -84,14 +78,5 @@ export class Footer {
   scrollToTop(event: Event): void {
     event.preventDefault();
     this.document.defaultView?.scrollTo({ top: 0, behavior: 'smooth' });
-  }
-
-  onKitchenClick(event: Event): void {
-    event.preventDefault();
-    this.snackBar.open('Coming soon', 'Dismiss', {
-      duration: 3000,
-      horizontalPosition: 'center',
-      verticalPosition: 'bottom',
-    });
   }
 }

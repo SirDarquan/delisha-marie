@@ -1,6 +1,5 @@
 import { DOCUMENT } from '@angular/common';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { provideRouter } from '@angular/router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Footer } from './footer';
@@ -8,14 +7,11 @@ import { Footer } from './footer';
 describe('Footer', () => {
   let component: Footer;
   let fixture: ComponentFixture<Footer>;
-  let mockSnackBar: { open: ReturnType<typeof vi.fn> };
 
   beforeEach(async () => {
-    mockSnackBar = { open: vi.fn() };
-
     await TestBed.configureTestingModule({
       imports: [Footer],
-      providers: [provideRouter([]), { provide: MatSnackBar, useValue: mockSnackBar }],
+      providers: [provideRouter([])],
     }).compileComponents();
 
     fixture = TestBed.createComponent(Footer);
@@ -33,7 +29,7 @@ describe('Footer', () => {
     expect(compiled.textContent).toContain(`© ${currentYear} Delisha Marie. Designed by The One.`);
   });
 
-  it('should render links for About and Contact, and button for Kitchen', () => {
+  it('should render links for About, Contact, and Kitchen', () => {
     const compiled = fixture.nativeElement as HTMLElement;
     const links = Array.from(compiled.querySelectorAll('a'));
 
@@ -45,25 +41,9 @@ describe('Footer', () => {
     expect(contactLink).toBeTruthy();
     expect(contactLink?.getAttribute('href')).toBe('/contact');
 
-    const kitchenBtn = compiled.querySelector('.footer-links button');
-    expect(kitchenBtn).toBeTruthy();
-    expect(kitchenBtn?.textContent?.trim()).toBe('Kitchen');
-    expect(kitchenBtn?.getAttribute('aria-label')).toContain('Coming soon');
-  });
-
-  it('should show "Coming soon" snackbar when Kitchen button in footer is clicked', () => {
-    const compiled = fixture.nativeElement as HTMLElement;
-    const kitchenBtn = compiled.querySelector('.footer-links button') as HTMLButtonElement;
-    expect(kitchenBtn).toBeTruthy();
-
-    const event = new MouseEvent('click', { bubbles: true, cancelable: true });
-    kitchenBtn.dispatchEvent(event);
-
-    expect(mockSnackBar.open).toHaveBeenCalledWith('Coming soon', 'Dismiss', {
-      duration: 3000,
-      horizontalPosition: 'center',
-      verticalPosition: 'bottom',
-    });
+    const kitchenLink = links.find((a) => a.textContent?.trim() === 'Kitchen');
+    expect(kitchenLink).toBeTruthy();
+    expect(kitchenLink?.getAttribute('href')).toBe(component.kitchenUrl);
   });
 
   it('should scroll to top when "^ Back to the top" is clicked', () => {
