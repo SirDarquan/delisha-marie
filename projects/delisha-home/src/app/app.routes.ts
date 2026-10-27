@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { Home } from './pages/home/home';
+import { dynamicPageResolver } from './resolvers/dynamic-page.resolver';
 
 export const routes: Routes = [
   {
@@ -8,12 +9,13 @@ export const routes: Routes = [
     pathMatch: 'full',
   },
   {
-    path: 'about',
-    loadComponent: () => import('./pages/about/about').then((m) => m.About),
-  },
-  {
     path: 'contact',
     loadComponent: () => import('./pages/contact/contact').then((m) => m.Contact),
+  },
+  {
+    path: ':slug',
+    title: dynamicPageResolver,
+    loadComponent: () => import('./pages/dynamic-page/dynamic-page').then((m) => m.DynamicPage),
   },
   {
     path: '**',

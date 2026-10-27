@@ -20,11 +20,28 @@ export default async function pagesHandler(req: VercelRequest, res: VercelRespon
 
     const supabase = await getSupabaseClient();
 
-    const { data, error } = await supabase
+    let { data, error } = await supabase
       .from('pages')
       .select('slug, title, content, description, keywords, updated_at')
       .eq('slug', slug)
+      .limit(1)
       .single();
+
+    // Fallback: If kitchen:slug was not found, check for legacy unprefixed slug
+    if (error && error.code === 'PGRST116' && slug.startsWith('kitchen:')) {
+      const legacySlug = slug.slice(8); // remove 'kitchen:'
+      const fallbackResult = await supabase
+        .from('pages')
+        .select('slug, title, content, description, keywords, updated_at')
+        .eq('slug', legacySlug)
+        .limit(1)
+        .single();
+
+      if (!fallbackResult.error) {
+        data = fallbackResult.data;
+        error = null;
+      }
+    }
 
     if (error) {
       if (error.code === 'PGRST116') {

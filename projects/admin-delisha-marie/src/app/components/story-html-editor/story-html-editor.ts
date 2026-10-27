@@ -639,7 +639,7 @@ export type StoryTextAlign = 'left' | 'center' | 'right' | 'justify';
         (blur)="onInput()"
         (click)="onCanvasClick($event)"
         (keyup)="onCanvasClick($event)"
-        class="story text-lg md:text-xl text-slate-200 leading-relaxed font-serif p-6 rounded-2xl bg-slate-900/60 min-h-[250px] max-h-[600px] overflow-y-auto focus:outline-none transition-all"></div>
+        class="story flex flex-col gap-12 text-lg md:text-xl text-[#d6c4b0] leading-relaxed font-serif first-letter:text-6xl first-letter:font-black first-letter:mr-1 first-letter:text-[#ffb952] p-6 rounded-2xl bg-[#18120b] min-h-[250px] max-h-[600px] overflow-y-auto focus:outline-none transition-all"></div>
 
       <!-- Raw HTML Source Code Textarea -->
       <textarea
@@ -656,28 +656,51 @@ export type StoryTextAlign = 'left' | 'center' | 'right' | 'justify';
   `,
   styles: [
     `
-      .story p {
-        margin-bottom: 1.5rem;
+      .story {
+        --mat-sys-primary: #ffb952;
+        --mat-sys-on-primary: #452b00;
+        --mat-sys-tertiary: #3fdbdc;
+        --mat-sys-surface: #18120b;
+        --mat-sys-surface-container-low: #251f17;
+        --mat-sys-surface-container: #362f27;
+        --mat-sys-surface-container-high: #423a32;
+        --mat-sys-surface-container-highest: #4d453d;
+        --mat-sys-on-surface: #ede0d4;
+        --mat-sys-on-surface-variant: #d6c4b0;
+        --mat-sys-outline: #9e8e7c;
+        --mat-sys-outline-variant: #514536;
       }
-      .story p:last-child {
+      .story > :first-child::first-letter {
+        font-size: 3.75rem;
+        line-height: 1;
+        font-weight: 900;
+        margin-right: 0.25rem;
+        color: #ffb952;
+      }
+      .story p {
+        margin-bottom: 2.5rem;
+      }
+      .story p:last-child,
+      .story .grid p,
+      .story section.flex-col p:not(:last-child) {
         margin-bottom: 0;
       }
       .story h1.story-title,
       .story h1 {
         font-size: 2.25rem;
         font-weight: 800;
-        margin-top: 2rem;
+        margin-top: 2.5rem;
         margin-bottom: 1rem;
         line-height: 1.25;
-        color: #f8fafc;
+        color: #ede0d4;
       }
       .story .story-subtitle {
         font-size: 1.25rem;
         font-weight: 400;
-        color: #94a3b8;
+        color: #9e8e7c;
         font-style: italic;
         margin-top: -0.25rem;
-        margin-bottom: 1.5rem;
+        margin-bottom: 2rem;
       }
       .story .story-first-letter,
       .story .drop-cap {
@@ -687,54 +710,71 @@ export type StoryTextAlign = 'left' | 'center' | 'right' | 'justify';
         float: left;
         margin-right: 0.65rem;
         margin-top: 0.15rem;
-        color: #c084fc;
+        color: #ffb952;
         font-family: 'Playfair Display', Georgia, serif;
       }
       .story h2 {
         font-size: 1.75rem;
         font-weight: 700;
-        margin-top: 2rem;
-        margin-bottom: 1rem;
-        color: #f8fafc;
+        margin-top: 2.5rem;
+        margin-bottom: 1.25rem;
+        color: #ede0d4;
+      }
+      .story section h2:first-child,
+      .story .grid h2,
+      .story .flex-col h2 {
+        margin-top: 0;
+        margin-bottom: 0;
+      }
+      .story section.flex-col > h2:first-child {
+        color: var(--mat-sys-primary);
+      }
+      .story .flex-col > h2 {
+        color: var(--mat-sys-on-surface);
       }
       .story h3 {
         font-size: 1.35rem;
         font-weight: 600;
-        margin-top: 1.5rem;
-        margin-bottom: 0.75rem;
-        color: #f1f5f9;
+        margin-top: 2rem;
+        margin-bottom: 1rem;
+        color: #ede0d4;
+      }
+      .story .grid h3,
+      .story .flex-col h3 {
+        margin-top: 0;
+        margin-bottom: 0;
       }
       .story h4 {
         font-size: 1.15rem;
         font-weight: 600;
-        margin-top: 1.25rem;
-        margin-bottom: 0.5rem;
-        color: #e2e8f0;
+        margin-top: 1.5rem;
+        margin-bottom: 0.75rem;
+        color: #ede0d4;
       }
       .story blockquote {
-        border-left: 4px solid #a855f7;
-        padding-left: 1rem;
+        border-left: 4px solid #ffb952;
+        padding-left: 1.25rem;
         font-style: italic;
-        margin: 1.5rem 0;
-        color: #cbd5e1;
+        margin: 2rem 0;
+        color: #d6c4b0;
       }
       .story .recipe-tip {
-        background: rgba(168, 85, 247, 0.12);
-        border-left: 4px solid #c084fc;
+        background: #251f17;
+        border-left: 4px solid #ffb952;
         border-radius: 0.75rem;
         padding: 1rem 1.25rem;
-        margin: 1.5rem 0;
-        color: #f1f5f9;
+        margin: 2rem 0;
+        color: #ede0d4;
       }
       .story mark {
         background: rgba(250, 204, 21, 0.25);
-        color: #fef08a;
+        color: inherit;
         padding: 0.1rem 0.35rem;
         border-radius: 0.25rem;
       }
       .story code {
-        background: rgba(30, 41, 59, 0.85);
-        color: #e2e8f0;
+        background: #4d453d;
+        color: #ede0d4;
         padding: 0.15rem 0.4rem;
         border-radius: 0.35rem;
         font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
@@ -742,22 +782,25 @@ export type StoryTextAlign = 'left' | 'center' | 'right' | 'justify';
       }
       .story hr {
         border: 0;
-        border-top: 1px solid rgba(148, 163, 184, 0.3);
+        border-top: 1px solid #514536;
         margin: 2rem 0;
       }
       .story ul {
         list-style-type: disc;
-        padding-left: 1.5rem;
-        margin-bottom: 1.5rem;
+        padding-left: 1.75rem;
+        margin-bottom: 2rem;
       }
       .story ol {
         list-style-type: decimal;
-        padding-left: 1.5rem;
-        margin-bottom: 1.5rem;
+        padding-left: 1.75rem;
+        margin-bottom: 2rem;
       }
-      .story a {
-        color: #c084fc;
+      .story a:not(.no-underline) {
+        color: #ffb952;
         text-decoration: underline;
+      }
+      .story a.no-underline {
+        text-decoration: none;
       }
       .story img {
         max-width: 100%;
@@ -780,7 +823,7 @@ export type StoryTextAlign = 'left' | 'center' | 'right' | 'justify';
         display: grid;
         grid-template-columns: repeat(1, minmax(0, 1fr));
         gap: 1.5rem;
-        margin: 2rem 0;
+        margin: 2.5rem 0;
         align-items: start;
       }
       .story figure.recipe-gallery:has(.column-2),
@@ -809,23 +852,24 @@ export type StoryTextAlign = 'left' | 'center' | 'right' | 'justify';
         height: auto;
         object-fit: cover;
         border-radius: 0.75rem;
+        display: block;
       }
       .story img:hover,
       .story figure:hover {
-        outline: 2px dashed #c084fc;
+        outline: 2px dashed #ffb952;
         outline-offset: 4px;
       }
       .story img.active-highlight,
       .story figure.active-highlight {
-        outline: 3px solid #a855f7 !important;
+        outline: 3px solid #ffb952 !important;
         outline-offset: 6px !important;
-        box-shadow: 0 0 25px rgba(168, 85, 247, 0.6) !important;
+        box-shadow: 0 0 25px rgba(255, 185, 82, 0.5) !important;
         border-radius: 1rem;
       }
       .story figcaption {
         font-size: 0.875rem;
-        line-height: 1.25rem;
-        color: #94a3b8;
+        line-height: 1.35rem;
+        color: #d6c4b0;
         margin-top: 0.5rem;
         text-align: center;
         font-style: italic;
@@ -836,6 +880,8 @@ export type StoryTextAlign = 'left' | 'center' | 'right' | 'justify';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class StoryHtmlEditorComponent implements FormValueControl<string> {
+  // Tailwind safelist for dynamic database page HTML:
+  // grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-2 gap-3 gap-6 gap-12 p-6 p-8 md:p-12 rounded-xl rounded-2xl rounded-3xl rounded-full bg-[var(--mat-sys-surface-container)] bg-[var(--mat-sys-surface-container-high)] bg-gradient-to-r from-[var(--mat-sys-surface-container)] to-[var(--mat-sys-surface-container-high)] border border-[var(--mat-sys-outline-variant)] border-[var(--mat-sys-outline-variant)]/40 text-[var(--mat-sys-primary)] text-[var(--mat-sys-tertiary)] text-[var(--mat-sys-on-surface)] text-[var(--mat-sys-on-surface-variant)] !bg-[var(--mat-sys-primary)] !text-black !font-semibold !px-8 !py-4 !py-6 !text-base !text-3xl shadow-xl shadow-2xl backdrop-blur-md sm:flex-row sm:text-left no-underline space-y-4 space-y-6
   // FormValueControl value signal for [formField] binding
   readonly value = model<string>('');
   readonly required = input<boolean>(false);
@@ -1437,25 +1483,31 @@ export class StoryHtmlEditorComponent implements FormValueControl<string> {
 
   private resolveImageSrc(html: string): string {
     if (!html) return '';
-    return html.replace(/<img([^>]+)>/gi, (match, attrs) => {
-      const srcMatch = attrs.match(/(?:src)=["']([^"']+)["']/i);
-      if (!srcMatch) return match;
+    return html
+      .replace(/<mat-icon([^>]*)>([^<]*)<\/mat-icon>/gi, (_, attrs: string, iconName: string) => {
+        const classMatch = /class=["']([^"']*)["']/i.exec(attrs);
+        const extraClasses = classMatch ? ` ${classMatch[1]}` : '';
+        return `<span class="material-icons${extraClasses}">${iconName}</span>`;
+      })
+      .replace(/<img([^>]+)>/gi, (match, attrs) => {
+        const srcMatch = attrs.match(/(?:src)=["']([^"']+)["']/i);
+        if (!srcMatch) return match;
 
-      const originalSrc = srcMatch[1];
-      if (
-        originalSrc.startsWith('data:') ||
-        originalSrc.startsWith('http://') ||
-        originalSrc.startsWith('https://')
-      ) {
-        return match;
-      }
+        const originalSrc = srcMatch[1];
+        if (
+          originalSrc.startsWith('data:') ||
+          originalSrc.startsWith('http://') ||
+          originalSrc.startsWith('https://')
+        ) {
+          return match;
+        }
 
-      const cleanRelative = originalSrc.startsWith('/') ? originalSrc : `/${originalSrc}`;
-      const newSrc = `${this.baseUrl}${cleanRelative}`;
+        const cleanRelative = originalSrc.startsWith('/') ? originalSrc : `/${originalSrc}`;
+        const newSrc = `${this.baseUrl}${cleanRelative}`;
 
-      const newAttrs = attrs.replace(/(?:src)=["'][^"']+["']/gi, `src="${newSrc}"`);
-      return `<img${newAttrs}>`;
-    });
+        const newAttrs = attrs.replace(/(?:src)=["'][^"']+["']/gi, `src="${newSrc}"`);
+        return `<img${newAttrs}>`;
+      });
   }
 
   private stripImageBaseUrl(html: string): string {

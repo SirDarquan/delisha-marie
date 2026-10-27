@@ -11,6 +11,12 @@ import { PinterestHoverDirective } from './pinterest-hover.directive';
   template: `
     <div [dmPinterestHover]="recipe" id="test-container" style="padding: 100px;">
       <img id="test-img" src="test.jpg" alt="Test Image" style="width: 200px; height: 200px;" />
+      <img
+        id="test-img-2"
+        src="test2.jpg"
+        alt="Second Test Image"
+        style="width: 200px; height: 200px;" />
+      <span id="test-span">Non image element</span>
     </div>
   `,
 })
@@ -147,5 +153,67 @@ describe('PinterestHoverDirective', () => {
 
     const btn2 = document.getElementById('pinterest-hover-btn');
     expect(btn1).toBe(btn2);
+  });
+
+  it('should ignore mouseover and mouseout on non-IMG targets', () => {
+    const spanEl = fixture.debugElement.query(By.css('#test-span')).nativeElement as HTMLElement;
+    spanEl.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }));
+    fixture.detectChanges();
+    expect(document.getElementById('pinterest-hover-btn')).toBeNull();
+
+    spanEl.dispatchEvent(new MouseEvent('mouseout', { bubbles: true }));
+    fixture.detectChanges();
+    expect(document.getElementById('pinterest-hover-btn')).toBeNull();
+  });
+
+  it('should reposition existing button when hovering a different image', () => {
+    const img2El = fixture.debugElement.query(By.css('#test-img-2')).nativeElement as HTMLElement;
+
+    // Hover first image
+    imgEl.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }));
+    fixture.detectChanges();
+    const btn = document.getElementById('pinterest-hover-btn');
+    expect(btn).toBeTruthy();
+
+    // Hover second image immediately without timeout
+    img2El.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }));
+    fixture.detectChanges();
+
+    const buttons = document.querySelectorAll('#pinterest-hover-btn');
+    expect(buttons).toHaveLength(1);
+    expect(buttons[0]).toBe(btn);
+  });
+
+  it('should fallback to empty media and description when recipe attributes and activeImg src are missing', () => {
+    const openSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
+    fixture.componentInstance.recipe = createMockRecipe({
+      title: '',
+      image: '',
+    });
+    fixture.detectChanges();
+
+    const imgDebug = fixture.debugElement.query(By.css('#test-img'));
+    imgDebug.nativeElement.removeAttribute('src');
+
+    imgEl.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }));
+    fixture.detectChanges();
+
+    const btn = document.getElementById('pinterest-hover-btn')!;
+    btn.dispatchEvent(new Event('click'));
+
+    expect(openSpy).toHaveBeenCalled();
+    const urlArg = openSpy.mock.calls[0][0] as string;
+    expect(urlArg).toContain('media=');
+    expect(urlArg).toContain('description=');
+    openSpy.mockRestore();
+  });
+
+  it('should clean up button and timers on destroy', () => {
+    imgEl.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }));
+    fixture.detectChanges();
+    expect(document.getElementById('pinterest-hover-btn')).toBeTruthy();
+
+    fixture.destroy();
+    expect(document.getElementById('pinterest-hover-btn')).toBeNull();
   });
 });

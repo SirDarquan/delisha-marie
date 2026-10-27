@@ -1133,6 +1133,14 @@ describe('StoryHtmlEditorComponent', () => {
         'https://ik.imagekit.io/delishamarie/2026/08/cake.webp',
       );
 
+      expect(
+        getPriv(component).resolveImageSrc(
+          '<mat-icon class="!text-3xl">spa</mat-icon><mat-icon>star</mat-icon>',
+        ),
+      ).toContain(
+        '<span class="material-icons !text-3xl">spa</span><span class="material-icons">star</span>',
+      );
+
       expect(getPriv(component).resolveImageSrc('<img alt="no src">')).toBe('<img alt="no src">');
 
       expect(getPriv(component).resolveImageSrc('')).toBe('');
@@ -1595,6 +1603,98 @@ describe('StoryHtmlEditorComponent', () => {
         fixture.detectChanges();
       }
       expect(component).toBeTruthy();
+    });
+
+    it('should cover promptLink when user cancels or enters empty string', () => {
+      const promptSpy = vi.spyOn(window, 'prompt').mockReturnValue(null);
+      const execSpy = vi.spyOn(component, 'execCmd');
+      component.promptLink();
+      expect(execSpy).not.toHaveBeenCalled();
+
+      promptSpy.mockReturnValue('');
+      component.promptLink();
+      expect(execSpy).not.toHaveBeenCalled();
+      promptSpy.mockRestore();
+    });
+
+    it('should cover onFileSelected when no file is present or upload returns empty path', async () => {
+      // No file selected
+      const eventNoFiles = { target: { files: [] } } as unknown as Event;
+      await component.onFileSelected(eventNoFiles);
+
+      // Upload returns null/empty
+      const recipeService = (
+        component as unknown as { recipeService: { upload: ReturnType<typeof vi.fn> } }
+      ).recipeService;
+      recipeService.upload.mockResolvedValueOnce('');
+      const fakeFile = new File(['hello'], 'test.png', { type: 'image/png' });
+      const eventWithFile = { target: { files: [fakeFile] } } as unknown as Event;
+      const execSpy = vi.spyOn(component, 'execCmd');
+      await component.onFileSelected(eventWithFile);
+      expect(execSpy).not.toHaveBeenCalledWith('insertImage', expect.any(String));
+    });
+
+    it('should cover execCmd early returns when in html mode or value is undefined', () => {
+      component.isHtmlMode.set(true);
+      const canvasEl = component.editorCanvas()!.nativeElement;
+      const initialHtml = canvasEl.innerHTML;
+      component.execCmd('bold');
+      expect(canvasEl.innerHTML).toBe(initialHtml);
+
+      component.isHtmlMode.set(false);
+      component.execCmd('createLink', undefined);
+      component.execCmd('insertImage', undefined);
+      expect(canvasEl.innerHTML).toBe(initialHtml);
+    });
+
+    it('should cover applyBlockTag when existingBlock class is recipe-tip', () => {
+      const canvasEl = component.editorCanvas()!.nativeElement;
+      canvasEl.innerHTML = '<div class="recipe-tip">Existing Tip Content</div>';
+      const range = document.createRange();
+      range.selectNodeContents(canvasEl.firstChild!);
+      const sel = window.getSelection()!;
+      sel.removeAllRanges();
+      sel.addRange(range);
+
+      component.execCmd('formatBlock', 'p');
+      const p = canvasEl.querySelector('p');
+      expect(p).toBeTruthy();
+      expect(p?.className).not.toBe('recipe-tip');
+    });
+
+    it('should cover class inspection edge cases when target or className is empty', () => {
+      // Call with empty className
+      component.addClassToInspected('');
+      component.removeClassFromInspected('');
+
+      // Call addClassFromInput with empty input
+      const input = document.createElement('input');
+      input.value = '   ';
+      component.addClassFromInput(input);
+      expect(input.value).toBe('   ');
+    });
+
+    it('should cover applyFirstLetterDropCap when span already exists or text does not match', () => {
+      const canvasEl = component.editorCanvas()!.nativeElement;
+      canvasEl.innerHTML = '<p><span class="story-first-letter">T</span>est paragraph</p>';
+      const range = document.createRange();
+      range.selectNodeContents(canvasEl.querySelector('.story-first-letter')!);
+      const sel = window.getSelection()!;
+      sel.removeAllRanges();
+      sel.addRange(range);
+
+      component.applyFirstLetterDropCap();
+      expect(component.inspectedClasses()).toContain('story-first-letter');
+
+      // Paragraph starting with punctuation that does not match [A-Za-z0-9]
+      canvasEl.innerHTML = '<p>--- Non matching start</p>';
+      const range2 = document.createRange();
+      range2.selectNodeContents(canvasEl.firstChild!);
+      sel.removeAllRanges();
+      sel.addRange(range2);
+
+      component.applyFirstLetterDropCap();
+      expect(canvasEl.querySelector('.story-first-letter')).toBeNull();
     });
   });
 });

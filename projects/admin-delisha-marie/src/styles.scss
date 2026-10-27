@@ -89,6 +89,14 @@ body {
   /* slate-400 */
 }
 
+/* Transparent Dialog Overrides */
+.cdk-overlay-pane.transparent-dialog-panel .mat-mdc-dialog-container .mat-mdc-dialog-surface.mdc-dialog__surface {
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+  overflow: visible;
+}
+
 /* Contacts Paginator Overrides */
 .contacts-paginator .mat-mdc-paginator {
   background: transparent;

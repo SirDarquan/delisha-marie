@@ -17,6 +17,7 @@ const path = require('node:path');
 
 const ROOT = path.resolve(__dirname, '..');
 const PATCH_MARKER = '/* @dm-poll-ignore-patched */';
+if (process.env.CI || process.env.VERCEL === '1' || process.env.NODE_ENV === 'production') process.exit(0);
 
 function patchChokidar() {
   const file = path.join(ROOT, 'node_modules', 'chokidar', 'index.js');

@@ -21,10 +21,10 @@ import { ColoredHeaderComponent } from '../../components/colored-header/colored-
       <div class="grid grid-cols-1 lg:grid-cols-[1fr_350px] gap-8 lg:gap-12">
         <!-- Main Content -->
         <div class="min-w-0 space-y-16">
-          @if (page()) {
-            <dm-colored-header [title]="page()!.title" />
+          @if (page(); as currentPage) {
+            <dm-colored-header [title]="currentPage.title" />
             <div
-              class="story prose prose-invert prose-lg max-w-none leading-relaxed font-serif first-letter:text-6xl first-letter:font-black first-letter:mr-1 first-letter:text-[var(--mat-sys-primary)]"
+              class="story flex flex-col gap-12 text-lg md:text-xl text-[var(--mat-sys-on-surface-variant)] leading-relaxed font-serif first-letter:text-6xl first-letter:font-black first-letter:mr-1 first-letter:text-[var(--mat-sys-primary)] [&>*:first-child]:first-letter:text-6xl [&>*:first-child]:first-letter:font-black [&>*:first-child]:first-letter:mr-1 [&>*:first-child]:first-letter:text-[var(--mat-sys-primary)] [&_section.flex-col_p]:!mb-0 [&_.grid_p]:!mb-0 [&_section_h2:first-child]:!mt-0 [&_section_h2:first-child]:!mb-0 [&_section.flex-col>h2:first-child]:!text-[var(--mat-sys-primary)] [&_.grid_h3]:!mt-0 [&_.grid_h3]:!mb-0 [&_a.no-underline]:!no-underline"
               [innerHTML]="optimizedContent()"></div>
           } @else if (loading()) {
             <div class="animate-pulse space-y-8">
@@ -56,6 +56,8 @@ import { ColoredHeaderComponent } from '../../components/colored-header/colored-
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DynamicPage {
+  // Tailwind safelist for dynamic database page HTML:
+  // grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-2 gap-3 gap-6 gap-12 p-6 p-8 md:p-12 rounded-xl rounded-2xl rounded-3xl rounded-full bg-[var(--mat-sys-surface-container)] bg-[var(--mat-sys-surface-container-high)] bg-gradient-to-r from-[var(--mat-sys-surface-container)] to-[var(--mat-sys-surface-container-high)] border border-[var(--mat-sys-outline-variant)] border-[var(--mat-sys-outline-variant)]/40 text-[var(--mat-sys-primary)] text-[var(--mat-sys-tertiary)] text-[var(--mat-sys-on-surface)] text-[var(--mat-sys-on-surface-variant)] !bg-[var(--mat-sys-primary)] !text-black !font-semibold !px-8 !py-4 !py-6 !text-base !text-3xl shadow-xl shadow-2xl backdrop-blur-md sm:flex-row sm:text-left no-underline space-y-4 space-y-6
   private readonly route = inject(ActivatedRoute);
   private readonly pagesService = inject(PagesService);
   private readonly _params = toSignal(this.route.params);
@@ -64,7 +66,6 @@ export class DynamicPage {
   private readonly _pageResource = resource({
     params: () => (this._params()?.['slug'] || this._data()?.['slug']) as string | undefined,
     loader: async ({ params: slug }) => {
-      if (!slug) return null;
       try {
         return await this.pagesService.getPage(slug);
       } catch (err) {

@@ -150,7 +150,8 @@
               "functions": 94,
               "lines": 94
             },
-            "coverageExclude": ["projects/dm/library/**/*"]
+            "coverageExclude": ["projects/dm/library/**/*"],
+            "setupFiles": ["test/vitest.setup.ts"]
           }
         },
         "lint": {
@@ -361,7 +362,8 @@
               "branches": 92,
               "functions": 86,
               "lines": 94
-            }
+            },
+            "setupFiles": ["test/vitest.setup.ts"]
           }
         },
         "test-api": {
@@ -371,7 +373,7 @@
             "include": ["projects/admin-delisha-marie/src/api/**/*.test.ts"],
             "watch": false,
             "runnerConfig": "projects/admin-delisha-marie/src/api/vitest.config.ts",
-            "coverageExclude": ["projects/dm/backend-shared/**/*"],
+            "coverageExclude": ["projects/dm/backend-shared/**/*", "projects/dm/library/**/*"],
             "coverageThresholds": {
               "statements": 95,
               "branches": 94,
@@ -502,7 +504,8 @@
               "branches": 95,
               "functions": 95,
               "lines": 95
-            }
+            },
+            "setupFiles": ["test/vitest.setup.ts"]
           }
         },
         "lint": {
@@ -543,7 +546,8 @@
               "branches": 95,
               "functions": 95,
               "lines": 95
-            }
+            },
+            "setupFiles": ["test/vitest.setup.ts"]
           }
         },
         "lint": {
@@ -639,7 +643,8 @@
               "branches": 90,
               "functions": 95,
               "lines": 95
-            }
+            },
+            "setupFiles": ["test/vitest.setup.ts"]
           }
         },
         "lint": {

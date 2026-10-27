@@ -297,6 +297,53 @@ describe('Auth Middleware', () => {
     expect(res.body.code).toBe('ACCOUNT_BLOCKED');
   });
 
+  it('should fallback to default active member when user_profiles query throws an error', async () => {
+    const mockUser = { id: 'user-err', email: 'err@example.com' };
+    vi.mocked(backendService.verifyToken).mockResolvedValue(
+      mockUser as unknown as Awaited<ReturnType<typeof backendService.verifyToken>>,
+    );
+
+    backendService.supabaseAdmin = {
+      from: vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        maybeSingle: vi.fn().mockRejectedValue(new Error('Database profile failure')),
+      }),
+    } as unknown as typeof backendService.supabaseAdmin;
+
+    const res = await request(app)
+      .get('/test-secure')
+      .set('Cookie', ['admin_access_token=valid-token']);
+
+    expect(res.status).toBe(200);
+    expect(res.body.user).toEqual(mockUser);
+  });
+
+  it('should default empty role and status to member and active', async () => {
+    const mockUser = { id: 'user-empty', email: 'empty@example.com' };
+    vi.mocked(backendService.verifyToken).mockResolvedValue(
+      mockUser as unknown as Awaited<ReturnType<typeof backendService.verifyToken>>,
+    );
+
+    backendService.supabaseAdmin = {
+      from: vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        maybeSingle: vi.fn().mockResolvedValue({
+          data: { role: '', status: '' },
+          error: null,
+        }),
+      }),
+    } as unknown as typeof backendService.supabaseAdmin;
+
+    const res = await request(app)
+      .get('/test-secure')
+      .set('Cookie', ['admin_access_token=valid-token']);
+
+    expect(res.status).toBe(200);
+    expect(res.body.user).toEqual(mockUser);
+  });
+
   it('should load tenant and detect impersonation for active member', async () => {
     const mockUser = { id: 'user-member', email: 'member@example.com' };
     vi.mocked(backendService.verifyToken).mockResolvedValue(

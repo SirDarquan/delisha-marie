@@ -544,6 +544,7 @@ describe('llms endpoint', () => {
       expect(htmlToMarkdown({ text: 'sample object note' })).toBe('sample object note');
       expect(htmlToMarkdown({ notes: 'sample notes field' })).toBe('sample notes field');
       expect(htmlToMarkdown(12345)).toBe('12345');
+      expect(htmlToMarkdown(['valid note', 12345, null, false])).toBe('valid note');
     });
 
     it('getHomeUrl should route to port 4220 on localhost in development', () => {
