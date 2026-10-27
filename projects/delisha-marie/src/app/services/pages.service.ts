@@ -19,14 +19,17 @@ export class PagesService {
   private readonly pageCache = new Map<string, Promise<Page | null>>();
 
   getPage(slug: string): Promise<Page | null> {
-    let cached = this.pageCache.get(slug);
+    const cleanSlug = slug.startsWith('kitchen:') ? slug.slice(8) : slug;
+    const namespacedSlug = `kitchen:${cleanSlug}`;
+
+    let cached = this.pageCache.get(namespacedSlug);
     if (!cached) {
-      cached = this.api.get<Page>(`/pages/${slug}`).catch(() => null);
-      this.pageCache.set(slug, cached);
+      cached = this.api.get<Page>(`/pages/${namespacedSlug}`).catch(() => null);
+      this.pageCache.set(namespacedSlug, cached);
 
       // Simple deduplication cache to prevent multiple parallel requests during resolvers
       setTimeout(() => {
-        this.pageCache.delete(slug);
+        this.pageCache.delete(namespacedSlug);
       }, 5000);
     }
     return cached;

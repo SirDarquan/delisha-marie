@@ -19,12 +19,21 @@ describe('PagesService', () => {
     expect(service).toBeTruthy();
   });
 
-  it('should fetch a single page', async () => {
+  it('should fetch a single page with kitchen: namespace prefix', async () => {
     const mockPage = { title: 'About', content: '<p>Content</p>', updated_at: '2026-08-01' };
     apiSpy.get.mockResolvedValue(mockPage);
 
     const result = await service.getPage('about');
-    expect(apiSpy.get).toHaveBeenCalledWith('/pages/about');
+    expect(apiSpy.get).toHaveBeenCalledWith('/pages/kitchen:about');
+    expect(result).toEqual(mockPage);
+  });
+
+  it('should not double-prefix if slug already starts with kitchen:', async () => {
+    const mockPage = { title: 'FAQ', content: '<p>FAQ</p>', updated_at: '2026-08-01' };
+    apiSpy.get.mockResolvedValue(mockPage);
+
+    const result = await service.getPage('kitchen:faq');
+    expect(apiSpy.get).toHaveBeenCalledWith('/pages/kitchen:faq');
     expect(result).toEqual(mockPage);
   });
 

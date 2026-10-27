@@ -32,10 +32,10 @@ export const serverRoutes: ServerRoute[] = [
   },
   { path: 'faq', renderMode: RenderMode.Server },
   { path: 'privacy-policy', renderMode: RenderMode.Server },
+  { path: 'thank-you', renderMode: RenderMode.Server },
 
   // Noindex / utility routes → CSR (no SEO value, skip server work)
   { path: 'recipe/:slug/print', renderMode: RenderMode.Client },
-  { path: 'thank-you', renderMode: RenderMode.Client },
 
   // Fallback → CSR (this is where the app shell lives)
   {
