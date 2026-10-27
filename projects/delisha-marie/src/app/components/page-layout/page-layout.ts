@@ -20,10 +20,10 @@ import { ColoredHeaderComponent } from '../colored-header/colored-header';
       <div class="grid grid-cols-1 lg:grid-cols-[1fr_350px] gap-8 lg:gap-12">
         <!-- Main Content -->
         <div class="min-w-0 space-y-16">
-          @if (page()) {
-            <dm-colored-header [title]="page()!.title" />
+          @if (page(); as currentPage) {
+            <dm-colored-header [title]="currentPage.title" />
             <div
-              class="story prose prose-invert prose-lg max-w-none leading-relaxed font-serif first-letter:text-6xl first-letter:font-black first-letter:mr-1 first-letter:text-[var(--mat-sys-primary)]"
+              class="story flex flex-col gap-12 text-lg md:text-xl text-[var(--mat-sys-on-surface-variant)] leading-relaxed font-serif first-letter:text-6xl first-letter:font-black first-letter:mr-1 first-letter:text-[var(--mat-sys-primary)] [&>*:first-child]:first-letter:text-6xl [&>*:first-child]:first-letter:font-black [&>*:first-child]:first-letter:mr-1 [&>*:first-child]:first-letter:text-[var(--mat-sys-primary)] [&_section.flex-col_p]:!mb-0 [&_.grid_p]:!mb-0 [&_section_h2:first-child]:!mt-0 [&_section_h2:first-child]:!mb-0 [&_section.flex-col>h2:first-child]:!text-[var(--mat-sys-primary)] [&_.grid_h3]:!mt-0 [&_.grid_h3]:!mb-0 [&_a.no-underline]:!no-underline"
               [innerHTML]="optimizedContent()"></div>
 
             <ng-content />
@@ -63,7 +63,6 @@ export class PageLayout {
   private readonly _pageResource = resource({
     params: () => this.slug(),
     loader: async ({ params: slug }) => {
-      if (!slug) return null;
       try {
         return await this.pagesService.getPage(slug);
       } catch (err) {
