@@ -16,7 +16,7 @@ RUN mkdir -p /delisha-marie \
 WORKDIR /delisha-marie
 
 # Install global Angular CLI and Vercel CLI
-RUN npm install -g @angular/cli@22.2.2 vercel@latest
+RUN npm install -g @angular/cli@latest vercel@latest
 
 EXPOSE 4200 4220 8080 4001
 
