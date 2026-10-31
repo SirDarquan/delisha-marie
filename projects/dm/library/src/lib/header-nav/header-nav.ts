@@ -28,7 +28,7 @@ import { MenuLink } from '../types/menu';
   },
   template: `
     <!-- Desktop Nav -->
-    <nav class="hidden md:flex items-center gap-2 sm:gap-4 md:gap-6">
+    <nav class="dml-desktop-nav hidden md:flex items-center gap-2 sm:gap-4 md:gap-6">
       @for (link of menuLinks(); track link.label) {
         @if (link.externalUrl) {
           <a
@@ -97,7 +97,7 @@ import { MenuLink } from '../types/menu';
     </nav>
 
     <!-- Mobile Nav (Hamburger) -->
-    <div class="flex md:hidden items-center gap-2">
+    <div class="dml-mobile-nav flex md:hidden items-center gap-2">
       @if (showThemeToggle()) {
         <mat-slide-toggle
           [checked]="themeService.isDark()"
@@ -162,6 +162,25 @@ import { MenuLink } from '../types/menu';
         }
       </mat-menu>
     </div>
+  `,
+  styles: `
+    .dml-desktop-nav {
+      display: none;
+    }
+    @media (min-width: 768px) {
+      .dml-desktop-nav {
+        display: flex !important;
+      }
+    }
+
+    .dml-mobile-nav {
+      display: flex;
+    }
+    @media (min-width: 768px) {
+      .dml-mobile-nav {
+        display: none !important;
+      }
+    }
   `,
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
