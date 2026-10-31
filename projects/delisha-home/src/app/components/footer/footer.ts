@@ -13,32 +13,33 @@ import { getKitchenUrl } from '../../utils/navigation';
   imports: [RouterLink],
   template: `
     <footer
-      class="footer-bar w-full py-4 md:py-6 px-8 md:px-16 lg:px-24 xl:px-32 border-t border-white/15 bg-black/45 backdrop-blur-md text-white/90">
+      class="footer-bar w-full py-4 md:py-6 px-8 md:px-16 lg:px-24 xl:px-32 border-t border-[var(--mat-sys-outline-variant)] bg-[var(--mat-sys-surface-container)] backdrop-blur-md text-[var(--mat-sys-on-surface-variant)]">
       <div class="footer-links flex flex-row items-center gap-6 md:gap-8">
         <a
           href="#"
           (click)="scrollToTop($event)"
-          class="text-white/80 hover:text-[#ffb952] text-sm font-medium transition-colors no-underline">
+          class="text-[var(--mat-sys-on-surface-variant)] hover:text-[var(--mat-sys-primary)] text-sm font-medium transition-colors no-underline">
           ^ Back to the top
         </a>
         <a
           routerLink="/about"
-          class="text-white/80 hover:text-[#ffb952] text-sm font-medium transition-colors no-underline">
+          class="text-[var(--mat-sys-on-surface-variant)] hover:text-[var(--mat-sys-primary)] text-sm font-medium transition-colors no-underline">
           About
         </a>
         <a
           routerLink="/contact"
-          class="text-white/80 hover:text-[#ffb952] text-sm font-medium transition-colors no-underline">
+          class="text-[var(--mat-sys-on-surface-variant)] hover:text-[var(--mat-sys-primary)] text-sm font-medium transition-colors no-underline">
           Contact
         </a>
         <a
           [href]="kitchenUrl"
-          class="text-white/80 hover:text-[#ffb952] text-sm font-medium transition-colors no-underline">
+          class="text-[var(--mat-sys-on-surface-variant)] hover:text-[var(--mat-sys-primary)] text-sm font-medium transition-colors no-underline">
           Kitchen
         </a>
       </div>
 
-      <div class="footer-copyright text-white/70 text-xs whitespace-nowrap">
+      <div
+        class="footer-copyright text-[var(--mat-sys-on-surface-variant)]/80 text-xs whitespace-nowrap">
         © {{ year }} Delisha Marie. Designed by The One.
       </div>
     </footer>

@@ -3,7 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { provideRouter } from '@angular/router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ThemeService } from '../../services/theme.service';
+import { ThemeService } from '@dm/library';
 import { Header } from './header';
 import { By } from '@angular/platform-browser';
 

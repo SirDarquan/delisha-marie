@@ -1,16 +1,27 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { signal, WritableSignal } from '@angular/core';
 import { provideRouter } from '@angular/router';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ThemeService } from '@dm/library';
 import { Header } from './header';
 
 describe('Header', () => {
   let component: Header;
   let fixture: ComponentFixture<Header>;
+  let themeServiceMock: {
+    isDark: WritableSignal<boolean>;
+    toggle: ReturnType<typeof vi.fn>;
+  };
 
   beforeEach(async () => {
+    themeServiceMock = {
+      isDark: signal(false),
+      toggle: vi.fn(),
+    };
+
     await TestBed.configureTestingModule({
       imports: [Header],
-      providers: [provideRouter([])],
+      providers: [provideRouter([]), { provide: ThemeService, useValue: themeServiceMock }],
     }).compileComponents();
 
     fixture = TestBed.createComponent(Header);
@@ -47,5 +58,46 @@ describe('Header', () => {
     // Kitchen link
     expect(navLinks[2].textContent).toContain('Kitchen');
     expect(navLinks[2].getAttribute('href')).toBe(component.kitchenUrl);
+  });
+
+  it('should render mobile hamburger menu button', () => {
+    const compiled = fixture.nativeElement as HTMLElement;
+    const hamburgerBtn = compiled.querySelector('button[aria-label="Open navigation menu"]');
+    expect(hamburgerBtn).toBeTruthy();
+    expect(hamburgerBtn?.querySelector('mat-icon')?.textContent?.trim()).toBe('menu');
+  });
+
+  it('should render theme toggle and respond to toggle changes', () => {
+    const compiled = fixture.nativeElement as HTMLElement;
+    const toggle = compiled.querySelector('mat-slide-toggle button');
+    expect(toggle).toBeTruthy();
+
+    toggle?.dispatchEvent(new MouseEvent('click'));
+    expect(themeServiceMock.toggle).toHaveBeenCalled();
+  });
+
+  it('should reflect dark mode icon when dark mode is active', () => {
+    themeServiceMock.isDark.set(true);
+    fixture.detectChanges();
+    const compiled = fixture.nativeElement as HTMLElement;
+    const icon = compiled.querySelector('mat-slide-toggle mat-icon');
+    expect(icon?.textContent?.trim()).toBe('dark_mode');
+  });
+
+  it('should render dropdown menu trigger when link has children', () => {
+    const fixtureWithChildren = TestBed.createComponent(Header);
+    const comp = fixtureWithChildren.componentInstance;
+    Object.defineProperty(comp, 'menuLinks', {
+      value: [
+        {
+          label: 'More',
+          children: [{ label: 'Sublink', path: '/sub' }],
+        },
+      ],
+    });
+    fixtureWithChildren.detectChanges();
+    const compiled = fixtureWithChildren.nativeElement as HTMLElement;
+    expect(compiled.textContent).toContain('More');
+    expect(compiled.textContent).toContain('arrow_drop_down');
   });
 });

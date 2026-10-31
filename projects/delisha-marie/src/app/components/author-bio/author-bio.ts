@@ -10,7 +10,7 @@ import { getHomeUrl } from '../../utils/navigation';
     <section
       [class]="
         layout() === 'vertical'
-          ? 'bg-[var(--mat-sys-surface-container)] rounded-[2.5rem] p-6 sm:p-8 text-center shadow-sm border-y sm:border-0 border-[var(--mat-sys-outline-variant)]'
+          ? 'bg-[var(--mat-sys-surface-container-highest)] rounded-[2.5rem] p-6 sm:p-8 text-center shadow-sm border-y sm:border-0 border-[var(--mat-sys-outline-variant)]'
           : 'flex flex-col md:flex-row items-center justify-between text-left py-12 md:py-24'
       "
       aria-labelledby="author-title">
@@ -50,11 +50,11 @@ import { getHomeUrl } from '../../utils/navigation';
           that anyone can master. Welcome to my kitchen!
         </p>
         <a
-          mat-stroked-button
+          mat-flat-button
           [href]="aboutUrl"
           [class]="
             layout() === 'vertical'
-              ? 'rounded-full px-8 font-bold'
+              ? 'w-full rounded-full px-8 font-bold'
               : 'rounded-full px-8 py-6 text-lg font-bold'
           ">
           My Story

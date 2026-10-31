@@ -5,7 +5,7 @@ import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatMenuModule } from '@angular/material/menu';
 import { RouterLink, RouterLinkActive } from '@angular/router';
-import { ThemeService } from '../../services/theme.service';
+import { MenuLink, ThemeService } from '@dm/library';
 import { getHomeUrl } from '../../utils/navigation';
 
 @Component({
@@ -147,12 +147,7 @@ export class Header {
   protected readonly homeUrl = getHomeUrl();
 
   // Note: Add a `children` array to any item to automatically generate a dropdown!
-  protected readonly menuLinks: {
-    label: string;
-    path?: string;
-    externalUrl?: string;
-    children?: { label: string; path: string }[];
-  }[] = [
+  protected readonly menuLinks: MenuLink[] = [
     { path: '/recipe-index', label: 'Recipes' },
     { externalUrl: getHomeUrl('/about'), label: 'About' },
     { externalUrl: getHomeUrl('/contact'), label: 'Contact' },
