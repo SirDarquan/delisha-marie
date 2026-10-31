@@ -63,7 +63,7 @@ describe('HeaderNav', () => {
     expect(desktopNav).toBeTruthy();
 
     const links = desktopNav?.querySelectorAll('a');
-    expect(links?.length).toBe(4); // About, PlainLink, External, PlainExternal
+    expect(links).toHaveLength(4); // About, PlainLink, External, PlainExternal
 
     // Check About link with icon
     expect(links?.[0].textContent).toContain('About');
@@ -143,6 +143,6 @@ describe('HeaderNav', () => {
 
     const compiled = fixture.nativeElement as HTMLElement;
     const toggles = compiled.querySelectorAll('mat-slide-toggle');
-    expect(toggles.length).toBe(0);
+    expect(toggles).toHaveLength(0);
   });
 });
