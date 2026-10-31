@@ -3,7 +3,11 @@
   "version": 1,
   "cli": {
     "packageManager": "npm",
-    "schematicCollections": ["@cypress/schematic", "angular-eslint", "@schematics/angular"],
+    "schematicCollections": [
+      "@cypress/schematic",
+      "angular-eslint",
+      "@schematics/angular"
+    ],
     "analytics": false,
     "cache": {
       "enabled": true,
@@ -43,7 +47,12 @@
             "server": "projects/delisha-marie/src/main.server.ts",
             "outputMode": "server",
             "security": {
-              "allowedHosts": ["localhost", "127.0.0.1", "[::1]", "*.vercel.app"]
+              "allowedHosts": [
+                "localhost",
+                "127.0.0.1",
+                "[::1]",
+                "*.vercel.app"
+              ]
             },
             "ssr": {
               "entry": "projects/delisha-marie/src/server.ts"
@@ -141,8 +150,12 @@
         "test": {
           "builder": "@angular/build:unit-test",
           "options": {
-            "coverageReporters": ["lcov"],
-            "exclude": ["../../projects/serverless/src/api/**/*.test.ts"],
+            "coverageReporters": [
+              "lcov"
+            ],
+            "exclude": [
+              "../../projects/serverless/src/api/**/*.test.ts"
+            ],
             "watch": false,
             "coverageThresholds": {
               "statements": 94,
@@ -150,8 +163,12 @@
               "functions": 94,
               "lines": 94
             },
-            "coverageExclude": ["projects/dm/library/**/*"],
-            "setupFiles": ["test/vitest.setup.ts"]
+            "coverageExclude": [
+              "projects/dm/library/**/*"
+            ],
+            "setupFiles": [
+              "test/vitest.setup.ts"
+            ]
           }
         },
         "lint": {
@@ -258,7 +275,11 @@
               ]
             },
             "outputMode": "server",
-            "externalDependencies": ["sharp", "multer", "@imagekit/nodejs"],
+            "externalDependencies": [
+              "sharp",
+              "multer",
+              "@imagekit/nodejs"
+            ],
             "ssr": {
               "entry": "projects/admin-delisha-marie/src/server.ts"
             }
@@ -353,9 +374,15 @@
         "test": {
           "builder": "@angular/build:unit-test",
           "options": {
-            "coverageReporters": ["lcov"],
-            "exclude": ["projects/admin-delisha-marie/src/api/**/*.test.ts"],
-            "coverageExclude": ["projects/dm/library/**/*"],
+            "coverageReporters": [
+              "lcov"
+            ],
+            "exclude": [
+              "projects/admin-delisha-marie/src/api/**/*.test.ts"
+            ],
+            "coverageExclude": [
+              "projects/dm/library/**/*"
+            ],
             "watch": false,
             "coverageThresholds": {
               "statements": 94,
@@ -363,17 +390,26 @@
               "functions": 86,
               "lines": 94
             },
-            "setupFiles": ["test/vitest.setup.ts"]
+            "setupFiles": [
+              "test/vitest.setup.ts"
+            ]
           }
         },
         "test-api": {
           "builder": "@angular/build:unit-test",
           "options": {
-            "coverageReporters": ["lcov"],
-            "include": ["projects/admin-delisha-marie/src/api/**/*.test.ts"],
+            "coverageReporters": [
+              "lcov"
+            ],
+            "include": [
+              "projects/admin-delisha-marie/src/api/**/*.test.ts"
+            ],
             "watch": false,
             "runnerConfig": "projects/admin-delisha-marie/src/api/vitest.config.ts",
-            "coverageExclude": ["projects/dm/backend-shared/**/*", "projects/dm/library/**/*"],
+            "coverageExclude": [
+              "projects/dm/backend-shared/**/*",
+              "projects/dm/library/**/*"
+            ],
             "coverageThresholds": {
               "statements": 95,
               "branches": 94,
@@ -465,7 +501,9 @@
           "builder": "@angular/build:unit-test",
           "options": {
             "tsConfig": "projects/dm/library/tsconfig.spec.json",
-            "coverageReporters": ["lcov"],
+            "coverageReporters": [
+              "lcov"
+            ],
             "watch": false,
             "coverageThresholds": {
               "statements": 95,
@@ -479,7 +517,10 @@
           "builder": "@angular-eslint/builder:lint",
           "options": {
             "fix": true,
-            "lintFilePatterns": ["projects/dm/library/**/*.ts", "projects/dm/library/**/*.html"],
+            "lintFilePatterns": [
+              "projects/dm/library/**/*.ts",
+              "projects/dm/library/**/*.html"
+            ],
             "eslintConfig": "projects/dm/library/eslint.config.js"
           }
         }
@@ -494,8 +535,12 @@
           "builder": "@angular/build:unit-test",
           "options": {
             "buildTarget": "delisha-marie:build",
-            "coverageReporters": ["lcov"],
-            "include": ["projects/serverless/src/api/**/*.test.ts"],
+            "coverageReporters": [
+              "lcov"
+            ],
+            "include": [
+              "projects/serverless/src/api/**/*.test.ts"
+            ],
             "watch": false,
             "tsConfig": "projects/serverless/tsconfig.spec.json",
             "runnerConfig": "projects/serverless/src/api/vitest.config.ts",
@@ -505,14 +550,18 @@
               "functions": 95,
               "lines": 95
             },
-            "setupFiles": ["test/vitest.setup.ts"]
+            "setupFiles": [
+              "test/vitest.setup.ts"
+            ]
           }
         },
         "lint": {
           "builder": "@angular-eslint/builder:lint",
           "options": {
             "fix": true,
-            "lintFilePatterns": ["projects/serverless/**/*.ts"]
+            "lintFilePatterns": [
+              "projects/serverless/**/*.ts"
+            ]
           }
         }
       }
@@ -529,7 +578,13 @@
             "index": "",
             "browser": "projects/dm/backend-shared/src/env-utils.ts",
             "tsConfig": "projects/dm/backend-shared/tsconfig.lib.json",
-            "externalDependencies": ["node:fs", "node:path", "node:util", "node:module", "node:url"]
+            "externalDependencies": [
+              "node:fs",
+              "node:path",
+              "node:util",
+              "node:module",
+              "node:url"
+            ]
           }
         },
         "test-api": {
@@ -537,8 +592,12 @@
           "options": {
             "buildTarget": "delisha-marie:build",
             "tsConfig": "projects/dm/backend-shared/tsconfig.spec.json",
-            "coverageReporters": ["lcov"],
-            "include": ["projects/dm/backend-shared/src/**/*.test.ts"],
+            "coverageReporters": [
+              "lcov"
+            ],
+            "include": [
+              "projects/dm/backend-shared/src/**/*.test.ts"
+            ],
             "watch": false,
             "runnerConfig": "projects/dm/backend-shared/src/vitest.config.ts",
             "coverageThresholds": {
@@ -547,14 +606,18 @@
               "functions": 95,
               "lines": 95
             },
-            "setupFiles": ["test/vitest.setup.ts"]
+            "setupFiles": [
+              "test/vitest.setup.ts"
+            ]
           }
         },
         "lint": {
           "builder": "@angular-eslint/builder:lint",
           "options": {
             "fix": true,
-            "lintFilePatterns": ["projects/dm/backend-shared/**/*.ts"],
+            "lintFilePatterns": [
+              "projects/dm/backend-shared/**/*.ts"
+            ],
             "eslintConfig": "projects/dm/backend-shared/eslint.config.js"
           }
         }
@@ -636,7 +699,9 @@
         "test": {
           "builder": "@angular/build:unit-test",
           "options": {
-            "coverageReporters": ["lcov"],
+            "coverageReporters": [
+              "lcov"
+            ],
             "watch": false,
             "coverageThresholds": {
               "statements": 95,
@@ -644,7 +709,12 @@
               "functions": 95,
               "lines": 95
             },
-            "setupFiles": ["test/vitest.setup.ts"]
+            "setupFiles": [
+              "test/vitest.setup.ts"
+            ],
+            "coverageExclude": [
+              "projects/dm/library/**/*"
+            ]
           }
         },
         "lint": {

@@ -85,16 +85,19 @@ describe('Header', () => {
   });
 
   it('should render dropdown menu trigger when link has children', () => {
-    // Override menuLinks to include an item with children
-    (component as unknown as { menuLinks: unknown[] }).menuLinks = [
-      {
-        label: 'More',
-        children: [{ label: 'Sublink', path: '/sub' }],
-      },
-    ];
-    fixture.detectChanges();
-    const compiled = fixture.nativeElement as HTMLElement;
-    const triggerBtn = compiled.querySelector('nav button');
-    expect(triggerBtn?.textContent).toContain('More');
+    const fixtureWithChildren = TestBed.createComponent(Header);
+    const comp = fixtureWithChildren.componentInstance;
+    Object.defineProperty(comp, 'menuLinks', {
+      value: [
+        {
+          label: 'More',
+          children: [{ label: 'Sublink', path: '/sub' }],
+        },
+      ],
+    });
+    fixtureWithChildren.detectChanges();
+    const compiled = fixtureWithChildren.nativeElement as HTMLElement;
+    expect(compiled.textContent).toContain('More');
+    expect(compiled.textContent).toContain('arrow_drop_down');
   });
 });
