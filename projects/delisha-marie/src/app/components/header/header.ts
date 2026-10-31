@@ -1,25 +1,11 @@
-import { ChangeDetectionStrategy, Component, ViewEncapsulation, inject } from '@angular/core';
-import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
-import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
 import { MatToolbarModule } from '@angular/material/toolbar';
-import { MatMenuModule } from '@angular/material/menu';
-import { RouterLink, RouterLinkActive } from '@angular/router';
-import { MenuLink, ThemeService } from '@dm/library';
+import { HeaderNav, MenuLink } from '@dm/library';
 import { getHomeUrl } from '../../utils/navigation';
 
 @Component({
   selector: 'dm-header',
-  imports: [
-    RouterLink,
-    RouterLinkActive,
-    MatToolbarModule,
-    MatButtonModule,
-    MatIconModule,
-    MatSlideToggleModule,
-    MatMenuModule,
-  ],
-
+  imports: [MatToolbarModule, HeaderNav],
   host: {
     class: 'sticky top-0 z-50 block',
   },
@@ -41,109 +27,13 @@ import { getHomeUrl } from '../../utils/navigation';
         </div>
       </a>
 
-      <div class="hidden md:flex items-center gap-6">
-        @for (link of menuLinks; track link.label) {
-          @if (link.externalUrl) {
-            <a mat-button [href]="link.externalUrl" class="text-lg font-medium">
-              {{ link.label }}
-            </a>
-          } @else if (link.children) {
-            <button mat-button [matMenuTriggerFor]="desktopSub" class="text-lg font-medium">
-              {{ link.label }}
-              <mat-icon class="!mr-0">arrow_drop_down</mat-icon>
-            </button>
-            <mat-menu #desktopSub="matMenu">
-              @for (child of link.children; track child.label) {
-                <a
-                  mat-menu-item
-                  [routerLink]="child.path"
-                  routerLinkActive="!text-[var(--mat-sys-primary)]">
-                  <span>{{ child.label }}</span>
-                </a>
-              }
-            </mat-menu>
-          } @else {
-            <a
-              mat-button
-              [routerLink]="link.path"
-              routerLinkActive="!text-[var(--mat-sys-primary)]"
-              class="text-lg font-medium">
-              {{ link.label }}
-            </a>
-          }
-        }
-
-        <div class="flex items-center gap-2 ml-4">
-          <mat-slide-toggle
-            [checked]="themeService.isDark()"
-            (change)="themeService.toggle()"
-            [hideIcon]="true"
-            aria-label="Toggle dark mode">
-            <span
-              class="flex items-center gap-2 ml-1 text-sm font-bold uppercase tracking-widest text-[var(--mat-sys-on-surface-variant)] transition-all">
-              <mat-icon class="!text-[20px] transition-all">{{
-                themeService.isDark() ? 'dark_mode' : 'light_mode'
-              }}</mat-icon>
-            </span>
-          </mat-slide-toggle>
-        </div>
-      </div>
-
-      <div class="flex md:hidden items-center gap-2">
-        <mat-slide-toggle
-          [checked]="themeService.isDark()"
-          (change)="themeService.toggle()"
-          [hideIcon]="true"
-          aria-label="Toggle dark mode">
-          <span
-            class="flex items-center gap-2 ml-1 text-sm font-bold uppercase tracking-widest text-[var(--mat-sys-on-surface-variant)] transition-all">
-            <mat-icon class="!text-[20px] transition-all text-[var(--mat-sys-on-surface-variant)]">
-              {{ themeService.isDark() ? 'dark_mode' : 'light_mode' }}
-            </mat-icon>
-          </span>
-        </mat-slide-toggle>
-        <button mat-icon-button [matMenuTriggerFor]="mobileMenu" aria-label="Open navigation menu">
-          <mat-icon>menu</mat-icon>
-        </button>
-
-        <mat-menu #mobileMenu="matMenu">
-          @for (link of menuLinks; track link.label) {
-            @if (link.externalUrl) {
-              <a mat-menu-item [href]="link.externalUrl">
-                <span>{{ link.label }}</span>
-              </a>
-            } @else if (link.children) {
-              <button mat-menu-item [matMenuTriggerFor]="mobileSub">
-                <span>{{ link.label }}</span>
-              </button>
-              <mat-menu #mobileSub="matMenu">
-                @for (child of link.children; track child.label) {
-                  <a
-                    mat-menu-item
-                    [routerLink]="child.path"
-                    routerLinkActive="!text-[var(--mat-sys-primary)]">
-                    <span>{{ child.label }}</span>
-                  </a>
-                }
-              </mat-menu>
-            } @else {
-              <a
-                mat-menu-item
-                [routerLink]="link.path"
-                routerLinkActive="!text-[var(--mat-sys-primary)]">
-                <span>{{ link.label }}</span>
-              </a>
-            }
-          }
-        </mat-menu>
-      </div>
+      <dml-header-nav [menuLinks]="menuLinks" />
     </mat-toolbar>
   `,
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Header {
-  protected readonly themeService = inject(ThemeService);
   protected readonly homeUrl = getHomeUrl();
 
   // Note: Add a `children` array to any item to automatically generate a dropdown!

@@ -1,6 +1,7 @@
 export interface MenuLinkChild {
   label: string;
   path: string;
+  icon?: string;
 }
 
 export interface MenuLink {
