@@ -7,7 +7,7 @@ import { provideRouter, Router, Scroll, Event, NavigationEnd } from '@angular/ro
 import { Subject } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { App } from './app';
-import { ThemeService } from './services/theme.service';
+import { ThemeService } from '@dm/library';
 
 describe('App', () => {
   beforeEach(async () => {

@@ -2,8 +2,8 @@
 
 // Tailwind CSS v4 import
 @use 'tailwindcss';
-@use './kitchen';
-@use './app-theme';
+@use '../../dm/library/src/lib/theme/kitchen';
+@use '../../dm/library/src/lib/styles/app-theme';
 
 // Custom Material 3 theme colors
 // Light mode is the default (:root). Dark mode applies when .dark-theme is present.
