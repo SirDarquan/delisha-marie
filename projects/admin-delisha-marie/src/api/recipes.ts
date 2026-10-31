@@ -190,10 +190,16 @@ async function fetchPaginatedRecipes(
   if (pageError) throw pageError;
 
   // Fetch comments to calculate counts
-  const { data: commentsData } = await client
+  let commentsQuery = client
     .from('comments')
     .select('recipe_id, parent_id, is_new')
     .in('recipe_id', pageIds);
+
+  if (tenantId) {
+    commentsQuery = commentsQuery.eq('tenant_id', tenantId);
+  }
+
+  const { data: commentsData } = await commentsQuery;
 
   // Attach counts to pageData
   pageData?.forEach((recipe) => {
@@ -242,9 +248,13 @@ async function fetchAllRecipes(
   const allData = await fetchAllBatches(client, 0, 1000, tenantId);
 
   // Fetch comments to calculate counts
-  const { data: commentsData } = await client
-    .from('comments')
-    .select('recipe_id, parent_id, is_new');
+  let commentsQuery = client.from('comments').select('recipe_id, parent_id, is_new');
+
+  if (tenantId) {
+    commentsQuery = commentsQuery.eq('tenant_id', tenantId);
+  }
+
+  const { data: commentsData } = await commentsQuery;
 
   // Attach counts to allData
   allData.forEach((recipe) => {

@@ -729,9 +729,11 @@ async function handlePostComments(
       return;
     }
 
+    const { data: recipe } = await supabase.from('recipes').select('*').eq('id', recipeId).single();
+
     if (isBot) {
       // Honeypot tripped: save to spam_comments for research
-      const spamObj = {
+      const spamObj: Record<string, unknown> = {
         recipe_id: recipeId,
         author,
         email,
@@ -742,6 +744,10 @@ async function handlePostComments(
         trap_triggered: 'alt_email',
         trap_value: alt_email,
       };
+
+      if (recipe?.tenant_id) {
+        spamObj['tenant_id'] = recipe.tenant_id;
+      }
 
       await supabase.from('spam_comments').insert([spamObj]);
 
@@ -761,12 +767,11 @@ async function handlePostComments(
 
     const requireApproval = settings['require_comment_approval'] === 'true';
     const status = requireApproval ? 'pending' : 'approved';
-    const { data: recipe } = await supabase.from('recipes').select('*').eq('id', recipeId).single();
     const isNew =
       Date.now() <
-      Number(recipe.created_at) + Number(settings['comment_new_cutoff_seconds']) * 1000;
+      Number(recipe?.created_at) + Number(settings['comment_new_cutoff_seconds']) * 1000;
 
-    const insertObj = {
+    const insertObj: Record<string, unknown> = {
       recipe_id: recipeId,
       author,
       email,
@@ -777,6 +782,10 @@ async function handlePostComments(
       status,
       is_new: isNew,
     };
+
+    if (recipe?.tenant_id) {
+      insertObj['tenant_id'] = recipe.tenant_id;
+    }
 
     const { data, error } = await supabase.from('comments').insert([insertObj]).select().single();
 

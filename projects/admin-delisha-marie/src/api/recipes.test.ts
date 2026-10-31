@@ -624,10 +624,7 @@ describe('Recipes Router API', () => {
           data: [{ id: 'recipe-1', title: 'Salad', status: 'published' }],
           error: null,
         })
-        .mockResolvedValueOnce({
-          data: [],
-          error: null,
-        });
+        .mockReturnValueOnce(mockChain);
 
       const res = await request(app).get('/recipes?offset=0&limit=10');
       expect(res.status).toBe(200);
