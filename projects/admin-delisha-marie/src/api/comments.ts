@@ -11,12 +11,13 @@ commentsRouter.get('/recipes/:recipeId/comments', async (req: AuthRequest, res: 
     const { recipeId } = req.params as { recipeId: string };
     const client = backendService.getClient(req.token);
 
-    const { data, error } = await client
-      .from('comments')
-      .select('*')
-      .eq('recipe_id', recipeId)
-      .eq('is_new', true)
-      .order('created_at', { ascending: true });
+    let query = client.from('comments').select('*').eq('recipe_id', recipeId).eq('is_new', true);
+
+    if (req.tenantId) {
+      query = query.eq('tenant_id', req.tenantId);
+    }
+
+    const { data, error } = await query.order('created_at', { ascending: true });
 
     if (error) throw error;
     return res.json({ comments: data || [] });
@@ -39,7 +40,7 @@ commentsRouter.post(
         return res.status(400).json({ error: 'Content is required' });
       }
 
-      const reply = {
+      const reply: Record<string, unknown> = {
         recipe_id: recipeId,
         parent_id: parentId,
         author: 'Delisha Marie',
@@ -50,8 +51,16 @@ commentsRouter.post(
         is_new: false,
       };
 
+      if (req.tenantId) {
+        reply['tenant_id'] = req.tenantId;
+      }
+
       // Mark parent as no longer new
-      await client.from('comments').update({ is_new: false }).eq('id', parentId);
+      let parentUpdate = client.from('comments').update({ is_new: false }).eq('id', parentId);
+      if (req.tenantId) {
+        parentUpdate = parentUpdate.eq('tenant_id', req.tenantId);
+      }
+      await parentUpdate;
 
       const { data, error } = await client.from('comments').insert([reply]).select().single();
       if (error) throw error;
@@ -74,7 +83,12 @@ commentsRouter.delete(
       const { id } = req.params as { id: string };
       const client = backendService.supabaseAdmin;
 
-      const { error } = await client.from('comments').delete().eq('id', id);
+      let query = client.from('comments').delete().eq('id', id);
+      if (req.tenantId) {
+        query = query.eq('tenant_id', req.tenantId);
+      }
+
+      const { error } = await query;
       if (error) throw error;
 
       return res.json({ success: true });
@@ -96,12 +110,16 @@ commentsRouter.patch(
 
       const is_new = !skipped;
 
-      const { data, error } = await client
+      let query = client
         .from('comments')
         .update({ status: skipped ? 'skipped' : 'approved', is_new })
-        .eq('id', id)
-        .select()
-        .single();
+        .eq('id', id);
+
+      if (req.tenantId) {
+        query = query.eq('tenant_id', req.tenantId);
+      }
+
+      const { data, error } = await query.select().single();
 
       if (error) throw error;
 

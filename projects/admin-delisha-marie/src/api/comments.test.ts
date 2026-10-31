@@ -99,6 +99,53 @@ describe('Comments Router API', () => {
       expect(mockOrder).toHaveBeenCalledWith('created_at', { ascending: true });
     });
 
+    it('should scope comments query by tenantId when req.tenantId is present', async () => {
+      vi.spyOn(backendService, 'supabaseAdmin', 'get').mockReturnValue({
+        from: vi.fn().mockImplementation((table: string) => {
+          if (table === 'user_profiles') {
+            return {
+              select: () => ({
+                eq: () => ({
+                  maybeSingle: () =>
+                    Promise.resolve({ data: { role: 'member', status: 'active' } }),
+                }),
+              }),
+            };
+          }
+          if (table === 'tenants') {
+            return {
+              select: () => ({
+                eq: () => ({
+                  maybeSingle: () =>
+                    Promise.resolve({
+                      data: { id: 'tenant-123', name: 'Tenant 123', slug: 'tenant-123' },
+                    }),
+                }),
+              }),
+            };
+          }
+          return mockChain;
+        }),
+      } as unknown as SupabaseClient);
+
+      vi.mocked(backendService.verifyToken).mockResolvedValueOnce({
+        id: 'user-123',
+        username: 'test-user',
+        email: 'test@example.com',
+      } as unknown as User);
+
+      const mockComments = [{ id: 'c-1', content: 'Test', tenant_id: 'tenant-123' }];
+      mockSelect.mockReturnValue(mockChain);
+      mockEq.mockReturnValue(mockChain);
+      mockOrder.mockResolvedValueOnce({ data: mockComments, error: null });
+
+      const res = await request(app).get('/api/recipes/r-1/comments');
+
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual({ comments: mockComments });
+      expect(mockEq).toHaveBeenCalledWith('tenant_id', 'tenant-123');
+    });
+
     it('should return 400 on error', async () => {
       mockSelect.mockReturnValueOnce(mockChain);
       mockEq.mockReturnValueOnce(mockChain);
@@ -146,6 +193,61 @@ describe('Comments Router API', () => {
       ]);
     });
 
+    it('should attach tenant_id and scope parent update when req.tenantId is present', async () => {
+      vi.spyOn(backendService, 'supabaseAdmin', 'get').mockReturnValue({
+        from: vi.fn().mockImplementation((table: string) => {
+          if (table === 'user_profiles') {
+            return {
+              select: () => ({
+                eq: () => ({
+                  maybeSingle: () =>
+                    Promise.resolve({ data: { role: 'member', status: 'active' } }),
+                }),
+              }),
+            };
+          }
+          if (table === 'tenants') {
+            return {
+              select: () => ({
+                eq: () => ({
+                  maybeSingle: () =>
+                    Promise.resolve({
+                      data: { id: 'tenant-456', name: 'Tenant 456', slug: 'tenant-456' },
+                    }),
+                }),
+              }),
+            };
+          }
+          return mockChain;
+        }),
+      } as unknown as SupabaseClient);
+
+      vi.mocked(backendService.verifyToken).mockResolvedValueOnce({
+        id: 'user-456',
+        username: 'test-user',
+        email: 'test@example.com',
+      } as unknown as User);
+
+      const mockReply = { id: 'r-2', content: 'My reply', tenant_id: 'tenant-456' };
+      mockUpdate.mockReturnValue(mockChain);
+      mockEq.mockReturnValue(mockChain);
+      mockInsert.mockReturnValue(mockChain);
+      mockSelect.mockReturnValue(mockChain);
+      mockSingle.mockResolvedValueOnce({ data: mockReply, error: null });
+
+      const res = await request(app)
+        .post('/api/recipes/r-1/comments/c-1/reply')
+        .send({ content: 'My reply' });
+
+      expect(res.status).toBe(200);
+      expect(mockInsert).toHaveBeenCalledWith([
+        expect.objectContaining({
+          tenant_id: 'tenant-456',
+        }),
+      ]);
+      expect(mockEq).toHaveBeenCalledWith('tenant_id', 'tenant-456');
+    });
+
     it('should return 400 if content is missing', async () => {
       const res = await request(app).post('/api/recipes/r-1/comments/c-1/reply').send({});
 
@@ -188,6 +290,52 @@ describe('Comments Router API', () => {
       expect(res.body).toEqual({ success: true });
       expect(mockDelete).toHaveBeenCalled();
       expect(mockEq).toHaveBeenCalledWith('id', 'c-1');
+    });
+
+    it('should scope delete by tenant_id when req.tenantId is present', async () => {
+      vi.spyOn(backendService, 'supabaseAdmin', 'get').mockReturnValue({
+        from: vi.fn().mockImplementation((table: string) => {
+          if (table === 'user_profiles') {
+            return {
+              select: () => ({
+                eq: () => ({
+                  maybeSingle: () =>
+                    Promise.resolve({ data: { role: 'member', status: 'active' } }),
+                }),
+              }),
+            };
+          }
+          if (table === 'tenants') {
+            return {
+              select: () => ({
+                eq: () => ({
+                  maybeSingle: () =>
+                    Promise.resolve({
+                      data: { id: 'tenant-del', name: 'Tenant Del', slug: 'tenant-del' },
+                    }),
+                }),
+              }),
+            };
+          }
+          return mockChain;
+        }),
+      } as unknown as SupabaseClient);
+
+      vi.mocked(backendService.verifyToken).mockResolvedValueOnce({
+        id: 'user-del',
+        username: 'test-user',
+        email: 'test@example.com',
+      } as unknown as User);
+
+      mockDelete.mockReturnValueOnce(mockChain);
+      mockEq.mockReturnValue(mockChain);
+
+      const res = await request(app).delete('/api/recipes/r-1/comments/c-1');
+
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual({ success: true });
+      expect(mockEq).toHaveBeenCalledWith('id', 'c-1');
+      expect(mockEq).toHaveBeenCalledWith('tenant_id', 'tenant-del');
     });
 
     it('should return 400 on error', async () => {
@@ -239,6 +387,56 @@ describe('Comments Router API', () => {
       expect(res.status).toBe(200);
       expect(res.body).toEqual(mockUpdated);
       expect(mockUpdate).toHaveBeenCalledWith({ status: 'approved', is_new: true });
+    });
+
+    it('should scope skip update by tenant_id when req.tenantId is present', async () => {
+      vi.spyOn(backendService, 'supabaseAdmin', 'get').mockReturnValue({
+        from: vi.fn().mockImplementation((table: string) => {
+          if (table === 'user_profiles') {
+            return {
+              select: () => ({
+                eq: () => ({
+                  maybeSingle: () =>
+                    Promise.resolve({ data: { role: 'member', status: 'active' } }),
+                }),
+              }),
+            };
+          }
+          if (table === 'tenants') {
+            return {
+              select: () => ({
+                eq: () => ({
+                  maybeSingle: () =>
+                    Promise.resolve({
+                      data: { id: 'tenant-skip', name: 'Tenant Skip', slug: 'tenant-skip' },
+                    }),
+                }),
+              }),
+            };
+          }
+          return mockChain;
+        }),
+      } as unknown as SupabaseClient);
+
+      vi.mocked(backendService.verifyToken).mockResolvedValueOnce({
+        id: 'user-skip',
+        username: 'test-user',
+        email: 'test@example.com',
+      } as unknown as User);
+
+      const mockUpdated = { id: 'c-1', status: 'skipped', tenant_id: 'tenant-skip' };
+      mockUpdate.mockReturnValueOnce(mockChain);
+      mockEq.mockReturnValue(mockChain);
+      mockSelect.mockReturnValueOnce(mockChain);
+      mockSingle.mockResolvedValueOnce({ data: mockUpdated, error: null });
+
+      const res = await request(app)
+        .patch('/api/recipes/r-1/comments/c-1/skip')
+        .send({ skipped: true });
+
+      expect(res.status).toBe(200);
+      expect(mockEq).toHaveBeenCalledWith('id', 'c-1');
+      expect(mockEq).toHaveBeenCalledWith('tenant_id', 'tenant-skip');
     });
 
     it('should return 400 on error', async () => {
