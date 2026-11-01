@@ -5,6 +5,7 @@
 export * from './lib/stars/stars';
 export * from './lib/types/recipe';
 export * from './lib/types/menu';
+export * from './lib/header-logo/header-logo';
 export * from './lib/header-nav/header-nav';
 export * from './lib/utils/url-utils';
 export * from './lib/utils/ingredient-parser';
