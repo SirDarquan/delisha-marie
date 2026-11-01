@@ -65,7 +65,7 @@ export class WakeLock implements OnInit, OnDestroy {
     if (typeof document !== 'undefined') {
       this.document.removeEventListener('visibilitychange', this.handleVisibilityChange);
     }
-    this.releaseWakeLock();
+    void this.releaseWakeLock();
   }
 
   protected async toggle(enable: boolean): Promise<void> {

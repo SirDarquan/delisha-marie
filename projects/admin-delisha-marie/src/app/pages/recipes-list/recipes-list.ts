@@ -328,7 +328,7 @@ export class RecipesListComponent implements OnInit {
 
   ngOnInit(): void {
     if (this.recipes().length === 0) {
-      this.fetchNextBatch();
+      void this.fetchNextBatch();
     }
   }
 
@@ -356,7 +356,7 @@ export class RecipesListComponent implements OnInit {
     const total = this.recipes().length;
     // Fetch more when we are within 10 items of the end
     if (end && end >= total - 10) {
-      this.fetchNextBatch();
+      void this.fetchNextBatch();
     }
 
     // Virtual Scroll programmatic updates can happen outside CD in zoneless Angular.

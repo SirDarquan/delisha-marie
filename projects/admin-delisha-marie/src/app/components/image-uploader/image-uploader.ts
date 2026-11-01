@@ -364,7 +364,7 @@ export class ImageUploaderComponent implements FormValueControl<string>, OnInit 
     if (event.dataTransfer?.files?.length) {
       const file = event.dataTransfer.files[0];
       if (file.type.startsWith('image/')) {
-        this.processFile(file);
+        void this.processFile(file);
       }
     } else if (event.dataTransfer) {
       // Handle URL drops (e.g. dragging a picture from another tab or pasting URL text)
@@ -381,7 +381,7 @@ export class ImageUploaderComponent implements FormValueControl<string>, OnInit 
     const inputEl = event.target as HTMLInputElement;
     if (inputEl.files?.length) {
       const file = inputEl.files[0];
-      this.processFile(file);
+      void this.processFile(file);
     }
   }
 

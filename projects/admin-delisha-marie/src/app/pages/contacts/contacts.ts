@@ -466,7 +466,11 @@ export class ContactsPage implements OnInit {
   constructor() {
     effect(() => {
       // Fetch when page or folder changes
-      this.contactService.fetchMessages(this.currentFolder(), this.currentPage(), this.pageSize());
+      void this.contactService.fetchMessages(
+        this.currentFolder(),
+        this.currentPage(),
+        this.pageSize(),
+      );
     });
   }
 
@@ -491,13 +495,13 @@ export class ContactsPage implements OnInit {
   }
 
   protected setFolder(folder: string) {
-    this.router.navigate(['/contacts'], { queryParams: { folder } });
+    void this.router.navigate(['/contacts'], { queryParams: { folder } });
   }
 
   protected onPageChange(event: PageEvent) {
     const newPage = event.pageIndex + 1;
     const url = newPage === 1 ? ['/contacts'] : ['/contacts/page', newPage];
-    this.router.navigate(url, { queryParams: { folder: this.currentFolder() } });
+    void this.router.navigate(url, { queryParams: { folder: this.currentFolder() } });
     this.selectNone();
   }
 
@@ -538,7 +542,11 @@ export class ContactsPage implements OnInit {
   }
 
   protected refresh() {
-    this.contactService.fetchMessages(this.currentFolder(), this.currentPage(), this.pageSize());
+    void this.contactService.fetchMessages(
+      this.currentFolder(),
+      this.currentPage(),
+      this.pageSize(),
+    );
   }
 
   protected async markAllAsRead() {
@@ -551,7 +559,7 @@ export class ContactsPage implements OnInit {
   }
 
   protected viewMessage(id: string) {
-    this.router.navigate(['/contacts', id]);
+    void this.router.navigate(['/contacts', id]);
   }
 
   // Row Hover Actions

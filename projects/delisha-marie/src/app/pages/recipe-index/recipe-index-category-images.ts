@@ -96,7 +96,7 @@ export class RecipeIndexCategoryImages {
   search() {
     const query = this.searchControl.value;
     if (query?.trim()) {
-      this.router.navigate(['/'], { queryParams: { q: query.trim() } });
+      void this.router.navigate(['/'], { queryParams: { q: query.trim() } });
     }
   }
 }
