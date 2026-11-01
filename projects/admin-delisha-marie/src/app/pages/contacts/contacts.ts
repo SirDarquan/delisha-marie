@@ -719,7 +719,7 @@ export class ContactsPage implements OnInit {
     this.snackBar.open('Message restored to Inbox', '', { duration: 3000 });
   }
 
-  protected async hardDeleteMsg(msg: ContactMessage) {
+  protected hardDeleteMsg(msg: ContactMessage) {
     const dialogRef = this.dialog.open(ConfirmDialogComponent, {
       panelClass: 'admin-dialog-panel',
       data: {
@@ -745,7 +745,7 @@ export class ContactsPage implements OnInit {
     this.snackBar.open(`${ids.length} messages restored`, '', { duration: 3000 });
   }
 
-  protected async bulkHardDelete() {
+  protected bulkHardDelete() {
     const ids = this.selectedIds();
     const dialogRef = this.dialog.open(ConfirmDialogComponent, {
       panelClass: 'admin-dialog-panel',
@@ -764,7 +764,7 @@ export class ContactsPage implements OnInit {
     });
   }
 
-  protected async emptyTrash() {
+  protected emptyTrash() {
     const dialogRef = this.dialog.open(ConfirmDialogComponent, {
       panelClass: 'admin-dialog-panel',
       data: {

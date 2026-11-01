@@ -16,12 +16,13 @@ export class PluginRegistry {
       .filter((p) => p.isEnabled?.() || true)
       .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 
-    for (const plugin of eligible) {
+    await eligible.reduce(async (prevPromise, plugin) => {
+      await prevPromise;
       try {
         await Promise.resolve(plugin.init());
       } catch (err) {
         console.error(`Failed to initialize plugin ${plugin.id}`, err);
       }
-    }
+    }, Promise.resolve());
   }
 }

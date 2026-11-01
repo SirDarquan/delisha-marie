@@ -723,7 +723,7 @@ describe('RecipeComments', () => {
       streamSubject.next({ comment: existing });
       fixture.detectChanges();
 
-      expect(component.comments().length).toBe(countBefore);
+      expect(component.comments()).toHaveLength(countBefore);
     });
 
     it('should not increment totalTopLevelComments when receiving a reply from stream', () => {
