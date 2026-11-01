@@ -147,7 +147,7 @@ export class PageEditorComponent implements OnInit {
     try {
       await this.pagesService.savePage(this.slug(), value);
       this.snackBar.open('Page saved successfully!', 'Close', { duration: 3000 });
-      this.router.navigate(['/pages']);
+      void this.router.navigate(['/pages']);
     } catch (error) {
       console.error('Failed to save page', error);
       this.snackBar.open('Failed to save page.', 'Close', { duration: 3000 });
@@ -158,7 +158,7 @@ export class PageEditorComponent implements OnInit {
     const routeSlug = this.route.snapshot.paramMap.get('slug');
     if (routeSlug) {
       this.slug.set(routeSlug);
-      this.loadPageData(routeSlug);
+      void this.loadPageData(routeSlug);
     }
   }
 

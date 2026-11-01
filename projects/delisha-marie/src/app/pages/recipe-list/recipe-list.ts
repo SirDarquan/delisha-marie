@@ -274,7 +274,7 @@ export class RecipeList {
   });
 
   onPageChange(p: number): void {
-    this.router.navigateByUrl(this.getPageUrl(p));
+    void this.router.navigateByUrl(this.getPageUrl(p));
     const window = this.document.defaultView;
     window?.scrollTo({ top: 0, behavior: 'smooth' });
   }

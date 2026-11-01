@@ -712,7 +712,7 @@ export class RecipeFormComponent implements OnInit {
             this.currentStatus() === 'published' || this.currentStatus() === 'updated'
               ? 'published'
               : 'scheduled';
-          this.saveRequired(targetStatus);
+          void this.saveRequired(targetStatus);
         },
       },
     },
@@ -1154,7 +1154,7 @@ export class RecipeFormComponent implements OnInit {
 
     const result = await firstValueFrom(dialogRef.afterClosed());
     if (result) {
-      this.saveRequired('scheduled', result);
+      void this.saveRequired('scheduled', result);
     }
   }
 

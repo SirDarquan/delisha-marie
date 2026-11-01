@@ -407,7 +407,7 @@ export class LoginComponent implements OnInit, AfterViewInit {
               } else {
                 this.snackBar.open('Successfully logged in!', 'Close', { duration: 5000 });
                 const returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/';
-                this.router.navigateByUrl(returnUrl);
+                void this.router.navigateByUrl(returnUrl);
               }
             } else {
               const errMsg =
@@ -460,7 +460,7 @@ export class LoginComponent implements OnInit, AfterViewInit {
                 duration: 5000,
               });
               const returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/';
-              this.router.navigateByUrl(returnUrl);
+              void this.router.navigateByUrl(returnUrl);
             } else {
               const errMsg = this.auth.authError() || 'Registration failed. Please try again.';
               if (
@@ -513,10 +513,10 @@ export class LoginComponent implements OnInit, AfterViewInit {
     if (!isPlatformBrowser(this.platformId)) {
       return;
     }
-    this.auth.waitForSessionInit().then(async () => {
+    void this.auth.waitForSessionInit().then(async () => {
       if (this.auth.isAuthenticated()) {
         const returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/';
-        this.router.navigateByUrl(returnUrl);
+        void this.router.navigateByUrl(returnUrl);
         return;
       }
 
@@ -541,7 +541,7 @@ export class LoginComponent implements OnInit, AfterViewInit {
             } else {
               this.snackBar.open('Successfully logged in!', 'Close', { duration: 5000 });
               const returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/';
-              this.router.navigateByUrl(returnUrl);
+              void this.router.navigateByUrl(returnUrl);
             }
           } else {
             const errMsg = this.auth.authError() || 'Google sign in failed.';
@@ -560,7 +560,7 @@ export class LoginComponent implements OnInit, AfterViewInit {
 
           if (!loginSuccess) {
             // Clean up the URL query params so they don't persist if it failed
-            this.router.navigate([], {
+            void this.router.navigate([], {
               relativeTo: this.route,
               queryParams: { code: null, state: null },
               queryParamsHandling: 'merge',

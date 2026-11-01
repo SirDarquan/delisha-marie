@@ -618,7 +618,7 @@ export class RecipeComments {
 
     const path = p === lastPage ? `/recipe/${cleanSlug}` : `/recipe/${cleanSlug}/page/${p}`;
 
-    this.router.navigate([path], { fragment: 'comments' });
+    void this.router.navigate([path], { fragment: 'comments' });
   }
 
   setRating(rating: number) {

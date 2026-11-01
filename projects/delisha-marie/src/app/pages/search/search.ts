@@ -240,7 +240,7 @@ export class SearchPage {
     const query = this.searchModel().q;
     const path = p === 1 ? '/' : `/page/${p}`;
 
-    this.router.navigate([path], {
+    void this.router.navigate([path], {
       queryParams: { q: query?.trim() },
       queryParamsHandling: 'merge',
     });

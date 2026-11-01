@@ -121,7 +121,7 @@ export class ContactDetail implements OnInit {
   protected readonly message = signal<ContactMessage | undefined>(undefined);
 
   ngOnInit() {
-    this.loadMessage();
+    void this.loadMessage();
   }
 
   private async loadMessage() {
@@ -144,7 +144,7 @@ export class ContactDetail implements OnInit {
     const msg = this.message();
     if (msg) {
       await this.contactService.updateMessage(msg.id, { is_read: false });
-      this.router.navigate(['/contacts']);
+      void this.router.navigate(['/contacts']);
     }
   }
 
@@ -153,7 +153,7 @@ export class ContactDetail implements OnInit {
     if (!msg) return;
 
     await this.contactService.updateMessage(msg.id, { is_archived: true });
-    this.router.navigate(['/contacts']);
+    void this.router.navigate(['/contacts']);
 
     const snackBarRef = this.snackBar.open('Message archived', 'Undo', { duration: 5000 });
     snackBarRef.onAction().subscribe(async () => {
@@ -168,7 +168,7 @@ export class ContactDetail implements OnInit {
       const tomorrow = new Date();
       tomorrow.setDate(tomorrow.getDate() + 1);
       await this.contactService.updateMessage(msg.id, { snoozed_until: tomorrow.toISOString() });
-      this.router.navigate(['/contacts']);
+      void this.router.navigate(['/contacts']);
     }
   }
 
@@ -177,7 +177,7 @@ export class ContactDetail implements OnInit {
     if (!msg) return;
 
     await this.contactService.updateMessage(msg.id, { deleted_at: new Date().toISOString() });
-    this.router.navigate(['/contacts']);
+    void this.router.navigate(['/contacts']);
 
     const snackBarRef = this.snackBar.open('Message moved to trash', 'Undo', { duration: 5000 });
     snackBarRef.onAction().subscribe(async () => {
