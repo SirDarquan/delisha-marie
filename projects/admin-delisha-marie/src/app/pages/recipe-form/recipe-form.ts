@@ -712,7 +712,7 @@ export class RecipeFormComponent implements OnInit {
             this.currentStatus() === 'published' || this.currentStatus() === 'updated'
               ? 'published'
               : 'scheduled';
-          void this.saveRequired(targetStatus);
+          await this.saveRequired(targetStatus);
         },
       },
     },

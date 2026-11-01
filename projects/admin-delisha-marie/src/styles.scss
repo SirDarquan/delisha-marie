@@ -46,46 +46,46 @@ body {
   --mat-select-placeholder-text-color: #94a3b8;
 }
 
-.custom-mat-form-field .mat-mdc-form-field-subscript-wrapper {
-  display: none !important;
+body .custom-mat-form-field .mat-mdc-form-field-subscript-wrapper {
+  display: none;
 }
 
-.custom-mat-form-field .mat-mdc-form-field-flex {
-  height: 44px !important;
-  align-items: center !important;
+body .custom-mat-form-field .mat-mdc-form-field-flex {
+  height: 44px;
+  align-items: center;
 }
 
-.custom-mat-form-field .mat-mdc-select-value {
-  color: #ffffff !important;
-  font-size: 14px !important;
+body .custom-mat-form-field .mat-mdc-select-value {
+  color: #ffffff;
+  font-size: 14px;
 }
 
-.custom-mat-form-field .mat-mdc-select-placeholder {
-  color: #94a3b8 !important;
-  font-size: 14px !important;
+body .custom-mat-form-field .mat-mdc-select-placeholder {
+  color: #94a3b8;
+  font-size: 14px;
 }
 
-.custom-mat-form-field .mat-mdc-select-arrow {
-  color: #94a3b8 !important;
+body .custom-mat-form-field .mat-mdc-select-arrow {
+  color: #94a3b8;
 }
 
 /* Admin Dialog Overrides */
-.admin-dialog-panel .mdc-dialog__surface {
-  background-color: #1e293b !important;
+.cdk-overlay-pane.admin-dialog-panel .mat-mdc-dialog-container .mdc-dialog__surface {
+  background-color: #1e293b;
   /* slate-800 */
-  color: #cbd5e1 !important;
+  color: #cbd5e1;
   /* slate-300 */
-  border: 1px solid #334155 !important;
+  border: 1px solid #334155;
   /* slate-700 */
 }
 
-.admin-dialog-panel .mat-mdc-dialog-title {
-  color: #f8fafc !important;
+.cdk-overlay-pane.admin-dialog-panel .mat-mdc-dialog-title {
+  color: #f8fafc;
   /* slate-50 */
 }
 
-.admin-dialog-panel .mat-datepicker-toggle button {
-  color: #94a3b8 !important;
+.cdk-overlay-pane.admin-dialog-panel .mat-datepicker-toggle button {
+  color: #94a3b8;
   /* slate-400 */
 }
 

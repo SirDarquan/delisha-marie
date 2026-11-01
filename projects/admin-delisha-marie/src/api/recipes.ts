@@ -843,8 +843,10 @@ async function clearOldRelations(client: SupabaseClient, recipeId: string | numb
     'equipment',
     'recipe_ingredients',
   ] as const;
-  for (const table of tables) {
-    const { error } = await client.from(table).delete().eq('recipe_id', recipeId);
+  const results = await Promise.all(
+    tables.map((table) => client.from(table).delete().eq('recipe_id', recipeId)),
+  );
+  for (const { error } of results) {
     if (error) throw error;
   }
 }

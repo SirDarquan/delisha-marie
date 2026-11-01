@@ -15,8 +15,13 @@
   color-scheme: dark;
 }
 
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
 html {
-  scroll-behavior: smooth;
   // Apply the default Material 3 theme.
   @include mat.theme((
     color: (

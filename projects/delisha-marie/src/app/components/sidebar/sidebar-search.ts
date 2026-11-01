@@ -78,7 +78,7 @@ export class SidebarSearch {
         action: async (f) => {
           const q = f().value().query;
           if (q?.trim()) {
-            void this.router.navigate(['/'], { queryParams: { q: q.trim() } });
+            await this.router.navigate(['/'], { queryParams: { q: q.trim() } });
           }
         },
       },

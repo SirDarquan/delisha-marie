@@ -12,8 +12,13 @@
   color-scheme: dark;
 }
 
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
 html {
-  scroll-behavior: smooth;
   height: 100%;
   width: 100%;
   @include mat.theme((
