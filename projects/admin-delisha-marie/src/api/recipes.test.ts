@@ -1719,5 +1719,92 @@ describe('Recipes Router API', () => {
       expect(res.status).toBe(400);
       expect(res.body.error).toBe('Equipment insert failed');
     });
+
+    it('should generate preview_token when scheduling a recipe and preserve existing token if provided', async () => {
+      const futureDate = new Date(Date.now() + 86400000).toISOString();
+      mockSingle.mockResolvedValueOnce({
+        data: {
+          id: 'recipe-sched-1',
+          status: 'published',
+          created_at: futureDate,
+          preview_token: 'generated-token',
+        },
+        error: null,
+      });
+
+      const res1 = await request(app).post('/recipes').send({
+        title: 'Scheduled Salad',
+        status: 'published',
+        createdAt: futureDate,
+      });
+      expect(res1.status).toBe(200);
+      expect(mockInsert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: 'published',
+          created_at: futureDate,
+          preview_token: expect.any(String),
+        }),
+      );
+
+      mockSingle.mockResolvedValueOnce({
+        data: {
+          id: 'recipe-sched-2',
+          status: 'published',
+          created_at: futureDate,
+          preview_token: 'custom-token-123',
+        },
+        error: null,
+      });
+
+      const res2 = await request(app).post('/recipes').send({
+        title: 'Scheduled Salad 2',
+        status: 'published',
+        createdAt: futureDate,
+        previewToken: '  custom-token-123  ',
+      });
+      expect(res2.status).toBe(200);
+      expect(mockInsert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          preview_token: 'custom-token-123',
+        }),
+      );
+    });
+
+    it('should clear preview_token in formatRecipeList when recipe is not scheduled', async () => {
+      const futureDate = new Date(Date.now() + 86400000).toISOString();
+      const pastDate = new Date(Date.now() - 86400000).toISOString();
+      mockRange.mockResolvedValueOnce({
+        data: [
+          {
+            id: '1',
+            status: 'published',
+            created_at: futureDate,
+            preview_token: 'keep-me',
+          },
+          {
+            id: '2',
+            status: 'published',
+            created_at: pastDate,
+            preview_token: 'clear-me',
+          },
+          {
+            id: '3',
+            status: 'draft',
+            created_at: futureDate,
+            preview_token: 'clear-draft',
+          },
+        ],
+        error: null,
+      });
+
+      const res = await request(app).get('/recipes');
+      expect(res.status).toBe(200);
+      const byId = Object.fromEntries(
+        res.body.map((r: Record<string, unknown>) => [r['id'], r['previewToken']]),
+      );
+      expect(byId['1']).toBe('keep-me');
+      expect(byId['2']).toBeNull();
+      expect(byId['3']).toBeNull();
+    });
   });
 });

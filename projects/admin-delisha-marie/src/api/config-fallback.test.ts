@@ -34,11 +34,13 @@ describe('Config Router Service - Fallback Initialization Lifecycle', () => {
 
   it('should fall back to empty string if DESCOPE_PROJECT_ID is missing', async () => {
     delete process.env['DESCOPE_PROJECT_ID'];
+    delete process.env['KITCHEN_URL'];
 
     const { default: configRouter } = await import('./config');
     const app = express().use(configRouter);
 
     const res = await request(app).get('/config');
     expect(res.body.DescopeProjectId).toBe('');
+    expect(res.body.KitchenUrl).toBe('');
   });
 });

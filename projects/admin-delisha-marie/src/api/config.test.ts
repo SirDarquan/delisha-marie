@@ -35,6 +35,7 @@ describe('Config Router Service - Self-Initialization Lifecycle', () => {
   it('should load and present base configuration normally', async () => {
     process.env['GOOGLE_CLIENT_ID'] = 'base-id';
     process.env['DESCOPE_PROJECT_ID'] = 'test-descope-id';
+    process.env['KITCHEN_URL'] = 'https://delishamarie.com/kitchen';
 
     const { default: configRouter } = await import('./config');
     const app = express().use(configRouter);
@@ -42,5 +43,6 @@ describe('Config Router Service - Self-Initialization Lifecycle', () => {
     const res = await request(app).get('/config');
     expect(res.body.SocialClients.GoogleClientId).toBe('base-id');
     expect(res.body.DescopeProjectId).toBe('test-descope-id');
+    expect(res.body.KitchenUrl).toBe('https://delishamarie.com/kitchen');
   });
 });
