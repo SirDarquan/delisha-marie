@@ -258,6 +258,24 @@ describe('RecipeService', () => {
       expect(r2).toEqual(mockSeo2);
     });
 
+    it('should pass preview token query param to getSeoBySlug without caching', async () => {
+      const mockSeo = { title: 'Preview Stew', description: 'Desc', image: '/img.jpg' };
+
+      const p1 = service.getSeoBySlug('sched-recipe', false, 'token-123');
+      httpMock.expectOne('/api/recipes/sched-recipe/seo?preview=token-123').flush(mockSeo);
+      const r1 = await p1;
+      expect(r1).toEqual(mockSeo);
+      expect(
+        (service as unknown as { seoCache: Map<string, unknown> }).seoCache.has('sched-recipe'),
+      ).toBe(false);
+
+      const pErr = service.getSeoBySlug('sched-err', false, 'tok-err');
+      httpMock
+        .expectOne('/api/recipes/sched-err/seo?preview=tok-err')
+        .error(new ProgressEvent('error'));
+      expect(await pErr).toBeNull();
+    });
+
     it('should return null on error', async () => {
       const promise = service.getSeoBySlug('error-slug');
       const req = httpMock.expectOne('/api/recipes/error-slug/seo');

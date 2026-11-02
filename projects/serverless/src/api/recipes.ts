@@ -1174,8 +1174,11 @@ async function handleSeoBySlug(req: VercelRequest, res: VercelResponse, slug: st
     const supabase = await getSupabaseClient();
     const cleanSlug = slug.replace(/^\/?recipe\//, '').replace(/^\//, '');
     const refresh = req.query['refresh'] === 'true';
+    const previewQuery = req.query['preview'];
+    const previewToken =
+      typeof previewQuery === 'string' && previewQuery.trim() ? previewQuery.trim() : undefined;
 
-    if (!refresh && process.env['NODE_ENV'] !== 'test') {
+    if (!previewToken && !refresh && process.env['NODE_ENV'] !== 'test') {
       const cached = recipeSlugCache.get(cleanSlug);
       if (cached && Date.now() - cached.timestamp < 1000 * 60 * 5) {
         const raw = cached.rawRecipe;
@@ -1194,16 +1197,35 @@ async function handleSeoBySlug(req: VercelRequest, res: VercelResponse, slug: st
       }
     }
 
-    const { data, error } = await supabase
+    const nowIso = new Date().toISOString();
+    const { data: liveData, error } = await supabase
       .from('recipes')
       .select('title, description, keywords, image, image_width, image_height, image_type')
       .eq('slug', cleanSlug)
       .eq('status', 'published')
-      .lte('created_at', new Date().toISOString())
+      .lte('created_at', nowIso)
       .maybeSingle();
 
     if (error) {
       throw error;
+    }
+
+    let data = liveData;
+
+    if (!data && previewToken) {
+      const scheduledRes = await supabase
+        .from('recipes')
+        .select('title, description, keywords, image, image_width, image_height, image_type')
+        .eq('slug', cleanSlug)
+        .eq('status', 'published')
+        .gt('created_at', nowIso)
+        .eq('preview_token', previewToken)
+        .maybeSingle();
+
+      if (scheduledRes.error) {
+        throw scheduledRes.error;
+      }
+      data = scheduledRes.data;
     }
 
     if (!data) {

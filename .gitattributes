@@ -1,0 +1,32 @@
+# Default to LF for text files
+* text=auto eol=lf
+ 
+# Mark these as binary explicitly
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.otf binary
+*.ico binary
+*.pdf binary
+*.zip binary
+ 
+# Force LF for these (stable across all operating systems)
+*.js text eol=lf
+*.ts text eol=lf
+*.tsx text eol=lf
+*.jsx text eol=lf
+*.mdx text eol=lf
+*.md text eol=lf
+*.json text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.sh text eol=lf
+ 
+# Windows-specific scripts: CRLF
+*.bat text eol=crlf
+*.cmd text eol=crlf

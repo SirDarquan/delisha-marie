@@ -200,9 +200,18 @@ describe('Single Recipe Detail View', () => {
       body: scheduledRecipe,
     }).as('getScheduledPreview');
 
-    cy.intercept('GET', '**/recipes/*/seo', {
+    cy.intercept('GET', '/api/recipes/signature-beef-stew/title?preview=sched-tok-123', {
       statusCode: 200,
-      body: null,
+      body: { title: scheduledRecipe.title },
+    }).as('getScheduledTitle');
+
+    cy.intercept('GET', '**/recipes/*/seo*', {
+      statusCode: 200,
+      body: {
+        title: scheduledRecipe.title,
+        description: scheduledRecipe.description,
+        image: scheduledRecipe.image,
+      },
     }).as('getScheduledSeo');
 
     cy.intercept('GET', '**/recipes/*/schema', {
@@ -216,6 +225,11 @@ describe('Single Recipe Detail View', () => {
 
     cy.get('article', { timeout: 10000 }).should('be.visible');
     cy.get('meta[name="robots"]').should('have.attr', 'content', 'noindex,nofollow');
+    cy.get('meta[property="og:title"]').should(
+      'have.attr',
+      'content',
+      "Signature Beef Stew | Delisha Marie's Kitchen",
+    );
 
     cy.get('dml-recipe-comments').within(() => {
       cy.get('.preview-comments-disabled-notice').should(
