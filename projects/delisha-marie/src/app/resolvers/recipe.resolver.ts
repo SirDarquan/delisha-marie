@@ -7,7 +7,9 @@ export const recipeResolver: ResolveFn<Recipe | null> = (route) => {
   const slug = route.paramMap.get('slug');
   if (!slug) return null;
 
-  return inject(RecipeService).getRecipeBySlug(slug);
+  const preview = route.queryParamMap?.get('preview') || undefined;
+  const service = inject(RecipeService);
+  return preview ? service.getRecipeBySlug(slug, false, preview) : service.getRecipeBySlug(slug);
 };
 
 export const recipeListTitleResolver: ResolveFn<string> = (route) => {
@@ -23,7 +25,9 @@ export const recipeTitleResolver: ResolveFn<string> = (route) => {
   const slug = route.paramMap.get('slug');
   if (!slug) return 'Recipe Not Found';
 
-  return inject(RecipeService)
-    .getTitle(slug)
-    .then((title) => title || 'Recipe Not Found');
+  const preview = route.queryParamMap?.get('preview') || undefined;
+  const service = inject(RecipeService);
+  return (preview ? service.getTitle(slug, preview) : service.getTitle(slug)).then(
+    (title) => title || 'Recipe Not Found',
+  );
 };

@@ -116,6 +116,7 @@ import { Recipe } from '../../services/recipe.service';
         <button
           mat-stroked-button
           [routerLink]="['/recipe', recipe().slug, 'print']"
+          [queryParams]="previewToken() ? { preview: previewToken() } : null"
           class="flex-1 rounded-full h-12 border-2 font-black hover:bg-[var(--mat-sys-on-surface)] hover:text-[var(--mat-sys-surface)] transition-all">
           <mat-icon class="mr-2">print</mat-icon>
           Print
@@ -371,6 +372,7 @@ import { Recipe } from '../../services/recipe.service';
 })
 export class RecipeCard {
   recipe = input.required<Recipe>();
+  previewToken = input<string | undefined>(undefined);
 
   private readonly document = inject(DOCUMENT);
   private readonly imageLoader = inject(IMAGE_LOADER);

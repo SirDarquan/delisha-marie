@@ -88,13 +88,21 @@ export class RecipeService {
   /**
    * Fetches a single recipe by its slug.
    */
-  getRecipeBySlug(slug: string, refresh = false): Promise<Recipe | null> {
+  getRecipeBySlug(slug: string, refresh = false, previewToken?: string): Promise<Recipe | null> {
     const clean = (s: string) => s.replace(/^\/?recipe\//, '').replace(/^\//, '');
     const normalizedSearch = clean(slug);
 
     if (refresh) {
       this.recipeCache.delete(normalizedSearch);
       this.schemaCache.delete(normalizedSearch);
+    }
+
+    if (previewToken) {
+      return this.api
+        .get<Recipe | null>(
+          `/recipes/${normalizedSearch}?preview=${encodeURIComponent(previewToken)}`,
+        )
+        .catch(() => null);
     }
 
     let cached = this.recipeCache.get(normalizedSearch);
@@ -188,7 +196,7 @@ export class RecipeService {
     return cached;
   }
 
-  async getTitle(slug: string): Promise<string | null> {
+  async getTitle(slug: string, previewToken?: string): Promise<string | null> {
     const clean = (s: string) => s.replace(/^\/?recipe\//, '').replace(/^\//, '');
     const normalized = clean(slug);
 
@@ -210,9 +218,10 @@ export class RecipeService {
       if (seo?.title) return seo.title;
     }
 
+    const query = previewToken ? `?preview=${encodeURIComponent(previewToken)}` : '';
     return this.api
-      .get<{ title: string | null }>(`/recipes/${normalized}/title`)
-      .then((res) => res.title)
+      .get<{ title: string | null } | null>(`/recipes/${normalized}/title${query}`)
+      .then((res) => res?.title ?? null)
       .catch(() => null);
   }
   private readonly getRecipesCache = new Map<

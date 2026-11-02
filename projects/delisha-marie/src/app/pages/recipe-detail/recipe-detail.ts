@@ -133,7 +133,9 @@ import { SidebarQuickView } from './sidebar-quick-view';
               <!-- Rest of the content (Row 2, Col 1 on Desktop) -->
               <div class="order-2 lg:order-none space-y-12 min-w-0 lg:col-start-1 lg:row-start-2">
                 <!-- Premium Recipe Card -->
-                <dml-recipe-card [recipe]="r" />
+                <dml-recipe-card
+                  [recipe]="r"
+                  [previewToken]="isScheduledPreview() ? previewToken() : undefined" />
 
                 <!-- Equipment -->
                 <dm-recipe-equipment [recipeId]="r.id" />
@@ -151,6 +153,7 @@ import { SidebarQuickView } from './sidebar-quick-view';
                 <dml-recipe-comments
                   [recipe]="r"
                   [page]="page()"
+                  [isPreview]="isScheduledPreview()"
                   (statsChange)="onStatsChange($event)" />
               </div>
             </div>
@@ -168,22 +171,31 @@ export class RecipeDetail {
   private readonly route = inject(ActivatedRoute);
   private readonly recipeService = inject(RecipeService);
   private readonly _params = toSignal(this.route.params);
+  private readonly _queryParams = toSignal(this.route.queryParams);
   readonly router = inject(Router);
 
   readonly slug = computed(() => this._params()?.['slug'] as string | null | undefined);
+  readonly previewToken = computed(() => this._queryParams()?.['preview'] as string | undefined);
   commentCountOverride = signal<number | null>(null);
   ratingOverride = signal<number | null>(null);
   ratingCountOverride = signal<number | null>(null);
 
   readonly recipeResource = resource({
-    params: () => this.slug(),
-    loader: async ({ params: slug }) => {
+    params: () => ({ slug: this.slug(), preview: this.previewToken() }),
+    loader: async ({ params: { slug, preview } }) => {
       if (!slug) return null;
-      return await this.recipeService.getRecipeBySlug(slug);
+      return preview
+        ? await this.recipeService.getRecipeBySlug(slug, false, preview)
+        : await this.recipeService.getRecipeBySlug(slug);
     },
   });
 
   readonly recipe = computed(() => this.recipeResource.value());
+
+  readonly isScheduledPreview = computed(() => {
+    const r = this.recipe();
+    return Boolean(r?.createdAt && new Date(r.createdAt).getTime() > Date.now());
+  });
 
   readonly isLoading = computed(() => this.recipeResource.isLoading());
 
