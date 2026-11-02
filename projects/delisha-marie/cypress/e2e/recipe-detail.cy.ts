@@ -188,4 +188,42 @@ describe('Single Recipe Detail View', () => {
     cy.get('aside dml-sidebar').should('be.visible');
     cy.get('aside').invoke('width').should('be.closeTo', 350, 1);
   });
+
+  it('should render scheduled recipe preview with comments disabled and noindex SEO', () => {
+    const scheduledRecipe = {
+      ...mockFullRecipe,
+      createdAt: '2099-01-01T00:00:00.000Z',
+    };
+
+    cy.intercept('GET', '/api/recipes/signature-beef-stew?preview=sched-tok-123', {
+      statusCode: 200,
+      body: scheduledRecipe,
+    }).as('getScheduledPreview');
+
+    cy.intercept('GET', '**/recipes/*/seo', {
+      statusCode: 200,
+      body: null,
+    }).as('getScheduledSeo');
+
+    cy.intercept('GET', '**/recipes/*/schema', {
+      statusCode: 200,
+      body: null,
+    }).as('getScheduledSchema');
+
+    cy.visit('/recipe/signature-beef-stew?preview=sched-tok-123');
+    cy.wait('@getScheduledPreview');
+    cy.wait('@getRecipeComments');
+
+    cy.get('article', { timeout: 10000 }).should('be.visible');
+    cy.get('meta[name="robots"]').should('have.attr', 'content', 'noindex,nofollow');
+
+    cy.get('dml-recipe-comments').within(() => {
+      cy.get('.preview-comments-disabled-notice').should(
+        'contain.text',
+        'Comments are disabled while previewing a scheduled recipe.',
+      );
+      cy.get('fieldset').should('be.disabled');
+      cy.contains('button', 'Reply').should('be.disabled');
+    });
+  });
 });

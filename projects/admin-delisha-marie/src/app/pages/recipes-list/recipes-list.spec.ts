@@ -37,6 +37,9 @@ describe('RecipesListComponent', () => {
     setLastActiveRecipeId: vi.fn(),
     setLastScrollOffset: vi.fn(),
     setCachedRecipesList: vi.fn(),
+    getRecipePreviewUrl: vi.fn(
+      (slug: string, token: string) => `http://localhost:4200/recipe/${slug}?preview=${token}`,
+    ),
   };
 
   const dialogRefMock = {
@@ -463,5 +466,22 @@ describe('RecipesListComponent', () => {
     fakeRecipeService.getLastScrollOffset = () => 0;
     fakeRecipeService.getCachedRecipesList = () => [];
     fakeTenant.set(null);
+  });
+
+  it('should compute preview url for scheduled recipes via getPreviewUrl', () => {
+    const futureDate = new Date(Date.now() + 86400000).toISOString();
+    const scheduledRecipe: Recipe = {
+      ...mockRecipesData[0],
+      status: 'published',
+      createdAt: futureDate,
+      previewToken: 'sched-123',
+    };
+    expect(component['isScheduled'](scheduledRecipe)).toBe(true);
+    expect(component['getPreviewUrl'](scheduledRecipe)).toBe(
+      'http://localhost:4200/recipe/pasta?preview=sched-123',
+    );
+    expect(component['getPreviewUrl']({ ...scheduledRecipe, previewToken: undefined })).toBe(
+      'http://localhost:4200/recipe/pasta?preview=',
+    );
   });
 });

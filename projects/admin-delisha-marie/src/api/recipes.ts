@@ -1,6 +1,7 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import { camelCase, snakeCase } from 'change-case';
 import { Response, Router } from 'express';
+import crypto from 'node:crypto';
 import { authMiddleware, AuthRequest } from './middleware/auth.middleware';
 import { backendService } from './supabase-backend.service';
 import { capitalizeIngredient, parseIngredientName } from '@dm/library';
@@ -94,6 +95,13 @@ function formatRecipeList(
     delete cleanRecipe['recipe_ingredients'];
 
     const camelRecipe = camelCaseKeys(cleanRecipe);
+    const isScheduled =
+      camelRecipe['status'] === 'published' &&
+      typeof camelRecipe['createdAt'] === 'string' &&
+      new Date(camelRecipe['createdAt']).getTime() > Date.now();
+    if ('previewToken' in camelRecipe && !isScheduled) {
+      camelRecipe['previewToken'] = null;
+    }
 
     return {
       ...camelRecipe,
@@ -701,6 +709,19 @@ function normalizeDbBody(obj: Record<string, unknown>): Record<string, unknown> 
     result['nutrition'] = Object.fromEntries(
       Object.entries(result['nutrition']).map(([k, v]) => [snakeCase(k), v]),
     );
+  }
+  const isScheduled =
+    result['status'] === 'published' &&
+    typeof result['created_at'] === 'string' &&
+    new Date(result['created_at']).getTime() > Date.now();
+  if (isScheduled) {
+    const existingToken = result['preview_token'];
+    result['preview_token'] =
+      typeof existingToken === 'string' && existingToken.trim() !== ''
+        ? existingToken.trim()
+        : crypto.randomUUID();
+  } else {
+    result['preview_token'] = null;
   }
   return result;
 }

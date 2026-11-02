@@ -24,7 +24,10 @@ import { Recipe } from '../../services/recipe.service';
       <div
         class="no-print bg-gray-50 border-b border-gray-200 p-4 sticky top-0 z-50 flex flex-wrap gap-4 items-center justify-between shadow-sm">
         <div class="flex gap-3">
-          <a mat-stroked-button [routerLink]="['/recipe', recipe()?.slug]">
+          <a
+            mat-stroked-button
+            [routerLink]="['/recipe', recipe()?.slug]"
+            [queryParams]="isScheduledPreview() && preview() ? { preview: preview() } : null">
             <mat-icon class="mr-1">arrow_back</mat-icon>
             Go Back
           </a>
@@ -199,6 +202,7 @@ import { Recipe } from '../../services/recipe.service';
 })
 export class RecipePrint {
   recipe = input<Recipe | null | undefined>(undefined);
+  preview = input<string | undefined>(undefined);
 
   showImage = signal(true);
   showNotes = signal(true);
@@ -206,11 +210,16 @@ export class RecipePrint {
 
   private readonly document = inject(DOCUMENT);
 
+  readonly isScheduledPreview = computed(() => {
+    const r = this.recipe();
+    return Boolean(r?.createdAt && new Date(r.createdAt).getTime() > Date.now());
+  });
+
   readonly windowUrl = computed(() => {
     // Only attempt to read location if window is available (SSR safe)
     if (this.document.defaultView) {
-      // Strip '/print' from the end of the URL to give the actual recipe URL
-      return this.document.defaultView.location.href.replace(/\/print\/?$/, '');
+      // Strip query params and '/print' from the end of the URL to give the actual recipe URL
+      return this.document.defaultView.location.href.split('?')[0].replace(/\/print\/?$/, '');
     }
     return '';
   });

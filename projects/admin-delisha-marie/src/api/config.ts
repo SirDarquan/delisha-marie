@@ -12,6 +12,7 @@ export interface AppConfig {
   };
   DescopeProjectId: string;
   ImageKitUrlEndpoint: string;
+  KitchenUrl: string;
 }
 
 const appConfig: AppConfig = {
@@ -20,6 +21,7 @@ const appConfig: AppConfig = {
   },
   DescopeProjectId: process.env['DESCOPE_PROJECT_ID'] || '',
   ImageKitUrlEndpoint: process.env['IMAGEKIT_URL_ENDPOINT'] || '',
+  KitchenUrl: process.env['KITCHEN_URL'] || '',
 };
 
 configRouter.get('/config', (req: Request, res: Response) => {

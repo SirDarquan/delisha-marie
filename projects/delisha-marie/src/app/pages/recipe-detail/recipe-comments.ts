@@ -76,120 +76,131 @@ export interface CommentFormValue {
           }
         </div>
 
-        <form [formRoot]="commentForm" class="space-y-6">
-          <div class="hidden" aria-hidden="true" style="display: none;">
-            <input
-              type="text"
-              id="alt_email"
-              [formField]="commentForm.alt_email"
-              tabindex="-1"
-              autocomplete="off" />
-          </div>
+        @if (isPreview()) {
+          <p
+            class="preview-comments-disabled-notice text-sm font-medium text-[var(--mat-sys-on-surface-variant)] opacity-75 mb-6">
+            Comments are disabled while previewing a scheduled recipe.
+          </p>
+        }
 
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div class="space-y-1">
-              <label
-                for="author"
-                class="text-xs font-black uppercase tracking-widest opacity-50 ml-2"
-                >Name *</label
-              >
+        <form [formRoot]="commentForm" class="space-y-6">
+          <fieldset [disabled]="isPreview()" class="space-y-6 border-0 p-0 m-0 min-w-0">
+            <div class="hidden" aria-hidden="true" style="display: none;">
               <input
                 type="text"
-                id="author"
-                [formField]="commentForm.author"
-                placeholder="Your Name"
-                class="w-full h-14 px-6 rounded-2xl bg-[var(--mat-sys-surface-container-high)] border-transparent focus:border-[var(--mat-sys-primary)] focus:ring-0 transition-all font-medium" />
-              @if (commentForm.author().invalid() && commentForm.author().touched()) {
-                <span class="text-xs text-[var(--mat-sys-error)] ml-2">{{
-                  commentForm.author().errors()?.[0]?.message
-                }}</span>
-              }
+                id="alt_email"
+                [formField]="commentForm.alt_email"
+                tabindex="-1"
+                autocomplete="off" />
             </div>
 
-            <div class="space-y-1">
-              <label
-                for="email"
-                class="text-xs font-black uppercase tracking-widest opacity-50 ml-2"
-                >Email *</label
-              >
-              <input
-                type="email"
-                id="email"
-                [formField]="commentForm.email"
-                placeholder="email@example.com"
-                class="w-full h-14 px-6 rounded-2xl bg-[var(--mat-sys-surface-container-high)] border-transparent focus:border-[var(--mat-sys-primary)] focus:ring-0 transition-all font-medium" />
-              @if (commentForm.email().invalid() && commentForm.email().touched()) {
-                <span class="text-xs text-[var(--mat-sys-error)] ml-2">{{
-                  commentForm.email().errors()?.[0]?.message
-                }}</span>
-              }
-            </div>
-          </div>
-
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div class="space-y-1">
-              <label
-                for="website"
-                class="text-xs font-black uppercase tracking-widest opacity-50 ml-2"
-                >Website (Optional)</label
-              >
-              <input
-                type="url"
-                id="website"
-                [formField]="commentForm.website"
-                placeholder="https://yourblog.com"
-                class="w-full h-14 px-6 rounded-2xl bg-[var(--mat-sys-surface-container-high)] border-transparent focus:border-[var(--mat-sys-primary)] focus:ring-0 transition-all font-medium" />
-            </div>
-
-            @if (!replyTo()) {
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div class="space-y-1">
-                <span class="text-xs font-black uppercase tracking-widest opacity-50 ml-2"
-                  >Rating (Optional)</span
+                <label
+                  for="author"
+                  class="text-xs font-black uppercase tracking-widest opacity-50 ml-2"
+                  >Name *</label
                 >
-                <div class="h-14 flex items-center px-6">
-                  <dml-stars
-                    [rating]="commentForm.rating().value() ?? 0"
-                    [interactive]="true"
-                    (ratingChange)="setRating($event)" />
-                </div>
+                <input
+                  type="text"
+                  id="author"
+                  [formField]="commentForm.author"
+                  placeholder="Your Name"
+                  class="w-full h-14 px-6 rounded-2xl bg-[var(--mat-sys-surface-container-high)] border-transparent focus:border-[var(--mat-sys-primary)] focus:ring-0 transition-all font-medium" />
+                @if (commentForm.author().invalid() && commentForm.author().touched()) {
+                  <span class="text-xs text-[var(--mat-sys-error)] ml-2">{{
+                    commentForm.author().errors()?.[0]?.message
+                  }}</span>
+                }
               </div>
-            }
-          </div>
 
-          <div class="space-y-1">
-            <label
-              for="content"
-              class="text-xs font-black uppercase tracking-widest opacity-50 ml-2"
-              >Comment *</label
-            >
-            <textarea
-              id="content"
-              [formField]="commentForm.content"
-              rows="5"
-              placeholder="Share your thoughts..."
-              class="w-full p-6 rounded-2xl bg-[var(--mat-sys-surface-container-high)] border-transparent focus:border-[var(--mat-sys-primary)] focus:ring-0 transition-all font-medium resize-none"></textarea>
-            @if (commentForm.content().invalid() && commentForm.content().touched()) {
-              <span class="text-xs text-[var(--mat-sys-error)] ml-2">{{
-                commentForm.content().errors()?.[0]?.message
-              }}</span>
-            }
-          </div>
+              <div class="space-y-1">
+                <label
+                  for="email"
+                  class="text-xs font-black uppercase tracking-widest opacity-50 ml-2"
+                  >Email *</label
+                >
+                <input
+                  type="email"
+                  id="email"
+                  [formField]="commentForm.email"
+                  placeholder="email@example.com"
+                  class="w-full h-14 px-6 rounded-2xl bg-[var(--mat-sys-surface-container-high)] border-transparent focus:border-[var(--mat-sys-primary)] focus:ring-0 transition-all font-medium" />
+                @if (commentForm.email().invalid() && commentForm.email().touched()) {
+                  <span class="text-xs text-[var(--mat-sys-error)] ml-2">{{
+                    commentForm.email().errors()?.[0]?.message
+                  }}</span>
+                }
+              </div>
+            </div>
 
-          <div class="flex justify-end">
-            <button
-              type="submit"
-              mat-flat-button
-              class="h-14 px-10 rounded-full text-lg font-bold"
-              [disabled]="commentForm().invalid() || commentForm().submitting() || loading()">
-              {{
-                commentForm().submitting()
-                  ? 'Posting...'
-                  : replyTo()
-                    ? 'Post Reply'
-                    : 'Post Comment'
-              }}
-            </button>
-          </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div class="space-y-1">
+                <label
+                  for="website"
+                  class="text-xs font-black uppercase tracking-widest opacity-50 ml-2"
+                  >Website (Optional)</label
+                >
+                <input
+                  type="url"
+                  id="website"
+                  [formField]="commentForm.website"
+                  placeholder="https://yourblog.com"
+                  class="w-full h-14 px-6 rounded-2xl bg-[var(--mat-sys-surface-container-high)] border-transparent focus:border-[var(--mat-sys-primary)] focus:ring-0 transition-all font-medium" />
+              </div>
+
+              @if (!replyTo()) {
+                <div class="space-y-1">
+                  <span class="text-xs font-black uppercase tracking-widest opacity-50 ml-2"
+                    >Rating (Optional)</span
+                  >
+                  <div class="h-14 flex items-center px-6">
+                    <dml-stars
+                      [rating]="commentForm.rating().value() ?? 0"
+                      [interactive]="!isPreview()"
+                      (ratingChange)="setRating($event)" />
+                  </div>
+                </div>
+              }
+            </div>
+
+            <div class="space-y-1">
+              <label
+                for="content"
+                class="text-xs font-black uppercase tracking-widest opacity-50 ml-2"
+                >Comment *</label
+              >
+              <textarea
+                id="content"
+                [formField]="commentForm.content"
+                rows="5"
+                placeholder="Share your thoughts..."
+                class="w-full p-6 rounded-2xl bg-[var(--mat-sys-surface-container-high)] border-transparent focus:border-[var(--mat-sys-primary)] focus:ring-0 transition-all font-medium resize-none"></textarea>
+              @if (commentForm.content().invalid() && commentForm.content().touched()) {
+                <span class="text-xs text-[var(--mat-sys-error)] ml-2">{{
+                  commentForm.content().errors()?.[0]?.message
+                }}</span>
+              }
+            </div>
+
+            <div class="flex justify-end">
+              <button
+                type="submit"
+                mat-flat-button
+                class="h-14 px-10 rounded-full text-lg font-bold"
+                [disabled]="
+                  isPreview() || commentForm().invalid() || commentForm().submitting() || loading()
+                ">
+                {{
+                  commentForm().submitting()
+                    ? 'Posting...'
+                    : replyTo()
+                      ? 'Post Reply'
+                      : 'Post Comment'
+                }}
+              </button>
+            </div>
+          </fieldset>
         </form>
       </div>
 
@@ -269,6 +280,7 @@ export interface CommentFormValue {
                 <div class="flex justify-end">
                   <button
                     mat-stroked-button
+                    [disabled]="isPreview()"
                     (click)="replyToComment(comment)"
                     class="rounded-full font-bold">
                     Reply
@@ -350,6 +362,7 @@ export interface CommentFormValue {
 export class RecipeComments {
   recipe = input.required<Recipe>();
   page = input<string>();
+  isPreview = input<boolean>(false);
   statsChange = output<{ reviewCount: number; ratingCount: number; rating: number }>();
 
   private readonly recipeService = inject(RecipeService);
@@ -383,6 +396,7 @@ export class RecipeComments {
 
   private readonly _recipeResetEffect = effect(() => {
     const id = this.recipeId();
+    const preview = this.isPreview();
     untracked(() => {
       this.localComments.set([]);
       this.currentStats.set(null);
@@ -391,7 +405,9 @@ export class RecipeComments {
           this.streamSub.unsubscribe();
           this.streamSub = null;
         }
-        this.initStream(id);
+        if (!preview) {
+          this.initStream(id);
+        }
       }
     });
   });
@@ -482,6 +498,9 @@ export class RecipeComments {
     {
       submission: {
         action: async (f) => {
+          if (this.isPreview()) {
+            return;
+          }
           const value = f().value();
           const isReply = !!this.replyTo();
           const newComment: Omit<Comment, 'id' | 'createdAt'> & { alt_email?: string } = {
@@ -721,7 +740,7 @@ export class RecipeComments {
   }
 
   async pollComments(): Promise<void> {
-    if (this.document.visibilityState !== 'visible') {
+    if (this.isPreview() || this.document.visibilityState !== 'visible') {
       return;
     }
     try {

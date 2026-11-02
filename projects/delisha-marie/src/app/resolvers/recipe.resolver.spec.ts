@@ -71,6 +71,20 @@ describe('Recipe Resolvers', () => {
       expect(result).toEqual({ title: 'Mock Recipe' });
     });
 
+    it('should pass preview token to getRecipeBySlug when present in queryParamMap', async () => {
+      const route = {
+        paramMap: { get: vi.fn().mockReturnValue('test-slug') },
+        queryParamMap: { get: vi.fn().mockReturnValue('tok-123') },
+      } as unknown as ActivatedRouteSnapshot;
+
+      const result = await TestBed.runInInjectionContext(() => {
+        return recipeResolver(route, {} as RouterStateSnapshot);
+      });
+
+      expect(recipeService.getRecipeBySlug).toHaveBeenCalledWith('test-slug', false, 'tok-123');
+      expect(result).toEqual({ title: 'Mock Recipe' });
+    });
+
     it('should return null if no slug', async () => {
       const route = {
         paramMap: { get: vi.fn().mockReturnValue(null) },
@@ -94,6 +108,20 @@ describe('Recipe Resolvers', () => {
         return recipeTitleResolver(route, {} as RouterStateSnapshot);
       });
 
+      expect(result).toBe('Mock Recipe');
+    });
+
+    it('should pass preview token to getTitle when present in queryParamMap', async () => {
+      const route = {
+        paramMap: { get: vi.fn().mockReturnValue('test-slug') },
+        queryParamMap: { get: vi.fn().mockReturnValue('tok-123') },
+      } as unknown as ActivatedRouteSnapshot;
+
+      const result = await TestBed.runInInjectionContext(() => {
+        return recipeTitleResolver(route, {} as RouterStateSnapshot);
+      });
+
+      expect(recipeService.getTitle).toHaveBeenCalledWith('test-slug', 'tok-123');
       expect(result).toBe('Mock Recipe');
     });
 

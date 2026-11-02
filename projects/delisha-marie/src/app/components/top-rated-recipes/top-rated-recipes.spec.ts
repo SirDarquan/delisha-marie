@@ -1,3 +1,4 @@
+import { PLATFORM_ID } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { provideHttpClient } from '@angular/common/http';
@@ -74,6 +75,14 @@ describe('TopRatedRecipes', () => {
     // Wait for the resource promise to resolve
     await fixture.whenStable();
     fixture.detectChanges();
+    expect(mockRecipeService.getRecipes).toHaveBeenCalledWith(
+      1,
+      20,
+      'recipes',
+      undefined,
+      undefined,
+      true,
+    );
     expect(component.recipes()).toHaveLength(4);
     expect(component.recipes()[0].title).toBe('Recipe 1');
     expect(component.recipes()[1].title).toBe('Recipe 3');
@@ -130,6 +139,30 @@ describe('TopRatedRecipes', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
+    expect(component.recipes()).toHaveLength(0);
+  });
+
+  it('should return empty items without calling getRecipes on the server platform', async () => {
+    TestBed.resetTestingModule();
+    await TestBed.configureTestingModule({
+      imports: [TopRatedRecipes],
+      providers: [
+        provideRouter([]),
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        { provide: RecipeService, useValue: mockRecipeService },
+        { provide: PLATFORM_ID, useValue: 'server' },
+      ],
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(TopRatedRecipes);
+    component = fixture.componentInstance;
+
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(mockRecipeService.getRecipes).not.toHaveBeenCalled();
     expect(component.recipes()).toHaveLength(0);
   });
 });

@@ -2,7 +2,7 @@ import { DOCUMENT } from '@angular/common';
 import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, provideRouter, Router } from '@angular/router';
-import { BehaviorSubject, of } from 'rxjs';
+import { BehaviorSubject } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Recipe, RecipeService } from '../../services/recipe.service';
 import { createMockRecipe } from '../../utils/test-recipe';
@@ -13,6 +13,7 @@ describe('RecipeDetail', () => {
   let component: RecipeDetail;
   let fixture: ComponentFixture<RecipeDetail>;
   let paramsSubject: BehaviorSubject<{ slug?: string }>;
+  let queryParamsSubject: BehaviorSubject<{ preview?: string }>;
   let recipeServiceMock: {
     recipes: ReturnType<typeof signal<Recipe[]>>;
     getComments: ReturnType<typeof vi.fn>;
@@ -61,6 +62,7 @@ describe('RecipeDetail', () => {
 
   beforeEach(async () => {
     paramsSubject = new BehaviorSubject<{ slug?: string }>({});
+    queryParamsSubject = new BehaviorSubject<{ preview?: string }>({});
     recipeServiceMock = {
       recipes: signal(mockRecipes),
       getComments: vi.fn().mockResolvedValue({ comments: [], total: 0 }),
@@ -76,13 +78,14 @@ describe('RecipeDetail', () => {
           provide: ActivatedRoute,
           useValue: {
             params: paramsSubject.asObservable(),
-            queryParams: of({}),
+            queryParams: queryParamsSubject.asObservable(),
             snapshot: {
               paramMap: {
                 get: (key: string) => paramsSubject.value[key as keyof typeof paramsSubject.value],
               },
               queryParamMap: {
-                get: () => null,
+                get: (key: string) =>
+                  queryParamsSubject.value[key as keyof typeof queryParamsSubject.value] ?? null,
               },
             },
           },
@@ -397,6 +400,43 @@ describe('RecipeDetail', () => {
       };
       await loadRecipe(customRecipe);
       expect(component.breadcrumbItems()).toEqual([]);
+    });
+
+    it('should pass previewToken to getRecipeBySlug and set isScheduledPreview true when createdAt is in the future', async () => {
+      const scheduledRecipe = {
+        ...mockRecipe,
+        slug: 'sched-recipe',
+        createdAt: '2099-01-01T00:00:00.000Z',
+      };
+      recipeServiceMock.getRecipeBySlug.mockResolvedValue(scheduledRecipe);
+      queryParamsSubject.next({ preview: 'tok-999' });
+      paramsSubject.next({ slug: 'sched-recipe' });
+      fixture.detectChanges();
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      expect(recipeServiceMock.getRecipeBySlug).toHaveBeenCalledWith(
+        'sched-recipe',
+        false,
+        'tok-999',
+      );
+      expect(component.isScheduledPreview()).toBe(true);
+    });
+
+    it('should set isScheduledPreview false when recipe is already live in production even if preview param is present', async () => {
+      const liveRecipe = {
+        ...mockRecipe,
+        slug: 'live-recipe',
+        createdAt: '2025-01-01T00:00:00.000Z',
+      };
+      recipeServiceMock.getRecipeBySlug.mockResolvedValue(liveRecipe);
+      queryParamsSubject.next({ preview: 'tok-stale' });
+      paramsSubject.next({ slug: 'live-recipe' });
+      fixture.detectChanges();
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      expect(component.isScheduledPreview()).toBe(false);
     });
   });
 });

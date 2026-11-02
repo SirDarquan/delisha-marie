@@ -162,6 +162,19 @@ import { AuthService } from '../../services/auth.service';
 
                   <div role="cell" class="w-40 px-4 text-center">
                     <div class="flex items-center justify-center gap-1">
+                      @if (stat === 'scheduled' && recipe.previewToken && recipe.slug) {
+                        <a
+                          mat-icon-button
+                          [href]="getPreviewUrl(recipe)"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          class="!w-7 !h-7 !p-0 flex items-center justify-center !text-white hover:!text-amber-400 hover:drop-shadow-[0_0_8px_rgba(251,191,36,0.8)] transition-all cursor-pointer"
+                          aria-label="Preview scheduled recipe">
+                          <mat-icon class="text-[16px] h-4 w-4 flex items-center justify-center"
+                            >visibility</mat-icon
+                          >
+                        </a>
+                      }
                       <a
                         mat-icon-button
                         [routerLink]="['/recipes/edit', recipe.id]"
@@ -260,6 +273,10 @@ export class RecipesListComponent implements OnInit {
       !!recipe.createdAt &&
       new Date(recipe.createdAt).getTime() > Date.now()
     );
+  }
+
+  protected getPreviewUrl(recipe: Recipe): string {
+    return this.recipeService.getRecipePreviewUrl(recipe.slug, recipe.previewToken || '');
   }
 
   protected readonly recipes = signal<Recipe[]>(

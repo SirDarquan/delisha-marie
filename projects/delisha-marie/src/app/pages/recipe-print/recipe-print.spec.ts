@@ -122,6 +122,19 @@ describe('RecipePrint', () => {
     expect(component.windowUrl()).toBe('http://localhost:3000/recipe/test-print-recipe');
   });
 
+  it('should compute isScheduledPreview and strip preview query param from windowUrl', () => {
+    window.history.pushState({}, '', '/recipe/test-print-recipe/print?preview=tok-123');
+    fixture.componentRef.setInput('recipe', {
+      ...mockRecipe,
+      createdAt: '2099-01-01T00:00:00.000Z',
+    });
+    fixture.componentRef.setInput('preview', 'tok-123');
+    fixture.detectChanges();
+
+    expect(component.isScheduledPreview()).toBe(true);
+    expect(component.windowUrl()).toBe('http://localhost:3000/recipe/test-print-recipe');
+  });
+
   it('should not show image if recipe has no image', () => {
     fixture.componentRef.setInput('recipe', { ...mockRecipe, image: '' });
     fixture.detectChanges();

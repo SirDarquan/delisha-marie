@@ -186,6 +186,25 @@ describe('RecipeService', () => {
       const res2 = await p2;
       expect(res2?.title).toBe('Test 2');
     });
+
+    it('should pass previewToken query parameter and bypass cache when previewToken is provided', async () => {
+      const mockScheduled = {
+        id: 9,
+        slug: 'sched-slug',
+        title: 'Scheduled Preview',
+      } as unknown as Recipe;
+
+      const p1 = service.getRecipeBySlug('sched-slug', false, 'tok-abc');
+      httpMock.expectOne('/api/recipes/sched-slug?preview=tok-abc').flush(mockScheduled);
+      const res1 = await p1;
+      expect(res1).toEqual(mockScheduled);
+
+      const pErr = service.getRecipeBySlug('sched-err', false, 'tok-err');
+      httpMock
+        .expectOne('/api/recipes/sched-err?preview=tok-err')
+        .error(new ProgressEvent('error'));
+      expect(await pErr).toBeNull();
+    });
   });
 
   describe('getSEOBySlug', () => {
@@ -401,6 +420,17 @@ describe('RecipeService', () => {
       const title = await service.getTitle('seo-cache-title');
       httpMock.expectNone('/api/recipes/seo-cache-title/title');
       expect(title).toBe('Cached In SEO');
+    });
+
+    it('should pass previewToken query parameter in getTitle when provided', async () => {
+      const p = service.getTitle('sched-pie', 'tok-123');
+      const req = httpMock.expectOne('/api/recipes/sched-pie/title?preview=tok-123');
+      req.flush({ title: 'Scheduled Pie' });
+      expect(await p).toBe('Scheduled Pie');
+
+      const pNull = service.getTitle('missing-pie', 'tok-123');
+      httpMock.expectOne('/api/recipes/missing-pie/title?preview=tok-123').flush(null);
+      expect(await pNull).toBeNull();
     });
   });
 

@@ -15,6 +15,7 @@ export interface AppConfig {
   SocialClients: SocialClients;
   DescopeProjectId?: string;
   ImageKitUrlEndpoint: string;
+  KitchenUrl?: string;
 }
 
 @Injectable({
@@ -56,5 +57,9 @@ export class AppConfigService implements AppPlugin {
 
   ImageKitUrlEndpoint() {
     return this.config()?.ImageKitUrlEndpoint;
+  }
+
+  KitchenUrl() {
+    return this.config()?.KitchenUrl;
   }
 }

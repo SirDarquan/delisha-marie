@@ -80,13 +80,15 @@ export class TopRatedRecipes {
   private readonly platformId = inject(PLATFORM_ID);
 
   private readonly _recipeResource = resource({
-    loader: () => {
+    loader: async () => {
       if (!isPlatformBrowser(this.platformId)) {
-        return Promise.resolve({ items: [], total: 0 });
+        return { items: [], total: 0 };
       }
-      return this.recipeService
-        .getRecipes(1, 20, 'the-best-recipes', undefined, undefined, true)
-        .catch(() => ({ items: [], total: 0 }));
+      try {
+        return await this.recipeService.getRecipes(1, 20, 'recipes', undefined, undefined, true);
+      } catch {
+        return { items: [], total: 0 };
+      }
     },
   });
 

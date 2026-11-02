@@ -358,7 +358,7 @@ async function handleGetRecipes(req: VercelRequest, res: VercelResponse) {
 
     // 1. Data Query (no count, so it's fast to get the 12 items)
     let query;
-    if (rating && method === 'the-best-recipes' && !category) {
+    if (rating && method === 'recipes' && !category) {
       // If we are looking for top-rated, use the RPC that returns SETOF recipes so we don't hit URL limits
       query = supabase
         .rpc('get_top_rated_recipes', { min_rating: 4.5 }, { count: 'exact' })
@@ -731,6 +731,16 @@ async function handlePostComments(
 
     const { data: recipe } = await supabase.from('recipes').select('*').eq('id', recipeId).single();
 
+    if (
+      recipe &&
+      ((recipe.status && recipe.status !== 'published') ||
+        (typeof recipe.created_at === 'string' &&
+          new Date(recipe.created_at).getTime() > Date.now()))
+    ) {
+      res.status(403).json({ error: 'Comments are disabled for unpublished recipes.' });
+      return;
+    }
+
     if (isBot) {
       // Honeypot tripped: save to spam_comments for research
       const spamObj: Record<string, unknown> = {
@@ -863,18 +873,45 @@ export function setCacheDisabledForTesting(disabled: boolean) {
 async function fetchRecipeBySlug(
   supabase: SupabaseClient,
   cleanSlug: string,
+  previewToken?: string,
 ): Promise<{ formatted: FormattedRecipe; raw: DbRecipe } | null> {
-  const { data: recipeDataRaw, error: recipeError } = await supabase
+  const nowIso = new Date().toISOString();
+  const { data: liveRecipeDataRaw, error: recipeError } = await supabase
     .from('recipes')
     .select(SINGLE_RECIPE_SELECT)
     .eq('slug', cleanSlug)
     .eq('status', 'published')
-    .lte('created_at', new Date().toISOString())
+    .lte('created_at', nowIso)
     .maybeSingle();
 
   if (recipeError) {
     throw recipeError;
   }
+
+  let recipeDataRaw = liveRecipeDataRaw;
+
+  if (recipeDataRaw && previewToken) {
+    void supabase
+      .from('recipes')
+      .update({ preview_token: null })
+      .eq('id', (recipeDataRaw as unknown as DbRecipe).id);
+  }
+
+  if (!recipeDataRaw && previewToken) {
+    const scheduledRes = await supabase
+      .from('recipes')
+      .select(SINGLE_RECIPE_SELECT)
+      .eq('slug', cleanSlug)
+      .eq('status', 'published')
+      .gt('created_at', nowIso)
+      .eq('preview_token', previewToken)
+      .maybeSingle();
+    if (scheduledRes.error) {
+      throw scheduledRes.error;
+    }
+    recipeDataRaw = scheduledRes.data;
+  }
+
   if (!recipeDataRaw) {
     return null;
   }
@@ -886,16 +923,34 @@ async function fetchRecipeBySlug(
 async function fetchBreadcrumbsBySlug(
   supabase: SupabaseClient,
   cleanSlug: string,
+  previewToken?: string,
 ): Promise<{ main: number; items: { label: string; url?: string }[][] } | null> {
-  const { data: recipe, error } = await supabase
+  const nowIso = new Date().toISOString();
+  const { data: liveRecipe, error } = await supabase
     .from('recipes')
     .select('id, title, slug, the_best, recipe_categories (categories (id, name, url))')
     .eq('slug', cleanSlug)
     .eq('status', 'published')
-    .lte('created_at', new Date().toISOString())
+    .lte('created_at', nowIso)
     .maybeSingle();
 
   if (error) throw error;
+
+  let recipe = liveRecipe;
+
+  if (!recipe && previewToken) {
+    const scheduledRes = await supabase
+      .from('recipes')
+      .select('id, title, slug, the_best, recipe_categories (categories (id, name, url))')
+      .eq('slug', cleanSlug)
+      .eq('status', 'published')
+      .gt('created_at', nowIso)
+      .eq('preview_token', previewToken)
+      .maybeSingle();
+    if (scheduledRes.error) throw scheduledRes.error;
+    recipe = scheduledRes.data;
+  }
+
   if (!recipe) {
     return null;
   }
@@ -945,6 +1000,7 @@ async function fetchNavigationBySlug(
 async function fetchStatsBySlug(
   supabase: SupabaseClient,
   cleanSlugOrId: string,
+  previewToken?: string,
 ): Promise<{ reviewCount: number; ratingCount: number; rating: number }> {
   const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
     cleanSlugOrId,
@@ -952,15 +1008,32 @@ async function fetchStatsBySlug(
   let recipeId = cleanSlugOrId;
 
   if (!isUuid) {
-    const { data: recipe, error } = await supabase
+    const nowIso = new Date().toISOString();
+    const { data: liveRecipe, error } = await supabase
       .from('recipes')
       .select('id')
       .eq('slug', cleanSlugOrId)
       .eq('status', 'published')
-      .lte('created_at', new Date().toISOString())
+      .lte('created_at', nowIso)
       .maybeSingle();
 
     if (error) throw error;
+
+    let recipe = liveRecipe;
+
+    if (!recipe && previewToken) {
+      const scheduledRes = await supabase
+        .from('recipes')
+        .select('id')
+        .eq('slug', cleanSlugOrId)
+        .eq('status', 'published')
+        .gt('created_at', nowIso)
+        .eq('preview_token', previewToken)
+        .maybeSingle();
+      if (scheduledRes.error) throw scheduledRes.error;
+      recipe = scheduledRes.data;
+    }
+
     if (!recipe) {
       return { reviewCount: 0, ratingCount: 0, rating: 0 };
     }
@@ -974,6 +1047,7 @@ async function getRecipeDataBySlug(
   supabase: SupabaseClient,
   cleanSlug: string,
   refresh = false,
+  previewToken?: string,
 ): Promise<CachedSlugData | null> {
   if (!refresh && !cacheDisabledForTesting) {
     const cached = recipeSlugCache.get(cleanSlug);
@@ -984,10 +1058,10 @@ async function getRecipeDataBySlug(
 
   // Call the decomposed functions in parallel, all taking cleanSlug directly
   const [recipeResult, breadcrumbs, navigation, stats] = await Promise.all([
-    fetchRecipeBySlug(supabase, cleanSlug),
-    fetchBreadcrumbsBySlug(supabase, cleanSlug),
+    fetchRecipeBySlug(supabase, cleanSlug, previewToken),
+    fetchBreadcrumbsBySlug(supabase, cleanSlug, previewToken),
     fetchNavigationBySlug(supabase, cleanSlug),
-    fetchStatsBySlug(supabase, cleanSlug),
+    fetchStatsBySlug(supabase, cleanSlug, previewToken),
   ]);
 
   if (!recipeResult) {
@@ -1009,7 +1083,12 @@ async function getRecipeDataBySlug(
     rawRecipe: recipeData,
   };
 
-  recipeSlugCache.set(cleanSlug, entry);
+  const isFutureScheduled =
+    typeof recipeData['created_at'] === 'string' &&
+    new Date(recipeData['created_at']).getTime() > Date.now();
+  if (!isFutureScheduled) {
+    recipeSlugCache.set(cleanSlug, entry);
+  }
   return entry;
 }
 
@@ -1018,8 +1097,11 @@ async function handleGetBySlug(req: VercelRequest, res: VercelResponse, slug: st
     const supabase = await getSupabaseClient();
     const cleanSlug = slug.replace(/^\/?recipe\//, '').replace(/^\//, '');
     const refresh = req.query['refresh'] === 'true';
+    const previewQuery = req.query['preview'];
+    const previewToken =
+      typeof previewQuery === 'string' && previewQuery.trim() ? previewQuery.trim() : undefined;
 
-    const data = await getRecipeDataBySlug(supabase, cleanSlug, refresh);
+    const data = await getRecipeDataBySlug(supabase, cleanSlug, refresh, previewToken);
     if (!data) {
       res.json(null);
       return;
@@ -1037,6 +1119,9 @@ async function handleGetTitle(req: VercelRequest, res: VercelResponse, slug: str
   try {
     const supabase = await getSupabaseClient();
     const cleanSlug = slug.replace(/^\/?recipe\//, '').replace(/^\//, '');
+    const previewQuery = req.query['preview'];
+    const previewToken =
+      typeof previewQuery === 'string' && previewQuery.trim() ? previewQuery.trim() : undefined;
 
     if (process.env['NODE_ENV'] !== 'test') {
       const cached = recipeSlugCache.get(cleanSlug);
@@ -1046,16 +1131,34 @@ async function handleGetTitle(req: VercelRequest, res: VercelResponse, slug: str
       }
     }
 
-    const { data, error } = await supabase
+    const nowIso = new Date().toISOString();
+    const { data: liveData, error } = await supabase
       .from('recipes')
       .select('title')
       .eq('slug', cleanSlug)
       .eq('status', 'published')
-      .lte('created_at', new Date().toISOString())
+      .lte('created_at', nowIso)
       .maybeSingle();
 
     if (error) {
       throw error;
+    }
+
+    let data = liveData;
+
+    if (!data && previewToken) {
+      const scheduledRes = await supabase
+        .from('recipes')
+        .select('title')
+        .eq('slug', cleanSlug)
+        .eq('status', 'published')
+        .gt('created_at', nowIso)
+        .eq('preview_token', previewToken)
+        .maybeSingle();
+      if (scheduledRes.error) {
+        throw scheduledRes.error;
+      }
+      data = scheduledRes.data;
     }
 
     res.json(data);
@@ -1323,9 +1426,13 @@ const recipesHandler = async (req: VercelRequest, res: VercelResponse) => {
 
   try {
     if (req.method === 'GET') {
+      const isPreview =
+        typeof req.query['preview'] === 'string' && req.query['preview'].trim().length > 0;
       res.setHeader(
         'Cache-Control',
-        'public, max-age=0, s-maxage=60, stale-while-revalidate=86400',
+        isPreview
+          ? 'private, no-store, no-cache, must-revalidate'
+          : 'public, max-age=0, s-maxage=60, stale-while-revalidate=86400',
       );
     }
     for (const route of routes) {

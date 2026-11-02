@@ -749,5 +749,43 @@ describe('RecipeComments', () => {
 
       expect(component.totalTopLevelComments()).toBe(initialTotal);
     });
+
+    it('should disable comment submission, polling, and SSE stream when isPreview is true', async () => {
+      const streamService = TestBed.inject(CommentStreamService);
+      const streamSpy = vi.spyOn(streamService, 'getCommentStream');
+
+      fixture.componentRef.setInput('isPreview', true);
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      const compiled = fixture.nativeElement as HTMLElement;
+      expect(compiled.querySelector('.preview-comments-disabled-notice')?.textContent).toContain(
+        'Comments are disabled while previewing a scheduled recipe.',
+      );
+      expect((compiled.querySelector('fieldset') as HTMLFieldSetElement).disabled).toBe(true);
+      expect(streamSpy).not.toHaveBeenCalled();
+
+      // Polling should return early when isPreview is true
+      recipeServiceMock.getComments.mockClear();
+      await component.pollComments();
+      expect(recipeServiceMock.getComments).not.toHaveBeenCalled();
+
+      // Form submission action should return early when isPreview is true
+      recipeServiceMock.addComment.mockClear();
+      component['formModel'].set({
+        author: 'Preview User',
+        email: 'preview@example.com',
+        website: '',
+        content: 'Blocked comment',
+        rating: null,
+        alt_email: '',
+        isNew: false,
+      });
+      fixture.detectChanges();
+      const formEl = compiled.querySelector('form') as HTMLFormElement;
+      formEl.dispatchEvent(new Event('submit'));
+      await fixture.whenStable();
+      expect(recipeServiceMock.addComment).not.toHaveBeenCalled();
+    });
   });
 });

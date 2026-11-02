@@ -165,6 +165,12 @@ describe('RecipeCard', () => {
     expect(compiled.querySelector('.rating-text')?.textContent).toContain('(0)');
   });
 
+  it('should accept previewToken input for Print button queryParams', () => {
+    fixture.componentRef.setInput('previewToken', 'tok-123');
+    fixture.detectChanges();
+    expect(component.previewToken()).toBe('tok-123');
+  });
+
   describe('openPinterest', () => {
     it('should open Pinterest share dialog with recipe parameters', () => {
       const windowSpy = vi.spyOn(window, 'open').mockImplementation(() => null);

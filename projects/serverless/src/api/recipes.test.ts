@@ -208,10 +208,10 @@ describe('Recipes Router API', () => {
     expect(res.status).toBe(200);
   });
 
-  it('should filter by rating for the-best-recipes method with no category (valid data)', async () => {
+  it('should filter by rating for recipes method with no category (valid data)', async () => {
     const res = await createRequestMock(recipesRouter)()
       .get('/api/recipes')
-      .query({ method: 'the-best-recipes', rating: 'true' });
+      .query({ method: 'recipes', rating: 'true' });
     expect(res.status).toBe(200);
     expect(mockRpc).toHaveBeenCalledWith(
       'get_top_rated_recipes',
@@ -220,13 +220,20 @@ describe('Recipes Router API', () => {
     );
   });
 
-  it('should filter by rating for the-best-recipes method with no category (RPC error)', async () => {
+  it('should filter by rating for recipes method with no category (RPC error)', async () => {
     shouldFail = true;
     const res = await createRequestMock(recipesRouter)()
       .get('/api/recipes')
-      .query({ method: 'the-best-recipes', rating: 'true' });
+      .query({ method: 'recipes', rating: 'true' });
     expect(res.status).toBe(500);
     expect(res.body.error).toBe('Query failed');
+  });
+
+  it('should filter for the-best-recipes method with no category', async () => {
+    const res = await createRequestMock(recipesRouter)()
+      .get('/api/recipes')
+      .query({ method: 'the-best-recipes' });
+    expect(res.status).toBe(200);
   });
 
   it('should return 500 with stringified error when handleGetRecipes throws a non-Error plain object', async () => {
@@ -1163,6 +1170,168 @@ describe('Recipes Router API', () => {
         process.env['NODE_ENV'] = origEnv;
       }
     });
+
+    it('should fetch scheduled recipe when valid preview token is provided and not cache it', async () => {
+      mockRpc.mockResolvedValue({
+        data: [{ review_count: 0, rating_count: 0, average_rating: 0 }],
+        error: null,
+      });
+
+      mockFrom.mockImplementation((table: string) => {
+        if (table === 'recipes') {
+          let isScheduledQuery = false;
+          const queryChain = {
+            select: () => queryChain,
+            eq: () => queryChain,
+            in: () => queryChain,
+            order: () => queryChain,
+            lte: () => {
+              isScheduledQuery = false;
+              return queryChain;
+            },
+            gt: () => {
+              isScheduledQuery = true;
+              return queryChain;
+            },
+            maybeSingle: () =>
+              Promise.resolve({
+                data: isScheduledQuery
+                  ? {
+                      id: 'sched-1',
+                      slug: 'sched-slug',
+                      status: 'published',
+                      created_at: '2099-01-01T00:00:00.000Z',
+                      title: 'Scheduled Preview Title',
+                      recipe_categories: [],
+                    }
+                  : null,
+                error: null,
+              }),
+            then: (onfulfilled?: (value: unknown) => unknown) =>
+              Promise.resolve({ data: [], error: null }).then(onfulfilled),
+          };
+          return queryChain;
+        }
+        return {};
+      });
+
+      const res = await createRequestMock(recipesRouter)().get(
+        '/api/recipes/sched-slug?preview=tok-123',
+      );
+      expect(res.status).toBe(200);
+      expect(res.body.title).toBe('Scheduled Preview Title');
+    });
+
+    it('should ignore preview token and clear preview_token in DB when recipe is already live in production', async () => {
+      const updateEqMock = vi.fn().mockResolvedValue({ data: null, error: null });
+      const updateMock = vi.fn().mockReturnValue({ eq: updateEqMock });
+
+      mockFrom.mockImplementation((table: string) => {
+        if (table === 'recipes') {
+          const queryChain = {
+            select: () => queryChain,
+            update: updateMock,
+            eq: () => queryChain,
+            in: () => queryChain,
+            order: () => queryChain,
+            lte: () => queryChain,
+            gt: () => queryChain,
+            lt: () => queryChain,
+            limit: () => queryChain,
+            maybeSingle: () =>
+              Promise.resolve({
+                data: {
+                  id: 'live-1',
+                  slug: 'live-slug',
+                  status: 'published',
+                  created_at: '2025-01-01T00:00:00.000Z',
+                  title: 'Live Recipe Title',
+                  recipe_categories: [],
+                },
+                error: null,
+              }),
+            then: (onfulfilled?: (value: unknown) => unknown) =>
+              Promise.resolve({ data: [], error: null }).then(onfulfilled),
+          };
+          return queryChain;
+        }
+        return {};
+      });
+
+      const res = await createRequestMock(recipesRouter)().get(
+        '/api/recipes/live-slug?preview=stale-tok',
+      );
+      expect(res.status).toBe(200);
+      expect(res.body.title).toBe('Live Recipe Title');
+      expect(updateMock).toHaveBeenCalledWith({ preview_token: null });
+      expect(updateEqMock).toHaveBeenCalledWith('id', 'live-1');
+    });
+
+    it('should return 500 when scheduled preview query fails in fetchRecipeBySlug, fetchBreadcrumbsBySlug, or fetchStatsBySlug', async () => {
+      for (const failSelect of ['full', 'breadcrumbs', 'stats']) {
+        mockFrom.mockImplementation((table: string) => {
+          if (table === 'recipes') {
+            let currentSelect = '';
+            let isScheduledQuery = false;
+            const queryChain = {
+              select: (s: string) => {
+                currentSelect = s;
+                return queryChain;
+              },
+              eq: () => queryChain,
+              in: () => queryChain,
+              order: () => queryChain,
+              lte: () => {
+                isScheduledQuery = false;
+                return queryChain;
+              },
+              gt: () => {
+                isScheduledQuery = true;
+                return queryChain;
+              },
+              maybeSingle: () => {
+                if (!isScheduledQuery) {
+                  return Promise.resolve({ data: null, error: null });
+                }
+                const isTarget =
+                  (failSelect === 'full' && currentSelect.includes('ingredients')) ||
+                  (failSelect === 'breadcrumbs' &&
+                    currentSelect.includes('the_best') &&
+                    !currentSelect.includes('ingredients')) ||
+                  (failSelect === 'stats' && currentSelect === 'id');
+                if (isTarget) {
+                  return Promise.resolve({
+                    data: null,
+                    error: new Error(`Scheduled ${failSelect} failed`),
+                  });
+                }
+                return Promise.resolve({
+                  data: {
+                    id: 'sched-err',
+                    slug: 'sched-err-slug',
+                    status: 'published',
+                    created_at: '2099-01-01T00:00:00.000Z',
+                    title: 'Err',
+                    recipe_categories: [],
+                  },
+                  error: null,
+                });
+              },
+              then: (onfulfilled?: (value: unknown) => unknown) =>
+                Promise.resolve({ data: [], error: null }).then(onfulfilled),
+            };
+            return queryChain;
+          }
+          return {};
+        });
+
+        const res = await createRequestMock(recipesRouter)().get(
+          '/api/recipes/sched-err-slug?preview=tok-err',
+        );
+        expect(res.status).toBe(500);
+        expect(res.body.error).toBe(`Scheduled ${failSelect} failed`);
+      }
+    });
   });
 
   describe('GET /api/recipes/favorites/list', () => {
@@ -1267,6 +1436,65 @@ describe('Recipes Router API', () => {
       } finally {
         process.env['NODE_ENV'] = origEnv;
       }
+    });
+
+    it('should fetch title for scheduled recipe when valid preview token is provided', async () => {
+      mockFrom.mockImplementation(() => {
+        let isScheduled = false;
+        const chain = {
+          select: () => chain,
+          eq: () => chain,
+          lte: () => {
+            isScheduled = false;
+            return chain;
+          },
+          gt: () => {
+            isScheduled = true;
+            return chain;
+          },
+          maybeSingle: () =>
+            Promise.resolve({
+              data: isScheduled ? { title: 'Scheduled Title' } : null,
+              error: null,
+            }),
+        };
+        return chain;
+      });
+      const res = await createRequestMock(recipesRouter)().get(
+        '/api/recipes/sched-slug/title?preview=tok-123',
+      );
+      expect(res.status).toBe(200);
+      expect(res.body.title).toBe('Scheduled Title');
+    });
+
+    it('should return 500 when scheduled title query fails', async () => {
+      mockFrom.mockImplementation(() => {
+        let isScheduled = false;
+        const chain = {
+          select: () => chain,
+          eq: () => chain,
+          lte: () => {
+            isScheduled = false;
+            return chain;
+          },
+          gt: () => {
+            isScheduled = true;
+            return chain;
+          },
+          maybeSingle: () =>
+            Promise.resolve(
+              isScheduled
+                ? { data: null, error: new Error('Scheduled title fail') }
+                : { data: null, error: null },
+            ),
+        };
+        return chain;
+      });
+      const res = await createRequestMock(recipesRouter)().get(
+        '/api/recipes/sched-slug/title?preview=tok-123',
+      );
+      expect(res.status).toBe(500);
+      expect(res.body.error).toBe('Scheduled title fail');
     });
   });
 
@@ -2573,6 +2801,41 @@ describe('Recipes Router API', () => {
 
       expect(res.status).toBe(400);
       expect(res.body.error).toBe('Name, email, and content are required');
+    });
+
+    it('should return 403 when commenting on a draft or future scheduled recipe', async () => {
+      for (const mockRecipe of [
+        { id: '123', status: 'draft', created_at: '2025-01-01T00:00:00.000Z' },
+        { id: '123', status: 'published', created_at: '2099-01-01T00:00:00.000Z' },
+      ]) {
+        mockFrom.mockImplementation((table: string) => {
+          if (table === 'site_settings') {
+            return {
+              select: vi.fn().mockReturnThis(),
+              in: vi.fn().mockResolvedValue({ data: [], error: null }),
+            };
+          }
+          if (table === 'recipes') {
+            return {
+              select: vi.fn().mockReturnThis(),
+              eq: vi.fn().mockReturnThis(),
+              single: vi.fn().mockResolvedValue({ data: mockRecipe, error: null }),
+            };
+          }
+          return {};
+        });
+
+        const res = await createRequestMock(recipesRouter)()
+          .post('/api/recipes/123/comments')
+          .send({
+            author: 'Tester',
+            email: 'tester@example.com',
+            content: 'Awesome!',
+          });
+
+        expect(res.status).toBe(403);
+        expect(res.body.error).toBe('Comments are disabled for unpublished recipes.');
+      }
     });
 
     it('should return 400 if website contains blocked domain', async () => {
