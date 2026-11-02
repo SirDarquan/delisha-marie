@@ -1534,6 +1534,80 @@ describe('Recipes Router API', () => {
       });
     });
 
+    it('should fetch SEO metadata for scheduled recipe when preview token is provided', async () => {
+      let callCount = 0;
+      mockFrom.mockImplementation(() => {
+        callCount++;
+        const chain = {
+          select: () => chain,
+          eq: () => chain,
+          lte: () => chain,
+          gt: () => chain,
+          maybeSingle: () => {
+            if (callCount === 1) {
+              return Promise.resolve({ data: null, error: null });
+            }
+            return Promise.resolve({
+              data: {
+                title: 'Scheduled Stew',
+                description: 'Future stew',
+                keywords: ['stew'],
+                image: '/stew.jpg',
+                image_width: 800,
+                image_height: 600,
+                image_type: 'image/jpeg',
+              },
+              error: null,
+            });
+          },
+        };
+        return chain;
+      });
+
+      const res = await createRequestMock(recipesRouter)().get(
+        '/api/recipes/scheduled-stew/seo?preview=sched-token-123',
+      );
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual({
+        title: 'Scheduled Stew',
+        description: 'Future stew',
+        keywords: ['stew'],
+        image: '/stew.jpg',
+        imageWidth: 800,
+        imageHeight: 600,
+        imageType: 'image/jpeg',
+      });
+    });
+
+    it('should return 500 if scheduled SEO query fails with preview token', async () => {
+      let callCount = 0;
+      mockFrom.mockImplementation(() => {
+        callCount++;
+        const chain = {
+          select: () => chain,
+          eq: () => chain,
+          lte: () => chain,
+          gt: () => chain,
+          maybeSingle: () => {
+            if (callCount === 1) {
+              return Promise.resolve({ data: null, error: null });
+            }
+            return Promise.resolve({
+              data: null,
+              error: new Error('Scheduled SEO query failed'),
+            });
+          },
+        };
+        return chain;
+      });
+
+      const res = await createRequestMock(recipesRouter)().get(
+        '/api/recipes/scheduled-stew/seo?preview=sched-token-123',
+      );
+      expect(res.status).toBe(500);
+      expect(res.body.error).toBe('Scheduled SEO query failed');
+    });
+
     it('should return null when recipe is not found', async () => {
       mockFrom.mockImplementation(() => {
         const chain = {
