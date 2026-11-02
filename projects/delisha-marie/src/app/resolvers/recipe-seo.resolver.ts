@@ -17,6 +17,7 @@ export const seoRecipeResolver: ResolveFn<SeoContent> = async (route, state) => 
   const path = state.url.split('?')[0].split('#')[0];
   const siteName = "Delisha Marie's Kitchen";
   const slug = route.paramMap.get('slug') || undefined;
+  const preview = route.queryParamMap?.get('preview') || undefined;
   const baseHref =
     locationStrategy.getBaseHref() === '/' ? '' : locationStrategy.getBaseHref().replace(/\/$/, '');
   const url = `${origin}${baseHref}${path}`;
@@ -37,11 +38,17 @@ export const seoRecipeResolver: ResolveFn<SeoContent> = async (route, state) => 
     seoService.setSEO(seoConfig404);
     return seoConfig404;
   }
-  const seo = await recipeService.getSeoBySlug(slug);
+  const seo = await (preview
+    ? recipeService.getSeoBySlug(slug, false, preview)
+    : recipeService.getSeoBySlug(slug));
 
-  if (!seo) {
-    seoService.setSEO(seoConfig404);
-    return seoConfig404;
+  if (!seo || preview) {
+    const preview404Config: SeoContent = {
+      ...seoConfig404,
+      title: `${seo?.title || 'Recipe Not Found'} | ${siteName}`,
+    };
+    seoService.setSEO(preview404Config);
+    return preview404Config;
   }
   let image = seo.image
     ? loader({
