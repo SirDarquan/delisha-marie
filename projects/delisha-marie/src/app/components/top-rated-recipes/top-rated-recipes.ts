@@ -82,7 +82,7 @@ export class TopRatedRecipes {
   private readonly _recipeResource = resource({
     loader: async () => {
       if (!isPlatformBrowser(this.platformId)) {
-        return Promise.resolve({ items: [], total: 0 });
+        return { items: [], total: 0 };
       }
       try {
         return await this.recipeService.getRecipes(1, 20, 'recipes', undefined, undefined, true);
