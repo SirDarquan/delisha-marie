@@ -142,12 +142,24 @@ export class RecipeService {
   /**
    * Fetches a single recipe SEO by its slug.
    */
-  getSeoBySlug(slug: string, refresh = false): Promise<RecipeSeoData | null> {
+  getSeoBySlug(
+    slug: string,
+    refresh = false,
+    previewToken?: string,
+  ): Promise<RecipeSeoData | null> {
     const clean = (s: string) => s.replace(/^\/?recipe\//, '').replace(/^\//, '');
     const normalizedSearch = clean(slug);
 
     if (refresh) {
       this.seoCache.delete(normalizedSearch);
+    }
+
+    if (previewToken) {
+      return this.api
+        .get<RecipeSeoData | null>(
+          `/recipes/${normalizedSearch}/seo?preview=${encodeURIComponent(previewToken)}`,
+        )
+        .catch(() => null);
     }
 
     let cached = this.seoCache.get(normalizedSearch);
