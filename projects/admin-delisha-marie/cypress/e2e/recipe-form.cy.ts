@@ -384,4 +384,32 @@ describe('Admin Recipe Form Flow', () => {
       .should('not.have.class', 'hidden')
       .should('contain.text', 'Rich story updated via raw HTML mode');
   });
+
+  it('should render Preview link button only when recipe is scheduled', () => {
+    const scheduledRecipe = {
+      ...mockRecipe,
+      status: 'published',
+      createdAt: '2099-01-01T00:00:00.000Z',
+      previewToken: 'sched-tok-99',
+    };
+
+    cy.intercept('GET', '**/api/recipes/99', {
+      statusCode: 200,
+      body: scheduledRecipe,
+    }).as('getScheduledRecipe');
+
+    cy.visit('/recipes/edit/99', {
+      onBeforeLoad: (win) => {
+        win.localStorage.setItem('admin_recipes', JSON.stringify([scheduledRecipe]));
+        win.history.replaceState({}, '', '/recipes');
+        win.history.pushState({}, '', '/recipes/edit/99');
+      },
+    });
+
+    cy.wait('@getScheduledRecipe');
+    cy.get('a[aria-label="Preview scheduled recipe"]')
+      .should('be.visible')
+      .and('have.attr', 'href')
+      .and('include', '/recipe/garlic-rosemary-chicken?preview=sched-tok-99');
+  });
 });
