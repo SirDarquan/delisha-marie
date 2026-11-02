@@ -546,6 +546,18 @@ export interface RecipeFormModel {
 
             <!-- State 2: Recipe is 'scheduled' (PrePublished) -->
             @if (currentStatus() === 'scheduled') {
+              @if (previewUrl(); as url) {
+                <a
+                  mat-stroked-button
+                  [href]="url"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Preview scheduled recipe"
+                  class="px-5 py-2.5 rounded-xl font-bold text-purple-300 bg-purple-600/20 hover:bg-purple-600/30 border border-purple-500/40 transition shadow-md cursor-pointer no-underline flex items-center gap-1.5">
+                  <span class="material-icons text-sm">visibility</span>
+                  Preview
+                </a>
+              }
               <button
                 mat-stroked-button
                 type="button"
@@ -671,6 +683,17 @@ export class RecipeFormComponent implements OnInit {
       return 'scheduled';
     }
     return status;
+  });
+
+  protected readonly previewUrl = computed(() => {
+    if (this.currentStatus() !== 'scheduled') {
+      return null;
+    }
+    const { slug, previewToken } = this.recipeModel();
+    if (!slug || !previewToken) {
+      return null;
+    }
+    return this.recipeService.getRecipePreviewUrl(slug, previewToken);
   });
 
   protected readonly recipeForm = form(
@@ -853,6 +876,10 @@ export class RecipeFormComponent implements OnInit {
       return String(d);
     });
 
+    const isScheduled =
+      recipe.status === 'published' &&
+      Boolean(recipe.createdAt && new Date(recipe.createdAt).getTime() > Date.now());
+
     return {
       title: recipe.title || '',
       slug: recipe.slug || '',
@@ -863,7 +890,7 @@ export class RecipeFormComponent implements OnInit {
       totalTime: recipe.totalTime || '',
       yield: recipe.yield || '',
       status: recipe.status || 'draft',
-      previewToken: recipe.previewToken || '',
+      previewToken: isScheduled ? recipe.previewToken || '' : '',
       image: recipe.image || '',
       imageWidth: recipe.imageWidth || '',
       imageHeight: recipe.imageHeight || '',
@@ -1111,7 +1138,10 @@ export class RecipeFormComponent implements OnInit {
       return;
     }
 
-    const formValue = this.recipeModel();
+    const formValue = {
+      ...this.recipeModel(),
+      previewToken: '',
+    };
 
     const createdAt: string | null | undefined = null;
     const updatedAt: string | null | undefined = null;
@@ -1127,6 +1157,7 @@ export class RecipeFormComponent implements OnInit {
       this.recipeModel.update((model) => ({
         ...model,
         status: 'draft',
+        previewToken: '',
       }));
 
       if (id) {
@@ -1176,7 +1207,9 @@ export class RecipeFormComponent implements OnInit {
     let updatedAt = originalRecipe?.updatedAt;
 
     const currentTime = new Date().toISOString();
+    let previewToken = '';
     if (status === 'scheduled') {
+      previewToken = formValue.previewToken?.trim() || crypto.randomUUID();
       if (scheduledDate) {
         createdAt = scheduledDate.toISOString();
         updatedAt = scheduledDate.toISOString();
@@ -1189,8 +1222,16 @@ export class RecipeFormComponent implements OnInit {
       createdAt ??= currentTime;
     }
 
+    this.recipeModel.update((model) => ({
+      ...model,
+      previewToken,
+    }));
+
     const payload: Omit<Recipe, 'id'> = {
-      ...this.serializeRecipe(formValue, status === 'scheduled' ? 'published' : status),
+      ...this.serializeRecipe(
+        { ...formValue, previewToken },
+        status === 'scheduled' ? 'published' : status,
+      ),
       createdAt,
       updatedAt,
     };

@@ -1,6 +1,8 @@
+import { DOCUMENT } from '@angular/common';
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { Recipe } from '../models/recipe.model';
 import { ApiService } from './api.service';
+import { AppConfigService } from './config.service';
 
 export type ActiveRecipeId = string | number | null;
 
@@ -9,6 +11,8 @@ export type ActiveRecipeId = string | number | null;
 })
 export class RecipeService {
   private readonly api = inject(ApiService);
+  private readonly appConfig = inject(AppConfigService, { optional: true });
+  private readonly document = inject(DOCUMENT);
 
   // Core state: signal of all categories from database
   private readonly _categories = signal<{ id: string; name: string; url: string }[]>([]);
@@ -121,6 +125,20 @@ export class RecipeService {
 
   deleteRecipe(id: string | number): Promise<{ success: boolean }> {
     return this.api.delete<{ success: boolean }>(`/recipes/${id}`);
+  }
+
+  getRecipePreviewUrl(slug: string, previewToken: string): string {
+    const cleanSlug = slug.replace(/^\/?recipe\//, '').replace(/^\//, '');
+    const configuredUrl = this.appConfig?.KitchenUrl()?.trim();
+    let baseUrl: string;
+    if (configuredUrl) {
+      baseUrl = configuredUrl.replace(/\/$/, '');
+    } else {
+      const hostname = this.document.location?.hostname || 'localhost';
+      const isLocal = hostname === 'localhost' || hostname === '127.0.0.1';
+      baseUrl = isLocal ? 'http://localhost:4200' : 'https://delishamarie.com/kitchen';
+    }
+    return `${baseUrl}/recipe/${cleanSlug}?preview=${encodeURIComponent(previewToken)}`;
   }
 
   async upload(file: File, folder?: string): Promise<string> {

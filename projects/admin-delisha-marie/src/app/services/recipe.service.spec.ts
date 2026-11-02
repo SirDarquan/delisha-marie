@@ -1,7 +1,9 @@
+import { DOCUMENT } from '@angular/common';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { Recipe } from '../models/recipe.model';
+import { AppConfigService } from './config.service';
 import { RecipeService } from './recipe.service';
 
 if (typeof localStorage === 'undefined') {
@@ -469,6 +471,61 @@ describe('RecipeService', () => {
 
       // Should not have updated
       expect(service.categories().length).toBe(initialCount);
+    });
+  });
+
+  describe('getRecipePreviewUrl', () => {
+    it('should use configured KitchenUrl when available', () => {
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({
+        providers: [
+          provideHttpClient(),
+          provideHttpClientTesting(),
+          RecipeService,
+          {
+            provide: AppConfigService,
+            useValue: { KitchenUrl: () => 'https://custom.example.com/kitchen/' },
+          },
+        ],
+      });
+      service = TestBed.inject(RecipeService);
+      httpMock = TestBed.inject(HttpTestingController);
+
+      expect(service.getRecipePreviewUrl('/recipe/my-pasta', 'tok-123')).toBe(
+        'https://custom.example.com/kitchen/recipe/my-pasta?preview=tok-123',
+      );
+    });
+
+    it('should fallback to localhost:4200 on local hostname and delishamarie.com on remote hostname', () => {
+      TestBed.resetTestingModule();
+      const mockDoc = {
+        location: { hostname: 'localhost' },
+        querySelectorAll: () => [],
+      };
+      TestBed.configureTestingModule({
+        providers: [
+          provideHttpClient(),
+          provideHttpClientTesting(),
+          RecipeService,
+          { provide: DOCUMENT, useValue: mockDoc },
+        ],
+      });
+      service = TestBed.inject(RecipeService);
+      httpMock = TestBed.inject(HttpTestingController);
+
+      expect(service.getRecipePreviewUrl('tacos', 'sec-token')).toBe(
+        'http://localhost:4200/recipe/tacos?preview=sec-token',
+      );
+
+      mockDoc.location.hostname = 'admin.delishamarie.com';
+      expect(service.getRecipePreviewUrl('tacos', 'sec-token')).toBe(
+        'https://delishamarie.com/kitchen/recipe/tacos?preview=sec-token',
+      );
+
+      mockDoc.location.hostname = '';
+      expect(service.getRecipePreviewUrl('tacos', 'sec-token')).toBe(
+        'http://localhost:4200/recipe/tacos?preview=sec-token',
+      );
     });
   });
 });

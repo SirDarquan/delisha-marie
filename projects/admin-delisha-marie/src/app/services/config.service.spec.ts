@@ -30,6 +30,7 @@ describe('AppConfigService', () => {
     expect(service.SocialClients()).toBeUndefined();
     expect(service.DescopeProjectId()).toBeUndefined();
     expect(service.ImageKitUrlEndpoint()).toBeUndefined();
+    expect(service.KitchenUrl()).toBeUndefined();
   });
 
   it('should fetch configuration from /config and populate signal state', async () => {
@@ -37,6 +38,7 @@ describe('AppConfigService', () => {
       SocialClients: { GoogleClientId: 'test-google-123' },
       DescopeProjectId: 'test-descope-456',
       ImageKitUrlEndpoint: 'https://ik.imagekit.io/test',
+      KitchenUrl: 'https://delishamarie.com/kitchen',
     };
 
     const promise = service.init();
@@ -50,6 +52,7 @@ describe('AppConfigService', () => {
     expect(service.SocialClients()).toEqual(mockConfig.SocialClients);
     expect(service.DescopeProjectId()).toBe('test-descope-456');
     expect(service.ImageKitUrlEndpoint()).toBe('https://ik.imagekit.io/test');
+    expect(service.KitchenUrl()).toBe('https://delishamarie.com/kitchen');
   });
 
   it('should log and throw a critical error if backend load fails', async () => {

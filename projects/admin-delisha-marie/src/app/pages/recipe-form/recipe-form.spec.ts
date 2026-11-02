@@ -97,6 +97,9 @@ describe('RecipeFormComponent', () => {
       updatePayload = payload;
       return Promise.resolve({ id, ...payload } as unknown as Recipe);
     },
+
+    getRecipePreviewUrl: (slug: string, previewToken: string) =>
+      `http://localhost:4200/recipe/${slug}?preview=${previewToken}`,
   };
 
   const fakeRouter = {
@@ -1874,6 +1877,56 @@ describe('RecipeFormComponent', () => {
 
       const mapped = component['mapRecipeToForm'](mockRecipe);
       expect(mapped.searchIngredients).toEqual(['Catfish', 'Ginger']);
+      expect(mapped.previewToken).toBe('');
+    });
+
+    it('should preserve previewToken in mapRecipeToForm only when recipe is scheduled and compute previewUrl', async () => {
+      const futureDate = new Date(Date.now() + 86400000).toISOString();
+      const scheduledRecipe = {
+        ...getValidPublishedModel(),
+        ingredients: ['1 pound of catfish'],
+        instructions: ['Cook it'],
+        status: 'published',
+        createdAt: futureDate,
+        previewToken: 'sched-tok-99',
+      } as unknown as Recipe;
+
+      const mapped = component['mapRecipeToForm'](scheduledRecipe);
+      expect(mapped.previewToken).toBe('sched-tok-99');
+
+      component['originalRecipe'].set(scheduledRecipe);
+      component['recipeModel'].set({
+        ...getValidPublishedModel(),
+        previewToken: mapped.previewToken,
+      });
+      fixture.detectChanges();
+
+      expect(component['currentStatus']()).toBe('scheduled');
+      expect(component['previewUrl']()).toBe(
+        'http://localhost:4200/recipe/valid-recipe?preview=sched-tok-99',
+      );
+
+      // When previewToken or slug is empty on a scheduled recipe, previewUrl returns null
+      component['recipeModel'].update((m) => ({ ...m, previewToken: '' }));
+      expect(component['previewUrl']()).toBeNull();
+
+      // When saveRequired('scheduled') is called with empty previewToken, it generates a UUID token
+      const updateSpy = vi
+        .spyOn(fakeRecipeService, 'updateRecipe')
+        .mockResolvedValue({} as unknown as Recipe);
+      updateSpy.mockClear();
+      component['idToEdit'].set('1');
+      await component.saveRequired('scheduled', new Date(futureDate));
+      const firstCallPayload = updateSpy.mock.calls[0]?.[1] as Record<string, unknown>;
+      expect(typeof firstCallPayload?.['previewToken']).toBe('string');
+      expect((firstCallPayload?.['previewToken'] as string).length).toBeGreaterThan(0);
+
+      // When saveRequired('scheduled') is called with existing previewToken, it preserves it
+      updateSpy.mockClear();
+      component['recipeModel'].update((m) => ({ ...m, previewToken: 'existing-tok' }));
+      await component.saveRequired('scheduled', new Date(futureDate));
+      const secondCallPayload = updateSpy.mock.calls[0]?.[1] as Record<string, unknown>;
+      expect(secondCallPayload?.['previewToken']).toBe('existing-tok');
     });
   });
 });
