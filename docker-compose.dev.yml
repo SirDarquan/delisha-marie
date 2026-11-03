@@ -13,10 +13,10 @@ services:
       - delisha-angular-cache:/delisha-marie/.angular
     working_dir: /delisha-marie
     ports:
-      - "4200:4200" # delisha-marie (kitchen)
-      - "4201:4201" # admin-delisha-marie (ng serve)
-      - "4220:4220" # delisha-home (home)
-      - "8080:8080" # admin-delisha-marie
+      - "4200:4200" # home
+      - "4201:4201" # kitchen
+      - "4209:4209" # admin (ng serve)
+      - "8080:8080" # admin
       - "4001:4001" # admin backend
     environment:
       - NODE_ENV=development

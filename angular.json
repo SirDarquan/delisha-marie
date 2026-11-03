@@ -16,7 +16,7 @@
   },
   "newProjectRoot": "projects",
   "projects": {
-    "delisha-marie": {
+    "kitchen": {
       "projectType": "application",
       "schematics": {
         "@schematics/angular:component": {
@@ -24,27 +24,27 @@
           "style": "scss"
         }
       },
-      "root": "projects/delisha-marie",
-      "sourceRoot": "projects/delisha-marie/src",
+      "root": "projects/kitchen",
+      "sourceRoot": "projects/kitchen/src",
       "prefix": "dm",
       "architect": {
         "build": {
           "builder": "@angular/build:application",
           "options": {
-            "browser": "projects/delisha-marie/src/main.ts",
-            "tsConfig": "projects/delisha-marie/tsconfig.app.json",
+            "browser": "projects/kitchen/src/main.ts",
+            "tsConfig": "projects/kitchen/tsconfig.app.json",
             "inlineStyleLanguage": "scss",
             "assets": [
               {
                 "glob": "**/*",
-                "input": "projects/delisha-marie/public"
+                "input": "projects/kitchen/public"
               }
             ],
             "styles": [
-              "projects/delisha-marie/src/tailwind.css",
-              "projects/delisha-marie/src/styles.scss"
+              "projects/kitchen/src/tailwind.css",
+              "projects/kitchen/src/styles.scss"
             ],
-            "server": "projects/delisha-marie/src/main.server.ts",
+            "server": "projects/kitchen/src/main.server.ts",
             "outputMode": "server",
             "security": {
               "allowedHosts": [
@@ -55,7 +55,7 @@
               ]
             },
             "ssr": {
-              "entry": "projects/delisha-marie/src/server.ts"
+              "entry": "projects/kitchen/src/server.ts"
             }
           },
           "configurations": {
@@ -80,7 +80,7 @@
                 }
               ],
               "outputHashing": "all",
-              "serviceWorker": "projects/delisha-marie/ngsw-config.json"
+              "serviceWorker": "projects/kitchen/ngsw-config.json"
             },
             "development": {
               "optimization": false,
@@ -105,18 +105,18 @@
         "build-spa": {
           "builder": "@angular/build:application",
           "options": {
-            "browser": "projects/delisha-marie/src/main.ts",
-            "tsConfig": "projects/delisha-marie/tsconfig.app.json",
+            "browser": "projects/kitchen/src/main.ts",
+            "tsConfig": "projects/kitchen/tsconfig.app.json",
             "inlineStyleLanguage": "scss",
             "assets": [
               {
                 "glob": "**/*",
-                "input": "projects/delisha-marie/public"
+                "input": "projects/kitchen/public"
               }
             ],
             "styles": [
-              "projects/delisha-marie/src/tailwind.css",
-              "projects/delisha-marie/src/styles.scss"
+              "projects/kitchen/src/tailwind.css",
+              "projects/kitchen/src/styles.scss"
             ]
           },
           "configurations": {
@@ -131,18 +131,19 @@
           "builder": "@angular/build:dev-server",
           "options": {
             "host": "0.0.0.0",
-            "allowedHosts": true
+            "allowedHosts": true,
+            "port": 4201
           },
           "configurations": {
             "production": {
-              "buildTarget": "delisha-marie:build:production"
+              "buildTarget": "kitchen:build:production"
             },
             "development": {
-              "buildTarget": "delisha-marie:build:development"
+              "buildTarget": "kitchen:build:development"
             },
             "e2e": {
-              "buildTarget": "delisha-marie:build-spa:e2e",
-              "port": 4210
+              "buildTarget": "kitchen:build-spa:e2e",
+              "port": 4211
             }
           },
           "defaultConfiguration": "development"
@@ -175,22 +176,22 @@
           "builder": "@angular-eslint/builder:lint",
           "options": {
             "lintFilePatterns": [
-              "projects/delisha-marie/**/*.ts",
-              "projects/delisha-marie/**/*.html"
+              "projects/kitchen/**/*.ts",
+              "projects/kitchen/**/*.html"
             ],
-            "eslintConfig": "projects/delisha-marie/eslint.config.js",
+            "eslintConfig": "projects/kitchen/eslint.config.js",
             "fix": true
           }
         },
         "cypress-run": {
           "builder": "@cypress/schematic:cypress",
           "options": {
-            "devServerTarget": "delisha-marie:serve:e2e",
-            "configFile": "projects/delisha-marie/cypress.config.ts"
+            "devServerTarget": "kitchen:serve:e2e",
+            "configFile": "projects/kitchen/cypress.config.ts"
           },
           "configurations": {
             "production": {
-              "devServerTarget": "delisha-marie:serve:production"
+              "devServerTarget": "kitchen:serve:production"
             }
           }
         },
@@ -199,40 +200,40 @@
           "options": {
             "watch": true,
             "headless": false,
-            "configFile": "projects/delisha-marie/cypress.config.ts"
+            "configFile": "projects/kitchen/cypress.config.ts"
           }
         },
         "ct": {
           "builder": "@cypress/schematic:cypress",
           "options": {
-            "devServerTarget": "delisha-marie:serve",
+            "devServerTarget": "kitchen:serve",
             "watch": true,
             "headless": false,
             "testingType": "component"
           },
           "configurations": {
             "development": {
-              "devServerTarget": "delisha-marie:serve:development"
+              "devServerTarget": "kitchen:serve:development"
             }
           }
         },
         "e2e": {
           "builder": "@cypress/schematic:cypress",
           "options": {
-            "devServerTarget": "delisha-marie:serve:e2e",
+            "devServerTarget": "kitchen:serve:e2e",
             "watch": true,
             "headless": false,
-            "configFile": "projects/delisha-marie/cypress.config.ts"
+            "configFile": "projects/kitchen/cypress.config.ts"
           },
           "configurations": {
             "production": {
-              "devServerTarget": "delisha-marie:serve:production"
+              "devServerTarget": "kitchen:serve:production"
             }
           }
         }
       }
     },
-    "admin-delisha-marie": {
+    "admin": {
       "projectType": "application",
       "schematics": {
         "@schematics/angular:component": {
@@ -240,31 +241,31 @@
           "style": "scss"
         }
       },
-      "root": "projects/admin-delisha-marie",
-      "sourceRoot": "projects/admin-delisha-marie/src",
+      "root": "projects/admin",
+      "sourceRoot": "projects/admin/src",
       "prefix": "app",
       "architect": {
         "build": {
           "builder": "@angular/build:application",
           "options": {
-            "browser": "projects/admin-delisha-marie/src/main.ts",
-            "tsConfig": "projects/admin-delisha-marie/tsconfig.app.json",
+            "browser": "projects/admin/src/main.ts",
+            "tsConfig": "projects/admin/tsconfig.app.json",
             "inlineStyleLanguage": "scss",
             "assets": [
               {
                 "glob": "**/*",
-                "input": "projects/admin-delisha-marie/public"
+                "input": "projects/admin/public"
               },
               {
                 "glob": "**/*",
-                "input": "projects/admin-delisha-marie/images"
+                "input": "projects/admin/images"
               }
             ],
             "styles": [
-              "projects/admin-delisha-marie/src/tailwind.css",
-              "projects/admin-delisha-marie/src/styles.scss"
+              "projects/admin/src/tailwind.css",
+              "projects/admin/src/styles.scss"
             ],
-            "server": "projects/admin-delisha-marie/src/main.server.ts",
+            "server": "projects/admin/src/main.server.ts",
             "security": {
               "allowedHosts": [
                 "localhost",
@@ -281,7 +282,7 @@
               "@imagekit/nodejs"
             ],
             "ssr": {
-              "entry": "projects/admin-delisha-marie/src/server.ts"
+              "entry": "projects/admin/src/server.ts"
             }
           },
           "configurations": {
@@ -323,22 +324,22 @@
         "build-spa": {
           "builder": "@angular/build:application",
           "options": {
-            "browser": "projects/admin-delisha-marie/src/main.ts",
-            "tsConfig": "projects/admin-delisha-marie/tsconfig.app.json",
+            "browser": "projects/admin/src/main.ts",
+            "tsConfig": "projects/admin/tsconfig.app.json",
             "inlineStyleLanguage": "scss",
             "assets": [
               {
                 "glob": "**/*",
-                "input": "projects/admin-delisha-marie/public"
+                "input": "projects/admin/public"
               },
               {
                 "glob": "**/*",
-                "input": "projects/admin-delisha-marie/images"
+                "input": "projects/admin/images"
               }
             ],
             "styles": [
-              "projects/admin-delisha-marie/src/tailwind.css",
-              "projects/admin-delisha-marie/src/styles.scss"
+              "projects/admin/src/tailwind.css",
+              "projects/admin/src/styles.scss"
             ]
           },
           "configurations": {
@@ -354,19 +355,19 @@
           "options": {
             "host": "0.0.0.0",
             "allowedHosts": true,
-            "port": 4201,
+            "port": 4209,
             "poll": 2000
           },
           "configurations": {
             "production": {
-              "buildTarget": "admin-delisha-marie:build:production"
+              "buildTarget": "admin:build:production"
             },
             "development": {
-              "buildTarget": "admin-delisha-marie:build:development"
+              "buildTarget": "admin:build:development"
             },
             "e2e": {
-              "buildTarget": "admin-delisha-marie:build-spa:e2e",
-              "port": 4211
+              "buildTarget": "admin:build-spa:e2e",
+              "port": 4219
             }
           },
           "defaultConfiguration": "development"
@@ -378,7 +379,7 @@
               "lcov"
             ],
             "exclude": [
-              "projects/admin-delisha-marie/src/api/**/*.test.ts"
+              "projects/admin/src/api/**/*.test.ts"
             ],
             "coverageExclude": [
               "projects/dm/library/**/*"
@@ -402,10 +403,10 @@
               "lcov"
             ],
             "include": [
-              "projects/admin-delisha-marie/src/api/**/*.test.ts"
+              "projects/admin/src/api/**/*.test.ts"
             ],
             "watch": false,
-            "runnerConfig": "projects/admin-delisha-marie/src/api/vitest.config.ts",
+            "runnerConfig": "projects/admin/src/api/vitest.config.ts",
             "coverageExclude": [
               "projects/dm/backend-shared/**/*",
               "projects/dm/library/**/*"
@@ -422,22 +423,22 @@
           "builder": "@angular-eslint/builder:lint",
           "options": {
             "lintFilePatterns": [
-              "projects/admin-delisha-marie/**/*.ts",
-              "projects/admin-delisha-marie/**/*.html"
+              "projects/admin/**/*.ts",
+              "projects/admin/**/*.html"
             ],
-            "eslintConfig": "projects/admin-delisha-marie/eslint.config.js",
+            "eslintConfig": "projects/admin/eslint.config.js",
             "fix": true
           }
         },
         "cypress-run": {
           "builder": "@cypress/schematic:cypress",
           "options": {
-            "devServerTarget": "admin-delisha-marie:serve:e2e",
-            "configFile": "projects/admin-delisha-marie/cypress.config.ts"
+            "devServerTarget": "admin:serve:e2e",
+            "configFile": "projects/admin/cypress.config.ts"
           },
           "configurations": {
             "production": {
-              "devServerTarget": "admin-delisha-marie:serve:production"
+              "devServerTarget": "admin:serve:production"
             }
           }
         },
@@ -446,34 +447,34 @@
           "options": {
             "watch": true,
             "headless": false,
-            "configFile": "projects/admin-delisha-marie/cypress.config.ts"
+            "configFile": "projects/admin/cypress.config.ts"
           }
         },
         "ct": {
           "builder": "@cypress/schematic:cypress",
           "options": {
-            "devServerTarget": "admin-delisha-marie:serve",
+            "devServerTarget": "admin:serve",
             "watch": true,
             "headless": false,
             "testingType": "component"
           },
           "configurations": {
             "development": {
-              "devServerTarget": "admin-delisha-marie:serve:development"
+              "devServerTarget": "admin:serve:development"
             }
           }
         },
         "e2e": {
           "builder": "@cypress/schematic:cypress",
           "options": {
-            "devServerTarget": "admin-delisha-marie:serve:e2e",
+            "devServerTarget": "admin:serve:e2e",
             "watch": true,
             "headless": false,
-            "configFile": "projects/admin-delisha-marie/cypress.config.ts"
+            "configFile": "projects/admin/cypress.config.ts"
           },
           "configurations": {
             "production": {
-              "devServerTarget": "admin-delisha-marie:serve:production"
+              "devServerTarget": "admin:serve:production"
             }
           }
         }
@@ -534,7 +535,7 @@
         "test-api": {
           "builder": "@angular/build:unit-test",
           "options": {
-            "buildTarget": "delisha-marie:build",
+            "buildTarget": "kitchen:build",
             "coverageReporters": [
               "lcov"
             ],
@@ -590,7 +591,7 @@
         "test-api": {
           "builder": "@angular/build:unit-test",
           "options": {
-            "buildTarget": "delisha-marie:build",
+            "buildTarget": "kitchen:build",
             "tsConfig": "projects/dm/backend-shared/tsconfig.spec.json",
             "coverageReporters": [
               "lcov"
@@ -623,32 +624,32 @@
         }
       }
     },
-    "delisha-home": {
+    "home": {
       "projectType": "application",
       "schematics": {
         "@schematics/angular:component": {
           "style": "scss"
         }
       },
-      "root": "projects/delisha-home",
-      "sourceRoot": "projects/delisha-home/src",
+      "root": "projects/home",
+      "sourceRoot": "projects/home/src",
       "prefix": "app",
       "architect": {
         "build": {
           "builder": "@angular/build:application",
           "options": {
-            "browser": "projects/delisha-home/src/main.ts",
-            "tsConfig": "projects/delisha-home/tsconfig.app.json",
+            "browser": "projects/home/src/main.ts",
+            "tsConfig": "projects/home/tsconfig.app.json",
             "inlineStyleLanguage": "scss",
             "assets": [
               {
                 "glob": "**/*",
-                "input": "projects/delisha-home/public"
+                "input": "projects/home/public"
               }
             ],
             "styles": [
-              "projects/delisha-home/src/tailwind.css",
-              "projects/delisha-home/src/styles.scss"
+              "projects/home/src/tailwind.css",
+              "projects/home/src/styles.scss"
             ],
             "outputPath": {
               "base": "dist",
@@ -687,11 +688,11 @@
           },
           "configurations": {
             "production": {
-              "buildTarget": "delisha-home:build:production"
+              "buildTarget": "home:build:production"
             },
             "development": {
-              "buildTarget": "delisha-home:build:development",
-              "port": 4220
+              "buildTarget": "home:build:development",
+              "port": 4200
             }
           },
           "defaultConfiguration": "development"
@@ -721,10 +722,10 @@
           "builder": "@angular-eslint/builder:lint",
           "options": {
             "lintFilePatterns": [
-              "projects/delisha-home/**/*.ts",
-              "projects/delisha-home/**/*.html"
+              "projects/home/**/*.ts",
+              "projects/home/**/*.html"
             ],
-            "eslintConfig": "projects/delisha-home/eslint.config.js",
+            "eslintConfig": "projects/home/eslint.config.js",
             "fix": true
           }
         }

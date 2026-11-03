@@ -42,16 +42,16 @@
       "path": "./projects/serverless/tsconfig.spec.json"
     },
     {
-      "path": "./projects/delisha-marie/tsconfig.app.json"
+      "path": "./projects/kitchen/tsconfig.app.json"
     },
     {
-      "path": "./projects/delisha-marie/tsconfig.spec.json"
+      "path": "./projects/kitchen/tsconfig.spec.json"
     },
     {
-      "path": "./projects/admin-delisha-marie/tsconfig.app.json"
+      "path": "./projects/admin/tsconfig.app.json"
     },
     {
-      "path": "./projects/admin-delisha-marie/tsconfig.spec.json"
+      "path": "./projects/admin/tsconfig.spec.json"
     },
     {
       "path": "./projects/dm/library/tsconfig.lib.json"
@@ -60,10 +60,10 @@
       "path": "./projects/dm/library/tsconfig.spec.json"
     },
     {
-      "path": "./projects/delisha-home/tsconfig.app.json"
+      "path": "./projects/home/tsconfig.app.json"
     },
     {
-      "path": "./projects/delisha-home/tsconfig.spec.json"
+      "path": "./projects/home/tsconfig.spec.json"
     }
   ]
 }

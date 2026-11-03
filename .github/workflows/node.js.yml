@@ -54,7 +54,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        app: [admin, blog]
+        app: [admin, kitchen]
     steps:
     - uses: actions/checkout@v6
     - name: Use Node.js
@@ -89,8 +89,9 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-node-
     - run: npm ci --ignore-scripts
-    - run: npm run build delisha-marie --if-present
-    - run: npm run build admin-delisha-marie --if-present
+    - run: npm run build kitchen --if-present
+    - run: npm run build admin --if-present
+    - run: npm run build home --if-present
   Deploy-Preview:
     needs: [unit-tests, e2e-tests]
     runs-on: ubuntu-latest
