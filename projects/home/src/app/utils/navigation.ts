@@ -7,7 +7,7 @@ export interface KitchenUrlOptions {
 
 /**
  * Returns the URL for navigating to the Kitchen application.
- * In local development, routes to http://localhost:4200 (delisha-marie dev server).
+ * In local development, routes to http://localhost:4201 (kitchen dev server).
  * In production, routes to /kitchen.
  */
 export function getKitchenUrl(options?: KitchenUrlOptions): string {
@@ -20,12 +20,12 @@ export function getKitchenUrl(options?: KitchenUrlOptions): string {
     return '/kitchen/';
   }
 
-  return 'http://localhost:4200';
+  return 'http://localhost:4201';
 }
 
 /**
  * Returns the resolved API URL for backend endpoints.
- * In local development, routes to http://localhost:4200/api/...
+ * In local development, routes to http://localhost:4201/api/...
  * In production, routes to /api/...
  */
 export function getApiUrl(path: string, options?: KitchenUrlOptions): string {
@@ -39,5 +39,5 @@ export function getApiUrl(path: string, options?: KitchenUrlOptions): string {
     return cleanPath;
   }
 
-  return `http://localhost:4200${cleanPath}`;
+  return `http://localhost:4201${cleanPath}`;
 }

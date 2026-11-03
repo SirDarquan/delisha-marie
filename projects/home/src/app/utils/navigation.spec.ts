@@ -3,9 +3,9 @@ import { getApiUrl, getKitchenUrl } from './navigation';
 
 describe('navigation utils', () => {
   describe('getKitchenUrl', () => {
-    it('should return http://localhost:4200 in dev mode on localhost', () => {
-      expect(getKitchenUrl({ hostname: 'localhost', isDev: true })).toBe('http://localhost:4200');
-      expect(getKitchenUrl({ hostname: '127.0.0.1', isDev: true })).toBe('http://localhost:4200');
+    it('should return http://localhost:4201 in dev mode on localhost', () => {
+      expect(getKitchenUrl({ hostname: 'localhost', isDev: true })).toBe('http://localhost:4201');
+      expect(getKitchenUrl({ hostname: '127.0.0.1', isDev: true })).toBe('http://localhost:4201');
     });
 
     it('should return /kitchen/ for production hostname even in dev mode', () => {
@@ -25,12 +25,12 @@ describe('navigation utils', () => {
   });
 
   describe('getApiUrl', () => {
-    it('should return http://localhost:4200/api/contacts on localhost in dev mode', () => {
+    it('should return http://localhost:4201/api/contacts on localhost in dev mode', () => {
       expect(getApiUrl('/api/contacts', { hostname: 'localhost', isDev: true })).toBe(
-        'http://localhost:4200/api/contacts',
+        'http://localhost:4201/api/contacts',
       );
       expect(getApiUrl('api/contacts', { hostname: '127.0.0.1', isDev: true })).toBe(
-        'http://localhost:4200/api/contacts',
+        'http://localhost:4201/api/contacts',
       );
     });
 

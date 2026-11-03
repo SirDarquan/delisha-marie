@@ -7,7 +7,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Page, PagesService } from '../../services/pages.service';
 import { DynamicPage } from './dynamic-page';
 
-describe('DynamicPage (delisha-home)', () => {
+describe('DynamicPage (home)', () => {
   let component: DynamicPage;
   let fixture: ComponentFixture<DynamicPage>;
   let mockPagesService: { getPage: ReturnType<typeof vi.fn> };

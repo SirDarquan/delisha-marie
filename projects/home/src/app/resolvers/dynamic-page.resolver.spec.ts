@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { PagesService } from '../services/pages.service';
 import { dynamicPageResolver } from './dynamic-page.resolver';
 
-describe('dynamicPageResolver (delisha-home)', () => {
+describe('dynamicPageResolver (home)', () => {
   let mockPagesService: { getPage: ReturnType<typeof vi.fn> };
 
   beforeEach(() => {

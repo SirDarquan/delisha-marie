@@ -4,7 +4,7 @@ import { TestBed } from '@angular/core/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Page, PagesService } from './pages.service';
 
-describe('PagesService (delisha-home)', () => {
+describe('PagesService (home)', () => {
   let service: PagesService;
   let httpMock: HttpTestingController;
 
