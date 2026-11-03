@@ -6,9 +6,15 @@ vi.hoisted(() => {
   process.env['SUPABASE_KEY'] = 'test-key';
 });
 
-const { mockInvoke } = vi.hoisted(() => ({
-  mockInvoke: vi.fn(),
-}));
+const { mockInvoke, mockFrom, mockLte } = vi.hoisted(() => {
+  const mockLte = vi.fn();
+  const mockEq = vi.fn(() => ({ lte: mockLte }));
+  const mockIn = vi.fn(() => ({ eq: mockEq }));
+  const mockSelect = vi.fn(() => ({ in: mockIn }));
+  const mockFrom = vi.fn(() => ({ select: mockSelect }));
+  const mockInvoke = vi.fn();
+  return { mockInvoke, mockFrom, mockLte };
+});
 
 vi.mock('@supabase/supabase-js', () => {
   return {
@@ -16,6 +22,7 @@ vi.mock('@supabase/supabase-js', () => {
       functions: {
         invoke: mockInvoke,
       },
+      from: mockFrom,
     })),
   };
 });
@@ -33,6 +40,7 @@ describe('Search Router API', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     resetSupabaseClient();
+    mockLte.mockResolvedValue({ data: [{ id: 1 }], error: null });
   });
 
   describe('POST /api/search', () => {
@@ -56,6 +64,128 @@ describe('Search Router API', () => {
       expect(mockInvoke).toHaveBeenCalledWith('search-recipes', {
         body: { query: 'test', page: 1, pageSize: 12 },
       });
+      expect(mockFrom).toHaveBeenCalledWith('recipes');
+    });
+
+    it('should filter out future-scheduled recipes (like waffle) not returned by live database query', async () => {
+      mockInvoke.mockResolvedValue({
+        data: {
+          recipes: [
+            { id: 1, title: 'Live Recipe', status: 'published', total_count: 2 },
+            { id: 2, title: 'Waffle', status: 'published', total_count: 2 },
+          ],
+          total: 2,
+        },
+        error: null,
+      });
+      // Database query only returns id: 1 because id: 2 has created_at in the future
+      mockLte.mockResolvedValue({ data: [{ id: 1 }], error: null });
+
+      const res = await request(app)
+        .post('/api/search')
+        .send({ query: 'waffle', page: 1, pageSize: 12 });
+
+      expect(res.status).toBe(200);
+      expect(res.body.items).toHaveLength(1);
+      expect(res.body.items[0]).toEqual({ id: 1, title: 'Live Recipe', status: 'published' });
+      expect(res.body.total).toBe(1);
+    });
+
+    it('should filter out scheduled recipes whose created_at is in the future even if in validIdSet', async () => {
+      mockInvoke.mockResolvedValue({
+        data: {
+          recipes: [
+            { id: 1, title: 'Live Recipe', status: 'published' },
+            {
+              id: 2,
+              title: 'Future Recipe',
+              status: 'published',
+              created_at: '2099-01-01T00:00:00Z',
+            },
+          ],
+          total: 2,
+        },
+        error: null,
+      });
+      mockLte.mockResolvedValue({ data: [{ id: 1 }, { id: 2 }], error: null });
+
+      const res = await request(app)
+        .post('/api/search')
+        .send({ query: 'recipe', page: 1, pageSize: 12 });
+
+      expect(res.status).toBe(200);
+      expect(res.body.items).toHaveLength(1);
+      expect(res.body.items[0].id).toBe(1);
+      expect(res.body.total).toBe(1);
+    });
+
+    it('should filter out recipes with non-published status', async () => {
+      mockInvoke.mockResolvedValue({
+        data: {
+          recipes: [
+            { id: 1, title: 'Live Recipe', status: 'published' },
+            { id: 2, title: 'Draft Recipe', status: 'draft' },
+          ],
+          total: 2,
+        },
+        error: null,
+      });
+      mockLte.mockResolvedValue({ data: [{ id: 1 }, { id: 2 }], error: null });
+
+      const res = await request(app)
+        .post('/api/search')
+        .send({ query: 'recipe', page: 1, pageSize: 12 });
+
+      expect(res.status).toBe(200);
+      expect(res.body.items).toHaveLength(1);
+      expect(res.body.items[0].id).toBe(1);
+      expect(res.body.total).toBe(1);
+    });
+
+    it('should return 500 when database verification query fails', async () => {
+      mockInvoke.mockResolvedValue({
+        data: {
+          recipes: [{ id: 1, title: 'Recipe', status: 'published' }],
+          total: 1,
+        },
+        error: null,
+      });
+      mockLte.mockResolvedValue({ data: null, error: new Error('DB verification query error') });
+
+      const res = await request(app).post('/api/search').send({ query: 'test' });
+      expect(res.status).toBe(500);
+      expect(res.body.error).toBe('DB verification query error');
+    });
+
+    it('should handle null liveRecipes data gracefully', async () => {
+      mockInvoke.mockResolvedValue({
+        data: {
+          recipes: [{ id: 1, title: 'Recipe', status: 'published' }],
+          total: 1,
+        },
+        error: null,
+      });
+      mockLte.mockResolvedValue({ data: null, error: null });
+
+      const res = await request(app).post('/api/search').send({ query: 'test' });
+      expect(res.status).toBe(200);
+      expect(res.body.items).toHaveLength(0);
+      expect(res.body.total).toBe(0);
+    });
+
+    it('should handle recipes without valid IDs without querying database', async () => {
+      mockInvoke.mockResolvedValue({
+        data: {
+          recipes: [{ title: 'No ID Recipe' }],
+          total: 1,
+        },
+        error: null,
+      });
+
+      const res = await request(app).post('/api/search').send({ query: 'test' });
+      expect(res.status).toBe(200);
+      expect(res.body.items).toHaveLength(0);
+      expect(mockFrom).not.toHaveBeenCalled();
     });
 
     it('should return recipes successfully with default pagination if not provided', async () => {
