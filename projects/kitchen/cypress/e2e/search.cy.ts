@@ -37,4 +37,18 @@ describe('Search Page', () => {
     cy.get('dm-search aside dml-sidebar').should('be.visible');
     cy.get('dm-search aside').invoke('width').should('be.closeTo', 350, 1);
   });
+
+  it('should display empty message when query returns no live recipes (e.g. scheduled recipes excluded)', () => {
+    cy.intercept('POST', '/api/search', {
+      statusCode: 200,
+      body: {
+        items: [],
+        total: 0,
+      },
+    }).as('scheduledSearch');
+
+    cy.visit('/?q=waffle');
+    cy.wait('@scheduledSearch');
+    cy.contains('No matching recipes found. Try a different search term!').should('be.visible');
+  });
 });
