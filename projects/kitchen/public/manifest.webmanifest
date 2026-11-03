@@ -1,6 +1,6 @@
 {
-  "name": "delisha-marie",
-  "short_name": "delisha-marie",
+  "name": "kitchen",
+  "short_name": "kitchen",
   "display": "standalone",
   "scope": "/kitchen",
   "start_url": "/kitchen",

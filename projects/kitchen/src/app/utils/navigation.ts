@@ -7,7 +7,7 @@ export interface HomeUrlOptions {
 
 /**
  * Returns the URL for navigating to the Home application or its subpages (e.g. /about, /contact).
- * In local development, routes to http://localhost:4220{path} (delisha-home dev server).
+ * In local development, routes to http://localhost:4200{path} (home dev server).
  * In production, routes to {path} on the root application domain.
  */
 export function getHomeUrl(path = '', options?: HomeUrlOptions): string {
@@ -24,5 +24,5 @@ export function getHomeUrl(path = '', options?: HomeUrlOptions): string {
     return cleanPath || '/';
   }
 
-  return `http://localhost:4220${cleanPath}`;
+  return `http://localhost:4200${cleanPath}`;
 }

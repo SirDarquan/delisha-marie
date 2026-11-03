@@ -4,7 +4,7 @@ import { APP_PLUGINS } from '@dm/library';
 import { AppConfigService } from '../services/config.service';
 import { provideAppConfig } from './app-config';
 
-describe('provideAppConfig (delisha-marie)', () => {
+describe('provideAppConfig (kitchen)', () => {
   it('should provide AppConfigService as an APP_PLUGINS multi-provider', () => {
     const mockAppConfigService = {} as unknown as AppConfigService;
 

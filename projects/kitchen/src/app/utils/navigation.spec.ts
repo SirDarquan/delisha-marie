@@ -3,19 +3,19 @@ import { getHomeUrl } from './navigation';
 
 describe('navigation utils', () => {
   describe('getHomeUrl', () => {
-    it('should return http://localhost:4220 on localhost in dev mode', () => {
-      expect(getHomeUrl('', { hostname: 'localhost', isDev: true })).toBe('http://localhost:4220');
+    it('should return http://localhost:4200 on localhost in dev mode', () => {
+      expect(getHomeUrl('', { hostname: 'localhost', isDev: true })).toBe('http://localhost:4200');
       expect(getHomeUrl('/', { hostname: '127.0.0.1', isDev: true })).toBe(
-        'http://localhost:4220/',
+        'http://localhost:4200/',
       );
     });
 
-    it('should return http://localhost:4220/about and /contact in dev mode', () => {
+    it('should return http://localhost:4200/about and /contact in dev mode', () => {
       expect(getHomeUrl('/about', { hostname: 'localhost', isDev: true })).toBe(
-        'http://localhost:4220/about',
+        'http://localhost:4200/about',
       );
       expect(getHomeUrl('contact', { hostname: 'localhost', isDev: true })).toBe(
-        'http://localhost:4220/contact',
+        'http://localhost:4200/contact',
       );
     });
 
