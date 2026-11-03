@@ -44,10 +44,10 @@ describe('App', () => {
     expect(app).toBeTruthy();
   });
 
-  it('should have the title signal set to "admin-delisha-marie"', () => {
+  it('should have the title signal set to "admin"', () => {
     const fixture = TestBed.createComponent(App);
     const app = fixture.componentInstance;
-    expect(app['title']()).toBe('admin-delisha-marie');
+    expect(app['title']()).toBe('admin');
   });
 
   it('should control header display reactively based on routing URL', async () => {

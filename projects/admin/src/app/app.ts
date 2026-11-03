@@ -31,7 +31,7 @@ import { AuthService } from './services/auth.service';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class App {
-  protected readonly title = signal('admin-delisha-marie');
+  protected readonly title = signal('admin');
   private readonly router = inject(Router);
   private readonly auth = inject(AuthService);
 
