@@ -52,5 +52,5 @@ Thumbs.db
 
 # cypress angular supabase
 skills-lock.json
-cypress/
+/cypress/
 .vercel
