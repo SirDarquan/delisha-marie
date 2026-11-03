@@ -8,11 +8,11 @@
     "source=delisha-npm-cache,target=/root/.npm,type=volume",
     "source=delisha-angular-cache,target=/delisha-marie/.angular,type=volume"
   ],
-  "forwardPorts": [4200, 4201, 4220, 8080, 4001],
+  "forwardPorts": [4200, 4201, 4209, 8080, 4001],
   "appPort": [
     "4200:4200",
     "4201:4201",
-    "4220:4220",
+    "4209:4209",
     "8080:8080",
     "4001:4001"
   ],

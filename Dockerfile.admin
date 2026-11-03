@@ -13,7 +13,7 @@ RUN npm ci --ignore-scripts
 COPY . .
 
 # Build the admin dashboard application explicitly
-RUN SUPABASE_URL="https://placeholder.supabase.co" SUPABASE_KEY="placeholder" npm run build admin-delisha-marie
+RUN SUPABASE_URL="https://placeholder.supabase.co" SUPABASE_KEY="placeholder" npm run build admin
 
 
 # Run Stage
@@ -46,4 +46,4 @@ USER nodejs
 EXPOSE 8080
 
 # Start the server targeting the admin application
-CMD ["npm", "run", "serve:ssr:admin-delisha-marie"]
+CMD ["npm", "run", "serve:ssr:admin"]

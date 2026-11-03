@@ -13,7 +13,7 @@ RUN npm ci --ignore-scripts
 COPY . .
 
 # Build the application
-RUN npm run build delisha-marie
+RUN npm run build kitchen
 
 # Run Stage
 FROM node:26-slim
@@ -45,4 +45,4 @@ USER nodejs
 EXPOSE 8080
 
 # Start the server
-CMD ["npm", "run", "serve:ssr:delisha-marie"]
+CMD ["npm", "run", "serve:ssr:kitchen"]
