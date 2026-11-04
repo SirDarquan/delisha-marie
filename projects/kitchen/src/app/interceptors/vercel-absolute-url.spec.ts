@@ -284,6 +284,8 @@ describe('vercelAbsoluteUrlInterceptor with REQUEST token', () => {
 
     httpClient.get('/api/forwarded').subscribe();
     const req = httpMock.expectOne('https://custom-domain.com/api/forwarded');
+    expect(req.request.method).toBe('GET');
+    expect(req.request.url).toBe('https://custom-domain.com/api/forwarded');
     req.flush({});
     httpMock.verify();
   });
@@ -309,6 +311,8 @@ describe('vercelAbsoluteUrlInterceptor with REQUEST token', () => {
 
     httpClient.get('/api/host-header').subscribe();
     const req = httpMock.expectOne('https://recipes.delishamarie.com/api/host-header');
+    expect(req.request.method).toBe('GET');
+    expect(req.request.url).toBe('https://recipes.delishamarie.com/api/host-header');
     req.flush({});
     httpMock.verify();
   });

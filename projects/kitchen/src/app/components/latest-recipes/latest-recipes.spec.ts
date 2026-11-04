@@ -82,7 +82,7 @@ describe('LatestRecipes Component', () => {
     fixture.detectChanges();
 
     const cards = fixture.nativeElement.querySelectorAll('mat-card');
-    expect(cards.length).toBe(2);
+    expect(cards).toHaveLength(2);
 
     const firstCard = cards[0];
     const locationBadge = firstCard.querySelector('a[href*="/the-best-recipes"]');
