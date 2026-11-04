@@ -34,15 +34,23 @@ describe('LatestRecipes Component', () => {
   ];
 
   let getRecipesMock: ReturnType<typeof vi.fn>;
+  let prefetchRecipesMock: ReturnType<typeof vi.fn>;
 
   beforeEach(async () => {
     getRecipesMock = vi.fn().mockResolvedValue({ items: mockRecipes, total: 12 });
+    prefetchRecipesMock = vi.fn();
 
     await TestBed.configureTestingModule({
       imports: [LatestRecipes],
       providers: [
         provideRouter([]),
-        { provide: RecipeService, useValue: { getRecipes: getRecipesMock } },
+        {
+          provide: RecipeService,
+          useValue: {
+            getRecipes: getRecipesMock,
+            prefetchRecipes: prefetchRecipesMock,
+          },
+        },
         { provide: PLATFORM_ID, useValue: 'browser' },
       ],
     }).compileComponents();
@@ -136,7 +144,13 @@ describe('LatestRecipes Component', () => {
       imports: [LatestRecipes],
       providers: [
         provideRouter([]),
-        { provide: RecipeService, useValue: { getRecipes: getRecipesMock } },
+        {
+          provide: RecipeService,
+          useValue: {
+            getRecipes: getRecipesMock,
+            prefetchRecipes: prefetchRecipesMock,
+          },
+        },
         { provide: PLATFORM_ID, useValue: 'server' },
       ],
     }).compileComponents();

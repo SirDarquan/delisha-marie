@@ -2,17 +2,20 @@ import { isPlatformBrowser, NgOptimizedImage } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
+  effect,
   ElementRef,
   inject,
   input,
   PLATFORM_ID,
   resource,
+  signal,
   ViewEncapsulation,
 } from '@angular/core';
 import { MatCardModule } from '@angular/material/card';
 import { Router, RouterLink } from '@angular/router';
 import { NgxPaginationModule } from 'ngx-pagination';
-import { RecipeService } from '../../services/recipe.service';
+import { Recipe, RecipeService } from '../../services/recipe.service';
 
 @Component({
   selector: 'dm-latest-recipes',
@@ -33,7 +36,7 @@ import { RecipeService } from '../../services/recipe.service';
         </div>
       }
 
-      @if (isLoading()) {
+      @if (isInitialLoading()) {
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
           @for (placeholder of [1, 2, 3, 4, 5, 6]; track placeholder) {
             <mat-card
@@ -53,7 +56,9 @@ import { RecipeService } from '../../services/recipe.service';
           }
         </div>
       } @else {
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div
+          class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 transition-opacity duration-200"
+          [class.opacity-60]="isPageChanging()">
           @for (
             recipe of recipes()
               | paginate
@@ -147,9 +152,47 @@ export class LatestRecipes {
     },
   });
 
-  readonly recipes = () => this._recipeResource.value()?.items || [];
-  readonly totalItems = () => this._recipeResource.value()?.total || 0;
+  // Keep previous items displayed to prevent flashing skeletons on page turn
+  private readonly _cachedItems = signal<Recipe[]>([]);
+  private readonly _cachedTotal = signal<number>(0);
+
+  readonly recipes = computed(() => {
+    const val = this._recipeResource.value();
+    if (val?.items && val.items.length > 0) {
+      return val.items;
+    }
+    return this._cachedItems();
+  });
+
+  readonly totalItems = computed(() => {
+    const val = this._recipeResource.value();
+    if (val && typeof val.total === 'number') {
+      return val.total;
+    }
+    return this._cachedTotal();
+  });
+
   readonly isLoading = () => this._recipeResource.isLoading();
+  readonly isInitialLoading = computed(() => this.isLoading() && this.recipes().length === 0);
+  readonly isPageChanging = computed(() => this.isLoading() && this.recipes().length > 0);
+
+  constructor() {
+    effect(() => {
+      const val = this._recipeResource.value();
+      if (val && val.items) {
+        this._cachedItems.set(val.items);
+        this._cachedTotal.set(val.total || 0);
+
+        // Quietly prefetch the next page in the background on browser
+        if (
+          isPlatformBrowser(this.platformId) &&
+          (val.total || 0) > this.page() * this.pageSize()
+        ) {
+          this.recipeService.prefetchRecipes(this.page() + 1, this.pageSize(), 'recipes');
+        }
+      }
+    });
+  }
 
   onPageChange(newPage: number): void {
     const targetUrl = newPage === 1 ? '/' : `/page/${newPage}`;
