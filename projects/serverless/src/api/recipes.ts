@@ -94,15 +94,6 @@ function getSelectString(method: string, category: string): string {
       ${labels},
       recipe_categories (
         categories (id, name, url)
-      ),
-      recipe_methods (
-        methods (name)
-      ),
-      recipe_holidays (
-        holidays (name)
-      ),
-      recipe_special_diets (
-        special_diets (name)
       )
     `;
   }
@@ -111,15 +102,6 @@ function getSelectString(method: string, category: string): string {
       ${labels},
       recipe_categories!inner (
         categories!inner (id, name, url)
-      ),
-      recipe_methods (
-        methods (name)
-      ),
-      recipe_holidays (
-        holidays (name)
-      ),
-      recipe_special_diets (
-        special_diets (name)
       )
     `;
   }
@@ -131,12 +113,6 @@ function getSelectString(method: string, category: string): string {
       ),
       recipe_methods!inner (
         methods!inner (name, slug)
-      ),
-      recipe_holidays (
-        holidays (name)
-      ),
-      recipe_special_diets (
-        special_diets (name)
       )
     `;
   }
@@ -145,12 +121,6 @@ function getSelectString(method: string, category: string): string {
       ${labels},
       recipe_categories (
         categories (id, name, url)
-      ),
-      recipe_methods (
-        methods (name)
-      ),
-      recipe_holidays (
-        holidays (name)
       ),
       recipe_special_diets!inner (
         special_diets!inner (name, slug)
@@ -163,14 +133,8 @@ function getSelectString(method: string, category: string): string {
       recipe_categories (
         categories (id, name, url)
       ),
-      recipe_methods (
-        methods (name)
-      ),
       recipe_holidays!inner (
         holidays!inner (name, slug)
-      ),
-      recipe_special_diets (
-        special_diets (name)
       )
     `;
   }
@@ -179,15 +143,6 @@ function getSelectString(method: string, category: string): string {
       ${labels},
       recipe_categories (
         categories (id, name, url)
-      ),
-      recipe_methods (
-        methods (name)
-      ),
-      recipe_holidays (
-        holidays (name)
-      ),
-      recipe_special_diets (
-        special_diets (name)
       ),
       recipe_ingredients!inner (
         ingredient_id
@@ -198,15 +153,6 @@ function getSelectString(method: string, category: string): string {
     ${labels},
     recipe_categories (
       categories (id, name, url)
-    ),
-    recipe_methods (
-      methods (name)
-    ),
-    recipe_holidays (
-      holidays (name)
-    ),
-    recipe_special_diets (
-      special_diets (name)
     )
   `;
 }
