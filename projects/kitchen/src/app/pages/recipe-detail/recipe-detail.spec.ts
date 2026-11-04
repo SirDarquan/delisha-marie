@@ -19,6 +19,7 @@ describe('RecipeDetail', () => {
     getComments: ReturnType<typeof vi.fn>;
     getRecipeBySlug: ReturnType<typeof vi.fn>;
     getRecipeEquipment: ReturnType<typeof vi.fn>;
+    prefetchRecipeBySlug: ReturnType<typeof vi.fn>;
   };
 
   const mockRecipe: Recipe = createMockRecipe({
@@ -68,6 +69,7 @@ describe('RecipeDetail', () => {
       getComments: vi.fn().mockResolvedValue({ comments: [], total: 0 }),
       getRecipeBySlug: vi.fn().mockResolvedValue(mockRecipe),
       getRecipeEquipment: vi.fn().mockResolvedValue([]),
+      prefetchRecipeBySlug: vi.fn(),
     };
 
     await TestBed.configureTestingModule({
