@@ -53,4 +53,11 @@ describe('Home Page', () => {
       .should('be.visible')
       .and('contain.text', 'Top Rated Recipes');
   });
+
+  it('should display the Latest Recipes section directly below hero', () => {
+    cy.get('dm-latest-recipes', { timeout: 10000 })
+      .should('be.visible')
+      .and('contain.text', 'Latest Recipes');
+    cy.get('dm-latest-recipes mat-card').should('have.length.at.least', 1);
+  });
 });
