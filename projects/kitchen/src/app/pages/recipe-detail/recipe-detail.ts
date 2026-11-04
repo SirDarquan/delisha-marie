@@ -220,6 +220,18 @@ export class RecipeDetail {
     };
   });
 
+  private readonly _prefetchSiblingsEffect = effect(() => {
+    const r = this.recipe();
+    if (r?.navigation) {
+      if (r.navigation.prev?.slug) {
+        this.recipeService.prefetchRecipeBySlug(r.navigation.prev.slug);
+      }
+      if (r.navigation.next?.slug) {
+        this.recipeService.prefetchRecipeBySlug(r.navigation.next.slug);
+      }
+    }
+  });
+
   onStatsChange(stats: { reviewCount: number; ratingCount: number; rating: number }) {
     this.commentCountOverride.set(stats.reviewCount);
     if (stats.ratingCount > 0 && stats.rating > 0) {

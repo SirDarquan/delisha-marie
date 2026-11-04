@@ -5,8 +5,11 @@ import {
   DOCUMENT,
   ViewEncapsulation,
   computed,
+  effect,
   inject,
   resource,
+  signal,
+  untracked,
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
@@ -17,7 +20,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { NgxPaginationModule } from 'ngx-pagination';
 import { BreadcrumbItem, Breadcrumbs } from '../../components/breadcrumbs/breadcrumbs';
 import { RefineBy, RefineByItem } from '../../components/refine-by/refine-by';
-import { RecipeService } from '../../services/recipe.service';
+import { Recipe, RecipeService } from '../../services/recipe.service';
 import { deslugify } from '@dm/library';
 import { RecipeIndexService } from '../recipe-index/recipe-index.service';
 import { ColoredHeaderComponent } from '../../components/colored-header/colored-header';
@@ -50,7 +53,7 @@ import { ColoredHeaderComponent } from '../../components/colored-header/colored-
 
       <!-- Recipe Grid -->
       <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
-        @if (isLoading()) {
+        @if (isLoading() && displayedRecipes().length === 0) {
           @for (placeholder of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]; track placeholder) {
             <mat-card
               class="!bg-[var(--mat-sys-surface-container)] !rounded-[2.5rem] overflow-hidden border border-[var(--mat-sys-outline-variant)] animate-pulse">
@@ -68,7 +71,7 @@ import { ColoredHeaderComponent } from '../../components/colored-header/colored-
           }
         } @else {
           @for (
-            recipe of recipes()
+            recipe of displayedRecipes()
               | paginate
                 : { itemsPerPage: pageSize, currentPage: currentPage(), totalItems: totalItems() };
             track recipe.slug || $index;
@@ -76,7 +79,8 @@ import { ColoredHeaderComponent } from '../../components/colored-header/colored-
           ) {
             <a [routerLink]="['/recipe', recipe.slug]" class="block no-underline text-inherit">
               <mat-card
-                class="!bg-[var(--mat-sys-surface-container)] !rounded-[2.5rem] overflow-hidden shadow-sm hover:shadow-xl transition-all duration-500 group border border-[var(--mat-sys-outline-variant)]">
+                class="!bg-[var(--mat-sys-surface-container)] !rounded-[2.5rem] overflow-hidden shadow-sm hover:shadow-xl transition-all duration-500 group border border-[var(--mat-sys-outline-variant)]"
+                [class.opacity-60]="isLoading()">
                 <div class="aspect-[4/3] overflow-hidden relative">
                   <img
                     [ngSrc]="recipe.image"
@@ -167,10 +171,43 @@ export class RecipeList {
       this.recipeService.getRecipes(t.page, this.pageSize, t.method, t.cat, t.sub),
   });
 
+  private readonly _previousRecipes = signal<Recipe[]>([]);
   readonly recipes = computed(() => this._recipeResource.value()?.items || []);
   readonly totalItems = computed(() => this._recipeResource.value()?.total || 0);
   readonly totalPages = computed(() => Math.ceil(this.totalItems() / this.pageSize));
   readonly isLoading = computed(() => this._recipeResource.isLoading());
+
+  readonly displayedRecipes = computed(() => {
+    const current = this.recipes();
+    if (current.length > 0) return current;
+    if (this.isLoading() && this._previousRecipes().length > 0) return this._previousRecipes();
+    return current;
+  });
+
+  private readonly _updatePreviousEffect = effect(() => {
+    const items = this.recipes();
+    if (items.length > 0) {
+      untracked(() => {
+        this._previousRecipes.set(items);
+      });
+    }
+  });
+
+  private readonly _prefetchNextPageEffect = effect(() => {
+    const total = this.totalItems();
+    const trigger = this._dataTrigger();
+    const pageSize = this.pageSize;
+
+    if (total > trigger.page * pageSize) {
+      this.recipeService.prefetchRecipes(
+        trigger.page + 1,
+        pageSize,
+        trigger.method,
+        trigger.cat,
+        trigger.sub,
+      );
+    }
+  });
 
   // Determine the root type based on the official path segments
   readonly rootType = computed(() => {

@@ -136,11 +136,11 @@ describe('RecipeService', () => {
       httpMock.expectNone('/api/recipes/schema-slug');
     });
 
-    it('should clear cache after 5 seconds for getRecipeBySlug', async () => {
+    it('should clear cache after timeout for getRecipeBySlug', async () => {
       const origSetTimeout = window.setTimeout;
       let interceptedCb: ((...args: unknown[]) => void) | null = null;
       window.setTimeout = function (cb: (...args: unknown[]) => void, ms?: number) {
-        if (ms === 5000) {
+        if (ms === 5 * 60 * 1000 || ms === 5000) {
           interceptedCb = cb;
         }
         return origSetTimeout.call(window, cb, ms);
@@ -204,6 +204,23 @@ describe('RecipeService', () => {
         .expectOne('/api/recipes/sched-err?preview=tok-err')
         .error(new ProgressEvent('error'));
       expect(await pErr).toBeNull();
+    });
+
+    it('should prefetch recipe by slug into cache', async () => {
+      service.prefetchRecipeBySlug('chocolate-cake');
+      const req = httpMock.expectOne('/api/recipes/chocolate-cake');
+      expect(req.request.method).toBe('GET');
+      req.flush({ id: 1, slug: 'chocolate-cake', title: 'Chocolate Cake' });
+
+      // Immediate subsequent call uses cache
+      const recipe = await service.getRecipeBySlug('chocolate-cake');
+      httpMock.expectNone('/api/recipes/chocolate-cake');
+      expect(recipe?.title).toBe('Chocolate Cake');
+    });
+
+    it('should do nothing when prefetching with empty slug', () => {
+      service.prefetchRecipeBySlug('');
+      expect(httpMock.expectNone('/api/recipes/')).toBeUndefined();
     });
   });
 
@@ -540,7 +557,7 @@ describe('RecipeService', () => {
   });
 
   describe('getFavoriteRecipes', () => {
-    it('should fetch favorite recipes', async () => {
+    it('should fetch favorite recipes and cache them', async () => {
       const mockFavorites = { items: [{ id: 1, title: 'Fave 1' } as unknown as Recipe] };
       const promise = service.getFavoriteRecipes();
       const req = httpMock.expectOne('/api/recipes/favorites/list');
@@ -548,6 +565,25 @@ describe('RecipeService', () => {
       req.flush(mockFavorites);
       const result = await promise;
       expect(result).toEqual(mockFavorites);
+
+      // Cached second call should not issue a second HTTP request
+      const cachedResult = await service.getFavoriteRecipes();
+      httpMock.expectNone('/api/recipes/favorites/list');
+      expect(cachedResult).toEqual(mockFavorites);
+    });
+
+    it('should clear favorites cache on error', async () => {
+      const promise = service.getFavoriteRecipes();
+      const req = httpMock.expectOne('/api/recipes/favorites/list');
+      req.error(new ProgressEvent('Network error'));
+      await expect(promise).rejects.toThrow();
+
+      // Subsequent call should retry HTTP request
+      const retryPromise = service.getFavoriteRecipes();
+      const retryReq = httpMock.expectOne('/api/recipes/favorites/list');
+      retryReq.flush({ items: [] });
+      const retryResult = await retryPromise;
+      expect(retryResult).toEqual({ items: [] });
     });
   });
 
@@ -589,6 +625,31 @@ describe('RecipeService', () => {
       );
       req2.flush({ items: [], total: 0 });
       await promise2;
+    });
+
+    it('should prefetch recipes quietly in the background', async () => {
+      service.prefetchRecipes(2, 6, 'recipes');
+      const req = httpMock.expectOne(
+        '/api/recipes?page=2&pageSize=6&method=recipes&category=&subcategory=&rating=',
+      );
+      req.flush({ items: [], total: 10 });
+
+      // Second direct request should be an immediate cache hit
+      const res = await service.getRecipes(2, 6, 'recipes');
+      expect(res.total).toBe(10);
+      httpMock.expectNone(
+        '/api/recipes?page=2&pageSize=6&method=recipes&category=&subcategory=&rating=',
+      );
+    });
+
+    it('should quietly catch prefetch errors', async () => {
+      expect(() => {
+        service.prefetchRecipes(4, 6, 'recipes');
+      }).not.toThrow();
+      const req = httpMock.expectOne(
+        '/api/recipes?page=4&pageSize=6&method=recipes&category=&subcategory=&rating=',
+      );
+      req.error(new ProgressEvent('network error'));
     });
   });
 

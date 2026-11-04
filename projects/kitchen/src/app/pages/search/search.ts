@@ -19,7 +19,7 @@ import { Router, ActivatedRoute, RouterLink } from '@angular/router';
 import { Sidebar } from '../../components/sidebar/sidebar';
 import { NgxPaginationModule } from 'ngx-pagination';
 
-import { SearchService } from './search.service';
+import { SearchService, SearchResultRecipe } from './search.service';
 
 interface SearchFormValue {
   q: string;
@@ -70,7 +70,7 @@ interface SearchFormValue {
           <!-- Main Content -->
           <div class="w-full min-w-0">
             <!-- 2 Column Results -->
-            @if (loading()) {
+            @if (loading() && displayedRecipes().length === 0) {
               <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                 @for (placeholder of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]; track placeholder) {
                   <div
@@ -95,8 +95,10 @@ interface SearchFormValue {
                 }
               </div>
             } @else {
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                @if (recipes().length === 0 && hasSearched()) {
+              <div
+                class="grid grid-cols-1 md:grid-cols-2 gap-8 transition-opacity duration-200"
+                [class.opacity-60]="loading()">
+                @if (displayedRecipes().length === 0 && hasSearched()) {
                   <div
                     class="col-span-1 md:col-span-2 text-center text-[var(--mat-sys-on-surface-variant)] py-12">
                     No matching recipes found. Try a different search term!
@@ -109,7 +111,7 @@ interface SearchFormValue {
                 }
 
                 @for (
-                  recipe of recipes()
+                  recipe of displayedRecipes()
                     | paginate
                       : {
                           itemsPerPage: pageSize,
@@ -153,7 +155,7 @@ interface SearchFormValue {
               </div>
 
               <!-- Paginator -->
-              @if (!loading() && totalItems() > pageSize) {
+              @if (totalItems() > pageSize) {
                 <div class="flex justify-center pt-8 pb-4">
                   <pagination-controls
                     (pageChange)="onPageChange($event)"
@@ -221,10 +223,42 @@ export class SearchPage {
     },
   });
 
+  private readonly _previousRecipes = signal<SearchResultRecipe[]>([]);
   readonly recipes = computed(() => this.searchResource.value()?.items || []);
   readonly totalItems = computed(() => this.searchResource.value()?.total || 0);
   readonly loading = computed(() => this.searchResource.isLoading());
   readonly hasSearched = computed(() => !!this.query());
+
+  readonly displayedRecipes = computed(() => {
+    const current = this.recipes();
+    if (current.length > 0) {
+      return current;
+    }
+    if (this.loading() && this._previousRecipes().length > 0) {
+      return this._previousRecipes();
+    }
+    return current;
+  });
+
+  private readonly _updatePreviousEffect = effect(() => {
+    const items = this.recipes();
+    if (items.length > 0) {
+      untracked(() => {
+        this._previousRecipes.set(items);
+      });
+    }
+  });
+
+  private readonly _prefetchNextPageEffect = effect(() => {
+    const page = this.currentPage();
+    const query = this.query();
+    const total = this.totalItems();
+    const pageSize = this.pageSize;
+
+    if (query && total > page * pageSize) {
+      this.searchService.prefetchSearch(query, page + 1, pageSize);
+    }
+  });
 
   private readonly _syncEffect = effect(() => {
     const q = this.query();
