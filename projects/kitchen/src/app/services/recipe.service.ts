@@ -132,9 +132,12 @@ export class RecipeService {
       cached = fetchRecipe();
       this.recipeCache.set(normalizedSearch, cached);
 
-      setTimeout(() => {
-        this.recipeCache.delete(normalizedSearch);
-      }, 5000);
+      setTimeout(
+        () => {
+          this.recipeCache.delete(normalizedSearch);
+        },
+        5 * 60 * 1000,
+      ); // Cache for 5 minutes instead of 5 seconds
     }
     return cached;
   }
@@ -169,9 +172,12 @@ export class RecipeService {
         .catch(() => null);
       this.seoCache.set(normalizedSearch, cached);
 
-      setTimeout(() => {
-        this.seoCache.delete(normalizedSearch);
-      }, 5000);
+      setTimeout(
+        () => {
+          this.seoCache.delete(normalizedSearch);
+        },
+        5 * 60 * 1000,
+      ); // 5 minutes
     }
     return cached;
   }
@@ -201,9 +207,12 @@ export class RecipeService {
         this.schemaCache.set(normalizedSearch, cached);
       }
 
-      setTimeout(() => {
-        this.schemaCache.delete(normalizedSearch);
-      }, 5000);
+      setTimeout(
+        () => {
+          this.schemaCache.delete(normalizedSearch);
+        },
+        5 * 60 * 1000,
+      ); // 5 minutes
     }
     return cached;
   }
@@ -271,10 +280,53 @@ export class RecipeService {
   }
 
   /**
-   * Fetches all favorite recipes.
+   * Pre-fetches recipe detail by slug into the in-memory cache silently.
+   */
+  prefetchRecipeBySlug(slug: string): void {
+    if (!slug) return;
+    void this.getRecipeBySlug(slug).catch(() => {
+      // Quiet background failure
+    });
+  }
+  /**
+   * Pre-fetches a page into the in-memory cache silently in the background.
+   */
+  prefetchRecipes(
+    page: number,
+    pageSize: number,
+    method: string,
+    category?: string,
+    subcategory?: string,
+    rating?: boolean,
+  ): void {
+    void this.getRecipes(page, pageSize, method, category, subcategory, rating).catch(() => {
+      // Quiet background failure
+    });
+  }
+
+  private readonly favoritesCache = {
+    timestamp: 0,
+    promise: null as Promise<{ items: Recipe[] }> | null,
+  };
+
+  /**
+   * Fetches all favorite recipes. Caches in-memory for 5 minutes.
    */
   getFavoriteRecipes(): Promise<{ items: Recipe[] }> {
-    return this.api.get<{ items: Recipe[] }>('/recipes/favorites/list');
+    const minutes = 5 * 60 * 1000;
+    const now = Date.now();
+    if (this.favoritesCache.promise && now - this.favoritesCache.timestamp < minutes) {
+      return this.favoritesCache.promise;
+    }
+
+    const promise = this.api.get<{ items: Recipe[] }>('/recipes/favorites/list').catch((err) => {
+      this.favoritesCache.promise = null;
+      throw err;
+    });
+
+    this.favoritesCache.timestamp = now;
+    this.favoritesCache.promise = promise;
+    return promise;
   }
 
   /**
