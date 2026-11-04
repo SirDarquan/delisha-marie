@@ -1,7 +1,8 @@
-import { TestBed } from '@angular/core/testing';
-import { PLATFORM_ID, REQUEST } from '@angular/core';
-import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { HttpClient, provideHttpClient, withInterceptors } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { PLATFORM_ID, REQUEST } from '@angular/core';
+import { TestBed } from '@angular/core/testing';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { vercelAbsoluteUrlInterceptor } from './vercel-absolute-url';
 
 describe('vercelAbsoluteUrlInterceptor', () => {
@@ -43,10 +44,16 @@ describe('vercelAbsoluteUrlInterceptor', () => {
 
   it.each([
     {
-      description: 'localhost by default',
+      description: 'localhost:4201 by default for kitchen',
       env: {},
       path: '/api/test',
-      expectedUrl: 'http://localhost:4200/api/test',
+      expectedUrl: 'http://localhost:4201/api/test',
+    },
+    {
+      description: 'PORT env variable if set',
+      env: { PORT: '5000' },
+      path: '/api/test-port',
+      expectedUrl: 'http://localhost:5000/api/test-port',
     },
     {
       description: 'VERCEL_URL if available',
@@ -77,7 +84,7 @@ describe('vercelAbsoluteUrlInterceptor', () => {
     httpClient
       .get('/api/test-header', { headers: { host: 'localhost:4000', 'other-header': 'value' } })
       .subscribe();
-    const req = httpMock.expectOne('http://localhost:4200/api/test-header');
+    const req = httpMock.expectOne('http://localhost:4201/api/test-header');
     expect(req.request.headers.has('host')).toBe(false);
     expect(req.request.headers.get('other-header')).toBe('value');
     req.flush({});
@@ -95,14 +102,14 @@ describe('vercelAbsoluteUrlInterceptor', () => {
       'VERCEL_AUTOMATION_BYPASS_SECRET'
     ] = 'secret-bypass-token';
     httpClient.get('/api/test-bypass').subscribe();
-    const req = httpMock.expectOne('http://localhost:4200/api/test-bypass');
+    const req = httpMock.expectOne('http://localhost:4201/api/test-bypass');
     expect(req.request.headers.get('x-vercel-protection-bypass')).toBe('secret-bypass-token');
     req.flush({});
   });
 
   it('should handle /kitchen/api/ endpoints correctly', () => {
     httpClient.get('/kitchen/api/recipes').subscribe();
-    const req = httpMock.expectOne('http://localhost:4200/kitchen/api/recipes');
+    const req = httpMock.expectOne('http://localhost:4201/kitchen/api/recipes');
     expect(req.request.method).toBe('GET');
     req.flush({});
   });
@@ -131,7 +138,7 @@ describe('vercelAbsoluteUrlInterceptor with REQUEST token', () => {
     const httpClient = TestBed.inject(HttpClient);
 
     httpClient.get('/api/protected').subscribe();
-    const req = httpMock.expectOne('http://localhost:4200/api/protected');
+    const req = httpMock.expectOne('http://localhost:4201/api/protected');
     expect(req.request.headers.get('cookie')).toBe('session_id=123');
     expect(req.request.headers.get('x-vercel-protection-bypass')).toBe('incoming-bypass');
     expect(req.request.headers.get('authorization')).toBe('Bearer token123');
@@ -164,7 +171,7 @@ describe('vercelAbsoluteUrlInterceptor with REQUEST token', () => {
     const httpClient = TestBed.inject(HttpClient);
 
     httpClient.get('/api/headers-instance').subscribe();
-    const req = httpMock.expectOne('http://localhost:4200/api/headers-instance');
+    const req = httpMock.expectOne('http://localhost:4201/api/headers-instance');
     expect(req.request.headers.get('cookie')).toBe('session_id=456');
     expect(req.request.headers.get('x-vercel-protection-bypass')).toBe('header-bypass');
     expect(req.request.headers.get('authorization')).toBe('Bearer token456');
@@ -211,7 +218,7 @@ describe('vercelAbsoluteUrlInterceptor with REQUEST token', () => {
     const httpClient = TestBed.inject(HttpClient);
 
     httpClient.get('/api/array-cookie').subscribe();
-    const req = httpMock.expectOne('http://localhost:4200/api/array-cookie');
+    const req = httpMock.expectOne('http://localhost:4201/api/array-cookie');
     expect(req.request.headers.get('cookie')).toBe('a=1; b=2');
     req.flush({});
     httpMock.verify();
@@ -231,7 +238,7 @@ describe('vercelAbsoluteUrlInterceptor with REQUEST token', () => {
     const httpClient = TestBed.inject(HttpClient);
 
     httpClient.get('/api/empty-req').subscribe();
-    const req = httpMock.expectOne('http://localhost:4200/api/empty-req');
+    const req = httpMock.expectOne('http://localhost:4201/api/empty-req');
     expect(req.request.headers.has('cookie')).toBe(false);
     req.flush({});
     httpMock.verify();
@@ -249,9 +256,60 @@ describe('vercelAbsoluteUrlInterceptor with REQUEST token', () => {
     const httpMock2 = TestBed.inject(HttpTestingController);
     const httpClient2 = TestBed.inject(HttpClient);
     httpClient2.get('/api/string-req').subscribe();
-    const req2 = httpMock2.expectOne('http://localhost:4200/api/string-req');
+    const req2 = httpMock2.expectOne('http://localhost:4201/api/string-req');
     expect(req2.request.headers.has('cookie')).toBe(false);
     req2.flush({});
     httpMock2.verify();
+  });
+
+  it('should resolve base URL from x-forwarded-host and x-forwarded-proto/port', () => {
+    const mockRequest = {
+      headers: {
+        'x-forwarded-host': 'custom-domain.com',
+        'x-forwarded-proto': 'https',
+      },
+    };
+
+    TestBed.configureTestingModule({
+      providers: [
+        provideHttpClient(withInterceptors([vercelAbsoluteUrlInterceptor])),
+        provideHttpClientTesting(),
+        { provide: PLATFORM_ID, useValue: 'server' },
+        { provide: REQUEST, useValue: mockRequest },
+      ],
+    });
+
+    const httpMock = TestBed.inject(HttpTestingController);
+    const httpClient = TestBed.inject(HttpClient);
+
+    httpClient.get('/api/forwarded').subscribe();
+    const req = httpMock.expectOne('https://custom-domain.com/api/forwarded');
+    req.flush({});
+    httpMock.verify();
+  });
+
+  it('should resolve base URL from non-localhost incoming host header', () => {
+    const mockRequest = {
+      headers: {
+        host: 'recipes.delishamarie.com',
+      },
+    };
+
+    TestBed.configureTestingModule({
+      providers: [
+        provideHttpClient(withInterceptors([vercelAbsoluteUrlInterceptor])),
+        provideHttpClientTesting(),
+        { provide: PLATFORM_ID, useValue: 'server' },
+        { provide: REQUEST, useValue: mockRequest },
+      ],
+    });
+
+    const httpMock = TestBed.inject(HttpTestingController);
+    const httpClient = TestBed.inject(HttpClient);
+
+    httpClient.get('/api/host-header').subscribe();
+    const req = httpMock.expectOne('https://recipes.delishamarie.com/api/host-header');
+    req.flush({});
+    httpMock.verify();
   });
 });

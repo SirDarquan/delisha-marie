@@ -142,7 +142,8 @@ describe('TopRatedRecipes', () => {
     expect(component.recipes()).toHaveLength(0);
   });
 
-  it('should return empty items without calling getRecipes on the server platform', async () => {
+  it('should fetch and filter recipes during server-side rendering', async () => {
+    mockRecipeService.getRecipes.mockResolvedValue({ items: mockRecipes, total: 6 });
     TestBed.resetTestingModule();
     await TestBed.configureTestingModule({
       imports: [TopRatedRecipes],
@@ -162,7 +163,14 @@ describe('TopRatedRecipes', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect(mockRecipeService.getRecipes).not.toHaveBeenCalled();
-    expect(component.recipes()).toHaveLength(0);
+    expect(mockRecipeService.getRecipes).toHaveBeenCalledWith(
+      1,
+      20,
+      'recipes',
+      undefined,
+      undefined,
+      true,
+    );
+    expect(component.recipes()).toHaveLength(4);
   });
 });

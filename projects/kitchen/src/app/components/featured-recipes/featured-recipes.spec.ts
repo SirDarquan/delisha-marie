@@ -145,7 +145,7 @@ describe('FeaturedRecipes', () => {
     expect(component.recipes()).toEqual([]);
   });
 
-  it('should skip fetching and return empty items on server platform', async () => {
+  it('should fetch recipes during server-side rendering', async () => {
     const { PLATFORM_ID } = await import('@angular/core');
     TestBed.resetTestingModule();
     await TestBed.configureTestingModule({
@@ -162,7 +162,7 @@ describe('FeaturedRecipes', () => {
     ssrFixture.detectChanges();
     await ssrFixture.whenStable();
 
-    expect(fakeRecipeService.getRecipes).not.toHaveBeenCalled();
-    expect(ssrFixture.componentInstance.recipes()).toEqual([]);
+    expect(fakeRecipeService.getRecipes).toHaveBeenCalledWith(1, 4, 'recipes', 'dinner', undefined);
+    expect(ssrFixture.componentInstance.recipes()).toEqual(mockRecipes);
   });
 });

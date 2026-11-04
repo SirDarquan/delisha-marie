@@ -1,10 +1,9 @@
-import { isPlatformBrowser, NgOptimizedImage } from '@angular/common';
+import { NgOptimizedImage } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
   computed,
   inject,
-  PLATFORM_ID,
   resource,
   ViewEncapsulation,
 } from '@angular/core';
@@ -77,13 +76,9 @@ import { RecipeService } from '../../services/recipe.service';
 })
 export class TopRatedRecipes {
   private readonly recipeService = inject(RecipeService);
-  private readonly platformId = inject(PLATFORM_ID);
 
   private readonly _recipeResource = resource({
     loader: async () => {
-      if (!isPlatformBrowser(this.platformId)) {
-        return { items: [], total: 0 };
-      }
       try {
         return await this.recipeService.getRecipes(1, 20, 'recipes', undefined, undefined, true);
       } catch {
