@@ -60,6 +60,8 @@ export interface MockResponseBody {
     id: number | string;
     title: string;
     status: string;
+    location?: string;
+    locationName?: string;
     holidays: unknown[];
     special_diets: unknown[];
     method: string;

@@ -76,6 +76,8 @@ export interface BaseRecipe {
   course?: string;
   method?: string;
   category?: string | CategoryTrails;
+  location?: string;
+  locationName?: string;
   breadcrumbs?: Breadcrumbs | null;
   keywords?: string[];
   specialDiets?: string[];
