@@ -220,7 +220,7 @@ describe('RecipeService', () => {
 
     it('should do nothing when prefetching with empty slug', () => {
       service.prefetchRecipeBySlug('');
-      httpMock.expectNone('/api/recipes/');
+      expect(httpMock.expectNone('/api/recipes/')).toBeUndefined();
     });
   });
 
@@ -643,7 +643,9 @@ describe('RecipeService', () => {
     });
 
     it('should quietly catch prefetch errors', async () => {
-      service.prefetchRecipes(4, 6, 'recipes');
+      expect(() => {
+        service.prefetchRecipes(4, 6, 'recipes');
+      }).not.toThrow();
       const req = httpMock.expectOne(
         '/api/recipes?page=4&pageSize=6&method=recipes&category=&subcategory=&rating=',
       );

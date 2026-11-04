@@ -179,7 +179,7 @@ export class LatestRecipes {
   constructor() {
     effect(() => {
       const val = this._recipeResource.value();
-      if (val && val.items) {
+      if (val?.items) {
         this._cachedItems.set(val.items);
         this._cachedTotal.set(val.total || 0);
 
