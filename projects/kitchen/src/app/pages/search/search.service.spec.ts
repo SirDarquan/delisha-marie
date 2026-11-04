@@ -48,4 +48,59 @@ describe('SearchService', () => {
       total: 1,
     });
   });
+
+  it('should cache search results for identical queries and pagination', async () => {
+    mockApi.post.mockResolvedValue({
+      items: [{ id: '1', title: 'Test' }],
+      total: 1,
+    });
+
+    await service.searchRecipes('soup', 1, 10);
+    const result2 = await service.searchRecipes('soup', 1, 10);
+
+    expect(mockApi.post).toHaveBeenCalledTimes(1);
+    expect(result2).toEqual({
+      items: [{ id: '1', title: 'Test' }],
+      total: 1,
+    });
+  });
+
+  it('should invalidate cache if api call fails', async () => {
+    mockApi.post.mockRejectedValueOnce(new Error('Network error'));
+
+    await expect(service.searchRecipes('error-query', 1, 10)).rejects.toThrow('Network error');
+
+    mockApi.post.mockResolvedValueOnce({
+      items: [{ id: '2', title: 'Recovered' }],
+      total: 1,
+    });
+
+    const result = await service.searchRecipes('error-query', 1, 10);
+    expect(mockApi.post).toHaveBeenCalledTimes(2);
+    expect(result.items[0].id).toBe('2');
+  });
+
+  it('should prefetch search query and populate cache', async () => {
+    mockApi.post.mockResolvedValue({
+      items: [{ id: '3', title: 'Prefetched' }],
+      total: 1,
+    });
+
+    service.prefetchSearch('pizza', 2, 10);
+    expect(mockApi.post).toHaveBeenCalledWith('/search', {
+      query: 'pizza',
+      page: 2,
+      pageSize: 10,
+    });
+
+    // Calling searchRecipes immediately returns cached promise without extra api call
+    const result = await service.searchRecipes('pizza', 2, 10);
+    expect(mockApi.post).toHaveBeenCalledTimes(1);
+    expect(result.items[0].id).toBe('3');
+  });
+
+  it('should do nothing in prefetchSearch if query is blank', () => {
+    service.prefetchSearch('   ', 1, 10);
+    expect(mockApi.post).not.toHaveBeenCalled();
+  });
 });
