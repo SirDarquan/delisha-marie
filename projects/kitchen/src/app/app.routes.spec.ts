@@ -54,6 +54,12 @@ describe('app routes', () => {
     expect(home?.title).toBe('Home');
   });
 
+  it('should define a non-search page/:page route pointing to LatestRecipesPage', () => {
+    const latestRoute = routes.find((r) => r.path === 'page/:page' && !r.canMatch);
+    expect(latestRoute).toBeDefined();
+    expect(latestRoute?.title).toBe('Latest Recipes');
+  });
+
   it('should no longer define a /search route', () => {
     expect(routes.some((r) => r.path?.startsWith('search'))).toBe(false);
   });

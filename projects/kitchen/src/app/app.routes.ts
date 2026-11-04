@@ -46,6 +46,13 @@ export const routes: Routes = [
     },
   },
   {
+    path: 'page/:page',
+    loadComponent: () =>
+      import('./pages/latest-recipes/latest-recipes').then((m) => m.LatestRecipesPage),
+    title: 'Latest Recipes',
+    resolve: { seo: seoRecipeListResolver, schema: schemaResolver },
+  },
+  {
     path: '',
     component: Home,
     title: 'Home',

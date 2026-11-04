@@ -255,9 +255,9 @@ export class RecipeService {
     rating?: boolean,
   ): Promise<{ items: Recipe[]; total: number }> {
     const url = `/recipes?page=${page}&pageSize=${pageSize}&method=${method}&category=${category || ''}&subcategory=${subcategory || ''}&rating=${rating || ''}`;
-
+    const minutes = 5 * 60 * 1000;
     const cached = this.getRecipesCache.get(url);
-    if (cached && Date.now() - cached.timestamp < 300000) {
+    if (cached && Date.now() - cached.timestamp < minutes) {
       // 5 minutes
       return cached.promise;
     }

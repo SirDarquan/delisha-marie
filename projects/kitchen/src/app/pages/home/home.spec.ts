@@ -46,6 +46,9 @@ describe('Home', () => {
     const featuredRecipes = compiled.querySelector('dm-featured-recipes');
     expect(featuredRecipes).toBeTruthy();
 
+    const latestRecipes = compiled.querySelector('dm-latest-recipes');
+    expect(latestRecipes).toBeTruthy();
+
     const topRatedRecipes = compiled.querySelector('dm-top-rated-recipes');
     expect(topRatedRecipes).toBeTruthy();
   });

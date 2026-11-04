@@ -6,6 +6,7 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatIconModule } from '@angular/material/icon';
 import { FeaturedRecipes } from '../../components/featured-recipes/featured-recipes';
 import { TopRatedRecipes } from '../../components/top-rated-recipes/top-rated-recipes';
+import { LatestRecipes } from '../../components/latest-recipes/latest-recipes';
 import { AuthorBio } from '../../components/author-bio/author-bio';
 import { RouterLink } from '@angular/router';
 
@@ -20,6 +21,7 @@ import { RouterLink } from '@angular/router';
     NgOptimizedImage,
     FeaturedRecipes,
     TopRatedRecipes,
+    LatestRecipes,
     AuthorBio,
     RouterLink,
   ],
@@ -55,6 +57,9 @@ import { RouterLink } from '@angular/router';
           </div>
         </div>
       </section>
+
+      <!-- Latest Recipes Section -->
+      <dm-latest-recipes />
 
       <!-- Featured Recipes Section -->
       <dm-featured-recipes link="/recipes/dinner" />
