@@ -49,6 +49,7 @@ describe('RecipeList', () => {
 
   const recipeServiceMock = {
     getRecipes: vi.fn().mockResolvedValue({ items: mockRecipes, total: 2 }),
+    prefetchRecipes: vi.fn(),
   };
 
   const recipeIndexServiceMock = {
