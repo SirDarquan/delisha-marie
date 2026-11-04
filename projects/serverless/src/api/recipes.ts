@@ -53,6 +53,8 @@ interface FormattedRecipe {
   theBest?: boolean;
   comments?: unknown[];
   rating?: number;
+  location?: string;
+  locationName?: string;
   breadcrumbs?: {
     main: number;
     items: { label: string; url?: string }[][];
@@ -308,6 +310,28 @@ function formatDbRecipes(data: DbRecipe[]): FormattedRecipe[] {
       recipe.recipe_special_diets?.map((d) => d.special_diets?.name).filter(Boolean) || [];
     const methodVal = recipe.recipe_methods?.[0]?.methods?.name || recipe.method || '';
 
+    const validCats = (recipe.recipe_categories || [])
+      .map((rc) => rc.categories)
+      .filter((cat): cat is CategoryInfo => Boolean(cat?.name && cat.url));
+
+    let chosenCat: CategoryInfo | undefined;
+    if (validCats.length > 0) {
+      const isTheBest = Boolean(recipe['the_best']);
+      const pool = isTheBest
+        ? validCats.filter((c) => c.url.startsWith('/the-best-recipes'))
+        : validCats.filter((c) => !c.url.startsWith('/the-best-recipes'));
+      const activePool = pool.length > 0 ? pool : validCats;
+      chosenCat = activePool.reduce(
+        (prev, curr) => (curr.url.split('/').length > prev.url.split('/').length ? curr : prev),
+        activePool[0],
+      );
+    }
+
+    const defaultUrl = recipe['the_best'] ? '/the-best-recipes' : '/recipes';
+    const defaultName = recipe['the_best'] ? 'The Best Recipes' : 'Recipes';
+    const location = chosenCat?.url || defaultUrl;
+    const locationName = chosenCat?.name || defaultName;
+
     const cleanRecipe = { ...recipe };
     delete cleanRecipe['recipe_categories'];
     delete cleanRecipe['recipe_methods'];
@@ -319,6 +343,8 @@ function formatDbRecipes(data: DbRecipe[]): FormattedRecipe[] {
 
     return {
       ...cleanRecipe,
+      location,
+      locationName,
       holidays,
       special_diets: specialDiets,
       method: methodVal,
@@ -864,10 +890,14 @@ interface CachedSlugData {
 }
 
 const recipeSlugCache = new Map<string, CachedSlugData>();
-let cacheDisabledForTesting = process.env['NODE_ENV'] === 'test';
+let cacheDisabledForTesting = false;
 
 export function setCacheDisabledForTesting(disabled: boolean) {
   cacheDisabledForTesting = disabled;
+}
+
+function isCacheDisabled(): boolean {
+  return cacheDisabledForTesting || process.env['NODE_ENV'] === 'test';
 }
 
 async function fetchRecipeBySlug(
@@ -1049,7 +1079,7 @@ async function getRecipeDataBySlug(
   refresh = false,
   previewToken?: string,
 ): Promise<CachedSlugData | null> {
-  if (!refresh && !cacheDisabledForTesting) {
+  if (!refresh && !isCacheDisabled()) {
     const cached = recipeSlugCache.get(cleanSlug);
     if (cached && Date.now() - cached.timestamp < 1000 * 60 * 5) {
       return cached;
@@ -1247,7 +1277,7 @@ async function handleSchemaBySlug(req: VercelRequest, res: VercelResponse, slug:
     const cleanSlug = slug.replace(/^\/?recipe\//, '').replace(/^\//, '');
     const refresh = req.query['refresh'] === 'true';
 
-    if (!refresh && !cacheDisabledForTesting) {
+    if (!refresh && !isCacheDisabled()) {
       const cached = recipeSlugCache.get(cleanSlug);
       if (cached && Date.now() - cached.timestamp < 1000 * 60 * 5) {
         const comments = await fetchTopComments(supabase, cleanSlug);

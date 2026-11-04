@@ -6,10 +6,41 @@ function isApiRequest(url: string): boolean {
   return url.startsWith('/api/') || url.startsWith('/kitchen/api/');
 }
 
-function resolveBaseUrl(env: Record<string, string | undefined>): string {
-  const host = env['VERCEL_URL'] || env['VERCEL_PROJECT_PRODUCTION_URL'] || 'localhost:4200';
-  const protocol = host.includes('localhost') ? 'http' : 'https';
-  return `${protocol}://${host}`;
+function resolveBaseUrl(
+  env: Record<string, string | undefined>,
+  incomingRequest?: unknown,
+): string {
+  if (env['VERCEL_URL']) {
+    return `https://${env['VERCEL_URL']}`;
+  }
+  if (env['VERCEL_PROJECT_PRODUCTION_URL']) {
+    return `https://${env['VERCEL_PROJECT_PRODUCTION_URL']}`;
+  }
+
+  const forwardedHost = getHeaderValue(incomingRequest, 'x-forwarded-host');
+  const forwardedPort = getHeaderValue(incomingRequest, 'x-forwarded-port');
+  const forwardedProto = getHeaderValue(incomingRequest, 'x-forwarded-proto');
+
+  if (forwardedHost) {
+    const hasPort = forwardedHost.includes(':');
+    const hostWithPort =
+      hasPort || !forwardedPort ? forwardedHost : `${forwardedHost}:${forwardedPort}`;
+    const protocol = forwardedProto || (hostWithPort.includes('localhost') ? 'http' : 'https');
+    return `${protocol}://${hostWithPort}`;
+  }
+
+  const incomingHost = getHeaderValue(incomingRequest, 'host');
+  if (
+    incomingHost &&
+    !incomingHost.startsWith('127.0.0.1:') &&
+    !incomingHost.startsWith('localhost:')
+  ) {
+    const protocol = incomingHost.includes('localhost') ? 'http' : 'https';
+    return `${protocol}://${incomingHost}`;
+  }
+
+  const port = env['PORT'] || '4201';
+  return `http://localhost:${port}`;
 }
 
 function getHeaderValue(incomingRequest: unknown, name: string): string | null {
@@ -82,8 +113,8 @@ export const vercelAbsoluteUrlInterceptor: HttpInterceptorFn = (
   }
 
   const env = typeof process !== 'undefined' && process.env ? process.env : {};
-  const baseUrl = resolveBaseUrl(env);
   const incomingRequest = inject(REQUEST, { optional: true });
+  const baseUrl = resolveBaseUrl(env, incomingRequest);
   const headers = enrichHeaders(req.headers, env, incomingRequest);
 
   let newReq = req.clone({

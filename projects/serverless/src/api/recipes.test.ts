@@ -175,6 +175,8 @@ describe('Recipes Router API', () => {
     expect(res.body.items).toHaveLength(2);
     expect(res.body.total).toBe(2);
     expect(res.body.items[0].title).toBe('Recipe 1');
+    expect(res.body.items[0].location).toBe('/recipes/dinner');
+    expect(res.body.items[0].locationName).toBe('Dinner');
     expect(res.body.items[0].method).toBe('Baking');
     expect(res.body.items[0].holidays).toEqual(['Christmas']);
     expect(res.body.items[0].special_diets).toEqual(['Vegan']);
