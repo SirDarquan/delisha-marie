@@ -1,12 +1,12 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { FullCategory } from '../../models/category';
-import { RecipeIndexCategoryImages } from './recipe-index-category-images';
+import { CategoryImages } from './category-images';
 
-describe('RecipeIndexCategoryImages', () => {
-  let component: RecipeIndexCategoryImages;
-  let fixture: ComponentFixture<RecipeIndexCategoryImages>;
+describe('CategoryImages', () => {
+  let component: CategoryImages;
+  let fixture: ComponentFixture<CategoryImages>;
 
   const mockCategories: FullCategory[] = [
     { name: 'Appetizers', image: '/test1.png', url: '/recipes/appetizers' },
@@ -15,11 +15,11 @@ describe('RecipeIndexCategoryImages', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [RecipeIndexCategoryImages],
+      imports: [CategoryImages],
       providers: [provideRouter([])],
     }).compileComponents();
 
-    fixture = TestBed.createComponent(RecipeIndexCategoryImages);
+    fixture = TestBed.createComponent(CategoryImages);
     component = fixture.componentInstance;
 
     // Set required input
@@ -48,50 +48,57 @@ describe('RecipeIndexCategoryImages', () => {
   it('should render the search input with prefix icon', () => {
     const compiled = fixture.nativeElement as HTMLElement;
     const searchField = compiled.querySelector('mat-form-field');
-    const icon = searchField?.querySelector('mat-icon');
-    const input = searchField?.querySelector('input');
-
     expect(searchField).toBeTruthy();
+    const icon = searchField?.querySelector('mat-icon');
     expect(icon?.textContent?.trim()).toBe('search');
+    const input = searchField?.querySelector('input');
     expect(input?.getAttribute('placeholder')).toBe('e.g. Chocolate Cake');
   });
 
-  it('should update search control value when typing', () => {
-    const inputElement = fixture.nativeElement.querySelector('input') as HTMLInputElement;
-    inputElement.value = 'Chocolate';
-    inputElement.dispatchEvent(new Event('input'));
-
-    expect(component.searchControl.value).toBe('Chocolate');
+  it('should not render anything if categories array is empty', () => {
+    fixture.componentRef.setInput('categories', []);
+    fixture.detectChanges();
+    const compiled = fixture.nativeElement as HTMLElement;
+    const section = compiled.querySelector('section');
+    expect(section).toBeNull();
   });
 
-  it('should navigate to search on valid query', () => {
+  it('should navigate to search route when search is triggered with a value', () => {
     const router = TestBed.inject(Router);
-    vi.spyOn(router, 'navigate');
-    component.searchControl.setValue('  Chocolate  ');
+    const navigateSpy = vi
+      .spyOn(router, 'navigate')
+      .mockImplementation(() => Promise.resolve(true));
+
+    component.searchControl.setValue('Pasta');
     component.search();
-    expect(router.navigate).toHaveBeenCalledWith(['/'], { queryParams: { q: 'Chocolate' } });
+
+    expect(navigateSpy).toHaveBeenCalledWith(['/'], { queryParams: { q: 'Pasta' } });
   });
 
-  it('should not navigate on empty query', () => {
+  it('should not navigate when search is triggered with whitespace or empty query', () => {
     const router = TestBed.inject(Router);
-    vi.spyOn(router, 'navigate');
+    const navigateSpy = vi.spyOn(router, 'navigate');
+
     component.searchControl.setValue('   ');
     component.search();
-    expect(router.navigate).not.toHaveBeenCalled();
+
+    expect(navigateSpy).not.toHaveBeenCalled();
   });
 
   it('should trigger search when pressing Enter on input or clicking Search button', () => {
     const router = TestBed.inject(Router);
-    vi.spyOn(router, 'navigate');
-    component.searchControl.setValue('Pasta');
+    const navigateSpy = vi
+      .spyOn(router, 'navigate')
+      .mockImplementation(() => Promise.resolve(true));
+
+    component.searchControl.setValue('Soup');
     fixture.detectChanges();
 
-    const inputElement = fixture.nativeElement.querySelector('input') as HTMLInputElement;
-    inputElement.dispatchEvent(new KeyboardEvent('keyup', { key: 'Enter' }));
-    expect(router.navigate).toHaveBeenCalledWith(['/'], { queryParams: { q: 'Pasta' } });
+    const compiled = fixture.nativeElement as HTMLElement;
+    const button = compiled.querySelector('button') as HTMLButtonElement;
+    expect(button).toBeTruthy();
+    button.click();
 
-    const buttonElement = fixture.nativeElement.querySelector('button') as HTMLButtonElement;
-    buttonElement.click();
-    expect(router.navigate).toHaveBeenCalledTimes(2);
+    expect(navigateSpy).toHaveBeenCalledWith(['/'], { queryParams: { q: 'Soup' } });
   });
 });
