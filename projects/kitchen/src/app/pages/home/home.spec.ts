@@ -1,8 +1,9 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { RecipeService } from '../../services/recipe.service';
+import { RecipeIndexService } from '../recipe-index/recipe-index.service';
 import { Home } from './home';
 
 describe('Home', () => {
@@ -19,6 +20,10 @@ describe('Home', () => {
     },
   ];
 
+  const mockFeaturedCategories = [
+    { name: 'Appetizers', image: '/app.png', url: '/recipes/appetizers' },
+  ];
+
   beforeEach(async () => {
     TestBed.resetTestingModule();
     const recipeServiceMock = {
@@ -27,8 +32,19 @@ describe('Home', () => {
       getRecipes: vi.fn().mockResolvedValue({ items: mockRecipes, total: 1 }),
     };
 
+    const recipeIndexServiceMock = {
+      indexResource: {
+        value: signal({ featuredCategories: mockFeaturedCategories }),
+        isLoading: signal(false),
+      },
+    };
+
     await TestBed.configureTestingModule({
-      providers: [provideRouter([]), { provide: RecipeService, useValue: recipeServiceMock }],
+      providers: [
+        provideRouter([]),
+        { provide: RecipeService, useValue: recipeServiceMock },
+        { provide: RecipeIndexService, useValue: recipeIndexServiceMock },
+      ],
       imports: [Home],
     }).compileComponents();
   });
@@ -37,12 +53,17 @@ describe('Home', () => {
     const fixture = TestBed.createComponent(Home);
     const component = fixture.componentInstance;
     expect(component).toBeTruthy();
+    expect(component.featuredCategories()).toEqual(mockFeaturedCategories);
   });
 
-  it('should render the recipe grid', () => {
+  it('should render the recipe grid and category images', () => {
     const fixture = TestBed.createComponent(Home);
     fixture.detectChanges();
     const compiled = fixture.nativeElement as HTMLElement;
+
+    const categoryImages = compiled.querySelector('dm-category-images');
+    expect(categoryImages).toBeTruthy();
+
     const featuredRecipes = compiled.querySelector('dm-featured-recipes');
     expect(featuredRecipes).toBeTruthy();
 
