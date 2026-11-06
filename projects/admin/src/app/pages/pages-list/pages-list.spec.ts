@@ -183,6 +183,35 @@ describe('PagesListComponent', () => {
     expect(component.getKitchenHomePicture(filtered[0])).toBe('delisha_marie_profile.png');
   });
 
+  it('should render custom uploaded picture options on kitchen:home card', async () => {
+    const pagesWithCustomHome: Page[] = [
+      ...mockPages,
+      {
+        id: '7',
+        slug: 'kitchen:home',
+        title: 'Delisha Kitchen Home',
+        content: JSON.stringify({
+          picture1: 'custom_pic_1.webp',
+          picture2: 'custom_pic_2.webp',
+          picture: 'custom_pic_1.webp',
+        }),
+        updated_at: '2026-11-06',
+      },
+    ];
+    pagesServiceSpy.getPages.mockResolvedValueOnce(pagesWithCustomHome);
+    fixture = TestBed.createComponent(PagesListComponent);
+    component = fixture.componentInstance;
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    component.selectPost('kitchen');
+    const filtered = component['filteredPages']();
+    const options = component.getKitchenPictureOptions(filtered[0]);
+    expect(options[0].filename).toBe('custom_pic_1.webp');
+    expect(options[1].filename).toBe('custom_pic_2.webp');
+    expect(component.getKitchenHomePicture(filtered[0])).toBe('custom_pic_1.webp');
+  });
+
   it('should filter pages for custom post garden', async () => {
     pagesServiceSpy.getPages.mockResolvedValueOnce(mockPages);
     fixture = TestBed.createComponent(PagesListComponent);

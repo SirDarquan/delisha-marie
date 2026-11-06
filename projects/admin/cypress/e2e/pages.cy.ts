@@ -179,5 +179,7 @@ describe('Admin Blog Pages & Posts Management', () => {
     cy.wait('@getPage');
     cy.get('[data-testid="editor-pic-about-pic"]').should('be.visible');
     cy.get('[data-testid="editor-pic-kitchen-pic"]').should('be.visible');
+    cy.get('[data-testid="dropzone-picture1"]').should('be.visible');
+    cy.get('[data-testid="dropzone-picture2"]').should('be.visible');
   });
 });

@@ -19,7 +19,11 @@ import {
   CreatePageDialogComponent,
   CreatePageDialogResult,
 } from '../create-page-dialog/create-page-dialog';
-import { ABOUT_ME_PICTURE_OPTIONS, parseKitchenHomeConfig } from '../../models/kitchen-home-config';
+import {
+  getKitchenPictureOptions,
+  parseKitchenHomeConfig,
+  ProfilePictureOption,
+} from '../../models/kitchen-home-config';
 
 export interface BlockInfo {
   hasBlock: boolean;
@@ -176,7 +180,7 @@ export interface BlockInfo {
                     </div>
 
                     <div class="grid grid-cols-2 gap-2">
-                      @for (opt of pictureOptions; track opt.id) {
+                      @for (opt of getKitchenPictureOptions(page); track opt.id) {
                         @let isSelected = getKitchenHomePicture(page) === opt.filename;
                         <button
                           type="button"
@@ -277,8 +281,12 @@ export class PagesListComponent {
 
   protected readonly activePost = signal<string>('home');
   protected readonly customPosts = signal<string[]>([]);
-  protected readonly pictureOptions = ABOUT_ME_PICTURE_OPTIONS;
   protected readonly pictureOverrides = signal<Record<string, string>>({});
+
+  getKitchenPictureOptions(page: Page): ProfilePictureOption[] {
+    const config = parseKitchenHomeConfig(page.content);
+    return getKitchenPictureOptions(config);
+  }
 
   getKitchenHomePicture(page: Page): string {
     const override = this.pictureOverrides()[page.slug];
