@@ -159,6 +159,25 @@ describe('PageEditorComponent', () => {
     });
   });
 
+  it('should render 2 picture cards when isKitchenHome is true and select picture on click', async () => {
+    component['slug'].set('kitchen:home');
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.textContent).toContain('About Me Profile Picture');
+    expect(compiled.textContent).toContain('About Page Picture');
+    expect(compiled.textContent).toContain('Kitchen Home Picture');
+
+    const aboutPicBtn = compiled.querySelector(
+      '[data-testid="editor-pic-about-pic"]',
+    ) as HTMLButtonElement;
+    expect(aboutPicBtn).toBeTruthy();
+    aboutPicBtn.click();
+    fixture.detectChanges();
+
+    expect(component['pageForm'].picture().value()).toBe('delisha_marie_profile.png');
+  });
+
   it('should load slug from route in ngOnInit, submit form, and handle cancel button clicks', async () => {
     const route = TestBed.inject((await import('@angular/router')).ActivatedRoute);
     vi.spyOn(route.snapshot.paramMap, 'get').mockReturnValue('about');

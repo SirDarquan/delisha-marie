@@ -12,7 +12,10 @@ import { CreatePageDialogComponent } from '../create-page-dialog/create-page-dia
 describe('PagesListComponent', () => {
   let component: PagesListComponent;
   let fixture: ComponentFixture<PagesListComponent>;
-  let pagesServiceSpy: { getPages: ReturnType<typeof vi.fn> };
+  let pagesServiceSpy: {
+    getPages: ReturnType<typeof vi.fn>;
+    savePage: ReturnType<typeof vi.fn>;
+  };
   let dialogSpy: { open: ReturnType<typeof vi.fn> };
   let router: Router;
 
@@ -65,6 +68,7 @@ describe('PagesListComponent', () => {
   beforeEach(async () => {
     pagesServiceSpy = {
       getPages: vi.fn().mockResolvedValue([]),
+      savePage: vi.fn().mockResolvedValue({}),
     };
     dialogSpy = {
       open: vi.fn().mockReturnValue({
@@ -131,14 +135,14 @@ describe('PagesListComponent', () => {
     expect(filtered.map((p) => p.slug)).toEqual(['kitchen:recipes', 'about', 'thank-you']);
   });
 
-  it('should pin kitchen:home to the top of kitchen pages and display Kitchen Home badge', async () => {
+  it('should pin kitchen:home to the top of kitchen pages and display Kitchen Home badge and About Me picture selector', async () => {
     const pagesWithHome: Page[] = [
       ...mockPages,
       {
         id: '7',
         slug: 'kitchen:home',
         title: 'Delisha Kitchen Home',
-        content: '{}',
+        content: JSON.stringify({ picture: 'delisha_marie_profile_2.png' }),
         updated_at: '2026-11-06',
       },
     ];
@@ -155,6 +159,28 @@ describe('PagesListComponent', () => {
     fixture.detectChanges();
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.textContent).toContain('Kitchen Home');
+    expect(compiled.textContent).toContain('About Me Picture');
+    expect(compiled.textContent).toContain('About Page Picture');
+    expect(compiled.textContent).toContain('Kitchen Home Picture');
+
+    // Currently selected is delisha_marie_profile_2.png
+    expect(component.getKitchenHomePicture(filtered[0])).toBe('delisha_marie_profile_2.png');
+
+    // Click on About Page Picture
+    const aboutBtn = compiled.querySelector(
+      '[data-testid="btn-select-about-pic"]',
+    ) as HTMLButtonElement;
+    expect(aboutBtn).toBeTruthy();
+    aboutBtn.click();
+    fixture.detectChanges();
+
+    expect(pagesServiceSpy.savePage).toHaveBeenCalledWith(
+      'kitchen:home',
+      expect.objectContaining({
+        content: expect.stringContaining('delisha_marie_profile.png'),
+      }),
+    );
+    expect(component.getKitchenHomePicture(filtered[0])).toBe('delisha_marie_profile.png');
   });
 
   it('should filter pages for custom post garden', async () => {

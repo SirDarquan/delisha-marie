@@ -36,6 +36,17 @@ describe('Admin Blog Pages & Posts Management', () => {
       content: '<p>Legacy about page.</p>',
       updated_at: '2026-10-18T12:00:00Z',
     },
+    {
+      id: '6',
+      slug: 'kitchen:home',
+      title: 'Kitchen Home',
+      content: JSON.stringify({
+        featuredRecipes: ['/recipes/dinner', '/recipes/breakfast', '/recipes/lunch'],
+        picture: 'delisha_marie_profile_2.png',
+        content: '<p>Kitchen Home Layout</p>',
+      }),
+      updated_at: '2026-10-23T12:00:00Z',
+    },
   ];
 
   beforeEach(() => {
@@ -143,5 +154,30 @@ describe('Admin Blog Pages & Posts Management', () => {
     cy.contains('button', 'Save Content').click({ force: true });
     cy.wait('@savePage');
     cy.contains('Page saved successfully!').should('be.visible');
+  });
+
+  it('should allow switching About Me picture on kitchen:home card and in editor', () => {
+    // Switch to Kitchen tab
+    cy.contains('button', 'kitchen').click();
+    cy.contains('/kitchen:home').should('be.visible');
+
+    // Verify picture selector appears
+    cy.get('[data-testid="btn-select-about-pic"]').should('be.visible');
+    cy.get('[data-testid="btn-select-kitchen-pic"]').should('be.visible');
+
+    // Click about-pic option
+    cy.get('[data-testid="btn-select-about-pic"]').click();
+    cy.wait('@savePage')
+      .its('request.body')
+      .should((body) => {
+        const parsed = JSON.parse(body.content);
+        expect(parsed.picture).to.equal('delisha_marie_profile.png');
+      });
+
+    // Visit kitchen:home editor
+    cy.visit('/pages/kitchen:home');
+    cy.wait('@getPage');
+    cy.get('[data-testid="editor-pic-about-pic"]').should('be.visible');
+    cy.get('[data-testid="editor-pic-kitchen-pic"]').should('be.visible');
   });
 });

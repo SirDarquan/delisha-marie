@@ -1,4 +1,4 @@
-import { DatePipe } from '@angular/common';
+import { DatePipe, NgOptimizedImage } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -19,6 +19,7 @@ import {
   CreatePageDialogComponent,
   CreatePageDialogResult,
 } from '../create-page-dialog/create-page-dialog';
+import { ABOUT_ME_PICTURE_OPTIONS, parseKitchenHomeConfig } from '../../models/kitchen-home-config';
 
 export interface BlockInfo {
   hasBlock: boolean;
@@ -28,7 +29,14 @@ export interface BlockInfo {
 
 @Component({
   selector: 'app-pages-list',
-  imports: [RouterLink, MatButtonModule, MatIconModule, MatProgressSpinnerModule, DatePipe],
+  imports: [
+    RouterLink,
+    MatButtonModule,
+    MatIconModule,
+    MatProgressSpinnerModule,
+    DatePipe,
+    NgOptimizedImage,
+  ],
   template: `
     <div class="px-4 md:px-8 py-8 space-y-6">
       <!-- Header -->
@@ -154,6 +162,60 @@ export interface BlockInfo {
                       'Manage content, write stories beside or under components, and set custom layout block sizes.'
                   }}
                 </p>
+
+                @if (page.slug === 'kitchen:home' || page.slug === 'home') {
+                  <div
+                    class="mt-3 p-3 bg-slate-950/70 rounded-xl border border-purple-500/25 space-y-2">
+                    <div
+                      class="flex items-center justify-between text-[11px] font-semibold text-purple-300">
+                      <span class="flex items-center gap-1">
+                        <mat-icon class="!w-3 !h-3 !text-[12px]">account_circle</mat-icon>
+                        About Me Picture
+                      </span>
+                      <span class="text-[10px] text-slate-400 font-normal">Click to switch</span>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2">
+                      @for (opt of pictureOptions; track opt.id) {
+                        @let isSelected = getKitchenHomePicture(page) === opt.filename;
+                        <button
+                          type="button"
+                          (click)="selectKitchenHomePicture(page, opt.filename)"
+                          [attr.data-testid]="'btn-select-' + opt.id"
+                          class="flex items-center gap-2 p-1.5 rounded-lg border text-left transition cursor-pointer"
+                          [class.border-purple-500]="isSelected"
+                          [class.bg-purple-500/15]="isSelected"
+                          [class.text-white]="isSelected"
+                          [class.border-slate-800]="!isSelected"
+                          [class.bg-slate-900]="!isSelected"
+                          [class.text-slate-400]="!isSelected"
+                          [class.hover:border-slate-700]="!isSelected">
+                          <div
+                            class="relative w-8 h-8 rounded-full overflow-hidden shrink-0 border border-slate-700 bg-slate-800">
+                            <img
+                              [ngSrc]="opt.filename"
+                              width="32"
+                              height="32"
+                              [alt]="opt.label"
+                              class="w-full h-full object-cover" />
+                          </div>
+                          <div class="min-w-0 flex-1">
+                            <div
+                              class="text-[10px] font-bold truncate leading-tight flex items-center gap-1">
+                              {{ opt.label }}
+                              @if (isSelected) {
+                                <mat-icon class="!w-2.5 !h-2.5 !text-[10px] text-purple-400">
+                                  check_circle
+                                </mat-icon>
+                              }
+                            </div>
+                            <div class="text-[9px] text-slate-500 truncate">{{ opt.filename }}</div>
+                          </div>
+                        </button>
+                      }
+                    </div>
+                  </div>
+                }
               </div>
 
               <div
@@ -215,6 +277,34 @@ export class PagesListComponent {
 
   protected readonly activePost = signal<string>('home');
   protected readonly customPosts = signal<string[]>([]);
+  protected readonly pictureOptions = ABOUT_ME_PICTURE_OPTIONS;
+  protected readonly pictureOverrides = signal<Record<string, string>>({});
+
+  getKitchenHomePicture(page: Page): string {
+    const override = this.pictureOverrides()[page.slug];
+    if (override) return override;
+    return parseKitchenHomeConfig(page.content).picture || 'delisha_marie_profile_2.png';
+  }
+
+  async selectKitchenHomePicture(page: Page, filename: string): Promise<void> {
+    const currentConfig = parseKitchenHomeConfig(page.content);
+    currentConfig.picture = filename;
+    const newContent = JSON.stringify(currentConfig);
+
+    // Optimistic update
+    this.pictureOverrides.update((all) => ({ ...all, [page.slug]: filename }));
+    page.content = newContent;
+
+    try {
+      await this.pagesService.savePage(page.slug, {
+        ...page,
+        content: newContent,
+      });
+      this._pagesResource.reload();
+    } catch (err) {
+      console.error('Failed to save kitchen home picture', err);
+    }
+  }
 
   protected readonly posts = computed(() => {
     const list = ['home', 'kitchen'];

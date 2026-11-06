@@ -7,7 +7,7 @@ import {
   signal,
   ViewEncapsulation,
 } from '@angular/core';
-import { Location } from '@angular/common';
+import { Location, NgOptimizedImage } from '@angular/common';
 import { form, FormField, FormRoot, required } from '@angular/forms/signals';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -18,6 +18,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { StoryHtmlEditorComponent } from '../../components/story-html-editor/story-html-editor';
 import { PagesService } from '../../services/pages.service';
 import { KeywordsComponent } from '../../components/keywords/keywords';
+import { ABOUT_ME_PICTURE_OPTIONS } from '../../models/kitchen-home-config';
 
 interface PageFormModel {
   title: string;
@@ -42,6 +43,7 @@ interface PageFormModel {
     MatInputModule,
     MatSnackBarModule,
     StoryHtmlEditorComponent,
+    NgOptimizedImage,
   ],
   template: `
     <div class="p-4 md:p-8">
@@ -117,15 +119,54 @@ interface PageFormModel {
                   </mat-form-field>
                 </div>
 
-                <mat-form-field appearance="outline" class="w-full mb-0">
-                  <mat-label>About Me Profile Picture</mat-label>
-                  <input
-                    matInput
-                    id="picture"
-                    type="text"
-                    [formField]="pageForm.picture"
-                    placeholder="e.g., delisha_marie_profile_2.png" />
-                </mat-form-field>
+                <div class="space-y-2">
+                  <span class="block text-xs font-semibold text-slate-300">
+                    About Me Profile Picture
+                  </span>
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    @for (opt of pictureOptions; track opt.id) {
+                      @let isSelected = pageForm.picture().value() === opt.filename;
+                      <button
+                        type="button"
+                        (click)="selectPicture(opt.filename)"
+                        [attr.data-testid]="'editor-pic-' + opt.id"
+                        class="flex items-center gap-3 p-3 rounded-xl border text-left transition cursor-pointer"
+                        [class.border-purple-500]="isSelected"
+                        [class.bg-purple-500/15]="isSelected"
+                        [class.text-white]="isSelected"
+                        [class.border-slate-700]="!isSelected"
+                        [class.bg-slate-900/80]="!isSelected"
+                        [class.text-slate-300]="!isSelected"
+                        [class.hover:border-slate-600]="!isSelected">
+                        <div
+                          class="relative w-12 h-12 rounded-full overflow-hidden shrink-0 border-2 border-slate-700 bg-slate-800">
+                          <img
+                            [ngSrc]="opt.filename"
+                            width="48"
+                            height="48"
+                            [alt]="opt.label"
+                            class="w-full h-full object-cover" />
+                        </div>
+                        <div class="min-w-0 flex-1">
+                          <div class="text-sm font-bold truncate flex items-center justify-between">
+                            <span>{{ opt.label }}</span>
+                            @if (isSelected) {
+                              <mat-icon class="!w-4 !h-4 !text-[16px] text-purple-400">
+                                check_circle
+                              </mat-icon>
+                            }
+                          </div>
+                          <div class="text-xs text-slate-400 line-clamp-1">
+                            {{ opt.description }}
+                          </div>
+                          <div class="text-[10px] text-slate-500 font-mono mt-0.5">
+                            {{ opt.filename }}
+                          </div>
+                        </div>
+                      </button>
+                    }
+                  </div>
+                </div>
               </div>
             }
 
@@ -179,15 +220,16 @@ export class PageEditorComponent implements OnInit {
 
   protected readonly slug = signal<string>('');
   readonly isKitchenHome = computed(() => this.slug() === 'kitchen:home' || this.slug() === 'home');
+  protected readonly pictureOptions = ABOUT_ME_PICTURE_OPTIONS;
 
   protected readonly pageModel = signal<PageFormModel>({
     title: '',
     content: '',
     description: '',
     keywords: [],
-    featuredRecipes1: '/recipes/dinner',
-    featuredRecipes2: '/recipes/breakfast',
-    featuredRecipes3: '/recipes/lunch',
+    featuredRecipes1: '',
+    featuredRecipes2: '',
+    featuredRecipes3: '',
     picture: 'delisha_marie_profile_2.png',
   });
 
@@ -202,6 +244,10 @@ export class PageEditorComponent implements OnInit {
       },
     },
   );
+
+  selectPicture(filename: string): void {
+    this.pageModel.update((m) => ({ ...m, picture: filename }));
+  }
 
   async save(value: Partial<PageFormModel>) {
     try {

@@ -20,7 +20,7 @@ export function getKitchenUrl(options?: KitchenUrlOptions): string {
     return '/kitchen/';
   }
 
-  return 'http://localhost:4201';
+  return 'http://localhost:4200';
 }
 
 /**

@@ -42,11 +42,9 @@ export interface KitchenHomeConfig {
       </section>
 
       <!-- Featured Recipes #1 Section -->
-      @if (featuredRecipes1()) {
-        <section data-testid="home-section-featured-recipes-1">
-          <dm-featured-recipes [link]="featuredRecipes1()" />
-        </section>
-      }
+      <section data-testid="home-section-featured-recipes-1">
+        <dm-featured-recipes [link]="featuredRecipes1()" />
+      </section>
 
       <!-- Author Bio / About Me Section -->
       <section data-testid="home-section-author-bio">
@@ -59,18 +57,14 @@ export interface KitchenHomeConfig {
       </section>
 
       <!-- Featured Recipes #2 Section -->
-      @if (featuredRecipes2()) {
-        <section data-testid="home-section-featured-recipes-2">
-          <dm-featured-recipes [link]="featuredRecipes2()" />
-        </section>
-      }
+      <section data-testid="home-section-featured-recipes-2">
+        <dm-featured-recipes [link]="featuredRecipes2()" />
+      </section>
 
       <!-- Featured Recipes #3 Section -->
-      @if (featuredRecipes3()) {
-        <section data-testid="home-section-featured-recipes-3">
-          <dm-featured-recipes [link]="featuredRecipes3()" />
-        </section>
-      }
+      <section data-testid="home-section-featured-recipes-3">
+        <dm-featured-recipes [link]="featuredRecipes3()" />
+      </section>
     </div>
   `,
   encapsulation: ViewEncapsulation.None,

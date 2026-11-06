@@ -107,7 +107,7 @@ describe('Home', () => {
     expect(topRatedRecipes).toBeTruthy();
   });
 
-  it('should not render featured recipes when links are empty strings', async () => {
+  it('should pass empty link strings to featured recipes when unconfigured', async () => {
     pagesServiceMock.getPage.mockResolvedValueOnce({
       id: '1',
       slug: 'kitchen:home',
@@ -129,7 +129,7 @@ describe('Home', () => {
 
     const compiled = fixture.nativeElement as HTMLElement;
     const featuredRecipes = compiled.querySelectorAll('dm-featured-recipes');
-    expect(featuredRecipes.length).toBe(1);
+    expect(featuredRecipes.length).toBe(3);
   });
 
   it('should handle unconfigured or invalid JSON gracefully', async () => {
@@ -153,7 +153,7 @@ describe('Home', () => {
 
     const compiled = fixture.nativeElement as HTMLElement;
     const featuredRecipes = compiled.querySelectorAll('dm-featured-recipes');
-    expect(featuredRecipes.length).toBe(0);
+    expect(featuredRecipes.length).toBe(3);
   });
 
   it('should handle null page from pagesService', async () => {
@@ -166,5 +166,27 @@ describe('Home', () => {
     const component = fixture.componentInstance;
     expect(component.featuredRecipes1()).toBe('');
     expect(component.picture()).toBe('delisha_marie_profile_2.png');
+  });
+
+  it('should support switching picture to delisha_marie_profile.png', async () => {
+    pagesServiceMock.getPage.mockResolvedValueOnce({
+      id: '1',
+      slug: 'kitchen:home',
+      title: 'Kitchen Home',
+      content: JSON.stringify({
+        picture: 'delisha_marie_profile.png',
+      }),
+      updated_at: '2026-11-06T10:00:00Z',
+    });
+
+    const fixture = TestBed.createComponent(Home);
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const component = fixture.componentInstance;
+    expect(component.picture()).toBe('delisha_marie_profile.png');
+
+    const authorBio = fixture.nativeElement.querySelector('dm-author-bio');
+    expect(authorBio).toBeTruthy();
   });
 });
