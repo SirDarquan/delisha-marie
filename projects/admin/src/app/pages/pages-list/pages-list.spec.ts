@@ -131,6 +131,32 @@ describe('PagesListComponent', () => {
     expect(filtered.map((p) => p.slug)).toEqual(['kitchen:recipes', 'about', 'thank-you']);
   });
 
+  it('should pin kitchen:home to the top of kitchen pages and display Kitchen Home badge', async () => {
+    const pagesWithHome: Page[] = [
+      ...mockPages,
+      {
+        id: '7',
+        slug: 'kitchen:home',
+        title: 'Delisha Kitchen Home',
+        content: '{}',
+        updated_at: '2026-11-06',
+      },
+    ];
+    pagesServiceSpy.getPages.mockResolvedValueOnce(pagesWithHome);
+    fixture = TestBed.createComponent(PagesListComponent);
+    component = fixture.componentInstance;
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    component.selectPost('kitchen');
+    const filtered = component['filteredPages']();
+    expect(filtered[0].slug).toBe('kitchen:home');
+
+    fixture.detectChanges();
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.textContent).toContain('Kitchen Home');
+  });
+
   it('should filter pages for custom post garden', async () => {
     pagesServiceSpy.getPages.mockResolvedValueOnce(mockPages);
     fixture = TestBed.createComponent(PagesListComponent);

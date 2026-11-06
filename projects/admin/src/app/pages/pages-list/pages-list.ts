@@ -128,6 +128,13 @@ export interface BlockInfo {
                     class="px-2.5 py-1 rounded-full text-xs font-mono font-medium bg-slate-800 text-slate-300 border border-slate-700/60">
                     /{{ page.slug }}
                   </span>
+                  @if (page.slug === 'kitchen:home' || page.slug === 'home') {
+                    <span
+                      class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-purple-500/20 text-purple-300 border border-purple-500/40">
+                      <mat-icon class="!w-3 !h-3 !text-[12px]">home</mat-icon>
+                      ★ Kitchen Home
+                    </span>
+                  }
                   @if (block.hasBlock) {
                     <span
                       class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-500/15 text-amber-300 border border-amber-500/30">
@@ -233,7 +240,12 @@ export class PagesListComponent {
     const current = this.activePost();
     const all = this.pages();
     if (current === 'kitchen') {
-      return all.filter((p) => p.slug.startsWith('kitchen:') || !p.slug.includes(':'));
+      const kitchenPages = all.filter(
+        (p) => p.slug.startsWith('kitchen:') || !p.slug.includes(':'),
+      );
+      const homePages = kitchenPages.filter((p) => p.slug === 'kitchen:home' || p.slug === 'home');
+      const otherPages = kitchenPages.filter((p) => p.slug !== 'kitchen:home' && p.slug !== 'home');
+      return [...homePages, ...otherPages];
     }
     return all.filter((p) => p.slug.startsWith(`${current}:`));
   });

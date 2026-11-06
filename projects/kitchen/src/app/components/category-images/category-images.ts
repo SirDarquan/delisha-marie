@@ -26,8 +26,7 @@ import { FullCategory } from '../../models/category';
   template: `
     <!-- Break-out Background with Categories and Search -->
     @if (categories().length > 0) {
-      <section
-        class="break-out bg-[var(--mat-sys-surface-container-low)] pt-16 pb-12 mb-20 border-y border-[var(--mat-sys-outline-variant)]">
+      <section class="break-out bg-[var(--mat-sys-surface-container-low)] pt-16 pb-12 mb-20">
         <div class="into-the-box">
           <nav aria-label="Recipe categories" class="mb-12">
             <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-6">

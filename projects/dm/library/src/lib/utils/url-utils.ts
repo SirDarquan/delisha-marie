@@ -81,6 +81,7 @@ export function deslugify(slug: string): string {
     st: 'St.',
   };
 
+  if (!slug) return '';
   return slug
     .split('-')
     .map((word) => {

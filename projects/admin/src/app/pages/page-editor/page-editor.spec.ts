@@ -73,7 +73,7 @@ describe('PageEditorComponent', () => {
     expect(snackSpy).toHaveBeenCalledWith('Failed to save page.', 'Close', { duration: 3000 });
   });
 
-  it('should set pageModel to empty strings if page title and content are missing', async () => {
+  it('should set pageModel to default values if page title and content are missing', async () => {
     pagesServiceSpy.getPage.mockResolvedValueOnce({ slug: 'about' });
     await component['loadPageData']('about');
     expect(component['pageModel']()).toEqual({
@@ -81,18 +81,81 @@ describe('PageEditorComponent', () => {
       content: '',
       description: '',
       keywords: [],
+      featuredRecipes1: '/recipes/dinner',
+      featuredRecipes2: '/recipes/breakfast',
+      featuredRecipes3: '/recipes/lunch',
+      picture: 'delisha_marie_profile_2.png',
     });
   });
 
   it('should not update pageModel if getPage returns falsy', async () => {
     pagesServiceSpy.getPage.mockResolvedValueOnce(null);
-    component['pageModel'].set({ title: 'Init', content: 'Init', description: '', keywords: [] });
+    component['pageModel'].set({
+      title: 'Init',
+      content: 'Init',
+      description: '',
+      keywords: [],
+      featuredRecipes1: '',
+      featuredRecipes2: '',
+      featuredRecipes3: '',
+      picture: '',
+    });
     await component['loadPageData']('about');
     expect(component['pageModel']()).toEqual({
       title: 'Init',
       content: 'Init',
       description: '',
       keywords: [],
+      featuredRecipes1: '',
+      featuredRecipes2: '',
+      featuredRecipes3: '',
+      picture: '',
+    });
+  });
+
+  it('should load kitchen:home json configuration and save stringified json', async () => {
+    component['slug'].set('kitchen:home');
+    expect(component.isKitchenHome()).toBe(true);
+
+    pagesServiceSpy.getPage.mockResolvedValueOnce({
+      slug: 'kitchen:home',
+      title: 'Kitchen Home',
+      content: JSON.stringify({
+        featuredRecipes: ['/recipes/custom-1', '', '/recipes/custom-3'],
+        picture: 'my-custom-pic.png',
+        content: '<p>Custom Home Blocks</p>',
+      }),
+    });
+
+    await component['loadPageData']('kitchen:home');
+    expect(component['pageModel']().featuredRecipes1).toBe('/recipes/custom-1');
+    expect(component['pageModel']().featuredRecipes2).toBe('');
+    expect(component['pageModel']().featuredRecipes3).toBe('/recipes/custom-3');
+    expect(component['pageModel']().picture).toBe('my-custom-pic.png');
+    expect(component['pageModel']().content).toBe('<p>Custom Home Blocks</p>');
+
+    // Now test save
+    pagesServiceSpy.savePage.mockResolvedValueOnce(null);
+    await component.save({
+      title: 'Kitchen Home',
+      content: '<p>Updated Blocks</p>',
+      description: 'Home SEO',
+      keywords: ['kitchen', 'home'],
+      featuredRecipes1: '/recipes/dinner',
+      featuredRecipes2: '',
+      featuredRecipes3: '/recipes/lunch',
+      picture: 'pic.png',
+    });
+
+    expect(pagesServiceSpy.savePage).toHaveBeenCalledWith('kitchen:home', {
+      title: 'Kitchen Home',
+      content: JSON.stringify({
+        featuredRecipes: ['/recipes/dinner', '', '/recipes/lunch'],
+        picture: 'pic.png',
+        content: '<p>Updated Blocks</p>',
+      }),
+      description: 'Home SEO',
+      keywords: ['kitchen', 'home'],
     });
   });
 
@@ -108,6 +171,10 @@ describe('PageEditorComponent', () => {
       content: '<p>Body</p>',
       description: 'Desc',
       keywords: ['tag'],
+      featuredRecipes1: '',
+      featuredRecipes2: '',
+      featuredRecipes3: '',
+      picture: '',
     });
     fixture.detectChanges();
     const formEl = fixture.nativeElement.querySelector('form') as HTMLFormElement;

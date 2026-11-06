@@ -17,6 +17,7 @@ import { RecipeIndexLinkList } from './recipe-index-link-list';
 import { RecipeIndexMethodImages } from './recipe-index-method-images';
 import { RecipeIndexService } from './recipe-index.service';
 import { ColoredHeaderComponent } from '../../components/colored-header/colored-header';
+import { TopRatedRecipes } from '../../components/top-rated-recipes/top-rated-recipes';
 
 @Component({
   selector: 'dm-recipe-index',
@@ -31,6 +32,7 @@ import { ColoredHeaderComponent } from '../../components/colored-header/colored-
     RecipeIndexMethodImages,
     RecipeIndexLinkList,
     RecipeIndexIngredients,
+    TopRatedRecipes,
   ],
   template: `
     <main class="py-12" aria-labelledby="index-title">
@@ -127,6 +129,7 @@ import { ColoredHeaderComponent } from '../../components/colored-header/colored-
         <!-- Featured Image Sections -->
         <dm-category-images [categories]="featuredCategories()" />
         <dm-recipe-index-method-images [methods]="featuredMethods()" />
+        <dm-top-rated-recipes />
 
         <!-- Full Link Index Sections -->
         <section class="space-y-4">
