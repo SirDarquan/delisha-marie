@@ -11,7 +11,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatIconModule } from '@angular/material/icon';
 import { BreadcrumbItem, Breadcrumbs } from '../../components/breadcrumbs/breadcrumbs';
-import { RecipeIndexCategoryImages } from './recipe-index-category-images';
+import { CategoryImages } from '../../components/category-images/category-images';
 import { RecipeIndexIngredients } from './recipe-index-ingredients';
 import { RecipeIndexLinkList } from './recipe-index-link-list';
 import { RecipeIndexMethodImages } from './recipe-index-method-images';
@@ -27,7 +27,7 @@ import { ColoredHeaderComponent } from '../../components/colored-header/colored-
     MatIconModule,
     MatChipsModule,
     Breadcrumbs,
-    RecipeIndexCategoryImages,
+    CategoryImages,
     RecipeIndexMethodImages,
     RecipeIndexLinkList,
     RecipeIndexIngredients,
@@ -125,7 +125,7 @@ import { ColoredHeaderComponent } from '../../components/colored-header/colored-
         </section>
       } @else {
         <!-- Featured Image Sections -->
-        <dm-recipe-index-category-images [categories]="featuredCategories()" />
+        <dm-category-images [categories]="featuredCategories()" />
         <dm-recipe-index-method-images [methods]="featuredMethods()" />
 
         <!-- Full Link Index Sections -->

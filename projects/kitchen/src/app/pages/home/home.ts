@@ -1,14 +1,22 @@
 import { CommonModule, NgOptimizedImage } from '@angular/common';
-import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  ViewEncapsulation,
+} from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatIconModule } from '@angular/material/icon';
+import { CategoryImages } from '../../components/category-images/category-images';
 import { FeaturedRecipes } from '../../components/featured-recipes/featured-recipes';
 import { TopRatedRecipes } from '../../components/top-rated-recipes/top-rated-recipes';
 import { LatestRecipes } from '../../components/latest-recipes/latest-recipes';
 import { AuthorBio } from '../../components/author-bio/author-bio';
 import { RouterLink } from '@angular/router';
+import { RecipeIndexService } from '../recipe-index/recipe-index.service';
 
 @Component({
   selector: 'dm-home',
@@ -19,6 +27,7 @@ import { RouterLink } from '@angular/router';
     MatIconModule,
     MatChipsModule,
     NgOptimizedImage,
+    CategoryImages,
     FeaturedRecipes,
     TopRatedRecipes,
     LatestRecipes,
@@ -58,6 +67,9 @@ import { RouterLink } from '@angular/router';
         </div>
       </section>
 
+      <!-- Category Images Section -->
+      <dm-category-images [categories]="featuredCategories()" />
+
       <!-- Latest Recipes Section -->
       <dm-latest-recipes />
 
@@ -79,4 +91,10 @@ import { RouterLink } from '@angular/router';
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class Home {}
+export class Home {
+  private readonly recipeIndexService = inject(RecipeIndexService);
+
+  readonly featuredCategories = computed(
+    () => this.recipeIndexService.indexResource.value()?.featuredCategories || [],
+  );
+}

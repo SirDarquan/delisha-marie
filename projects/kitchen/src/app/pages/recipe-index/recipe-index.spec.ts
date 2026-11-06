@@ -105,7 +105,7 @@ describe('RecipeIndex', () => {
 
   it('should render the category images component', () => {
     const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('dm-recipe-index-category-images')).toBeTruthy();
+    expect(compiled.querySelector('dm-category-images')).toBeTruthy();
   });
 
   it('should render the method images component', () => {

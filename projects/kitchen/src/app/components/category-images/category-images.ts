@@ -14,7 +14,7 @@ import { RouterLink, Router } from '@angular/router';
 import { FullCategory } from '../../models/category';
 
 @Component({
-  selector: 'dm-recipe-index-category-images',
+  selector: 'dm-category-images',
   imports: [
     NgOptimizedImage,
     ReactiveFormsModule,
@@ -88,7 +88,7 @@ import { FullCategory } from '../../models/category';
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class RecipeIndexCategoryImages {
+export class CategoryImages {
   readonly categories = input.required<FullCategory[]>();
   readonly searchControl = new FormControl('');
   private readonly router = inject(Router);

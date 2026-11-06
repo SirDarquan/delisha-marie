@@ -64,7 +64,7 @@ describe('Recipe Index Page', () => {
   });
 
   it('should render featured categories and methods with proper imagery', () => {
-    cy.get('dm-recipe-index-category-images').within(() => {
+    cy.get('dm-category-images').within(() => {
       cy.get('span').should('contain.text', 'Appetizers').and('contain.text', 'Desserts');
     });
 
