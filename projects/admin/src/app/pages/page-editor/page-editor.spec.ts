@@ -240,41 +240,55 @@ describe('PageEditorComponent', () => {
     expect(component['pageModel']().picture).toBe('delisha_marie_profile.png');
   });
 
-  it('should handle drag and drop and file selection events', () => {
-    const mockDragEvent = {
-      preventDefault: vi.fn(),
-      stopPropagation: vi.fn(),
-      dataTransfer: {
-        files: [new File([''], 'drop.png', { type: 'image/png' })],
-      },
-    } as unknown as DragEvent;
+  it('should compute pictureSlots correctly and handle selectSlotPicture', () => {
+    component['pageModel'].set({
+      title: 'Kitchen',
+      content: '',
+      description: '',
+      keywords: [],
+      featuredRecipes1: '',
+      featuredRecipes2: '',
+      featuredRecipes3: '',
+      picture: 'pic2.webp',
+      picture1: 'pic1.webp',
+      picture2: 'pic2.webp',
+    });
 
-    component.onDragOver(mockDragEvent, 'picture1');
-    expect(component['isDragOver']().picture1).toBe(true);
+    const slots = component['pictureSlots']();
+    expect(slots.length).toBe(2);
+    expect(slots[0].slotKey).toBe('picture1');
+    expect(slots[0].picture).toBe('pic1.webp');
+    expect(slots[0].isActive).toBe(false);
 
-    component.onDragLeave('picture1');
-    expect(component['isDragOver']().picture1).toBe(false);
+    expect(slots[1].slotKey).toBe('picture2');
+    expect(slots[1].picture).toBe('pic2.webp');
+    expect(slots[1].isActive).toBe(true);
 
-    const uploadSpy = vi.spyOn(component, 'uploadFile').mockResolvedValue();
-    component.onDrop(mockDragEvent, 'picture1');
-    expect(uploadSpy).toHaveBeenCalled();
-
-    const mockChangeEvent = {
-      target: {
-        files: [new File([''], 'input.png', { type: 'image/png' })],
-      },
-    } as unknown as Event;
-    component.onFileSelected(mockChangeEvent, 'picture2');
-    expect(uploadSpy).toHaveBeenCalled();
+    component.selectSlotPicture('picture1');
+    expect(component['pageModel']().picture).toBe('pic1.webp');
   });
 
-  it('should correctly identify absolute and local URLs', () => {
-    expect(component.isAbsoluteUrl('https://example.com/pic.png')).toBe(true);
-    expect(component.isAbsoluteUrl('http://example.com/pic.png')).toBe(true);
-    expect(component.isAbsoluteUrl('blob:http://localhost/123')).toBe(true);
-    expect(component.isAbsoluteUrl('data:image/png;base64,...')).toBe(true);
-    expect(component.isAbsoluteUrl('delisha_marie_profile.png')).toBe(false);
-    expect(component.isAbsoluteUrl('')).toBe(false);
+  it('should update pictureModel on onPictureChanged and sync active picture', () => {
+    component['pageModel'].set({
+      title: 'Kitchen',
+      content: '',
+      description: '',
+      keywords: [],
+      featuredRecipes1: '',
+      featuredRecipes2: '',
+      featuredRecipes3: '',
+      picture: 'pic1.webp',
+      picture1: 'pic1.webp',
+      picture2: 'pic2.webp',
+    });
+
+    component.onPictureChanged('picture1', 'updated_pic1.webp');
+    expect(component['pageModel']().picture1).toBe('updated_pic1.webp');
+    expect(component['pageModel']().picture).toBe('updated_pic1.webp');
+
+    component.onPictureChanged('picture2', 'updated_pic2.webp');
+    expect(component['pageModel']().picture2).toBe('updated_pic2.webp');
+    expect(component['pageModel']().picture).toBe('updated_pic1.webp');
   });
 
   it('should load slug from route in ngOnInit, submit form, and handle cancel button clicks', async () => {
