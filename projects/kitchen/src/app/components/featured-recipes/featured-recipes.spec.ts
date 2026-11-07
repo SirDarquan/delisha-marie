@@ -101,14 +101,15 @@ describe('FeaturedRecipes', () => {
     expect(cards[1].querySelector('h3').textContent.trim()).toBe('Recipe 2');
   });
 
-  it('should fall back to "recipes" method if link has no valid segments', async () => {
+  it('should return empty items when link has no valid segments without calling getRecipes', async () => {
+    fakeRecipeService.getRecipes.mockClear();
     componentRef.setInput('link', '///'); // Lots of slashes to test .find(s => !!s) returning undefined
     fixture.detectChanges();
     await fixture.whenStable();
     fixture.detectChanges();
 
-    // The method should default to 'recipes'
-    expect(fakeRecipeService.getRecipes).toHaveBeenCalledWith(1, 4, 'recipes', '', '');
+    expect(fakeRecipeService.getRecipes).not.toHaveBeenCalled();
+    expect(component.recipes()).toEqual([]);
   });
 
   it('should return empty array if recipeResource has no items', async () => {

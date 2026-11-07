@@ -114,17 +114,24 @@ export class FeaturedRecipes {
     return {
       cat: this.categorySlug(),
       sub: this.subCategorySlug(),
-      method: segments || 'recipes',
+      method: segments,
     };
   });
 
   protected readonly _recipeResource = resource({
     params: () => this._dataTrigger(),
-    loader: ({ params: t }) =>
-      this.recipeService.getRecipes(1, 4, t.method, t.cat, t.sub).catch(() => ({
+    loader: async ({ params: t }) => {
+      if (!t.method) {
+        return {
+          items: [],
+          total: 0,
+        };
+      }
+      return await this.recipeService.getRecipes(1, 4, t.method, t.cat, t.sub).catch(() => ({
         items: [],
         total: 0,
-      })),
+      }));
+    },
   });
 
   readonly recipes = computed(() => this._recipeResource.value()?.items || []);

@@ -4,6 +4,7 @@ import { provideRouter } from '@angular/router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { RecipeService } from '../../services/recipe.service';
 import { RecipeIndexService } from '../recipe-index/recipe-index.service';
+import { PagesService } from '../../services/pages.service';
 import { Home } from './home';
 
 describe('Home', () => {
@@ -24,6 +25,8 @@ describe('Home', () => {
     { name: 'Appetizers', image: '/app.png', url: '/recipes/appetizers' },
   ];
 
+  let pagesServiceMock: { getPage: ReturnType<typeof vi.fn> };
+
   beforeEach(async () => {
     TestBed.resetTestingModule();
     const recipeServiceMock = {
@@ -39,38 +42,151 @@ describe('Home', () => {
       },
     };
 
+    pagesServiceMock = {
+      getPage: vi.fn().mockResolvedValue({
+        id: '1',
+        slug: 'kitchen:home',
+        title: 'Kitchen Home',
+        content: JSON.stringify({
+          featuredRecipes: ['/recipes/dinner', '/recipes/breakfast', '/recipes/lunch'],
+          picture: 'custom_profile.png',
+        }),
+        updated_at: '2026-11-06T10:00:00Z',
+      }),
+    };
+
     await TestBed.configureTestingModule({
       providers: [
         provideRouter([]),
         { provide: RecipeService, useValue: recipeServiceMock },
         { provide: RecipeIndexService, useValue: recipeIndexServiceMock },
+        { provide: PagesService, useValue: pagesServiceMock },
       ],
       imports: [Home],
     }).compileComponents();
   });
 
-  it('should create', () => {
+  it('should create and load configured featured recipes and categories', async () => {
     const fixture = TestBed.createComponent(Home);
+    await fixture.whenStable();
+    fixture.detectChanges();
+
     const component = fixture.componentInstance;
     expect(component).toBeTruthy();
     expect(component.featuredCategories()).toEqual(mockFeaturedCategories);
+    expect(component.featuredRecipes1()).toBe('/recipes/dinner');
+    expect(component.featuredRecipes2()).toBe('/recipes/breakfast');
+    expect(component.featuredRecipes3()).toBe('/recipes/lunch');
+    expect(component.picture()).toBe('custom_profile.png');
   });
 
-  it('should render the recipe grid and category images', () => {
+  it('should render all sections including 3 featured recipe blocks and top cover slot', async () => {
     const fixture = TestBed.createComponent(Home);
+    await fixture.whenStable();
     fixture.detectChanges();
+
     const compiled = fixture.nativeElement as HTMLElement;
+
+    // Check top cover container slot
+    const coverSlot = compiled.querySelector('#home-cover');
+    expect(coverSlot).toBeTruthy();
 
     const categoryImages = compiled.querySelector('dm-category-images');
     expect(categoryImages).toBeTruthy();
 
-    const featuredRecipes = compiled.querySelector('dm-featured-recipes');
-    expect(featuredRecipes).toBeTruthy();
-
     const latestRecipes = compiled.querySelector('dm-latest-recipes');
     expect(latestRecipes).toBeTruthy();
 
+    const featuredRecipes = compiled.querySelectorAll('dm-featured-recipes');
+    expect(featuredRecipes).toHaveLength(3);
+
+    const authorBio = compiled.querySelector('dm-author-bio');
+    expect(authorBio).toBeTruthy();
+
     const topRatedRecipes = compiled.querySelector('dm-top-rated-recipes');
     expect(topRatedRecipes).toBeTruthy();
+  });
+
+  it('should pass empty link strings to featured recipes when unconfigured', async () => {
+    pagesServiceMock.getPage.mockResolvedValueOnce({
+      id: '1',
+      slug: 'kitchen:home',
+      title: 'Kitchen Home',
+      content: JSON.stringify({
+        featuredRecipes: ['/recipes/dinner', '', ''],
+      }),
+      updated_at: '2026-11-06T10:00:00Z',
+    });
+
+    const fixture = TestBed.createComponent(Home);
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const component = fixture.componentInstance;
+    expect(component.featuredRecipes1()).toBe('/recipes/dinner');
+    expect(component.featuredRecipes2()).toBe('');
+    expect(component.featuredRecipes3()).toBe('');
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    const featuredRecipes = compiled.querySelectorAll('dm-featured-recipes');
+    expect(featuredRecipes).toHaveLength(3);
+  });
+
+  it('should handle unconfigured or invalid JSON gracefully', async () => {
+    pagesServiceMock.getPage.mockResolvedValueOnce({
+      id: '1',
+      slug: 'kitchen:home',
+      title: 'Kitchen Home',
+      content: 'invalid json content',
+      updated_at: '2026-11-06T10:00:00Z',
+    });
+
+    const fixture = TestBed.createComponent(Home);
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const component = fixture.componentInstance;
+    expect(component.featuredRecipes1()).toBe('');
+    expect(component.featuredRecipes2()).toBe('');
+    expect(component.featuredRecipes3()).toBe('');
+    expect(component.picture()).toBe('delisha_marie_profile_2.png');
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    const featuredRecipes = compiled.querySelectorAll('dm-featured-recipes');
+    expect(featuredRecipes).toHaveLength(3);
+  });
+
+  it('should handle null page from pagesService', async () => {
+    pagesServiceMock.getPage.mockResolvedValueOnce(null);
+
+    const fixture = TestBed.createComponent(Home);
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const component = fixture.componentInstance;
+    expect(component.featuredRecipes1()).toBe('');
+    expect(component.picture()).toBe('delisha_marie_profile_2.png');
+  });
+
+  it('should support switching picture to delisha_marie_profile.png', async () => {
+    pagesServiceMock.getPage.mockResolvedValueOnce({
+      id: '1',
+      slug: 'kitchen:home',
+      title: 'Kitchen Home',
+      content: JSON.stringify({
+        picture: 'delisha_marie_profile.png',
+      }),
+      updated_at: '2026-11-06T10:00:00Z',
+    });
+
+    const fixture = TestBed.createComponent(Home);
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const component = fixture.componentInstance;
+    expect(component.picture()).toBe('delisha_marie_profile.png');
+
+    const authorBio = fixture.nativeElement.querySelector('dm-author-bio');
+    expect(authorBio).toBeTruthy();
   });
 });
