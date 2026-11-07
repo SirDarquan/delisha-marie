@@ -1,4 +1,4 @@
-import { createRequestMock } from './test-utils';
+import { createMockResponse, createRequestMock } from './test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.hoisted(() => {
@@ -72,6 +72,8 @@ describe('Recipe Index Router API', () => {
     { name: 'Wings', url: '/recipes/appetizers/wings' },
     { name: 'Empty Category Slug', url: '/recipes/' },
     { name: 'Main Dishes', url: '/recipes/main-dishes' },
+    { name: null, url: null },
+    { name: 'Invalid Segment', url: '/other/invalid' },
     { name: 'The Best Appetizers', url: '/the-best-recipes/the-best-appetizers' },
     { name: 'The Best Dips', url: '/the-best-recipes/the-best-appetizers/the-best-dips' },
     { name: 'The Best Wings', url: '/the-best-recipes/the-best-appetizers/the-best-wings' },
@@ -552,6 +554,30 @@ describe('Recipe Index Router API', () => {
       const res = await createRequestMock(recipeIndexRouter)().get('/api/recipe-index');
       expect(res.status).toBe(500);
       expect(res.body.error).toBe('String exception');
+    });
+
+    it('should handle request with missing host and empty url', async () => {
+      const mockReqEmptyUrl = {
+        headers: {},
+        query: {},
+        method: 'GET',
+        url: '',
+      };
+      const mockRes1 = createMockResponse();
+      await recipeIndexRouter(mockReqEmptyUrl as never, mockRes1 as never);
+      expect(mockRes1.statusCode).toBe(404);
+      expect(mockRes1.body).toEqual({ error: 'Not found' });
+
+      // Request with missing host header but valid pathname
+      const mockReqMissingHost = {
+        headers: {},
+        query: {},
+        method: 'GET',
+        url: '/api/recipe-index',
+      };
+      const mockRes2 = createMockResponse();
+      await recipeIndexRouter(mockReqMissingHost as never, mockRes2 as never);
+      expect(mockRes2.statusCode).toBe(200);
     });
   });
 });

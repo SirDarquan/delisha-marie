@@ -311,5 +311,58 @@ describe('robotsTxtRouter', () => {
 
       expect(getRobotsPrefix()).toBe('');
     });
+
+    it('should format rules with prefix: true for both allow and disallow', async () => {
+      process.env['SITE_URL'] = 'https://example.com';
+      process.env['ROBOTS_TXT'] = JSON.stringify({
+        rules: [
+          {
+            userAgent: '*',
+            allow: ['/public'],
+            disallow: ['/admin'],
+            prefix: true,
+          },
+        ],
+      });
+      const res = await request(app).get('/api/robots?prefix=kitchen');
+      expect(res.status).toBe(200);
+      expect(res.text).toContain('Allow: /kitchen/public\n');
+      expect(res.text).toContain('Disallow: /kitchen/admin\n');
+    });
+
+    it('should fall back to localhost when host header is missing', async () => {
+      delete process.env['SITE_URL'];
+      delete process.env['VERCEL_ENV'];
+      delete process.env['VERCEL_URL'];
+      delete process.env['VERCEL_PROJECT_PRODUCTION_URL'];
+      process.env['ROBOTS_TXT'] = JSON.stringify({
+        rules: [{ userAgent: '*' }],
+        sitemap: '/sitemap.xml',
+      });
+      const mockReq = {
+        headers: {},
+        query: {},
+        method: 'GET',
+        url: '/robots.txt',
+      };
+      let resultText = '';
+      const mockRes = {
+        statusCode: 0,
+        headers: {} as Record<string, string>,
+        setHeader(k: string, v: string) {
+          this.headers[k] = v;
+        },
+        status(code: number) {
+          this.statusCode = code;
+          return this;
+        },
+        send(text: string) {
+          resultText = text;
+        },
+      };
+      robotsTxtRouter(mockReq as never, mockRes as never);
+      expect(mockRes.statusCode).toBe(200);
+      expect(resultText).toContain('Sitemap: https://localhost/sitemap.xml');
+    });
   });
 });

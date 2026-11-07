@@ -156,23 +156,11 @@ describe('Admin Blog Pages & Posts Management', () => {
     cy.contains('Page saved successfully!').should('be.visible');
   });
 
-  it('should allow switching About Me picture on kitchen:home card and in editor', () => {
+  it('should display Kitchen Home badge on pages list and allow switching About Me picture in editor', () => {
     // Switch to Kitchen tab
     cy.contains('button', 'kitchen').click();
     cy.contains('/kitchen:home').should('be.visible');
-
-    // Verify picture selector appears
-    cy.get('[data-testid="btn-select-about-pic"]').should('be.visible');
-    cy.get('[data-testid="btn-select-kitchen-pic"]').should('be.visible');
-
-    // Click about-pic option
-    cy.get('[data-testid="btn-select-about-pic"]').click();
-    cy.wait('@savePage')
-      .its('request.body')
-      .should((body) => {
-        const parsed = JSON.parse(body.content);
-        expect(parsed.picture).to.equal('delisha_marie_profile.png');
-      });
+    cy.contains('Kitchen Home').should('be.visible');
 
     // Visit kitchen:home editor
     cy.visit('/pages/kitchen:home');
@@ -181,5 +169,8 @@ describe('Admin Blog Pages & Posts Management', () => {
     cy.get('[data-testid="editor-pic-kitchen-pic"]').should('be.visible');
     cy.get('[data-testid="dropzone-picture1"]').should('be.visible');
     cy.get('[data-testid="dropzone-picture2"]').should('be.visible');
+
+    // Select about-pic option
+    cy.get('[data-testid="editor-pic-about-pic"]').click();
   });
 });

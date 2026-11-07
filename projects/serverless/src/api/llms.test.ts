@@ -621,5 +621,53 @@ describe('llms endpoint', () => {
       );
       expect(getHomeUrl('/about', undefined, '')).toBe('/about');
     });
+
+    it('formatFullRecipe handles recipes with empty ingredients and instructions', () => {
+      const formatted = formatFullRecipe(
+        {
+          id: '99',
+          title: 'Minimal Recipe',
+          slug: 'minimal-recipe',
+          description: 'Just minimal',
+          ingredients: [],
+          instructions: [],
+        } as never,
+        'https://example.com',
+      );
+      expect(formatted).toContain('### Minimal Recipe');
+      expect(formatted).not.toContain('#### Ingredients');
+      expect(formatted).not.toContain('#### Instructions');
+    });
+
+    it('htmlToMarkdown and normalize functions handle edge cases and whitespace', () => {
+      expect(htmlToMarkdown('   ')).toBe('');
+      expect(
+        htmlToMarkdown([
+          { notes: 'Test notes' },
+          { note: 'Test note' },
+          { content: 'Test content' },
+        ]),
+      ).toContain('Test notes');
+      expect(htmlToMarkdown({ notes: 'Single notes' })).toBe('Single notes');
+      expect(htmlToMarkdown({ note: 'Single note' })).toBe('Single note');
+      expect(htmlToMarkdown({ content: 'Single content' })).toBe('Single content');
+
+      const normalizedInst = normalizeInstructions([
+        { step: 'Step 1' },
+        { instruction: 'Do this' },
+        { text: 123 },
+        456,
+        '   ',
+      ]);
+      expect(normalizedInst).toContain('Step 1');
+      expect(normalizedInst).toContain('Do this');
+    });
+
+    it('handles rawBaseUrl ending with /kitchen', async () => {
+      process.env['SITE_URL'] = 'https://example.com/kitchen';
+      const res = await request().get('/llms.txt');
+      expect(res.status).toBe(200);
+      expect(res.text).toContain('# Delisha Marie');
+    });
   });
 });

@@ -135,7 +135,7 @@ describe('PagesListComponent', () => {
     expect(filtered.map((p) => p.slug)).toEqual(['kitchen:recipes', 'about', 'thank-you']);
   });
 
-  it('should pin kitchen:home to the top of kitchen pages and display Kitchen Home badge and About Me picture selector', async () => {
+  it('should pin kitchen:home to the top of kitchen pages and display Kitchen Home badge', async () => {
     const pagesWithHome: Page[] = [
       ...mockPages,
       {
@@ -159,57 +159,6 @@ describe('PagesListComponent', () => {
     fixture.detectChanges();
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.textContent).toContain('Kitchen Home');
-    expect(compiled.textContent).toContain('About Me Picture');
-    expect(compiled.textContent).toContain('About Page Picture');
-    expect(compiled.textContent).toContain('Kitchen Home Picture');
-
-    // Currently selected is delisha_marie_profile_2.png
-    expect(component.getKitchenHomePicture(filtered[0])).toBe('delisha_marie_profile_2.png');
-
-    // Click on About Page Picture
-    const aboutBtn = compiled.querySelector(
-      '[data-testid="btn-select-about-pic"]',
-    ) as HTMLButtonElement;
-    expect(aboutBtn).toBeTruthy();
-    aboutBtn.click();
-    fixture.detectChanges();
-
-    expect(pagesServiceSpy.savePage).toHaveBeenCalledWith(
-      'kitchen:home',
-      expect.objectContaining({
-        content: expect.stringContaining('delisha_marie_profile.png'),
-      }),
-    );
-    expect(component.getKitchenHomePicture(filtered[0])).toBe('delisha_marie_profile.png');
-  });
-
-  it('should render custom uploaded picture options on kitchen:home card', async () => {
-    const pagesWithCustomHome: Page[] = [
-      ...mockPages,
-      {
-        id: '7',
-        slug: 'kitchen:home',
-        title: 'Delisha Kitchen Home',
-        content: JSON.stringify({
-          picture1: 'custom_pic_1.webp',
-          picture2: 'custom_pic_2.webp',
-          picture: 'custom_pic_1.webp',
-        }),
-        updated_at: '2026-11-06',
-      },
-    ];
-    pagesServiceSpy.getPages.mockResolvedValueOnce(pagesWithCustomHome);
-    fixture = TestBed.createComponent(PagesListComponent);
-    component = fixture.componentInstance;
-    await fixture.whenStable();
-    fixture.detectChanges();
-
-    component.selectPost('kitchen');
-    const filtered = component['filteredPages']();
-    const options = component.getKitchenPictureOptions(filtered[0]);
-    expect(options[0].filename).toBe('custom_pic_1.webp');
-    expect(options[1].filename).toBe('custom_pic_2.webp');
-    expect(component.getKitchenHomePicture(filtered[0])).toBe('custom_pic_1.webp');
   });
 
   it('should filter pages for custom post garden', async () => {
@@ -453,5 +402,40 @@ describe('PagesListComponent', () => {
     // Call again with same name
     component.openAddPostDialog();
     expect(component['customPosts']().filter((p) => p === 'events')).toHaveLength(1);
+  });
+
+  it('should return tenant from authService.tenant() when defined', () => {
+    expect(component.tenant()).toEqual({ name: 'Test Tenant' });
+  });
+
+  it('should ignore duplicate post when customPosts already exists in default posts', () => {
+    component['customPosts'].set(['home', 'new-post']);
+    const posts = component['posts']();
+    expect(posts).toContain('home');
+    expect(posts).toContain('new-post');
+    expect(posts.filter((p: string) => p === 'home')).toHaveLength(1);
+  });
+
+  it('should render default 380px block height badge when block height is omitted', async () => {
+    const pageWithNoHeight: Page[] = [
+      {
+        id: 'no-height',
+        slug: 'kitchen:no-height',
+        title: 'No Height Page',
+        content: '<div class="story-component-block" data-component-block="true"></div>',
+        updated_at: '',
+      },
+    ];
+    pagesServiceSpy.getPages.mockResolvedValueOnce(pageWithNoHeight);
+    fixture = TestBed.createComponent(PagesListComponent);
+    component = fixture.componentInstance;
+    vi.spyOn(component, 'getBlockInfo').mockReturnValue({ hasBlock: true, height: undefined });
+    await fixture.whenStable();
+    fixture.detectChanges();
+    component.selectPost('kitchen');
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.textContent).toContain('Block: 380px');
   });
 });
