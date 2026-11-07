@@ -255,7 +255,7 @@ describe('PageEditorComponent', () => {
     });
 
     const slots = component['pictureSlots']();
-    expect(slots.length).toBe(2);
+    expect(slots).toHaveLength(2);
     expect(slots[0].slotKey).toBe('picture1');
     expect(slots[0].picture).toBe('pic1.webp');
     expect(slots[0].isActive).toBe(false);

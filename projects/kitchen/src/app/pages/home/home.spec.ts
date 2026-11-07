@@ -98,7 +98,7 @@ describe('Home', () => {
     expect(latestRecipes).toBeTruthy();
 
     const featuredRecipes = compiled.querySelectorAll('dm-featured-recipes');
-    expect(featuredRecipes.length).toBe(3);
+    expect(featuredRecipes).toHaveLength(3);
 
     const authorBio = compiled.querySelector('dm-author-bio');
     expect(authorBio).toBeTruthy();
@@ -129,7 +129,7 @@ describe('Home', () => {
 
     const compiled = fixture.nativeElement as HTMLElement;
     const featuredRecipes = compiled.querySelectorAll('dm-featured-recipes');
-    expect(featuredRecipes.length).toBe(3);
+    expect(featuredRecipes).toHaveLength(3);
   });
 
   it('should handle unconfigured or invalid JSON gracefully', async () => {
@@ -153,7 +153,7 @@ describe('Home', () => {
 
     const compiled = fixture.nativeElement as HTMLElement;
     const featuredRecipes = compiled.querySelectorAll('dm-featured-recipes');
-    expect(featuredRecipes.length).toBe(3);
+    expect(featuredRecipes).toHaveLength(3);
   });
 
   it('should handle null page from pagesService', async () => {

@@ -130,7 +130,7 @@ export class ProfilePictureUploaderComponent {
   private readonly recipeService = inject(RecipeService);
   private readonly snackBar = inject(MatSnackBar);
 
-  readonly slotKey = input.required<'picture1' | 'picture2' | string>();
+  readonly slotKey = input.required<string>();
   readonly testId = input.required<string>();
   readonly label = input.required<string>();
   readonly description = input<string>('');
