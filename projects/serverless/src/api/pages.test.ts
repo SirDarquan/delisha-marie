@@ -76,6 +76,24 @@ describe('Public Pages Router API', () => {
       expect(mockEq).toHaveBeenCalledWith('slug', 'about');
     });
 
+    it('should return 404 when kitchen:slug and legacy slug are both not found', async () => {
+      const mockSingle = vi
+        .fn()
+        .mockResolvedValueOnce({ data: null, error: { code: 'PGRST116' } })
+        .mockResolvedValueOnce({ data: null, error: { code: 'PGRST116' } });
+      const mockLimit = vi.fn().mockReturnValue({ single: mockSingle });
+      const mockEq = vi.fn().mockReturnValue({ limit: mockLimit });
+      const mockSelect = vi.fn().mockReturnValue({ eq: mockEq });
+      mockFrom.mockReturnValue({ select: mockSelect });
+
+      const res = await request(app).get('/api/pages/kitchen:missing');
+
+      expect(res.status).toBe(404);
+      expect(res.body).toEqual({ error: 'Page not found' });
+      expect(mockEq).toHaveBeenCalledWith('slug', 'kitchen:missing');
+      expect(mockEq).toHaveBeenCalledWith('slug', 'missing');
+    });
+
     it('should return 404 if page not found', async () => {
       const mockSingle = vi.fn().mockResolvedValue({ data: null, error: { code: 'PGRST116' } });
       const mockLimit = vi.fn().mockReturnValue({ single: mockSingle });
