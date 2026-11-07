@@ -47,6 +47,22 @@ describe('Contacts 2 API (Vercel Node)', () => {
       const res = await request().post('/api/contacts');
       expect(res.status).toBe(400);
       expect(res.body).toEqual({ error: 'Name, email, subject, and message are required' });
+
+      // Direct call to verify req.body || {} falsy branch
+      const mockReq = { method: 'POST', body: undefined, headers: {} };
+      const mockRes = {
+        statusCode: 0,
+        status(code: number) {
+          this.statusCode = code;
+          return this;
+        },
+        json: vi.fn(),
+      };
+      await contactsHandler(mockReq as never, mockRes as never);
+      expect(mockRes.statusCode).toBe(400);
+      expect(mockRes.json).toHaveBeenCalledWith({
+        error: 'Name, email, subject, and message are required',
+      });
     });
 
     it('should successfully post a contact from human with isSpam=false and deleted_at=null', async () => {
