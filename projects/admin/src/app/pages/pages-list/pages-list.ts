@@ -15,6 +15,7 @@ import { Router, RouterLink } from '@angular/router';
 import { Page, PagesService } from '../../services/pages.service';
 import { AuthService } from '../../services/auth.service';
 import { AddPostDialogComponent } from '../../components/add-post-dialog/add-post-dialog';
+import { KitchenHomeDialogComponent } from '../../components/kitchen-home-dialog/kitchen-home-dialog';
 import {
   CreatePageDialogComponent,
   CreatePageDialogResult,
@@ -98,15 +99,27 @@ export interface BlockInfo {
           </button>
         </div>
 
-        <div class="text-xs text-slate-400">
-          Viewing: <span class="font-bold text-white capitalize">{{ activePost() }}</span>
-          <span class="text-slate-500 ml-1">
-            @if (activePost() === 'kitchen') {
-              (finds kitchen:slug and legacy unprefixed slugs)
-            } @else {
-              (finds {{ activePost() }}: slugs)
-            }
-          </span>
+        <div class="flex items-center gap-3 flex-wrap">
+          @if (activePost() === 'kitchen') {
+            <button
+              type="button"
+              (click)="openKitchenHomeDialog()"
+              data-testid="btn-configure-kitchen-home"
+              class="px-3.5 py-1.5 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 border border-purple-500/30 hover:border-purple-500/50 cursor-pointer shadow-sm">
+              <mat-icon class="!w-4 !h-4 !text-[16px]">tune</mat-icon>
+              <span>Configure Kitchen Home</span>
+            </button>
+          }
+          <div class="text-xs text-slate-400">
+            Viewing: <span class="font-bold text-white capitalize">{{ activePost() }}</span>
+            <span class="text-slate-500 ml-1">
+              @if (activePost() === 'kitchen') {
+                (finds kitchen:slug and legacy unprefixed slugs)
+              } @else {
+                (finds {{ activePost() }}: slugs)
+              }
+            </span>
+          </div>
         </div>
       </div>
 
@@ -128,13 +141,6 @@ export interface BlockInfo {
                     class="px-2.5 py-1 rounded-full text-xs font-mono font-medium bg-slate-800 text-slate-300 border border-slate-700/60">
                     /{{ page.slug }}
                   </span>
-                  @if (page.slug === 'kitchen:home' || page.slug === 'home') {
-                    <span
-                      class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-purple-500/20 text-purple-300 border border-purple-500/40">
-                      <mat-icon class="!w-3 !h-3 !text-[12px]">home</mat-icon>
-                      Kitchen Home
-                    </span>
-                  }
                   @if (block.hasBlock) {
                     <span
                       class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-500/15 text-amber-300 border border-amber-500/30">
@@ -240,12 +246,9 @@ export class PagesListComponent {
     const current = this.activePost();
     const all = this.pages();
     if (current === 'kitchen') {
-      const kitchenPages = all.filter(
-        (p) => p.slug.startsWith('kitchen:') || !p.slug.includes(':'),
-      );
-      const homePages = kitchenPages.filter((p) => p.slug === 'kitchen:home' || p.slug === 'home');
-      const otherPages = kitchenPages.filter((p) => p.slug !== 'kitchen:home' && p.slug !== 'home');
-      return [...homePages, ...otherPages];
+      return all
+        .filter((p) => p.slug.startsWith('kitchen:') || !p.slug.includes(':'))
+        .filter((p) => p.slug !== 'kitchen:home' && p.slug !== 'home');
     }
     return all.filter((p) => p.slug.startsWith(`${current}:`));
   });
@@ -257,7 +260,9 @@ export class PagesListComponent {
   getPostCount(post: string): number {
     const all = this.pages();
     if (post === 'kitchen') {
-      return all.filter((p) => p.slug.startsWith('kitchen:') || !p.slug.includes(':')).length;
+      return all
+        .filter((p) => p.slug.startsWith('kitchen:') || !p.slug.includes(':'))
+        .filter((p) => p.slug !== 'kitchen:home' && p.slug !== 'home').length;
     }
     return all.filter((p) => p.slug.startsWith(`${post}:`)).length;
   }
@@ -317,6 +322,13 @@ export class PagesListComponent {
       if (result) {
         void this.router.navigate(['/pages', result.fullSlug]);
       }
+    });
+  }
+
+  openKitchenHomeDialog(): void {
+    this.dialog.open(KitchenHomeDialogComponent, {
+      width: '640px',
+      panelClass: 'transparent-dialog-panel',
     });
   }
 }

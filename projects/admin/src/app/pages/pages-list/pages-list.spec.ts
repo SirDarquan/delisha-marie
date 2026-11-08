@@ -8,6 +8,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { of } from 'rxjs';
 import { AddPostDialogComponent } from '../../components/add-post-dialog/add-post-dialog';
 import { CreatePageDialogComponent } from '../create-page-dialog/create-page-dialog';
+import { KitchenHomeDialogComponent } from '../../components/kitchen-home-dialog/kitchen-home-dialog';
 
 describe('PagesListComponent', () => {
   let component: PagesListComponent;
@@ -135,7 +136,7 @@ describe('PagesListComponent', () => {
     expect(filtered.map((p) => p.slug)).toEqual(['kitchen:recipes', 'about', 'thank-you']);
   });
 
-  it('should pin kitchen:home to the top of kitchen pages and display Kitchen Home badge', async () => {
+  it('should exclude kitchen:home and home from kitchen pages cards', async () => {
     const pagesWithHome: Page[] = [
       ...mockPages,
       {
@@ -143,6 +144,13 @@ describe('PagesListComponent', () => {
         slug: 'kitchen:home',
         title: 'Delisha Kitchen Home',
         content: JSON.stringify({ picture: 'delisha_marie_profile_2.png' }),
+        updated_at: '2026-11-06',
+      },
+      {
+        id: '8',
+        slug: 'home',
+        title: 'Legacy Home',
+        content: '<p>Legacy</p>',
         updated_at: '2026-11-06',
       },
     ];
@@ -154,11 +162,30 @@ describe('PagesListComponent', () => {
 
     component.selectPost('kitchen');
     const filtered = component['filteredPages']();
-    expect(filtered[0].slug).toBe('kitchen:home');
+    expect(filtered.map((p) => p.slug)).toEqual(['kitchen:recipes', 'about', 'thank-you']);
+  });
 
+  it('should display Configure Kitchen Home button when activePost is kitchen and open dialog on click', async () => {
+    pagesServiceSpy.getPages.mockResolvedValueOnce(mockPages);
+    fixture = TestBed.createComponent(PagesListComponent);
+    component = fixture.componentInstance;
+    await fixture.whenStable();
     fixture.detectChanges();
+
+    component.selectPost('kitchen');
+    fixture.detectChanges();
+
     const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.textContent).toContain('Kitchen Home');
+    const btn = compiled.querySelector(
+      '[data-testid="btn-configure-kitchen-home"]',
+    ) as HTMLButtonElement;
+    expect(btn).toBeTruthy();
+
+    btn.click();
+    expect(dialogSpy.open).toHaveBeenCalledWith(KitchenHomeDialogComponent, {
+      width: '640px',
+      panelClass: 'transparent-dialog-panel',
+    });
   });
 
   it('should filter pages for custom post garden', async () => {

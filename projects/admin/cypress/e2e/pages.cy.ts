@@ -90,6 +90,21 @@ describe('Admin Blog Pages & Posts Management', () => {
       body: { success: true },
     }).as('savePage');
 
+    // Mock kitchen home settings
+    cy.intercept('GET', '**/api/settings/kitchen-home', {
+      statusCode: 200,
+      body: {
+        featuredRecipes: ['/recipes/dinner', '/recipes/breakfast', '/recipes/lunch'],
+        kitchen_about: 'delisha_marie_profile_2.png',
+        sidebar_about: 'delisha_marie_profile.png',
+      },
+    }).as('getKitchenHomeSettings');
+
+    cy.intercept('PUT', '**/api/settings/kitchen-home', {
+      statusCode: 200,
+      body: { success: true },
+    }).as('saveKitchenHomeSettings');
+
     cy.visit('/pages');
     cy.wait('@getPages');
   });
@@ -156,21 +171,31 @@ describe('Admin Blog Pages & Posts Management', () => {
     cy.contains('Page saved successfully!').should('be.visible');
   });
 
-  it('should display Kitchen Home badge on pages list and allow switching About Me picture in editor', () => {
+  it('should open Configure Kitchen Home dialog on Kitchen tab and allow saving settings', () => {
     // Switch to Kitchen tab
     cy.contains('button', 'kitchen').click();
-    cy.contains('/kitchen:home').should('be.visible');
-    cy.contains('Kitchen Home').should('be.visible');
+    // kitchen:home is NOT displayed as a page card
+    cy.contains('/kitchen:home').should('not.exist');
 
-    // Visit kitchen:home editor
-    cy.visit('/pages/kitchen:home');
-    cy.wait('@getPage');
-    cy.get('[data-testid="editor-pic-about-pic"]').should('be.visible');
-    cy.get('[data-testid="editor-pic-kitchen-pic"]').should('be.visible');
-    cy.get('[data-testid="dropzone-picture1"]').should('be.visible');
-    cy.get('[data-testid="dropzone-picture2"]').should('be.visible');
+    // Click Configure Kitchen Home button
+    cy.get('[data-testid="btn-configure-kitchen-home"]').should('be.visible').click();
+    cy.wait('@getKitchenHomeSettings');
 
-    // Select about-pic option
-    cy.get('[data-testid="editor-pic-about-pic"]').click();
+    // Dialog should be open
+    cy.get('mat-dialog-container').should('be.visible');
+    cy.contains('Kitchen Home Settings').should('be.visible');
+    cy.get('[data-testid="recipe-slot-0"]').should('have.value', '/recipes/dinner');
+    cy.get('[data-testid="recipe-slot-1"]').should('have.value', '/recipes/breakfast');
+    cy.get('[data-testid="recipe-slot-2"]').should('have.value', '/recipes/lunch');
+    cy.get('[data-testid="dropzone-kitchen_about"]').should('be.visible');
+    cy.get('[data-testid="dropzone-sidebar_about"]').should('be.visible');
+
+    // Edit slot 1
+    cy.get('[data-testid="recipe-slot-0"]').clear().type('/recipes/new-featured');
+
+    // Save changes
+    cy.get('[data-testid="btn-save-kitchen-home"]').click();
+    cy.wait('@saveKitchenHomeSettings');
+    cy.contains('Kitchen Home settings saved successfully!').should('be.visible');
   });
 });
