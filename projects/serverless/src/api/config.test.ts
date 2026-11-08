@@ -32,10 +32,9 @@ describe('configRouter', () => {
   });
 
   it('should return the config data with default KitchenHome when no site_settings found', async () => {
-    const mockIs = vi.fn().mockReturnValue({
+    const mockEq = vi.fn().mockReturnValue({
       maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
     });
-    const mockEq = vi.fn().mockReturnValue({ is: mockIs });
     const mockSelect = vi.fn().mockReturnValue({ eq: mockEq });
     mockFrom.mockReturnValue({ select: mockSelect });
 
@@ -54,13 +53,12 @@ describe('configRouter', () => {
       sidebar_about: 'sidebar_custom.webp',
     };
 
-    const mockIs = vi.fn().mockReturnValue({
+    const mockEq = vi.fn().mockReturnValue({
       maybeSingle: vi.fn().mockResolvedValue({
         data: { value: JSON.stringify(customKitchenHome) },
         error: null,
       }),
     });
-    const mockEq = vi.fn().mockReturnValue({ is: mockIs });
     const mockSelect = vi.fn().mockReturnValue({ eq: mockEq });
     mockFrom.mockReturnValue({ select: mockSelect });
 
@@ -77,13 +75,12 @@ describe('configRouter', () => {
       sidebar_about: 'pic_b.webp',
     };
 
-    const mockIs = vi.fn().mockReturnValue({
+    const mockEq = vi.fn().mockReturnValue({
       maybeSingle: vi.fn().mockResolvedValue({
         data: { value: customKitchenHome },
         error: null,
       }),
     });
-    const mockEq = vi.fn().mockReturnValue({ is: mockIs });
     const mockSelect = vi.fn().mockReturnValue({ eq: mockEq });
     mockFrom.mockReturnValue({ select: mockSelect });
 
@@ -94,10 +91,9 @@ describe('configRouter', () => {
   });
 
   it('should fall back gracefully to default KitchenHome on Supabase error', async () => {
-    const mockIs = vi.fn().mockReturnValue({
+    const mockEq = vi.fn().mockReturnValue({
       maybeSingle: vi.fn().mockRejectedValue(new Error('Supabase unreachable')),
     });
-    const mockEq = vi.fn().mockReturnValue({ is: mockIs });
     const mockSelect = vi.fn().mockReturnValue({ eq: mockEq });
     mockFrom.mockReturnValue({ select: mockSelect });
 

@@ -24,15 +24,12 @@ settingsRouter.get(
   async (req: AuthRequest, res: Response): Promise<void> => {
     try {
       const client = backendService.getClient(req.token);
-      let query = client.from('site_settings').select('value').eq('key', 'kitchen_home');
+      const { data, error } = await client
+        .from('site_settings')
+        .select('value')
+        .eq('key', 'kitchen_home')
+        .maybeSingle();
 
-      if (req.tenantId) {
-        query = query.eq('tenant_id', req.tenantId);
-      } else {
-        query = query.is('tenant_id', null);
-      }
-
-      const { data, error } = await query.maybeSingle();
       if (error) throw error;
 
       if (!data?.value) {
@@ -73,40 +70,20 @@ settingsRouter.put(
       const client = backendService.getClient(req.token);
       const tenantId = req.tenantId || null;
 
-      let findQuery = client.from('site_settings').select('id').eq('key', 'kitchen_home');
-      if (tenantId) {
-        findQuery = findQuery.eq('tenant_id', tenantId);
-      } else {
-        findQuery = findQuery.is('tenant_id', null);
-      }
+      const recordValue = {
+        ...payload,
+        ...(tenantId ? { tenant_id: tenantId } : {}),
+      };
 
-      const { data: existing, error: findError } = await findQuery.maybeSingle();
-      if (findError) throw findError;
-
-      const now = new Date().toISOString();
-
-      if (existing) {
-        let updateQuery = client
-          .from('site_settings')
-          .update({ value: JSON.stringify(payload), updated_at: now })
-          .eq('id', existing.id);
-        if (tenantId) {
-          updateQuery = updateQuery.eq('tenant_id', tenantId);
-        } else {
-          updateQuery = updateQuery.is('tenant_id', null);
-        }
-        const { error } = await updateQuery;
-        if (error) throw error;
-      } else {
-        const { error } = await client.from('site_settings').insert({
+      const { error } = await client.from('site_settings').upsert(
+        {
           key: 'kitchen_home',
-          value: JSON.stringify(payload),
-          tenant_id: tenantId,
-          created_at: now,
-          updated_at: now,
-        });
-        if (error) throw error;
-      }
+          value: JSON.stringify(recordValue),
+        },
+        { onConflict: 'key' },
+      );
+
+      if (error) throw error;
 
       res.json({ success: true, settings: payload });
     } catch (err) {

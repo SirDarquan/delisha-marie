@@ -65,7 +65,6 @@ const configHandler = async (req: VercelRequest, res: VercelResponse): Promise<v
       .from('site_settings')
       .select('value')
       .eq('key', 'kitchen_home')
-      .is('tenant_id', null)
       .maybeSingle();
 
     if (data?.value) {
