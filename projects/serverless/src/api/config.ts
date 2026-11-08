@@ -1,4 +1,17 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
+import { getSupabaseClient } from './supabase';
+
+export interface KitchenHomeSettings {
+  featuredRecipes: string[];
+  kitchen_about: string;
+  sidebar_about: string;
+}
+
+export const DEFAULT_KITCHEN_HOME_SETTINGS: KitchenHomeSettings = {
+  featuredRecipes: ['', '', ''],
+  kitchen_about: 'delisha_marie_profile_2.png',
+  sidebar_about: 'delisha_marie_profile.png',
+};
 
 export interface AppConfig {
   GoogleTagManager: {
@@ -14,6 +27,7 @@ export interface AppConfig {
     release?: string;
     debug?: boolean;
   };
+  KitchenHome?: KitchenHomeSettings;
 }
 
 const appConfig: AppConfig = {
@@ -38,13 +52,34 @@ const appConfig: AppConfig = {
   },
 };
 
-const configHandler = async (req: VercelRequest, res: VercelResponse) => {
+const configHandler = async (req: VercelRequest, res: VercelResponse): Promise<void> => {
   if (req.method !== 'GET') {
     res.status(404).json({ error: 'Not found' });
     return;
   }
 
-  res.status(200).json(appConfig);
+  let kitchenHome = DEFAULT_KITCHEN_HOME_SETTINGS;
+  try {
+    const supabase = await getSupabaseClient();
+    const { data } = await supabase
+      .from('site_settings')
+      .select('value')
+      .eq('key', 'kitchen_home')
+      .is('tenant_id', null)
+      .maybeSingle();
+
+    if (data?.value) {
+      const parsed = typeof data.value === 'string' ? JSON.parse(data.value) : data.value;
+      kitchenHome = { ...DEFAULT_KITCHEN_HOME_SETTINGS, ...parsed };
+    }
+  } catch (err) {
+    console.error('Failed to load kitchen_home from site_settings:', err);
+  }
+
+  res.status(200).json({
+    ...appConfig,
+    KitchenHome: kitchenHome,
+  });
 };
 
 export default configHandler;

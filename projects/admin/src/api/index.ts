@@ -10,6 +10,7 @@ import commentsRouter from './comments';
 import { pagesRouter } from './pages';
 import contactsRouter from './contacts';
 import usersRouter from './users';
+import settingsRouter from './settings';
 const apiRouter = Router();
 
 // Register middleware
@@ -27,5 +28,6 @@ apiRouter.use('/api', commentsRouter);
 apiRouter.use('/api', pagesRouter);
 apiRouter.use('/api', contactsRouter);
 apiRouter.use('/api', usersRouter);
+apiRouter.use('/api', settingsRouter);
 
 export default apiRouter;
