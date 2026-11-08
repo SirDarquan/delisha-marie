@@ -23,6 +23,12 @@ export interface AppConfig {
     release?: string;
     debug?: boolean;
   };
+
+  KitchenHome?: {
+    featuredRecipes: string[];
+    kitchen_about: string;
+    sidebar_about: string;
+  };
 }
 
 @Injectable({
@@ -60,5 +66,9 @@ export class AppConfigService implements AppPlugin {
 
   SentryConfig() {
     return this.config()?.Sentry;
+  }
+
+  KitchenHomeConfig() {
+    return this.config()?.KitchenHome;
   }
 }

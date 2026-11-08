@@ -4,7 +4,7 @@ import { provideRouter } from '@angular/router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { RecipeService } from '../../services/recipe.service';
 import { RecipeIndexService } from '../recipe-index/recipe-index.service';
-import { PagesService } from '../../services/pages.service';
+import { AppConfigService } from '../../services/config.service';
 import { Home } from './home';
 
 describe('Home', () => {
@@ -25,7 +25,7 @@ describe('Home', () => {
     { name: 'Appetizers', image: '/app.png', url: '/recipes/appetizers' },
   ];
 
-  let pagesServiceMock: { getPage: ReturnType<typeof vi.fn> };
+  let configServiceMock: { KitchenHomeConfig: ReturnType<typeof vi.fn> };
 
   beforeEach(async () => {
     TestBed.resetTestingModule();
@@ -42,16 +42,11 @@ describe('Home', () => {
       },
     };
 
-    pagesServiceMock = {
-      getPage: vi.fn().mockResolvedValue({
-        id: '1',
-        slug: 'kitchen:home',
-        title: 'Kitchen Home',
-        content: JSON.stringify({
-          featuredRecipes: ['/recipes/dinner', '/recipes/breakfast', '/recipes/lunch'],
-          picture: 'custom_profile.png',
-        }),
-        updated_at: '2026-11-06T10:00:00Z',
+    configServiceMock = {
+      KitchenHomeConfig: vi.fn().mockReturnValue({
+        featuredRecipes: ['/recipes/dinner', '/recipes/breakfast', '/recipes/lunch'],
+        kitchen_about: 'custom_profile.png',
+        sidebar_about: 'custom_sidebar.png',
       }),
     };
 
@@ -60,7 +55,7 @@ describe('Home', () => {
         provideRouter([]),
         { provide: RecipeService, useValue: recipeServiceMock },
         { provide: RecipeIndexService, useValue: recipeIndexServiceMock },
-        { provide: PagesService, useValue: pagesServiceMock },
+        { provide: AppConfigService, useValue: configServiceMock },
       ],
       imports: [Home],
     }).compileComponents();
@@ -87,7 +82,6 @@ describe('Home', () => {
 
     const compiled = fixture.nativeElement as HTMLElement;
 
-    // Check top cover container slot
     const coverSlot = compiled.querySelector('#home-cover');
     expect(coverSlot).toBeTruthy();
 
@@ -108,14 +102,10 @@ describe('Home', () => {
   });
 
   it('should pass empty link strings to featured recipes when unconfigured', async () => {
-    pagesServiceMock.getPage.mockResolvedValueOnce({
-      id: '1',
-      slug: 'kitchen:home',
-      title: 'Kitchen Home',
-      content: JSON.stringify({
-        featuredRecipes: ['/recipes/dinner', '', ''],
-      }),
-      updated_at: '2026-11-06T10:00:00Z',
+    configServiceMock.KitchenHomeConfig.mockReturnValue({
+      featuredRecipes: ['/recipes/dinner', '', ''],
+      kitchen_about: 'delisha_marie_profile_2.png',
+      sidebar_about: 'delisha_marie_profile.png',
     });
 
     const fixture = TestBed.createComponent(Home);
@@ -132,14 +122,8 @@ describe('Home', () => {
     expect(featuredRecipes).toHaveLength(3);
   });
 
-  it('should handle unconfigured or invalid JSON gracefully', async () => {
-    pagesServiceMock.getPage.mockResolvedValueOnce({
-      id: '1',
-      slug: 'kitchen:home',
-      title: 'Kitchen Home',
-      content: 'invalid json content',
-      updated_at: '2026-11-06T10:00:00Z',
-    });
+  it('should handle unconfigured or null KitchenHomeConfig gracefully', async () => {
+    configServiceMock.KitchenHomeConfig.mockReturnValue(null);
 
     const fixture = TestBed.createComponent(Home);
     await fixture.whenStable();
@@ -154,39 +138,5 @@ describe('Home', () => {
     const compiled = fixture.nativeElement as HTMLElement;
     const featuredRecipes = compiled.querySelectorAll('dm-featured-recipes');
     expect(featuredRecipes).toHaveLength(3);
-  });
-
-  it('should handle null page from pagesService', async () => {
-    pagesServiceMock.getPage.mockResolvedValueOnce(null);
-
-    const fixture = TestBed.createComponent(Home);
-    await fixture.whenStable();
-    fixture.detectChanges();
-
-    const component = fixture.componentInstance;
-    expect(component.featuredRecipes1()).toBe('');
-    expect(component.picture()).toBe('delisha_marie_profile_2.png');
-  });
-
-  it('should support switching picture to delisha_marie_profile.png', async () => {
-    pagesServiceMock.getPage.mockResolvedValueOnce({
-      id: '1',
-      slug: 'kitchen:home',
-      title: 'Kitchen Home',
-      content: JSON.stringify({
-        picture: 'delisha_marie_profile.png',
-      }),
-      updated_at: '2026-11-06T10:00:00Z',
-    });
-
-    const fixture = TestBed.createComponent(Home);
-    await fixture.whenStable();
-    fixture.detectChanges();
-
-    const component = fixture.componentInstance;
-    expect(component.picture()).toBe('delisha_marie_profile.png');
-
-    const authorBio = fixture.nativeElement.querySelector('dm-author-bio');
-    expect(authorBio).toBeTruthy();
   });
 });
