@@ -666,6 +666,46 @@ describe('Auth Middleware', () => {
     expect(cookies).toBeDefined();
   });
 
+  it('should clear impersonation cookies when admin_impersonate_max_at cap has elapsed', async () => {
+    const mockAdmin = { id: 'admin-1', email: 'sirdarquan@gmail.com' };
+
+    vi.mocked(backendService.verifyToken).mockResolvedValue(
+      mockAdmin as unknown as Awaited<ReturnType<typeof backendService.verifyToken>>,
+    );
+
+    backendService.supabaseAdmin = {
+      from: vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        or: vi.fn().mockReturnThis(),
+        maybeSingle: vi.fn().mockResolvedValue({
+          data: {
+            id: 'p-1',
+            user_id: 'admin-1',
+            email: 'sirdarquan@gmail.com',
+            role: 'admin',
+            status: 'active',
+          },
+          error: null,
+        }),
+      }),
+    } as unknown as typeof backendService.supabaseAdmin;
+
+    const expiredMaxAt = Date.now() - 10000;
+    const res = await request(app)
+      .get('/test-secure')
+      .set('Cookie', [
+        'admin_access_token=admin-jwt',
+        'admin_impersonate_user_id=member-2',
+        `admin_impersonate_max_at=${expiredMaxAt}`,
+      ]);
+
+    expect(res.status).toBe(200);
+    expect(res.body.user).toEqual(mockAdmin);
+    const cookies = res.headers['set-cookie'] as unknown as string[];
+    expect(cookies).toBeDefined();
+  });
+
   describe('Role Guards', () => {
     it('adminOnlyMiddleware should allow admin and block non-admin', () => {
       const mockReq = { role: 'admin' } as unknown as express.Request;
@@ -756,6 +796,7 @@ describe('Auth Middleware', () => {
         path: '/',
       });
       expect(mockRes.clearCookie).toHaveBeenCalledWith('admin_impersonated_user_id', { path: '/' });
+      expect(mockRes.clearCookie).toHaveBeenCalledWith('admin_impersonate_max_at', { path: '/' });
 
       vi.clearAllMocks();
       clearAllAuthCookies(mockRes);
@@ -766,14 +807,20 @@ describe('Auth Middleware', () => {
         path: '/',
       });
       expect(mockRes.clearCookie).toHaveBeenCalledWith('admin_impersonated_user_id', { path: '/' });
+      expect(mockRes.clearCookie).toHaveBeenCalledWith('admin_impersonate_max_at', { path: '/' });
     });
 
     it('should set impersonation cookies with default maxAge when session is omitted or partial', () => {
-      const mockRes = { cookie: vi.fn() } as unknown as express.Response;
+      const mockRes = { cookie: vi.fn(), clearCookie: vi.fn() } as unknown as express.Response;
       setImpersonationCookies(mockRes, 'target-id');
       expect(mockRes.cookie).toHaveBeenCalledWith(
         'admin_impersonate_user_id',
         'target-id',
+        expect.objectContaining({ maxAge: 3600000 }),
+      );
+      expect(mockRes.cookie).toHaveBeenCalledWith(
+        'admin_impersonate_max_at',
+        expect.any(String),
         expect.objectContaining({ maxAge: 3600000 }),
       );
 
@@ -781,9 +828,13 @@ describe('Auth Middleware', () => {
       setImpersonationCookies(mockRes, 'target-id', {
         access_token: 'acc-tok',
         refresh_token: 'ref-tok',
-        expires_in: 1800,
       });
-      expect(mockRes.cookie).toHaveBeenCalledTimes(3);
+      expect(mockRes.cookie).toHaveBeenCalledTimes(4);
+
+      // Remaining cap <= 0 branch
+      vi.clearAllMocks();
+      setImpersonationCookies(mockRes, 'target-id', undefined, Date.now() - 5000);
+      expect(mockRes.clearCookie).toHaveBeenCalledWith('admin_impersonate_max_at', { path: '/' });
     });
   });
 });

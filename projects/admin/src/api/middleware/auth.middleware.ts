@@ -98,10 +98,14 @@ async function tryVerifyToken(
   }
 }
 
+export const IMPERSONATION_IDLE_TIMEOUT_MS = 60 * 60 * 1000; // 1 hour inactivity window
+export const IMPERSONATION_MAX_CAP_MS = 8 * 60 * 60 * 1000; // 8 hours absolute max cap
+
 export function clearImpersonationCookies(res: Response): void {
   res.clearCookie('admin_impersonate_user_id', { path: '/' });
   res.clearCookie('admin_impersonate_token', { path: '/' });
   res.clearCookie('admin_impersonate_refresh_token', { path: '/' });
+  res.clearCookie('admin_impersonate_max_at', { path: '/' });
   res.clearCookie('admin_original_token', { path: '/' });
   res.clearCookie('admin_original_refresh_token', { path: '/' });
   res.clearCookie('admin_impersonated_user_id', { path: '/' });
@@ -111,9 +115,27 @@ export function setImpersonationCookies(
   res: Response,
   targetUserId: string,
   session?: { access_token?: string; refresh_token?: string; expires_in?: number },
+  maxAt?: number,
 ): void {
-  const maxAge = (session?.expires_in || 3600) * 1000;
+  const now = Date.now();
+  const absoluteMaxAt = maxAt ?? now + IMPERSONATION_MAX_CAP_MS;
+  const remainingCap = absoluteMaxAt - now;
+
+  if (remainingCap <= 0) {
+    clearImpersonationCookies(res);
+    return;
+  }
+
+  const maxAge = Math.min(IMPERSONATION_IDLE_TIMEOUT_MS, remainingCap);
+
   res.cookie('admin_impersonate_user_id', targetUserId, {
+    httpOnly: true,
+    secure: false,
+    sameSite: 'lax',
+    path: '/',
+    maxAge,
+  });
+  res.cookie('admin_impersonate_max_at', String(absoluteMaxAt), {
     httpOnly: true,
     secure: false,
     sameSite: 'lax',
@@ -244,6 +266,7 @@ async function resolveImpersonation(
 ): Promise<{
   user: { id?: string; email?: string; [key: string]: unknown };
   token?: string;
+  refreshToken?: string;
   tenantId: string | null;
   tenant: TenantInfo | null;
 } | null> {
@@ -268,7 +291,7 @@ async function resolveImpersonation(
       .maybeSingle();
 
     let token = req.cookies?.['admin_impersonate_token'];
-    const refreshToken = req.cookies?.['admin_impersonate_refresh_token'];
+    let refreshToken = req.cookies?.['admin_impersonate_refresh_token'];
 
     if (token) {
       try {
@@ -288,7 +311,9 @@ async function resolveImpersonation(
         });
         if (!refErr && refData?.session && refData?.user?.id === profile.user_id) {
           token = refData.session.access_token;
-          setImpersonationCookies(res, profile.user_id, refData.session);
+          if (refData.session.refresh_token) {
+            refreshToken = refData.session.refresh_token;
+          }
         }
       } catch {
         // Refresh failed
@@ -298,6 +323,7 @@ async function resolveImpersonation(
     return {
       user: { id: profile.user_id, email: profile.email },
       token: token || undefined,
+      refreshToken: refreshToken || undefined,
       tenantId: tenantData?.id || null,
       tenant: tenantData
         ? {
@@ -355,6 +381,9 @@ export const authMiddleware = async (
 
     const impersonatedUserId =
       req.cookies?.['admin_impersonate_user_id'] || req.cookies?.['admin_impersonated_user_id'];
+    const maxAtRaw = req.cookies?.['admin_impersonate_max_at'];
+    const maxAt = maxAtRaw ? Number(maxAtRaw) : undefined;
+    const now = Date.now();
     const hasOriginalToken = Boolean(req.cookies?.['admin_original_token']);
 
     if (
@@ -362,17 +391,32 @@ export const authMiddleware = async (
       impersonatedUserId &&
       impersonatedUserId !== authResult.user.id
     ) {
-      const impContext = await resolveImpersonation(req, res, impersonatedUserId);
-      if (impContext) {
-        authReq.user = impContext.user;
-        if (impContext.token) {
-          authReq.token = impContext.token;
-        }
-        authReq.tenantId = impContext.tenantId;
-        authReq.tenant = impContext.tenant;
-        authReq.isImpersonating = true;
-      } else {
+      if (maxAt !== undefined && now >= maxAt) {
         clearImpersonationCookies(res);
+      } else {
+        const impContext = await resolveImpersonation(req, res, impersonatedUserId);
+        if (impContext) {
+          authReq.user = impContext.user;
+          if (impContext.token) {
+            authReq.token = impContext.token;
+          }
+          authReq.tenantId = impContext.tenantId;
+          authReq.tenant = impContext.tenant;
+          authReq.isImpersonating = true;
+
+          // Slide rolling 1-hour inactivity window, capped at 8-hour max
+          const currentToken = impContext.token || req.cookies?.['admin_impersonate_token'];
+          const currentRefreshToken =
+            impContext.refreshToken || req.cookies?.['admin_impersonate_refresh_token'];
+          setImpersonationCookies(
+            res,
+            impersonatedUserId,
+            { access_token: currentToken, refresh_token: currentRefreshToken },
+            maxAt,
+          );
+        } else {
+          clearImpersonationCookies(res);
+        }
       }
     } else if (hasOriginalToken && profileInfo.role === 'member') {
       authReq.isImpersonating = checkImpersonation(req, res, authResult.user.id, profileInfo.role);
