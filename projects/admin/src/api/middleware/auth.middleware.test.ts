@@ -25,6 +25,7 @@ import {
   clearImpersonationCookies,
   memberOnlyMiddleware,
   setAuthCookies,
+  setImpersonationCookies,
 } from './auth.middleware';
 import { backendService } from '../supabase-backend.service';
 
@@ -432,6 +433,279 @@ describe('Auth Middleware', () => {
     expect(cookies).toBeDefined();
   });
 
+  it('should clear impersonation cookies when member has admin_original_token but userId mismatches impersonatedUserId', async () => {
+    vi.mocked(backendService.verifyToken).mockResolvedValueOnce({
+      id: 'member-123',
+      email: 'member@example.com',
+    } as unknown as Awaited<ReturnType<typeof backendService.verifyToken>>);
+
+    backendService.supabaseAdmin = {
+      from: vi.fn().mockImplementation((table: string) => ({
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        maybeSingle: vi.fn().mockResolvedValue({
+          data:
+            table === 'user_profiles'
+              ? { role: 'member', status: 'active' }
+              : { id: 't-123', name: 'My Kitchen', slug: 'my-kitchen' },
+          error: null,
+        }),
+      })),
+    } as unknown as typeof backendService.supabaseAdmin;
+
+    const res = await request(app)
+      .get('/test-secure')
+      .set('Cookie', [
+        'admin_access_token=valid-token',
+        'admin_original_token=orig-token',
+        'admin_impersonated_user_id=different-user-456',
+      ]);
+
+    expect(res.status).toBe(200);
+    const cookies = res.headers['set-cookie'] as unknown as string[];
+    expect(cookies).toBeDefined();
+  });
+
+  it('should resolve impersonation when admin has admin_impersonate_user_id with valid token and tenant', async () => {
+    const mockAdmin = { id: 'admin-1', email: 'sirdarquan@gmail.com' };
+    const mockTarget = { id: 'member-2', email: 'member@example.com' };
+
+    vi.mocked(backendService.verifyToken).mockImplementation(async (token: string) => {
+      if (token === 'admin-jwt')
+        return mockAdmin as unknown as Awaited<ReturnType<typeof backendService.verifyToken>>;
+      if (token === 'target-jwt')
+        return mockTarget as unknown as Awaited<ReturnType<typeof backendService.verifyToken>>;
+      throw new Error('Invalid token');
+    });
+
+    let profileCallCount = 0;
+    backendService.supabaseAdmin = {
+      from: vi.fn().mockImplementation((table: string) => ({
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        or: vi.fn().mockReturnThis(),
+        maybeSingle: vi.fn().mockImplementation(async () => {
+          if (table === 'user_profiles') {
+            profileCallCount++;
+            if (profileCallCount === 1) {
+              return {
+                data: {
+                  id: 'p-1',
+                  user_id: 'admin-1',
+                  email: 'sirdarquan@gmail.com',
+                  role: 'admin',
+                  status: 'active',
+                },
+                error: null,
+              };
+            }
+            return {
+              data: {
+                id: 'p-2',
+                user_id: 'member-2',
+                email: 'member@example.com',
+                role: 'member',
+                status: 'active',
+              },
+              error: null,
+            };
+          }
+          if (table === 'tenants') {
+            return {
+              data: {
+                id: 't-2',
+                name: 'Member Kitchen',
+                slug: 'member-kitchen',
+                custom_domain: null,
+              },
+              error: null,
+            };
+          }
+          return { data: null, error: null };
+        }),
+      })),
+    } as unknown as typeof backendService.supabaseAdmin;
+
+    const res = await request(app)
+      .get('/test-secure')
+      .set('Cookie', [
+        'admin_access_token=admin-jwt',
+        'admin_impersonate_user_id=member-2',
+        'admin_impersonate_token=target-jwt',
+      ]);
+
+    expect(res.status).toBe(200);
+    expect(res.body.user).toEqual({ id: 'member-2', email: 'member@example.com' });
+    expect(res.body.token).toBe('target-jwt');
+  });
+
+  it('should refresh impersonation token when impersonate token is invalid but refresh token is present', async () => {
+    const mockAdmin = { id: 'admin-1', email: 'sirdarquan@gmail.com' };
+    const mockTarget = { id: 'member-2', email: 'member@example.com' };
+
+    vi.mocked(backendService.verifyToken).mockImplementation(async (token: string) => {
+      if (token === 'admin-jwt')
+        return mockAdmin as unknown as Awaited<ReturnType<typeof backendService.verifyToken>>;
+      throw new Error('Expired target token');
+    });
+
+    let profileCount = 0;
+    backendService.supabaseAdmin = {
+      from: vi.fn().mockImplementation((table: string) => ({
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        or: vi.fn().mockReturnThis(),
+        maybeSingle: vi.fn().mockImplementation(async () => {
+          if (table === 'user_profiles') {
+            profileCount++;
+            if (profileCount === 1) {
+              return {
+                data: {
+                  id: 'p-1',
+                  user_id: 'admin-1',
+                  email: 'sirdarquan@gmail.com',
+                  role: 'admin',
+                  status: 'active',
+                },
+                error: null,
+              };
+            }
+            return {
+              data: {
+                id: 'p-2',
+                user_id: 'member-2',
+                email: 'member@example.com',
+                role: 'member',
+                status: 'active',
+              },
+              error: null,
+            };
+          }
+          return { data: null, error: null };
+        }),
+      })),
+    } as unknown as typeof backendService.supabaseAdmin;
+
+    vi.mocked(backendService.supabase.auth.refreshSession).mockResolvedValueOnce({
+      data: {
+        session: {
+          access_token: 'new-target-jwt',
+          refresh_token: 'new-target-ref',
+          expires_in: 3600,
+        },
+        user: mockTarget,
+      },
+      error: null,
+    } as unknown as Awaited<ReturnType<typeof backendService.supabase.auth.refreshSession>>);
+
+    const res = await request(app)
+      .get('/test-secure')
+      .set('Cookie', [
+        'admin_access_token=admin-jwt',
+        'admin_impersonate_user_id=member-2',
+        'admin_impersonate_token=old-target-jwt',
+        'admin_impersonate_refresh_token=target-ref',
+      ]);
+
+    expect(res.status).toBe(200);
+    expect(res.body.token).toBe('new-target-jwt');
+  });
+
+  it('should clear impersonation cookies when target member is invalid or blocked', async () => {
+    const mockAdmin = { id: 'admin-1', email: 'sirdarquan@gmail.com' };
+
+    vi.mocked(backendService.verifyToken).mockResolvedValue(
+      mockAdmin as unknown as Awaited<ReturnType<typeof backendService.verifyToken>>,
+    );
+
+    let profileCount = 0;
+    backendService.supabaseAdmin = {
+      from: vi.fn().mockImplementation((table: string) => ({
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        or: vi.fn().mockReturnThis(),
+        maybeSingle: vi.fn().mockImplementation(async () => {
+          if (table === 'user_profiles') {
+            profileCount++;
+            if (profileCount === 1) {
+              return {
+                data: {
+                  id: 'p-1',
+                  user_id: 'admin-1',
+                  email: 'sirdarquan@gmail.com',
+                  role: 'admin',
+                  status: 'active',
+                },
+                error: null,
+              };
+            }
+            // Target is blocked
+            return {
+              data: {
+                id: 'p-2',
+                user_id: 'member-2',
+                email: 'member@example.com',
+                role: 'member',
+                status: 'blocked',
+              },
+              error: null,
+            };
+          }
+          return { data: null, error: null };
+        }),
+      })),
+    } as unknown as typeof backendService.supabaseAdmin;
+
+    const res = await request(app)
+      .get('/test-secure')
+      .set('Cookie', ['admin_access_token=admin-jwt', 'admin_impersonate_user_id=member-2']);
+
+    expect(res.status).toBe(200);
+    expect(res.body.user).toEqual(mockAdmin);
+    const cookies = res.headers['set-cookie'] as unknown as string[];
+    expect(cookies).toBeDefined();
+  });
+
+  it('should clear impersonation cookies when admin_impersonate_max_at cap has elapsed', async () => {
+    const mockAdmin = { id: 'admin-1', email: 'sirdarquan@gmail.com' };
+
+    vi.mocked(backendService.verifyToken).mockResolvedValue(
+      mockAdmin as unknown as Awaited<ReturnType<typeof backendService.verifyToken>>,
+    );
+
+    backendService.supabaseAdmin = {
+      from: vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        or: vi.fn().mockReturnThis(),
+        maybeSingle: vi.fn().mockResolvedValue({
+          data: {
+            id: 'p-1',
+            user_id: 'admin-1',
+            email: 'sirdarquan@gmail.com',
+            role: 'admin',
+            status: 'active',
+          },
+          error: null,
+        }),
+      }),
+    } as unknown as typeof backendService.supabaseAdmin;
+
+    const expiredMaxAt = Date.now() - 10000;
+    const res = await request(app)
+      .get('/test-secure')
+      .set('Cookie', [
+        'admin_access_token=admin-jwt',
+        'admin_impersonate_user_id=member-2',
+        `admin_impersonate_max_at=${expiredMaxAt}`,
+      ]);
+
+    expect(res.status).toBe(200);
+    expect(res.body.user).toEqual(mockAdmin);
+    const cookies = res.headers['set-cookie'] as unknown as string[];
+    expect(cookies).toBeDefined();
+  });
+
   describe('Role Guards', () => {
     it('adminOnlyMiddleware should allow admin and block non-admin', () => {
       const mockReq = { role: 'admin' } as unknown as express.Request;
@@ -522,6 +796,7 @@ describe('Auth Middleware', () => {
         path: '/',
       });
       expect(mockRes.clearCookie).toHaveBeenCalledWith('admin_impersonated_user_id', { path: '/' });
+      expect(mockRes.clearCookie).toHaveBeenCalledWith('admin_impersonate_max_at', { path: '/' });
 
       vi.clearAllMocks();
       clearAllAuthCookies(mockRes);
@@ -532,6 +807,34 @@ describe('Auth Middleware', () => {
         path: '/',
       });
       expect(mockRes.clearCookie).toHaveBeenCalledWith('admin_impersonated_user_id', { path: '/' });
+      expect(mockRes.clearCookie).toHaveBeenCalledWith('admin_impersonate_max_at', { path: '/' });
+    });
+
+    it('should set impersonation cookies with default maxAge when session is omitted or partial', () => {
+      const mockRes = { cookie: vi.fn(), clearCookie: vi.fn() } as unknown as express.Response;
+      setImpersonationCookies(mockRes, 'target-id');
+      expect(mockRes.cookie).toHaveBeenCalledWith(
+        'admin_impersonate_user_id',
+        'target-id',
+        expect.objectContaining({ maxAge: 3600000 }),
+      );
+      expect(mockRes.cookie).toHaveBeenCalledWith(
+        'admin_impersonate_max_at',
+        expect.any(String),
+        expect.objectContaining({ maxAge: 3600000 }),
+      );
+
+      vi.clearAllMocks();
+      setImpersonationCookies(mockRes, 'target-id', {
+        access_token: 'acc-tok',
+        refresh_token: 'ref-tok',
+      });
+      expect(mockRes.cookie).toHaveBeenCalledTimes(4);
+
+      // Remaining cap <= 0 branch
+      vi.clearAllMocks();
+      setImpersonationCookies(mockRes, 'target-id', undefined, Date.now() - 5000);
+      expect(mockRes.clearCookie).toHaveBeenCalledWith('admin_impersonate_max_at', { path: '/' });
     });
   });
 });

@@ -572,6 +572,7 @@ describe('Auth Router API', () => {
       expect(res.status).toBe(200);
       expect(res.body).toEqual({
         user: mockUser,
+        adminUser: mockUser,
         role: 'admin',
         status: 'active',
         tenant: null,

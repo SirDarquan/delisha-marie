@@ -7,6 +7,7 @@ import { ImpersonationBannerComponent } from './impersonation-banner';
 
 interface MockAuthService {
   currentUser: unknown;
+  adminUser: unknown;
   isImpersonating: unknown;
   tenant: unknown;
   exitImpersonation: Mock;
@@ -19,16 +20,19 @@ describe('ImpersonationBannerComponent', () => {
 
   let fakeAuthService: MockAuthService;
   const fakeCurrentUser = signal<unknown>(null);
+  const fakeAdminUser = signal<unknown>(null);
   const fakeIsImpersonating = signal<boolean>(false);
   const fakeTenant = signal<unknown>(null);
 
   beforeEach(async () => {
     fakeCurrentUser.set(null);
+    fakeAdminUser.set(null);
     fakeIsImpersonating.set(false);
     fakeTenant.set(null);
 
     fakeAuthService = {
       currentUser: fakeCurrentUser,
+      adminUser: fakeAdminUser,
       isImpersonating: fakeIsImpersonating,
       tenant: fakeTenant,
       exitImpersonation: vi.fn().mockResolvedValue(true),
@@ -57,6 +61,7 @@ describe('ImpersonationBannerComponent', () => {
 
   it('should render the impersonation banner when isImpersonating is true', () => {
     fakeIsImpersonating.set(true);
+    fakeAdminUser.set({ email: 'sirdarquan@gmail.com' });
     fakeCurrentUser.set({ email: 'sirdarquan+dm@gmail.com' });
     fakeTenant.set({ name: 'Sir Darquan DM Tenant' });
     fixture.detectChanges();
@@ -66,6 +71,7 @@ describe('ImpersonationBannerComponent', () => {
     expect(banner).toBeTruthy();
     expect(banner?.classList.contains('sticky')).toBe(true);
     expect(banner?.classList.contains('top-0')).toBe(true);
+    expect(banner?.textContent).toContain('sirdarquan@gmail.com');
     expect(banner?.textContent).toContain('sirdarquan+dm@gmail.com');
     expect(banner?.textContent).toContain('Sir Darquan DM Tenant');
     expect(banner?.textContent).toContain('Return to Admin');

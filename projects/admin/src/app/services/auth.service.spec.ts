@@ -427,6 +427,40 @@ describe('AuthService', () => {
       expect(service.currentUser()?.username).toBe('found_user');
     });
 
+    it('should set adminUser and impersonation state from checkSession', async () => {
+      const mockAdmin = { username: 'sirdarquan', email: 'sirdarquan@gmail.com' };
+      const mockMember = { username: 'delisha-marie', email: 'delisha@example.com' };
+      apiMock.get.mockResolvedValue({
+        user: mockMember,
+        adminUser: mockAdmin,
+        role: 'member',
+        status: 'active',
+        isImpersonating: true,
+      });
+
+      await service.checkSession();
+
+      expect(service.isAuthenticated()).toBe(true);
+      expect(service.currentUser()?.email).toBe('delisha@example.com');
+      expect(service.adminUser()?.email).toBe('sirdarquan@gmail.com');
+      expect(service.isImpersonating()).toBe(true);
+    });
+
+    it('should clear adminUser on logout', async () => {
+      service.setSession(
+        { username: 'member', email: 'm@example.com' },
+        'member',
+        'active',
+        null,
+        false,
+        { username: 'admin', email: 'a@example.com' },
+      );
+      expect(service.adminUser()?.email).toBe('a@example.com');
+
+      await service.logout();
+      expect(service.adminUser()).toBeNull();
+    });
+
     it('should call checkSession once on waitForSessionInit and return the same promise on subsequent calls', async () => {
       const spy = vi.spyOn(service, 'checkSession').mockResolvedValue();
 

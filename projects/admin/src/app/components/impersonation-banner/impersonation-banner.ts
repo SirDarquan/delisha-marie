@@ -17,6 +17,9 @@ import { AuthService } from '../../services/auth.service';
         <div class="flex items-center gap-2">
           <span class="material-icons text-amber-400 text-base">switch_account</span>
           <span>
+            @if (adminUser()) {
+              Logged in as <strong class="text-white">{{ adminUser()?.email }}</strong> &mdash;
+            }
             Impersonating Member: <strong class="text-white">{{ user()?.email }}</strong>
             @if (tenant()) {
               (Tenant: <span class="text-amber-200 font-semibold">{{ tenant()?.name }}</span
@@ -54,6 +57,9 @@ export class ImpersonationBannerComponent {
 
   readonly user = computed(() =>
     typeof this.authService.currentUser === 'function' ? this.authService.currentUser() : null,
+  );
+  readonly adminUser = computed(() =>
+    typeof this.authService.adminUser === 'function' ? this.authService.adminUser() : null,
   );
   readonly isImpersonating = computed(() =>
     typeof this.authService.isImpersonating === 'function'

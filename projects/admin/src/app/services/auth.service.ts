@@ -49,6 +49,7 @@ export class AuthService {
 
   private readonly _isAuthenticated = signal<boolean>(false);
   private readonly _currentUser = signal<AdminUser | null>(null);
+  private readonly _adminUser = signal<AdminUser | null>(null);
   private readonly _userRole = signal<UserRole>('member');
   private readonly _userStatus = signal<UserStatus>('active');
   private readonly _tenant = signal<TenantInfo | null>(null);
@@ -60,6 +61,7 @@ export class AuthService {
 
   readonly isAuthenticated = computed(() => this._isAuthenticated());
   readonly currentUser = computed(() => this._currentUser());
+  readonly adminUser = computed(() => this._adminUser());
   readonly userRole = computed(() => this._userRole());
   readonly userStatus = computed(() => this._userStatus());
   readonly tenant = computed(() => this._tenant());
@@ -92,6 +94,8 @@ export class AuthService {
       }>(`/auth/me?t=${Date.now()}`);
       if (resp?.user) {
         let sessionInfo: {
+          user?: AdminUser;
+          adminUser?: AdminUser | null;
           role?: UserRole;
           status?: UserStatus;
           tenant?: TenantInfo | null;
@@ -103,11 +107,12 @@ export class AuthService {
           // ignore if session endpoint is not available or in simple unit tests
         }
         this.setSession(
-          resp.user,
+          sessionInfo?.user || resp.user,
           sessionInfo?.role || resp.role || 'member',
           sessionInfo?.status || resp.status || 'active',
           sessionInfo?.tenant || resp.tenant || null,
           !!(sessionInfo?.isImpersonating ?? resp.isImpersonating),
+          sessionInfo?.adminUser || (sessionInfo?.role === 'admin' ? resp.user : null),
         );
       } else {
         await this.logout();
@@ -381,10 +386,12 @@ export class AuthService {
     status: UserStatus = 'active',
     tenant: TenantInfo | null = null,
     isImpersonating = false,
+    adminUser: AdminUser | null = null,
   ): void {
     this.sessionInitPromise = null;
     this._isAuthenticated.set(true);
     this._currentUser.set(user);
+    this._adminUser.set(adminUser || (role === 'admin' ? user : null));
     this._userRole.set(role);
     this._userStatus.set(status);
     this._tenant.set(tenant);
@@ -423,6 +430,7 @@ export class AuthService {
     this.sessionInitPromise = null;
     this._isAuthenticated.set(false);
     this._currentUser.set(null);
+    this._adminUser.set(null);
     this._userRole.set('member');
     this._userStatus.set('active');
     this._tenant.set(null);

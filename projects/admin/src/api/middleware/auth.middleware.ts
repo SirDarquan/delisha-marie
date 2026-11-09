@@ -10,6 +10,7 @@ export interface TenantInfo {
 
 export interface AuthRequest extends Request {
   user?: { id?: string; email?: string; [key: string]: unknown };
+  adminUser?: { id?: string; email?: string; [key: string]: unknown };
   token?: string;
   role?: 'admin' | 'member' | 'unassigned';
   status?: 'pending' | 'active' | 'blocked';
@@ -97,10 +98,68 @@ async function tryVerifyToken(
   }
 }
 
+export const IMPERSONATION_IDLE_TIMEOUT_MS = 60 * 60 * 1000; // 1 hour inactivity window
+export const IMPERSONATION_MAX_CAP_MS = 8 * 60 * 60 * 1000; // 8 hours absolute max cap
+
 export function clearImpersonationCookies(res: Response): void {
+  res.clearCookie('admin_impersonate_user_id', { path: '/' });
+  res.clearCookie('admin_impersonate_token', { path: '/' });
+  res.clearCookie('admin_impersonate_refresh_token', { path: '/' });
+  res.clearCookie('admin_impersonate_max_at', { path: '/' });
   res.clearCookie('admin_original_token', { path: '/' });
   res.clearCookie('admin_original_refresh_token', { path: '/' });
   res.clearCookie('admin_impersonated_user_id', { path: '/' });
+}
+
+export function setImpersonationCookies(
+  res: Response,
+  targetUserId: string,
+  session?: { access_token?: string; refresh_token?: string; expires_in?: number },
+  maxAt?: number,
+): void {
+  const now = Date.now();
+  const absoluteMaxAt = maxAt ?? now + IMPERSONATION_MAX_CAP_MS;
+  const remainingCap = absoluteMaxAt - now;
+
+  if (remainingCap <= 0) {
+    clearImpersonationCookies(res);
+    return;
+  }
+
+  const maxAge = Math.min(IMPERSONATION_IDLE_TIMEOUT_MS, remainingCap);
+
+  res.cookie('admin_impersonate_user_id', targetUserId, {
+    httpOnly: true,
+    secure: false,
+    sameSite: 'lax',
+    path: '/',
+    maxAge,
+  });
+  res.cookie('admin_impersonate_max_at', String(absoluteMaxAt), {
+    httpOnly: true,
+    secure: false,
+    sameSite: 'lax',
+    path: '/',
+    maxAge,
+  });
+  if (session?.access_token) {
+    res.cookie('admin_impersonate_token', session.access_token, {
+      httpOnly: true,
+      secure: false,
+      sameSite: 'lax',
+      path: '/',
+      maxAge,
+    });
+  }
+  if (session?.refresh_token) {
+    res.cookie('admin_impersonate_refresh_token', session.refresh_token, {
+      httpOnly: true,
+      secure: false,
+      sameSite: 'lax',
+      path: '/',
+      maxAge,
+    });
+  }
 }
 
 export function clearAllAuthCookies(res: Response): void {
@@ -188,7 +247,8 @@ async function authenticateUser(
 
 function checkImpersonation(req: Request, res: Response, userId?: string, role?: string): boolean {
   const hasOriginalToken = Boolean(req.cookies?.['admin_original_token']);
-  const impersonatedUserId = req.cookies?.['admin_impersonated_user_id'];
+  const impersonatedUserId =
+    req.cookies?.['admin_impersonate_user_id'] || req.cookies?.['admin_impersonated_user_id'];
   const isMatch = !impersonatedUserId || userId === impersonatedUserId;
   const isActuallyImpersonating = hasOriginalToken && role === 'member' && isMatch;
 
@@ -197,6 +257,179 @@ function checkImpersonation(req: Request, res: Response, userId?: string, role?:
   }
 
   return isActuallyImpersonating;
+}
+
+async function fetchUserTenant(
+  adminClient: typeof backendService.supabaseAdmin,
+  userId: string,
+): Promise<{ tenantId: string | null; tenant: TenantInfo | null }> {
+  const { data: tenantData } = await adminClient
+    .from('tenants')
+    .select('id, name, slug, custom_domain')
+    .eq('owner_id', userId)
+    .maybeSingle();
+
+  if (!tenantData) {
+    return { tenantId: null, tenant: null };
+  }
+
+  return {
+    tenantId: tenantData.id,
+    tenant: {
+      id: tenantData.id,
+      name: tenantData.name,
+      slug: tenantData.slug,
+      custom_domain: tenantData.custom_domain,
+    },
+  };
+}
+
+async function resolveImpersonatedToken(
+  req: Request,
+  expectedUserId: string,
+): Promise<{ token?: string; refreshToken?: string }> {
+  let token = req.cookies?.['admin_impersonate_token'];
+  let refreshToken = req.cookies?.['admin_impersonate_refresh_token'];
+
+  if (token) {
+    try {
+      const verified = await backendService.verifyToken(token);
+      if (verified?.id !== expectedUserId) {
+        token = undefined;
+      }
+    } catch {
+      token = undefined;
+    }
+  }
+
+  if (!token && refreshToken) {
+    try {
+      const { data: refData, error: refErr } = await backendService.supabase.auth.refreshSession({
+        refresh_token: refreshToken,
+      });
+      if (!refErr && refData?.session && refData.user?.id === expectedUserId) {
+        token = refData.session.access_token;
+        if (refData.session.refresh_token) {
+          refreshToken = refData.session.refresh_token;
+        }
+      }
+    } catch {
+      // Refresh failed
+    }
+  }
+
+  return {
+    token: token || undefined,
+    refreshToken: refreshToken || undefined,
+  };
+}
+
+async function resolveImpersonation(
+  req: Request,
+  res: Response,
+  targetUserId: string,
+): Promise<{
+  user: { id?: string; email?: string; [key: string]: unknown };
+  token?: string;
+  refreshToken?: string;
+  tenantId: string | null;
+  tenant: TenantInfo | null;
+} | null> {
+  const adminClient = backendService.supabaseAdmin;
+  if (!adminClient?.from) return null;
+
+  try {
+    const { data: profile } = await adminClient
+      .from('user_profiles')
+      .select('id, user_id, email, role, status')
+      .or(`id.eq.${targetUserId},user_id.eq.${targetUserId}`)
+      .maybeSingle();
+
+    if (profile?.status !== 'active' || profile?.role === 'admin') {
+      return null;
+    }
+
+    const { tenantId, tenant } = await fetchUserTenant(adminClient, profile.user_id);
+    const { token, refreshToken } = await resolveImpersonatedToken(req, profile.user_id);
+
+    return {
+      user: { id: profile.user_id, email: profile.email },
+      token,
+      refreshToken,
+      tenantId,
+      tenant,
+    };
+  } catch {
+    return null;
+  }
+}
+
+function checkAccountStatus(res: Response, status?: string): boolean {
+  if (status === 'pending') {
+    res.status(403).json({
+      error: 'Account is pending administrator approval.',
+      code: 'ACCOUNT_PENDING',
+    });
+    return false;
+  }
+  if (status === 'blocked') {
+    res.status(403).json({
+      error: 'Account has been blocked by administrator.',
+      code: 'ACCOUNT_BLOCKED',
+    });
+    return false;
+  }
+  return true;
+}
+
+async function handleAdminImpersonation(
+  req: Request,
+  res: Response,
+  authReq: AuthRequest,
+  adminUserId?: string,
+): Promise<void> {
+  const impersonatedUserId =
+    req.cookies?.['admin_impersonate_user_id'] || req.cookies?.['admin_impersonated_user_id'];
+  const maxAtRaw = req.cookies?.['admin_impersonate_max_at'];
+  const maxAt = maxAtRaw ? Number(maxAtRaw) : undefined;
+  const now = Date.now();
+
+  if (!impersonatedUserId || impersonatedUserId === adminUserId) {
+    if (req.cookies?.['admin_original_token']) {
+      clearImpersonationCookies(res);
+    }
+    return;
+  }
+
+  if (maxAt !== undefined && now >= maxAt) {
+    clearImpersonationCookies(res);
+    return;
+  }
+
+  const impContext = await resolveImpersonation(req, res, impersonatedUserId);
+  if (!impContext) {
+    clearImpersonationCookies(res);
+    return;
+  }
+
+  authReq.user = impContext.user;
+  if (impContext.token) {
+    authReq.token = impContext.token;
+  }
+  authReq.tenantId = impContext.tenantId;
+  authReq.tenant = impContext.tenant;
+  authReq.isImpersonating = true;
+
+  // Slide rolling 1-hour inactivity window, capped at 8-hour max
+  const currentToken = impContext.token || req.cookies?.['admin_impersonate_token'];
+  const currentRefreshToken =
+    impContext.refreshToken || req.cookies?.['admin_impersonate_refresh_token'];
+  setImpersonationCookies(
+    res,
+    impersonatedUserId,
+    { access_token: currentToken, refresh_token: currentRefreshToken },
+    maxAt,
+  );
 }
 
 export const authMiddleware = async (
@@ -213,30 +446,24 @@ export const authMiddleware = async (
     }
 
     const profileInfo = await resolveUserProfile(authResult.user);
-
-    if (profileInfo.status === 'pending') {
-      res.status(403).json({
-        error: 'Account is pending administrator approval.',
-        code: 'ACCOUNT_PENDING',
-      });
+    if (!checkAccountStatus(res, profileInfo.status)) {
       return;
     }
 
-    if (profileInfo.status === 'blocked') {
-      res.status(403).json({
-        error: 'Account has been blocked by administrator.',
-        code: 'ACCOUNT_BLOCKED',
-      });
-      return;
-    }
-
+    authReq.adminUser = authResult.user;
     authReq.user = authResult.user;
     authReq.token = authResult.token;
     authReq.role = profileInfo.role;
     authReq.status = profileInfo.status;
     authReq.tenantId = profileInfo.tenantId;
     authReq.tenant = profileInfo.tenant;
-    authReq.isImpersonating = checkImpersonation(req, res, authResult.user.id, profileInfo.role);
+    authReq.isImpersonating = false;
+
+    if (profileInfo.role === 'admin') {
+      await handleAdminImpersonation(req, res, authReq, authResult.user.id);
+    } else if (profileInfo.role === 'member' && req.cookies?.['admin_original_token']) {
+      authReq.isImpersonating = checkImpersonation(req, res, authResult.user.id, profileInfo.role);
+    }
 
     next();
   } catch (err: unknown) {
