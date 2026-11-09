@@ -20,11 +20,8 @@ const settingsRouter = Router();
 settingsRouter.use(authMiddleware);
 
 // GET /api/settings/kitchen-home
-settingsRouter.get(
-  '/settings/kitchen-home',
-  async (_req: AuthRequest, res: Response): Promise<void> => {
-    res.json(DEFAULT_KITCHEN_HOME_SETTINGS);
-  },
-);
+settingsRouter.get('/settings/kitchen-home', (_req: AuthRequest, res: Response): void => {
+  res.json(DEFAULT_KITCHEN_HOME_SETTINGS);
+});
 
 export default settingsRouter;
