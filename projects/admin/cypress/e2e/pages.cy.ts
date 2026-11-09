@@ -100,11 +100,6 @@ describe('Admin Blog Pages & Posts Management', () => {
       },
     }).as('getKitchenHomeSettings');
 
-    cy.intercept('PUT', '**/api/settings/kitchen-home', {
-      statusCode: 200,
-      body: { success: true },
-    }).as('saveKitchenHomeSettings');
-
     cy.visit('/pages');
     cy.wait('@getPages');
   });
@@ -171,7 +166,7 @@ describe('Admin Blog Pages & Posts Management', () => {
     cy.contains('Page saved successfully!').should('be.visible');
   });
 
-  it('should open Configure Kitchen Home dialog on Kitchen tab and allow saving settings', () => {
+  it('should open Configure Kitchen Home dialog on Kitchen tab and display environment settings', () => {
     // Switch to Kitchen tab
     cy.contains('button', 'kitchen').click();
     // kitchen:home is NOT displayed as a page card
@@ -190,12 +185,8 @@ describe('Admin Blog Pages & Posts Management', () => {
     cy.get('[data-testid="dropzone-kitchen_about"]').should('be.visible');
     cy.get('[data-testid="dropzone-sidebar_about"]').should('be.visible');
 
-    // Edit slot 1
-    cy.get('[data-testid="recipe-slot-0"]').clear().type('/recipes/new-featured');
-
-    // Save changes
-    cy.get('[data-testid="btn-save-kitchen-home"]').click();
-    cy.wait('@saveKitchenHomeSettings');
-    cy.contains('Kitchen Home settings saved successfully!').should('be.visible');
+    // Close dialog
+    cy.get('[data-testid="btn-cancel"]').click();
+    cy.get('mat-dialog-container').should('not.exist');
   });
 });
