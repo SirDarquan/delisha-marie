@@ -29,6 +29,20 @@ describe('FeaturedRecipes', () => {
       description: 'Desc 2',
       image: 'img2.jpg',
     },
+    {
+      id: 3,
+      title: 'Recipe 3',
+      slug: 'recipe-3',
+      description: 'Desc 3',
+      image: 'img3.jpg',
+    },
+    {
+      id: 4,
+      title: 'Recipe 4',
+      slug: 'recipe-4',
+      description: 'Desc 4',
+      image: 'img4.jpg',
+    },
   ];
 
   beforeEach(async () => {
@@ -96,9 +110,24 @@ describe('FeaturedRecipes', () => {
 
     expect(fakeRecipeService.getRecipes).toHaveBeenCalledWith(1, 4, 'recipes', 'dinner', 'pasta');
     const cards = fixture.nativeElement.querySelectorAll('mat-card');
-    expect(cards).toHaveLength(2);
+    expect(cards).toHaveLength(4);
     expect(cards[0].querySelector('h3').textContent.trim()).toBe('Recipe 1');
     expect(cards[1].querySelector('h3').textContent.trim()).toBe('Recipe 2');
+    expect(cards[2].querySelector('h3').textContent.trim()).toBe('Recipe 3');
+    expect(cards[3].querySelector('h3').textContent.trim()).toBe('Recipe 4');
+  });
+
+  it('should not render section when recipes count is not 4 after loading', async () => {
+    fakeRecipeService.getRecipes.mockResolvedValueOnce({
+      items: [mockRecipes[0], mockRecipes[1]],
+    });
+    componentRef.setInput('link', '/recipes/dinner');
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const section = fixture.nativeElement.querySelector('section');
+    expect(section).toBeNull();
   });
 
   it('should return empty items when link has no valid segments without calling getRecipes', async () => {
