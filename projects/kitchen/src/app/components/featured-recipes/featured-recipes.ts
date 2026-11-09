@@ -19,7 +19,7 @@ import { RecipeService } from '../../services/recipe.service';
   selector: 'dm-featured-recipes',
   imports: [MatCardModule, MatButtonModule, MatIconModule, NgOptimizedImage, RouterLink],
   template: `
-    @if (recipes().length > 0 || _recipeResource.isLoading()) {
+    @if (recipes().length === 4 || _recipeResource.isLoading()) {
       <section>
         <div class="flex items-end justify-between mb-10 gap-4">
           <div>
