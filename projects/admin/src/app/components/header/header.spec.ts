@@ -7,6 +7,7 @@ import { HeaderComponent } from './header';
 
 interface MockAuthService {
   currentUser: unknown;
+  adminUser: unknown;
   isAdmin: unknown;
   isImpersonating: unknown;
   tenant: unknown;
@@ -21,18 +22,21 @@ describe('HeaderComponent', () => {
 
   let fakeAuthService: MockAuthService;
   const fakeCurrentUser = signal<unknown>(null);
+  const fakeAdminUser = signal<unknown>(null);
   const fakeIsAdmin = signal<boolean>(false);
   const fakeIsImpersonating = signal<boolean>(false);
   const fakeTenant = signal<unknown>(null);
 
   beforeEach(async () => {
     fakeCurrentUser.set(null);
+    fakeAdminUser.set(null);
     fakeIsAdmin.set(false);
     fakeIsImpersonating.set(false);
     fakeTenant.set(null);
 
     fakeAuthService = {
       currentUser: fakeCurrentUser,
+      adminUser: fakeAdminUser,
       isAdmin: fakeIsAdmin,
       isImpersonating: fakeIsImpersonating,
       tenant: fakeTenant,
@@ -95,6 +99,28 @@ describe('HeaderComponent', () => {
       ?.textContent?.replace(/\s+/g, ' ')
       .trim();
     expect(welcomeText).toBe('Welcome back, sirda@example.com !');
+  });
+
+  it('should display the primary admin username in welcome greeting when impersonating a member', () => {
+    fakeAdminUser.set({
+      username: 'sirdarquan',
+      email: 'sirdarquan@gmail.com',
+      user_metadata: { username: 'sirdarquan' },
+    });
+    fakeCurrentUser.set({
+      username: 'delisha-marie',
+      email: 'delisha@example.com',
+      user_metadata: { username: 'delisha-marie' },
+    });
+    fakeIsImpersonating.set(true);
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    const welcomeText = compiled
+      .querySelector('span.text-slate-400')
+      ?.textContent?.replace(/\s+/g, ' ')
+      .trim();
+    expect(welcomeText).toBe('Welcome back, sirdarquan !');
   });
 
   it('should render Admin navigation links when isAdmin is true', () => {

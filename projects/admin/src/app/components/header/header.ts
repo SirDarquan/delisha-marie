@@ -63,9 +63,9 @@ import { AuthService } from '../../services/auth.service';
       <div class="flex items-center gap-4">
         <span class="text-slate-400 text-sm font-medium hidden sm:inline">
           Welcome back,
-          @if (user()) {
+          @if (effectiveGreetingUser()) {
             <span class="text-slate-200 font-semibold">{{
-              user()?.user_metadata?.username || user()?.email
+              effectiveGreetingUser()?.user_metadata?.username || effectiveGreetingUser()?.email
             }}</span>
           } @else {
             Admin
@@ -90,6 +90,10 @@ export class HeaderComponent {
   readonly user = computed(() =>
     typeof this.authService.currentUser === 'function' ? this.authService.currentUser() : null,
   );
+  readonly adminUser = computed(() =>
+    typeof this.authService.adminUser === 'function' ? this.authService.adminUser() : null,
+  );
+  readonly effectiveGreetingUser = computed(() => this.adminUser() || this.user());
   readonly isAdmin = computed(() =>
     typeof this.authService.isAdmin === 'function' ? this.authService.isAdmin() : false,
   );
