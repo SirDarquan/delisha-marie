@@ -81,6 +81,18 @@ describe('AppConfigService', () => {
     service.config.set(null);
     expect(service.SentryConfig()).toBeUndefined();
   });
+
+  it('should return KitchenHomeConfig', () => {
+    const kitchenHomeMock = {
+      featuredRecipes: ['/r/1', '/r/2', '/r/3'],
+      kitchen_about: 'pic1.png',
+      sidebar_about: 'pic2.png',
+    };
+    service.config.set({ KitchenHome: kitchenHomeMock } as AppConfig);
+    expect(service.KitchenHomeConfig()).toEqual(kitchenHomeMock);
+    service.config.set(null);
+    expect(service.KitchenHomeConfig()).toBeUndefined();
+  });
   describe('provideAppConfig', () => {
     it('should return valid plugin token provider definition', () => {
       const providers = provideAppConfig();

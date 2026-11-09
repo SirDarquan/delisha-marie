@@ -3,7 +3,6 @@ import {
   Component,
   computed,
   inject,
-  resource,
   ViewEncapsulation,
 } from '@angular/core';
 import { CategoryImages } from '../../components/category-images/category-images';
@@ -12,14 +11,7 @@ import { TopRatedRecipes } from '../../components/top-rated-recipes/top-rated-re
 import { LatestRecipes } from '../../components/latest-recipes/latest-recipes';
 import { AuthorBio } from '../../components/author-bio/author-bio';
 import { RecipeIndexService } from '../recipe-index/recipe-index.service';
-import { PagesService } from '../../services/pages.service';
-
-export interface KitchenHomeConfig {
-  featuredRecipes?: string[];
-  picture?: string;
-  title?: string;
-  description?: string;
-}
+import { AppConfigService } from '../../services/config.service';
 
 @Component({
   selector: 'dm-home',
@@ -71,33 +63,17 @@ export interface KitchenHomeConfig {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Home {
-  private readonly pagesService = inject(PagesService);
+  private readonly configService = inject(AppConfigService);
   private readonly recipeIndexService = inject(RecipeIndexService);
 
-  // Load Kitchen Home page saved by the user in Admin
-  protected readonly _homePageResource = resource({
-    loader: () => this.pagesService.getPage('home'),
-  });
+  protected readonly homeConfig = computed(() => this.configService.KitchenHomeConfig());
 
-  // Parse user configuration
-  protected readonly homeConfig = computed<KitchenHomeConfig | null>(() => {
-    const page = this._homePageResource.value();
-    if (!page?.content) return null;
-    try {
-      return JSON.parse(page.content) as KitchenHomeConfig;
-    } catch {
-      return null;
-    }
-  });
-
-  // Direct user configuration: empty input returns '' which signals @if not to show up
   readonly featuredRecipes1 = computed(() => this.homeConfig()?.featuredRecipes?.[0] ?? '');
-
   readonly featuredRecipes2 = computed(() => this.homeConfig()?.featuredRecipes?.[1] ?? '');
-
   readonly featuredRecipes3 = computed(() => this.homeConfig()?.featuredRecipes?.[2] ?? '');
-
-  readonly picture = computed(() => this.homeConfig()?.picture ?? 'delisha_marie_profile_2.png');
+  readonly picture = computed(
+    () => this.homeConfig()?.kitchen_about ?? 'delisha_marie_profile_2.png',
+  );
 
   readonly featuredCategories = computed(
     () => this.recipeIndexService.indexResource.value()?.featuredCategories || [],

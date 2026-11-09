@@ -34,6 +34,7 @@ describe('ProfilePictureUploaderComponent', () => {
     fixture.componentRef.setInput('description', 'Classic portrait');
     fixture.componentRef.setInput('picture', 'delisha_marie_profile.png');
     fixture.componentRef.setInput('isActive', false);
+    fixture.componentRef.setInput('showActiveToggle', true);
     fixture.detectChanges();
   });
 
@@ -61,6 +62,16 @@ describe('ProfilePictureUploaderComponent', () => {
 
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.textContent).toContain('Active on Home');
+  });
+
+  it('should not render active button or badge when showActiveToggle is false', () => {
+    fixture.componentRef.setInput('showActiveToggle', false);
+    fixture.componentRef.setInput('isActive', true);
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.textContent).not.toContain('Active on Home');
+    expect(compiled.querySelector('[data-testid="editor-pic-about-pic"]')).toBeNull();
   });
 
   it('should handle drag over and drag leave', () => {

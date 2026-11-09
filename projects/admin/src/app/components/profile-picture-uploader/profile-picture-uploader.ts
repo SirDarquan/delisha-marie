@@ -26,7 +26,7 @@ import { RecipeService } from '../../services/recipe.service';
         <div>
           <div class="text-sm font-bold text-white flex items-center gap-1.5">
             {{ label() }}
-            @if (isActive()) {
+            @if (showActiveToggle() && isActive()) {
               <span
                 class="text-[10px] bg-purple-500/20 text-purple-300 px-2 py-0.5 rounded-full font-semibold border border-purple-500/30">
                 Active on Home
@@ -37,19 +37,21 @@ import { RecipeService } from '../../services/recipe.service';
             <div class="text-xs text-slate-400">{{ description() }}</div>
           }
         </div>
-        <button
-          type="button"
-          (click)="selectActive.emit()"
-          [attr.data-testid]="'editor-pic-' + testId()"
-          class="px-3 py-1 text-xs font-semibold rounded-lg border transition cursor-pointer"
-          [class.bg-purple-600]="isActive()"
-          [class.border-purple-500]="isActive()"
-          [class.text-white]="isActive()"
-          [class.border-slate-700]="!isActive()"
-          [class.bg-slate-800]="!isActive()"
-          [class.text-slate-300]="!isActive()">
-          {{ isActive() ? 'Active' : 'Set as Active' }}
-        </button>
+        @if (showActiveToggle()) {
+          <button
+            type="button"
+            (click)="selectActive.emit()"
+            [attr.data-testid]="'editor-pic-' + testId()"
+            class="px-3 py-1 text-xs font-semibold rounded-lg border transition cursor-pointer"
+            [class.bg-purple-600]="isActive()"
+            [class.border-purple-500]="isActive()"
+            [class.text-white]="isActive()"
+            [class.border-slate-700]="!isActive()"
+            [class.bg-slate-800]="!isActive()"
+            [class.text-slate-300]="!isActive()">
+            {{ isActive() ? 'Active' : 'Set as Active' }}
+          </button>
+        }
       </div>
 
       <!-- Drop Zone & Preview -->
@@ -131,11 +133,12 @@ export class ProfilePictureUploaderComponent {
   private readonly snackBar = inject(MatSnackBar);
 
   readonly slotKey = input.required<string>();
-  readonly testId = input.required<string>();
+  readonly testId = input<string>('');
   readonly label = input.required<string>();
   readonly description = input<string>('');
   readonly picture = input.required<string>();
   readonly isActive = input<boolean>(false);
+  readonly showActiveToggle = input<boolean>(false);
 
   readonly selectActive = output<void>();
   readonly pictureChange = output<string>();

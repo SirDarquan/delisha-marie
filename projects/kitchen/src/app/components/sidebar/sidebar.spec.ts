@@ -1,17 +1,25 @@
 import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Sidebar } from './sidebar';
+import { AppConfigService } from '../../services/config.service';
 
 describe('Sidebar', () => {
   let component: Sidebar;
   let fixture: ComponentFixture<Sidebar>;
+  let configServiceMock: { KitchenHomeConfig: ReturnType<typeof vi.fn> };
 
   beforeEach(async () => {
+    configServiceMock = {
+      KitchenHomeConfig: vi.fn().mockReturnValue({
+        sidebar_about: 'custom_sidebar.png',
+      }),
+    };
+
     await TestBed.configureTestingModule({
       imports: [Sidebar],
-      providers: [provideRouter([])],
+      providers: [provideRouter([]), { provide: AppConfigService, useValue: configServiceMock }],
     }).compileComponents();
 
     fixture = TestBed.createComponent(Sidebar);
@@ -19,8 +27,18 @@ describe('Sidebar', () => {
     fixture.detectChanges();
   });
 
-  it('should create', () => {
+  it('should create and load sidebar_about picture from config', () => {
     expect(component).toBeTruthy();
+    expect(component.picture()).toBe('custom_sidebar.png');
+  });
+
+  it('should fall back to default profile picture when config has no sidebar_about', () => {
+    configServiceMock.KitchenHomeConfig.mockReturnValue(null);
+    fixture = TestBed.createComponent(Sidebar);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+
+    expect(component.picture()).toBe('delisha_marie_profile.png');
   });
 
   it('should render all sub-components', () => {

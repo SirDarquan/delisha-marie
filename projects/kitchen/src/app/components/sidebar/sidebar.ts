@@ -1,7 +1,14 @@
-import { ChangeDetectionStrategy, Component, signal, ViewEncapsulation } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  ViewEncapsulation,
+} from '@angular/core';
 import { AuthorBio } from '../author-bio/author-bio';
 import { SidebarSearch } from './sidebar-search';
 import { Newsletter } from '../newsletter/newsletter';
+import { AppConfigService } from '../../services/config.service';
 
 @Component({
   selector: 'dml-sidebar',
@@ -19,5 +26,9 @@ import { Newsletter } from '../newsletter/newsletter';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Sidebar {
-  readonly picture = signal<string>('/delisha_marie_profile.png');
+  private readonly configService = inject(AppConfigService);
+
+  readonly picture = computed(
+    () => this.configService.KitchenHomeConfig()?.sidebar_about ?? 'delisha_marie_profile.png',
+  );
 }

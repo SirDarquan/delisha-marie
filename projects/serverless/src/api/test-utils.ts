@@ -83,6 +83,7 @@ export interface MockResponseBody {
   comments: { id: string }[];
   GoogleTagManager: unknown;
   Sentry: unknown;
+  KitchenHome: unknown;
   categories: unknown[];
   subcategories: unknown[];
   methods: unknown[];

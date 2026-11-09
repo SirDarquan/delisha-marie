@@ -1,5 +1,19 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 
+export interface KitchenHomeSettings {
+  featuredRecipes: string[];
+  kitchen_about: string;
+  sidebar_about: string;
+}
+
+export const DEFAULT_KITCHEN_HOME_SETTINGS: KitchenHomeSettings = {
+  featuredRecipes: process.env['KITCHEN_FEATURED_RECIPES']
+    ? process.env['KITCHEN_FEATURED_RECIPES'].split(',').map((s) => s.trim())
+    : ['', '', ''],
+  kitchen_about: process.env['KITCHEN_ABOUT_PICTURE'] || 'delisha_marie_profile_2.png',
+  sidebar_about: process.env['SIDEBAR_ABOUT_PICTURE'] || 'delisha_marie_profile.png',
+};
+
 export interface AppConfig {
   GoogleTagManager: {
     id?: string;
@@ -14,6 +28,7 @@ export interface AppConfig {
     release?: string;
     debug?: boolean;
   };
+  KitchenHome?: KitchenHomeSettings;
 }
 
 const appConfig: AppConfig = {
@@ -36,9 +51,10 @@ const appConfig: AppConfig = {
     release: process.env['SENTRY_RELEASE'],
     debug: process.env['SENTRY_DEBUG'] === 'true',
   },
+  KitchenHome: DEFAULT_KITCHEN_HOME_SETTINGS,
 };
 
-const configHandler = async (req: VercelRequest, res: VercelResponse) => {
+const configHandler = async (req: VercelRequest, res: VercelResponse): Promise<void> => {
   if (req.method !== 'GET') {
     res.status(404).json({ error: 'Not found' });
     return;

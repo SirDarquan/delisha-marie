@@ -1,24 +1,22 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { createRequestMock } from './test-utils';
-import configRouter from './config';
+import configRouter, { DEFAULT_KITCHEN_HOME_SETTINGS } from './config';
 
 describe('configRouter', () => {
   let request: ReturnType<typeof createRequestMock>;
 
   beforeEach(() => {
+    vi.clearAllMocks();
     request = createRequestMock(configRouter);
   });
 
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
-
-  it('should return the config data', async () => {
+  it('should return the config data with KitchenHome settings', async () => {
     const response = await request(null).get('/config');
 
     expect(response.status).toBe(200);
     expect(response.body).toHaveProperty('GoogleTagManager');
     expect(response.body).toHaveProperty('Sentry');
+    expect(response.body.KitchenHome).toEqual(DEFAULT_KITCHEN_HOME_SETTINGS);
   });
 
   it('should return 404 for non-GET methods', async () => {
