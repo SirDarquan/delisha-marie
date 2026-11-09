@@ -225,7 +225,8 @@ export class KitchenHomeDialogComponent implements OnInit {
     {
       submission: {
         action: async () => {
-          await this.save();
+          await Promise.resolve();
+          this.save();
         },
       },
     },
@@ -237,8 +238,8 @@ export class KitchenHomeDialogComponent implements OnInit {
   readonly kitchenAbout = computed(() => this.model().kitchenAbout);
   readonly sidebarAbout = computed(() => this.model().sidebarAbout);
 
-  async ngOnInit(): Promise<void> {
-    await this.loadSettings();
+  ngOnInit(): void {
+    void this.loadSettings();
   }
 
   async loadSettings(): Promise<void> {
@@ -270,7 +271,7 @@ export class KitchenHomeDialogComponent implements OnInit {
     this.model.update((m) => ({ ...m, sidebarAbout: picture }));
   }
 
-  async save(): Promise<void> {
+  save(): void {
     this.isSaving.set(false);
     this.dialogRef.close(true);
   }

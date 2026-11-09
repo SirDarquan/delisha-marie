@@ -124,7 +124,7 @@ describe('KitchenHomeDialogComponent', () => {
     fixture.detectChanges();
     await fixture.whenStable();
 
-    await component.save();
+    component.save();
     expect(dialogRefSpy.close).toHaveBeenCalledWith(true);
     expect(component['isSaving']()).toBe(false);
   });
