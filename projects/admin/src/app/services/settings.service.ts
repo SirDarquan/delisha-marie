@@ -16,8 +16,4 @@ export class SettingsService {
   async getKitchenHomeSettings(): Promise<KitchenHomeSettings> {
     return this.api.get<KitchenHomeSettings>('/settings/kitchen-home');
   }
-
-  async saveKitchenHomeSettings(settings: KitchenHomeSettings): Promise<KitchenHomeSettings> {
-    return this.api.put<KitchenHomeSettings>('/settings/kitchen-home', settings);
-  }
 }
