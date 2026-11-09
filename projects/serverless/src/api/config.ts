@@ -1,5 +1,4 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
-import { getSupabaseClient } from './supabase';
 
 export interface KitchenHomeSettings {
   featuredRecipes: string[];
@@ -8,9 +7,11 @@ export interface KitchenHomeSettings {
 }
 
 export const DEFAULT_KITCHEN_HOME_SETTINGS: KitchenHomeSettings = {
-  featuredRecipes: ['', '', ''],
-  kitchen_about: 'delisha_marie_profile_2.png',
-  sidebar_about: 'delisha_marie_profile.png',
+  featuredRecipes: process.env['KITCHEN_FEATURED_RECIPES']
+    ? process.env['KITCHEN_FEATURED_RECIPES'].split(',').map((s) => s.trim())
+    : ['', '', ''],
+  kitchen_about: process.env['KITCHEN_ABOUT_PICTURE'] || 'delisha_marie_profile_2.png',
+  sidebar_about: process.env['SIDEBAR_ABOUT_PICTURE'] || 'delisha_marie_profile.png',
 };
 
 export interface AppConfig {
@@ -50,6 +51,7 @@ const appConfig: AppConfig = {
     release: process.env['SENTRY_RELEASE'],
     debug: process.env['SENTRY_DEBUG'] === 'true',
   },
+  KitchenHome: DEFAULT_KITCHEN_HOME_SETTINGS,
 };
 
 const configHandler = async (req: VercelRequest, res: VercelResponse): Promise<void> => {
@@ -58,27 +60,7 @@ const configHandler = async (req: VercelRequest, res: VercelResponse): Promise<v
     return;
   }
 
-  let kitchenHome = DEFAULT_KITCHEN_HOME_SETTINGS;
-  try {
-    const supabase = await getSupabaseClient();
-    const { data } = await supabase
-      .from('site_settings')
-      .select('value')
-      .eq('key', 'kitchen_home')
-      .maybeSingle();
-
-    if (data?.value) {
-      const parsed = typeof data.value === 'string' ? JSON.parse(data.value) : data.value;
-      kitchenHome = { ...DEFAULT_KITCHEN_HOME_SETTINGS, ...parsed };
-    }
-  } catch (err) {
-    console.error('Failed to load kitchen_home from site_settings:', err);
-  }
-
-  res.status(200).json({
-    ...appConfig,
-    KitchenHome: kitchenHome,
-  });
+  res.status(200).json(appConfig);
 };
 
 export default configHandler;
