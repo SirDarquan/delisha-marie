@@ -143,6 +143,7 @@ authRouter.post('/auth/login', async (req: Request, res: Response) => {
 
     const data = await signInWithPassword(email, password);
     if (data.session) {
+      clearImpersonationCookies(res);
       setAuthCookies(res, data.session);
     }
     return res.json({ session: data.session, user: data.user });
@@ -204,6 +205,7 @@ authRouter.get('/auth/session', authMiddleware, (req: Request, res: Response) =>
   const authReq = req as AuthRequest;
   return res.json({
     user: authReq.user,
+    adminUser: authReq.adminUser || authReq.user,
     role: authReq.role,
     status: authReq.status,
     tenant: authReq.tenant,

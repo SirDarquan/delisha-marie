@@ -4,27 +4,32 @@ import {
   authMiddleware,
   AuthRequest,
   clearImpersonationCookies,
+  setImpersonationCookies,
 } from './middleware/auth.middleware';
 import { backendService } from './supabase-backend.service';
 
 const usersRouter = Router();
 
-// Exit impersonation only requires the admin_original_token cookie
+// Exit impersonation requires an active impersonation cookie or admin_original_token
 usersRouter.post('/auth/exit-impersonation', (req: Request, res: Response) => {
   const originalToken = req.cookies?.['admin_original_token'];
   const originalRefreshToken = req.cookies?.['admin_original_refresh_token'];
-  if (!originalToken) {
+  const impersonatedUserId =
+    req.cookies?.['admin_impersonate_user_id'] || req.cookies?.['admin_impersonated_user_id'];
+  if (!originalToken && !impersonatedUserId) {
     return res.status(400).json({ error: 'No active impersonation session found' });
   }
 
   clearImpersonationCookies(res);
 
-  res.cookie('admin_access_token', originalToken, {
-    httpOnly: true,
-    secure: false,
-    sameSite: 'lax',
-    path: '/',
-  });
+  if (originalToken) {
+    res.cookie('admin_access_token', originalToken, {
+      httpOnly: true,
+      secure: false,
+      sameSite: 'lax',
+      path: '/',
+    });
+  }
 
   if (originalRefreshToken) {
     res.cookie('admin_refresh_token', originalRefreshToken, {
@@ -280,7 +285,7 @@ usersRouter.post(
         return res.status(500).json({ error: 'Failed to establish member session' });
       }
 
-      // Save admin original token in cookie
+      // Preserve admin original tokens
       if (authReq.token) {
         res.cookie('admin_original_token', authReq.token, {
           httpOnly: true,
@@ -300,31 +305,9 @@ usersRouter.post(
           maxAge: 86400 * 1000,
         });
       }
-      res.cookie('admin_impersonated_user_id', profile.user_id, {
-        httpOnly: true,
-        secure: false,
-        sameSite: 'lax',
-        path: '/',
-        maxAge: 86400 * 1000,
-      });
 
-      // Set active token to the member's session token
-      res.cookie('admin_access_token', sessionData.session.access_token, {
-        httpOnly: true,
-        secure: false,
-        sameSite: 'lax',
-        path: '/',
-        maxAge: sessionData.session.expires_in * 1000,
-      });
-      if (sessionData.session.refresh_token) {
-        res.cookie('admin_refresh_token', sessionData.session.refresh_token, {
-          httpOnly: true,
-          secure: false,
-          sameSite: 'lax',
-          path: '/',
-          maxAge: 30 * 24 * 60 * 60 * 1000,
-        });
-      }
+      // Set dedicated impersonation cookies with short idle lifespan
+      setImpersonationCookies(res, profile.user_id, sessionData.session);
 
       return res.json({
         success: true,
@@ -370,6 +353,7 @@ usersRouter.get('/auth/session', (req: Request, res: Response) => {
   const authReq = req as AuthRequest;
   return res.json({
     user: authReq.user,
+    adminUser: authReq.adminUser || authReq.user,
     role: authReq.role,
     status: authReq.status,
     tenantId: authReq.tenantId,

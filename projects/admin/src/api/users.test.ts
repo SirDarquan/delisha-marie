@@ -590,8 +590,13 @@ describe('Users API Router (Admin & Waiting Room)', () => {
         true,
       );
       expect(
-        cookies.some((c: string) => c.includes('admin_access_token=impersonated-session-token')),
+        cookies.some((c: string) =>
+          c.includes('admin_impersonate_token=impersonated-session-token'),
+        ),
       ).toBe(true);
+      expect(cookies.some((c: string) => c.includes('admin_impersonate_user_id=member-id-1'))).toBe(
+        true,
+      );
     });
 
     it('should return 500 when generateLink fails', async () => {

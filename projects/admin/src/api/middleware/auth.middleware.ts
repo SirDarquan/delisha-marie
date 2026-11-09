@@ -10,6 +10,7 @@ export interface TenantInfo {
 
 export interface AuthRequest extends Request {
   user?: { id?: string; email?: string; [key: string]: unknown };
+  adminUser?: { id?: string; email?: string; [key: string]: unknown };
   token?: string;
   role?: 'admin' | 'member' | 'unassigned';
   status?: 'pending' | 'active' | 'blocked';
@@ -98,9 +99,45 @@ async function tryVerifyToken(
 }
 
 export function clearImpersonationCookies(res: Response): void {
+  res.clearCookie('admin_impersonate_user_id', { path: '/' });
+  res.clearCookie('admin_impersonate_token', { path: '/' });
+  res.clearCookie('admin_impersonate_refresh_token', { path: '/' });
   res.clearCookie('admin_original_token', { path: '/' });
   res.clearCookie('admin_original_refresh_token', { path: '/' });
   res.clearCookie('admin_impersonated_user_id', { path: '/' });
+}
+
+export function setImpersonationCookies(
+  res: Response,
+  targetUserId: string,
+  session?: { access_token?: string; refresh_token?: string; expires_in?: number },
+): void {
+  const maxAge = (session?.expires_in || 3600) * 1000;
+  res.cookie('admin_impersonate_user_id', targetUserId, {
+    httpOnly: true,
+    secure: false,
+    sameSite: 'lax',
+    path: '/',
+    maxAge,
+  });
+  if (session?.access_token) {
+    res.cookie('admin_impersonate_token', session.access_token, {
+      httpOnly: true,
+      secure: false,
+      sameSite: 'lax',
+      path: '/',
+      maxAge,
+    });
+  }
+  if (session?.refresh_token) {
+    res.cookie('admin_impersonate_refresh_token', session.refresh_token, {
+      httpOnly: true,
+      secure: false,
+      sameSite: 'lax',
+      path: '/',
+      maxAge,
+    });
+  }
 }
 
 export function clearAllAuthCookies(res: Response): void {
@@ -188,7 +225,8 @@ async function authenticateUser(
 
 function checkImpersonation(req: Request, res: Response, userId?: string, role?: string): boolean {
   const hasOriginalToken = Boolean(req.cookies?.['admin_original_token']);
-  const impersonatedUserId = req.cookies?.['admin_impersonated_user_id'];
+  const impersonatedUserId =
+    req.cookies?.['admin_impersonate_user_id'] || req.cookies?.['admin_impersonated_user_id'];
   const isMatch = !impersonatedUserId || userId === impersonatedUserId;
   const isActuallyImpersonating = hasOriginalToken && role === 'member' && isMatch;
 
@@ -197,6 +235,82 @@ function checkImpersonation(req: Request, res: Response, userId?: string, role?:
   }
 
   return isActuallyImpersonating;
+}
+
+async function resolveImpersonation(
+  req: Request,
+  res: Response,
+  targetUserId: string,
+): Promise<{
+  user: { id?: string; email?: string; [key: string]: unknown };
+  token?: string;
+  tenantId: string | null;
+  tenant: TenantInfo | null;
+} | null> {
+  const adminClient = backendService.supabaseAdmin;
+  if (!adminClient?.from) return null;
+
+  try {
+    const { data: profile } = await adminClient
+      .from('user_profiles')
+      .select('id, user_id, email, role, status')
+      .or(`id.eq.${targetUserId},user_id.eq.${targetUserId}`)
+      .maybeSingle();
+
+    if (!profile || profile.status !== 'active' || profile.role === 'admin') {
+      return null;
+    }
+
+    const { data: tenantData } = await adminClient
+      .from('tenants')
+      .select('id, name, slug, custom_domain')
+      .eq('owner_id', profile.user_id)
+      .maybeSingle();
+
+    let token = req.cookies?.['admin_impersonate_token'];
+    const refreshToken = req.cookies?.['admin_impersonate_refresh_token'];
+
+    if (token) {
+      try {
+        const verified = await backendService.verifyToken(token);
+        if (!verified || verified.id !== profile.user_id) {
+          token = undefined;
+        }
+      } catch {
+        token = undefined;
+      }
+    }
+
+    if (!token && refreshToken) {
+      try {
+        const { data: refData, error: refErr } = await backendService.supabase.auth.refreshSession({
+          refresh_token: refreshToken,
+        });
+        if (!refErr && refData?.session && refData?.user?.id === profile.user_id) {
+          token = refData.session.access_token;
+          setImpersonationCookies(res, profile.user_id, refData.session);
+        }
+      } catch {
+        // Refresh failed
+      }
+    }
+
+    return {
+      user: { id: profile.user_id, email: profile.email },
+      token: token || undefined,
+      tenantId: tenantData?.id || null,
+      tenant: tenantData
+        ? {
+            id: tenantData.id,
+            name: tenantData.name,
+            slug: tenantData.slug,
+            custom_domain: tenantData.custom_domain,
+          }
+        : null,
+    };
+  } catch {
+    return null;
+  }
 }
 
 export const authMiddleware = async (
@@ -230,13 +344,41 @@ export const authMiddleware = async (
       return;
     }
 
+    authReq.adminUser = authResult.user;
     authReq.user = authResult.user;
     authReq.token = authResult.token;
     authReq.role = profileInfo.role;
     authReq.status = profileInfo.status;
     authReq.tenantId = profileInfo.tenantId;
     authReq.tenant = profileInfo.tenant;
-    authReq.isImpersonating = checkImpersonation(req, res, authResult.user.id, profileInfo.role);
+    authReq.isImpersonating = false;
+
+    const impersonatedUserId =
+      req.cookies?.['admin_impersonate_user_id'] || req.cookies?.['admin_impersonated_user_id'];
+    const hasOriginalToken = Boolean(req.cookies?.['admin_original_token']);
+
+    if (
+      profileInfo.role === 'admin' &&
+      impersonatedUserId &&
+      impersonatedUserId !== authResult.user.id
+    ) {
+      const impContext = await resolveImpersonation(req, res, impersonatedUserId);
+      if (impContext) {
+        authReq.user = impContext.user;
+        if (impContext.token) {
+          authReq.token = impContext.token;
+        }
+        authReq.tenantId = impContext.tenantId;
+        authReq.tenant = impContext.tenant;
+        authReq.isImpersonating = true;
+      } else {
+        clearImpersonationCookies(res);
+      }
+    } else if (hasOriginalToken && profileInfo.role === 'member') {
+      authReq.isImpersonating = checkImpersonation(req, res, authResult.user.id, profileInfo.role);
+    } else if (hasOriginalToken && profileInfo.role === 'admin') {
+      clearImpersonationCookies(res);
+    }
 
     next();
   } catch (err: unknown) {
