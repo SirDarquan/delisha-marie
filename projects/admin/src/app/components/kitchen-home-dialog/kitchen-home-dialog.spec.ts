@@ -11,7 +11,6 @@ describe('KitchenHomeDialogComponent', () => {
   let fixture: ComponentFixture<KitchenHomeDialogComponent>;
   let settingsServiceSpy: {
     getKitchenHomeSettings: ReturnType<typeof vi.fn>;
-    saveKitchenHomeSettings: ReturnType<typeof vi.fn>;
   };
   let dialogRefSpy: { close: ReturnType<typeof vi.fn> };
   let snackBarSpy: { open: ReturnType<typeof vi.fn> };
@@ -26,7 +25,6 @@ describe('KitchenHomeDialogComponent', () => {
   beforeEach(async () => {
     settingsServiceSpy = {
       getKitchenHomeSettings: vi.fn().mockResolvedValue(mockSettings),
-      saveKitchenHomeSettings: vi.fn().mockResolvedValue(mockSettings),
     };
     dialogRefSpy = { close: vi.fn() };
     snackBarSpy = { open: vi.fn() };
@@ -46,7 +44,7 @@ describe('KitchenHomeDialogComponent', () => {
     component = fixture.componentInstance;
   });
 
-  it('should create and load settings on init', async () => {
+  it('should create and load settings on init into signal form model', async () => {
     fixture.detectChanges();
     await fixture.whenStable();
 
@@ -57,6 +55,7 @@ describe('KitchenHomeDialogComponent', () => {
     expect(component.recipe3()).toBe('/recipes/pie');
     expect(component.kitchenAbout()).toBe('custom_kitchen.png');
     expect(component.sidebarAbout()).toBe('custom_sidebar.png');
+    expect(component.model().recipe1).toBe('/recipes/pasta');
   });
 
   it('should handle getKitchenHomeSettings returning null/undefined gracefully', async () => {
@@ -110,46 +109,23 @@ describe('KitchenHomeDialogComponent', () => {
     expect(dialogRefSpy.close).toHaveBeenCalledWith();
   });
 
-  it('should save settings and close dialog on submit', async () => {
+  it('should update model on picture change events', async () => {
     fixture.detectChanges();
     await fixture.whenStable();
-    fixture.detectChanges();
 
-    component.recipe1.set('/recipes/new-slot-1');
-    component.kitchenAbout.set('new_kitchen.png');
-    component.sidebarAbout.set('new_sidebar.png');
+    component.onKitchenAboutChange('updated_kitchen.png');
+    expect(component.kitchenAbout()).toBe('updated_kitchen.png');
 
-    await component.save();
-
-    expect(settingsServiceSpy.saveKitchenHomeSettings).toHaveBeenCalledWith({
-      featuredRecipes: ['/recipes/new-slot-1', '/recipes/cake', '/recipes/pie'],
-      kitchen_about: 'new_kitchen.png',
-      sidebar_about: 'new_sidebar.png',
-    });
-    expect(snackBarSpy.open).toHaveBeenCalledWith(
-      'Kitchen Home settings saved successfully!',
-      'Close',
-      { duration: 3000 },
-    );
-    expect(dialogRefSpy.close).toHaveBeenCalledWith(true);
-    expect(component['isSaving']()).toBe(false);
+    component.onSidebarAboutChange('updated_sidebar.png');
+    expect(component.sidebarAbout()).toBe('updated_sidebar.png');
   });
 
-  it('should handle save failure gracefully', async () => {
-    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(vi.fn());
-    settingsServiceSpy.saveKitchenHomeSettings.mockRejectedValue(new Error('Save failed'));
+  it('should close dialog on save', async () => {
     fixture.detectChanges();
     await fixture.whenStable();
 
     await component.save();
-
-    expect(snackBarSpy.open).toHaveBeenCalledWith(
-      'Failed to save settings. Please try again.',
-      'Close',
-      { duration: 3000 },
-    );
-    expect(dialogRefSpy.close).not.toHaveBeenCalledWith(true);
+    expect(dialogRefSpy.close).toHaveBeenCalledWith(true);
     expect(component['isSaving']()).toBe(false);
-    consoleErrorSpy.mockRestore();
   });
 });

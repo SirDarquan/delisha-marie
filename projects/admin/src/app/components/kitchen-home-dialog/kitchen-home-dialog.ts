@@ -1,6 +1,13 @@
-import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  OnInit,
+  signal,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { disabled, form, FormField, FormRoot } from '@angular/forms/signals';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -9,13 +16,22 @@ import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ProfilePictureUploaderComponent } from '../profile-picture-uploader/profile-picture-uploader';
-import { KitchenHomeSettings, SettingsService } from '../../services/settings.service';
+import { SettingsService } from '../../services/settings.service';
+
+export interface KitchenHomeModel {
+  recipe1: string;
+  recipe2: string;
+  recipe3: string;
+  kitchenAbout: string;
+  sidebarAbout: string;
+}
 
 @Component({
   selector: 'app-kitchen-home-dialog',
   imports: [
     CommonModule,
-    FormsModule,
+    FormRoot,
+    FormField,
     MatDialogModule,
     MatButtonModule,
     MatFormFieldModule,
@@ -39,7 +55,7 @@ import { KitchenHomeSettings, SettingsService } from '../../services/settings.se
               Kitchen Home Settings
             </h2>
             <p class="text-xs text-slate-400 mt-1">
-              Configure featured recipes and author bio pictures.
+              Environment configuration for featured recipes and author bio pictures.
             </p>
           </div>
         </div>
@@ -62,7 +78,10 @@ import { KitchenHomeSettings, SettingsService } from '../../services/settings.se
           <span class="text-xs text-slate-400">Loading settings...</span>
         </div>
       } @else {
-        <form (ngSubmit)="save()" class="flex flex-col gap-6">
+        <form
+          [formRoot]="kitchenHomeForm"
+          aria-label="Kitchen Home Settings Form"
+          class="flex flex-col gap-6">
           <!-- Featured Recipe Links Section -->
           <div>
             <h3
@@ -71,9 +90,9 @@ import { KitchenHomeSettings, SettingsService } from '../../services/settings.se
               Featured Recipe Links
             </h3>
             <p class="text-xs text-slate-400 mb-3">
-              Enter relative slugs (e.g.
-              <code class="text-purple-300 font-mono">/recipes/my-favorite-pasta</code>) or absolute
-              URLs.
+              Configured via environment variables (<code class="text-purple-300 font-mono"
+                >KITCHEN_FEATURED_RECIPES</code
+              >).
             </p>
 
             <div class="space-y-3">
@@ -84,12 +103,10 @@ import { KitchenHomeSettings, SettingsService } from '../../services/settings.se
                 <input
                   id="recipe-slot-0"
                   type="text"
-                  [ngModel]="recipe1()"
-                  (ngModelChange)="recipe1.set($event)"
-                  name="recipe1"
+                  [formField]="kitchenHomeForm.recipe1"
                   placeholder="/recipes/featured-1"
                   data-testid="recipe-slot-0"
-                  class="w-full bg-slate-950/60 border border-slate-700 focus:border-purple-500 rounded-xl px-3.5 py-2 text-sm text-white placeholder-slate-500 outline-none transition" />
+                  class="w-full bg-slate-950/60 border border-slate-700 focus:border-purple-500 rounded-xl px-3.5 py-2 text-sm text-white placeholder-slate-500 outline-none transition disabled:opacity-60 disabled:cursor-not-allowed" />
               </div>
 
               <div class="flex flex-col gap-1">
@@ -99,12 +116,10 @@ import { KitchenHomeSettings, SettingsService } from '../../services/settings.se
                 <input
                   id="recipe-slot-1"
                   type="text"
-                  [ngModel]="recipe2()"
-                  (ngModelChange)="recipe2.set($event)"
-                  name="recipe2"
+                  [formField]="kitchenHomeForm.recipe2"
                   placeholder="/recipes/featured-2"
                   data-testid="recipe-slot-1"
-                  class="w-full bg-slate-950/60 border border-slate-700 focus:border-purple-500 rounded-xl px-3.5 py-2 text-sm text-white placeholder-slate-500 outline-none transition" />
+                  class="w-full bg-slate-950/60 border border-slate-700 focus:border-purple-500 rounded-xl px-3.5 py-2 text-sm text-white placeholder-slate-500 outline-none transition disabled:opacity-60 disabled:cursor-not-allowed" />
               </div>
 
               <div class="flex flex-col gap-1">
@@ -114,12 +129,10 @@ import { KitchenHomeSettings, SettingsService } from '../../services/settings.se
                 <input
                   id="recipe-slot-2"
                   type="text"
-                  [ngModel]="recipe3()"
-                  (ngModelChange)="recipe3.set($event)"
-                  name="recipe3"
+                  [formField]="kitchenHomeForm.recipe3"
                   placeholder="/recipes/featured-3"
                   data-testid="recipe-slot-2"
-                  class="w-full bg-slate-950/60 border border-slate-700 focus:border-purple-500 rounded-xl px-3.5 py-2 text-sm text-white placeholder-slate-500 outline-none transition" />
+                  class="w-full bg-slate-950/60 border border-slate-700 focus:border-purple-500 rounded-xl px-3.5 py-2 text-sm text-white placeholder-slate-500 outline-none transition disabled:opacity-60 disabled:cursor-not-allowed" />
               </div>
             </div>
           </div>
@@ -132,7 +145,10 @@ import { KitchenHomeSettings, SettingsService } from '../../services/settings.se
               Author Bio Pictures
             </h3>
             <p class="text-xs text-slate-400 mb-3">
-              Upload photos specifically for Kitchen Home author bio and Recipe Sidebar author bio.
+              Configured via environment variables (<code class="text-purple-300 font-mono"
+                >KITCHEN_ABOUT_PICTURE</code
+              >
+              and <code class="text-purple-300 font-mono">SIDEBAR_ABOUT_PICTURE</code>).
             </p>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -140,17 +156,15 @@ import { KitchenHomeSettings, SettingsService } from '../../services/settings.se
                 slotKey="kitchen_about"
                 label="Kitchen About"
                 description="Displayed on Kitchen Home author bio"
-                [picture]="kitchenAbout()"
-                [showActiveToggle]="false"
-                (pictureChange)="kitchenAbout.set($event)" />
+                [picture]="model().kitchenAbout"
+                (pictureChange)="onKitchenAboutChange($event)" />
 
               <app-profile-picture-uploader
                 slotKey="sidebar_about"
                 label="Sidebar About"
                 description="Displayed on Recipe Sidebar author bio"
-                [picture]="sidebarAbout()"
-                [showActiveToggle]="false"
-                (pictureChange)="sidebarAbout.set($event)" />
+                [picture]="model().sidebarAbout"
+                (pictureChange)="onSidebarAboutChange($event)" />
             </div>
           </div>
 
@@ -168,7 +182,7 @@ import { KitchenHomeSettings, SettingsService } from '../../services/settings.se
             <button
               mat-flat-button
               type="submit"
-              [disabled]="isSaving()"
+              [disabled]="true || isSaving()"
               data-testid="btn-save-kitchen-home"
               class="px-5 py-2.5 rounded-xl font-bold text-white bg-gradient-to-r from-purple-500 to-pink-500 hover:brightness-110 transition cursor-pointer disabled:opacity-50 flex items-center gap-2">
               @if (isSaving()) {
@@ -193,11 +207,35 @@ export class KitchenHomeDialogComponent implements OnInit {
   protected readonly isLoading = signal<boolean>(true);
   protected readonly isSaving = signal<boolean>(false);
 
-  readonly recipe1 = signal<string>('');
-  readonly recipe2 = signal<string>('');
-  readonly recipe3 = signal<string>('');
-  readonly kitchenAbout = signal<string>('delisha_marie_profile_2.png');
-  readonly sidebarAbout = signal<string>('delisha_marie_profile.png');
+  readonly model = signal<KitchenHomeModel>({
+    recipe1: '',
+    recipe2: '',
+    recipe3: '',
+    kitchenAbout: 'delisha_marie_profile_2.png',
+    sidebarAbout: 'delisha_marie_profile.png',
+  });
+
+  protected readonly kitchenHomeForm = form(
+    this.model,
+    (fields) => {
+      disabled(fields.recipe1, { when: () => true });
+      disabled(fields.recipe2, { when: () => true });
+      disabled(fields.recipe3, { when: () => true });
+    },
+    {
+      submission: {
+        action: async () => {
+          await this.save();
+        },
+      },
+    },
+  );
+
+  readonly recipe1 = computed(() => this.model().recipe1);
+  readonly recipe2 = computed(() => this.model().recipe2);
+  readonly recipe3 = computed(() => this.model().recipe3);
+  readonly kitchenAbout = computed(() => this.model().kitchenAbout);
+  readonly sidebarAbout = computed(() => this.model().sidebarAbout);
 
   async ngOnInit(): Promise<void> {
     await this.loadSettings();
@@ -208,11 +246,13 @@ export class KitchenHomeDialogComponent implements OnInit {
     try {
       const settings = await this.settingsService.getKitchenHomeSettings();
       if (settings) {
-        this.recipe1.set(settings.featuredRecipes?.[0] ?? '');
-        this.recipe2.set(settings.featuredRecipes?.[1] ?? '');
-        this.recipe3.set(settings.featuredRecipes?.[2] ?? '');
-        this.kitchenAbout.set(settings.kitchen_about || 'delisha_marie_profile_2.png');
-        this.sidebarAbout.set(settings.sidebar_about || 'delisha_marie_profile.png');
+        this.model.set({
+          recipe1: settings.featuredRecipes?.[0] ?? '',
+          recipe2: settings.featuredRecipes?.[1] ?? '',
+          recipe3: settings.featuredRecipes?.[2] ?? '',
+          kitchenAbout: settings.kitchen_about || 'delisha_marie_profile_2.png',
+          sidebarAbout: settings.sidebar_about || 'delisha_marie_profile.png',
+        });
       }
     } catch (err) {
       console.error('Failed to load Kitchen Home settings', err);
@@ -222,22 +262,16 @@ export class KitchenHomeDialogComponent implements OnInit {
     }
   }
 
+  onKitchenAboutChange(picture: string): void {
+    this.model.update((m) => ({ ...m, kitchenAbout: picture }));
+  }
+
+  onSidebarAboutChange(picture: string): void {
+    this.model.update((m) => ({ ...m, sidebarAbout: picture }));
+  }
+
   async save(): Promise<void> {
-    this.isSaving.set(true);
-    try {
-      const payload: KitchenHomeSettings = {
-        featuredRecipes: [this.recipe1(), this.recipe2(), this.recipe3()],
-        kitchen_about: this.kitchenAbout(),
-        sidebar_about: this.sidebarAbout(),
-      };
-      await this.settingsService.saveKitchenHomeSettings(payload);
-      this.snackBar.open('Kitchen Home settings saved successfully!', 'Close', { duration: 3000 });
-      this.dialogRef.close(true);
-    } catch (err) {
-      console.error('Failed to save Kitchen Home settings', err);
-      this.snackBar.open('Failed to save settings. Please try again.', 'Close', { duration: 3000 });
-    } finally {
-      this.isSaving.set(false);
-    }
+    this.isSaving.set(false);
+    this.dialogRef.close(true);
   }
 }
