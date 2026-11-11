@@ -2,44 +2,36 @@
 describe('Recipe List Page', () => {
   beforeEach(() => {
     // Mock the recipes API
-    cy.intercept(
-      'GET',
-      '/api/recipes?page=1&pageSize=12&method=recipes&category=&subcategory=&rating=',
-      {
-        statusCode: 200,
-        body: {
-          items: Array.from({ length: 12 }).map((_, i) => ({
-            id: `recipe-${i}`,
-            slug: `recipe-${i}`,
-            title: `Test Recipe ${i}`,
-            description: `Description ${i}`,
-            image: `/images/recipe-${i}.jpg`,
-          })),
-          total: 24, // 2 pages
-        },
+    cy.intercept('GET', '**/api/recipes*page=1*', {
+      statusCode: 200,
+      body: {
+        items: Array.from({ length: 12 }).map((_, i) => ({
+          id: `recipe-${i}`,
+          slug: `recipe-${i}`,
+          title: `Test Recipe ${i}`,
+          description: `Description ${i}`,
+          image: `/images/recipe-${i}.jpg`,
+        })),
+        total: 24, // 2 pages
       },
-    ).as('getRecipesPage1');
+    }).as('getRecipesPage1');
 
-    cy.intercept(
-      'GET',
-      '/api/recipes?page=2&pageSize=12&method=recipes&category=&subcategory=&rating=',
-      {
-        statusCode: 200,
-        body: {
-          items: Array.from({ length: 12 }).map((_, i) => ({
-            id: `recipe-${12 + i}`,
-            slug: `recipe-${12 + i}`,
-            title: `Test Recipe ${12 + i}`,
-            description: `Description ${12 + i}`,
-            image: `/images/recipe-${12 + i}.jpg`,
-          })),
-          total: 24,
-        },
+    cy.intercept('GET', '**/api/recipes*page=2*', {
+      statusCode: 200,
+      body: {
+        items: Array.from({ length: 12 }).map((_, i) => ({
+          id: `recipe-${12 + i}`,
+          slug: `recipe-${12 + i}`,
+          title: `Test Recipe ${12 + i}`,
+          description: `Description ${12 + i}`,
+          image: `/images/recipe-${12 + i}.jpg`,
+        })),
+        total: 24,
       },
-    ).as('getRecipesPage2');
+    }).as('getRecipesPage2');
 
     // Also need to mock index data for subcategories and breadcrumbs
-    cy.intercept('GET', '/api/recipe-index', {
+    cy.intercept('GET', '**/api/recipe-index*', {
       statusCode: 200,
       body: {
         categoriesList: [],

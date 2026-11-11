@@ -151,7 +151,7 @@ describe('FeaturedRecipes', () => {
     expect(component.recipes()).toEqual([]);
   });
 
-  it('should return empty array if recipeResource value is undefined (loading)', async () => {
+  it('should return empty array and render skeleton placeholders while loading', async () => {
     // Return a promise that doesn't resolve immediately
     let resolvePromise!: (value: { items: unknown[] }) => void;
     fakeRecipeService.getRecipes.mockReturnValueOnce(
@@ -162,6 +162,10 @@ describe('FeaturedRecipes', () => {
 
     // While loading, the value is undefined, so it should return []
     expect(component.recipes()).toEqual([]);
+    const skeletons = fixture.nativeElement.querySelectorAll(
+      '[data-testid="featured-recipe-skeleton"]',
+    );
+    expect(skeletons).toHaveLength(4);
     resolvePromise({ items: [] }); // Cleanup
   });
 

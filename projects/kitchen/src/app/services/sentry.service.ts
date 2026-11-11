@@ -5,6 +5,7 @@ import { AppConfigService } from './config.service';
 @Service()
 export class SentryPlugin implements AppPlugin {
   private readonly appConfigService = inject(AppConfigService);
+
   readonly id = 'sentry';
   readonly order = 5;
 

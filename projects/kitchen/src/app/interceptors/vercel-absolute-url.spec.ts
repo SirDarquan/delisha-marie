@@ -113,6 +113,18 @@ describe('vercelAbsoluteUrlInterceptor', () => {
     expect(req.request.method).toBe('GET');
     req.flush({});
   });
+
+  it('should handle /config and /kitchen/config endpoints correctly', () => {
+    httpClient.get('/config').subscribe();
+    const req1 = httpMock.expectOne('http://localhost:4201/config');
+    expect(req1.request.method).toBe('GET');
+    req1.flush({});
+
+    httpClient.get('/kitchen/config').subscribe();
+    const req2 = httpMock.expectOne('http://localhost:4201/kitchen/config');
+    expect(req2.request.method).toBe('GET');
+    req2.flush({});
+  });
 });
 
 describe('vercelAbsoluteUrlInterceptor with REQUEST token', () => {
