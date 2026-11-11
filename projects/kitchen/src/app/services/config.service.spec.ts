@@ -3,7 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { APP_PLUGINS } from '@dm/library';
-import { TransferState } from '@angular/core';
+import { PLATFORM_ID, TransferState } from '@angular/core';
 import { APP_CONFIG_STATE_KEY, AppConfig, AppConfigService } from './config.service';
 import { provideAppConfig } from '../provider/app-config';
 
@@ -68,6 +68,53 @@ describe('AppConfigService', () => {
     httpMock.expectNone('/config');
     expect(service.config()).toEqual(mockConfig);
     expect(transferState.hasKey(APP_CONFIG_STATE_KEY)).toBe(false);
+  });
+
+  it('should initialize config directly from process.env on server platform (SSR)', async () => {
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        AppConfigService,
+        { provide: PLATFORM_ID, useValue: 'server' },
+      ],
+    });
+
+    const serverService = TestBed.inject(AppConfigService);
+    const serverTransferState = TestBed.inject(TransferState);
+    const serverHttpMock = TestBed.inject(HttpTestingController);
+
+    const origGtm = process.env['GTM_ID'];
+    const origSentry = process.env['SENTRY_DSN'];
+    const origFeatured = process.env['KITCHEN_FEATURED_RECIPES'];
+    process.env['GTM_ID'] = 'GTM-SERVER-1';
+    process.env['SENTRY_DSN'] = 'https://sentry-server';
+    process.env['KITCHEN_FEATURED_RECIPES'] = 'recipe-1, recipe-2';
+
+    await serverService.init();
+
+    serverHttpMock.expectNone('/config');
+    expect(serverService.config()?.GoogleTagManager.id).toBe('GTM-SERVER-1');
+    expect(serverService.config()?.Sentry?.dsn).toBe('https://sentry-server');
+    expect(serverService.config()?.KitchenHome?.featuredRecipes).toEqual(['recipe-1', 'recipe-2']);
+    expect(serverTransferState.hasKey(APP_CONFIG_STATE_KEY)).toBe(true);
+
+    if (origGtm !== undefined) {
+      process.env['GTM_ID'] = origGtm;
+    } else {
+      delete process.env['GTM_ID'];
+    }
+    if (origSentry !== undefined) {
+      process.env['SENTRY_DSN'] = origSentry;
+    } else {
+      delete process.env['SENTRY_DSN'];
+    }
+    if (origFeatured !== undefined) {
+      process.env['KITCHEN_FEATURED_RECIPES'] = origFeatured;
+    } else {
+      delete process.env['KITCHEN_FEATURED_RECIPES'];
+    }
   });
 
   it('should log and throw a critical error if backend load fails', async () => {

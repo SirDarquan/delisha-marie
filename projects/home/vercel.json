@@ -6,6 +6,10 @@
       "destination": "/api/config"
     },
     {
+      "source": "/kitchen/config",
+      "destination": "/api/config"
+    },
+    {
       "source": "/robots.txt",
       "destination": "/api/robots"
     },

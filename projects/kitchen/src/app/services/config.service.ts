@@ -1,5 +1,13 @@
+import { isPlatformServer } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
-import { Injectable, inject, makeStateKey, signal, TransferState } from '@angular/core';
+import {
+  Injectable,
+  inject,
+  makeStateKey,
+  PLATFORM_ID,
+  signal,
+  TransferState,
+} from '@angular/core';
 import { firstValueFrom, tap } from 'rxjs';
 import { AppPlugin } from '@dm/library';
 
@@ -39,6 +47,7 @@ export interface AppConfig {
 export class AppConfigService implements AppPlugin {
   private readonly http = inject(HttpClient);
   private readonly transferState = inject(TransferState);
+  private readonly platformId = inject(PLATFORM_ID);
 
   readonly id = 'AppConfigService';
   readonly order = 1;
@@ -60,6 +69,41 @@ export class AppConfigService implements AppPlugin {
         this.config.set(cached);
         return;
       }
+    }
+
+    if (isPlatformServer(this.platformId) && typeof process !== 'undefined') {
+      const serverConfig: AppConfig = {
+        GoogleTagManager: {
+          id: process.env['GTM_ID'] || '',
+        },
+        Sentry: process.env['SENTRY_DSN']
+          ? {
+              dsn: process.env['SENTRY_DSN'],
+              tracesSampleRate: Number.parseFloat(
+                process.env['SENTRY_TRACES_SAMPLE_RATE'] ?? '0.1',
+              ),
+              tracePropagationTargets: process.env['SENTRY_TRACE_PROPAGATION_TARGETS']?.split(
+                ',',
+              ) ?? ['localhost:4201'],
+              environment: process.env['SENTRY_ENVIRONMENT'],
+              release: process.env['SENTRY_RELEASE'],
+              debug: process.env['SENTRY_DEBUG'] === 'true',
+            }
+          : undefined,
+        KitchenHome: {
+          featuredRecipes: process.env['KITCHEN_FEATURED_RECIPES']
+            ? process.env['KITCHEN_FEATURED_RECIPES']
+                .split(',')
+                .map((s) => s.trim())
+                .filter(Boolean)
+            : ['', '', ''],
+          kitchen_about: process.env['KITCHEN_ABOUT_PICTURE'] || 'delisha_marie_profile_2.png',
+          sidebar_about: process.env['SIDEBAR_ABOUT_PICTURE'] || 'delisha_marie_profile.png',
+        },
+      };
+      this.config.set(serverConfig);
+      this.transferState.set(APP_CONFIG_STATE_KEY, serverConfig);
+      return;
     }
 
     try {
