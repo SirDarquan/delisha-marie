@@ -19,6 +19,17 @@ describe('configRouter', () => {
     expect(response.body.KitchenHome).toEqual(DEFAULT_KITCHEN_HOME_SETTINGS);
   });
 
+  it('should return 200 for HEAD method', async () => {
+    const { createMockRequest, createMockResponse } = await import('./test-utils');
+    const req = createMockRequest('/config', 'HEAD');
+    const res = createMockResponse();
+
+    await configRouter(req, res as unknown as import('@vercel/node').VercelResponse);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.end).toHaveBeenCalled();
+  });
+
   it('should return 404 for non-GET methods', async () => {
     const response = await request(null).post('/config').send();
     expect(response.status).toBe(404);
