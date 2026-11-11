@@ -1,14 +1,19 @@
-import { inject, Service } from '@angular/core';
+import { inject, PLATFORM_ID, Service } from '@angular/core';
 import { AppPlugin } from '@dm/library';
 import { AppConfigService } from './config.service';
+import { isPlatformBrowser } from '@angular/common';
 
 @Service()
 export class SentryPlugin implements AppPlugin {
   private readonly appConfigService = inject(AppConfigService);
+  private readonly platformId = inject(PLATFORM_ID);
+
   readonly id = 'sentry';
   readonly order = 5;
 
   async init() {
+    if (!isPlatformBrowser(this.platformId)) return; // skip SSR
+
     const sentryConfig = this.appConfigService.SentryConfig();
 
     if (!sentryConfig) return;

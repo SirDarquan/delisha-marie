@@ -75,7 +75,7 @@ describe('Recipe Discovery Listings', () => {
   });
 
   it('should handle pagination controls correctly when items exceed standard limit', () => {
-    cy.intercept('GET', '/api/recipes*', {
+    cy.intercept('GET', '**/api/recipes*', {
       statusCode: 200,
       body: { items: generateMockRecipes(15), total: 15 }, // 15 items, first page will show 12
     }).as('getPaginatedRecipes');

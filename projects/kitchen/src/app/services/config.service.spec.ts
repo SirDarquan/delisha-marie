@@ -3,7 +3,8 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { APP_PLUGINS } from '@dm/library';
-import { AppConfig, AppConfigService } from './config.service';
+import { TransferState } from '@angular/core';
+import { APP_CONFIG_STATE_KEY, AppConfig, AppConfigService } from './config.service';
 import { provideAppConfig } from '../provider/app-config';
 
 describe('AppConfigService', () => {
@@ -51,6 +52,22 @@ describe('AppConfigService', () => {
     await promise;
 
     expect(service.config()).toEqual(mockConfig);
+  });
+
+  it('should use TransferState cached config if available and skip HTTP request', async () => {
+    const transferState = TestBed.inject(TransferState);
+    const mockConfig: AppConfig = {
+      GoogleTagManager: {
+        id: 'GTM-CACHED',
+      },
+    };
+    transferState.set(APP_CONFIG_STATE_KEY, mockConfig);
+
+    await service.init();
+
+    httpMock.expectNone('/config');
+    expect(service.config()).toEqual(mockConfig);
+    expect(transferState.hasKey(APP_CONFIG_STATE_KEY)).toBe(false);
   });
 
   it('should log and throw a critical error if backend load fails', async () => {

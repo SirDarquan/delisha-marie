@@ -3,7 +3,12 @@ import { HttpHandlerFn, HttpHeaders, HttpInterceptorFn, HttpRequest } from '@ang
 import { inject, PLATFORM_ID, REQUEST } from '@angular/core';
 
 function isApiRequest(url: string): boolean {
-  return url.startsWith('/api/') || url.startsWith('/kitchen/api/');
+  return (
+    url.startsWith('/api/') ||
+    url.startsWith('/kitchen/api/') ||
+    url === '/config' ||
+    url === '/kitchen/config'
+  );
 }
 
 function resolveBaseUrl(

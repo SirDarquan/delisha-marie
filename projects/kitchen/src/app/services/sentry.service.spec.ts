@@ -1,3 +1,4 @@
+import { PLATFORM_ID } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it, vi, afterEach } from 'vitest';
 import { SentryPlugin } from './sentry.service';
@@ -70,5 +71,19 @@ describe('SentryPlugin', () => {
 
     consoleWarnSpy.mockRestore();
     consoleErrorSpy.mockRestore();
+  });
+
+  it('should skip initialization on server platform (SSR)', async () => {
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      providers: [
+        SentryPlugin,
+        { provide: AppConfigService, useValue: mockConfigService },
+        { provide: PLATFORM_ID, useValue: 'server' },
+      ],
+    });
+    const ssrPlugin = TestBed.inject(SentryPlugin);
+    await ssrPlugin.init();
+    expect(mockConfigService.SentryConfig).not.toHaveBeenCalled();
   });
 });

@@ -19,7 +19,7 @@ import { RecipeService } from '../../services/recipe.service';
   selector: 'dm-featured-recipes',
   imports: [MatCardModule, MatButtonModule, MatIconModule, NgOptimizedImage, RouterLink],
   template: `
-    @if (recipes().length === 4 || _recipeResource.isLoading()) {
+    @if (title() && (recipes().length === 4 || _recipeResource.isLoading())) {
       <section>
         <div class="flex items-end justify-between mb-10 gap-4">
           <div>
@@ -46,49 +46,67 @@ import { RecipeService } from '../../services/recipe.service';
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-          @for (recipe of recipes(); track recipe.id) {
-            <a [routerLink]="['/recipe', recipe.slug]" class="block no-underline text-inherit">
-              <mat-card
-                class="!bg-[var(--mat-sys-surface-container)] !rounded-3xl border-none overflow-hidden transition-all hover:-translate-y-2 hover:shadow-xl group">
-                <div class="relative h-64 overflow-hidden">
-                  <img
-                    [ngSrc]="recipe.image"
-                    width="352"
-                    height="256"
-                    [alt]="recipe.title"
-                    class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+          @if (_recipeResource.isLoading() && recipes().length === 0) {
+            @for (skeleton of [1, 2, 3, 4]; track skeleton) {
+              <div
+                data-testid="featured-recipe-skeleton"
+                class="bg-[var(--mat-sys-surface-container)] rounded-3xl overflow-hidden animate-pulse flex flex-col h-full">
+                <div class="h-64 bg-[var(--mat-sys-surface-container-highest)]"></div>
+                <div class="p-6 space-y-3 flex-grow">
                   <div
-                    class="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button
-                      mat-mini-fab
-                      color="primary"
-                      [attr.aria-label]="'Save ' + recipe.title + ' to favorites'">
-                      <mat-icon>favorite</mat-icon>
-                    </button>
-                  </div>
+                    class="h-6 bg-[var(--mat-sys-surface-container-highest)] rounded w-3/4"></div>
+                  <div
+                    class="h-4 bg-[var(--mat-sys-surface-container-highest)] rounded w-full"></div>
+                  <div
+                    class="h-4 bg-[var(--mat-sys-surface-container-highest)] rounded w-2/3"></div>
                 </div>
+              </div>
+            }
+          } @else {
+            @for (recipe of recipes(); track recipe.id) {
+              <a [routerLink]="['/recipe', recipe.slug]" class="block no-underline text-inherit">
+                <mat-card
+                  class="!bg-[var(--mat-sys-surface-container)] !rounded-3xl border-none overflow-hidden transition-all hover:-translate-y-2 hover:shadow-xl group">
+                  <div class="relative h-64 overflow-hidden">
+                    <img
+                      [ngSrc]="recipe.image"
+                      width="352"
+                      height="256"
+                      [alt]="recipe.title"
+                      class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                    <div
+                      class="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button
+                        mat-mini-fab
+                        color="primary"
+                        [attr.aria-label]="'Save ' + recipe.title + ' to favorites'">
+                        <mat-icon>favorite</mat-icon>
+                      </button>
+                    </div>
+                  </div>
 
-                <mat-card-content class="!p-6">
-                  <h3
-                    class="text-2xl font-bold mb-3 line-clamp-1 group-hover:text-[var(--mat-sys-primary)] transition-colors">
-                    {{ recipe.title }}
-                  </h3>
-                  <p
-                    class="text-[var(--mat-sys-on-surface-variant)] line-clamp-2 text-sm leading-relaxed">
-                    {{ recipe.description }}
-                  </p>
-                </mat-card-content>
+                  <mat-card-content class="!p-6">
+                    <h3
+                      class="text-2xl font-bold mb-3 line-clamp-1 group-hover:text-[var(--mat-sys-primary)] transition-colors">
+                      {{ recipe.title }}
+                    </h3>
+                    <p
+                      class="text-[var(--mat-sys-on-surface-variant)] line-clamp-2 text-sm leading-relaxed">
+                      {{ recipe.description }}
+                    </p>
+                  </mat-card-content>
 
-                <mat-card-actions class="!p-6 !pt-0 flex justify-between items-center">
-                  <button
-                    mat-button
-                    [routerLink]="recipe.slug"
-                    class="!text-[var(--mat-sys-primary)] font-bold">
-                    Read Full Recipe
-                  </button>
-                </mat-card-actions>
-              </mat-card>
-            </a>
+                  <mat-card-actions class="!p-6 !pt-0 flex justify-between items-center">
+                    <button
+                      mat-button
+                      [routerLink]="recipe.slug"
+                      class="!text-[var(--mat-sys-primary)] font-bold">
+                      Read Full Recipe
+                    </button>
+                  </mat-card-actions>
+                </mat-card>
+              </a>
+            }
           }
         </div>
       </section>
