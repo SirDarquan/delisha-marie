@@ -12,25 +12,9 @@ export const DEFAULT_KITCHEN_HOME_SETTINGS: KitchenHomeSettings = {
         .split(',')
         .map((s) => s.trim())
         .filter(Boolean)
-    : ['/recipes/breakfast', '/recipes/lunch', '/recipes/dinner'],
+    : ['', '', ''],
   kitchen_about: process.env['KITCHEN_ABOUT_PICTURE'] || 'delisha_marie_profile_2.png',
   sidebar_about: process.env['SIDEBAR_ABOUT_PICTURE'] || 'delisha_marie_profile.png',
-};
-
-export const getKitchenHomeSettings = (): KitchenHomeSettings => {
-  const envRecipes = process.env['KITCHEN_FEATURED_RECIPES'];
-  return {
-    featuredRecipes: envRecipes
-      ? envRecipes
-          .split(',')
-          .map((s) => s.trim())
-          .filter(Boolean)
-      : DEFAULT_KITCHEN_HOME_SETTINGS.featuredRecipes,
-    kitchen_about:
-      process.env['KITCHEN_ABOUT_PICTURE'] || DEFAULT_KITCHEN_HOME_SETTINGS.kitchen_about,
-    sidebar_about:
-      process.env['SIDEBAR_ABOUT_PICTURE'] || DEFAULT_KITCHEN_HOME_SETTINGS.sidebar_about,
-  };
 };
 
 export interface AppConfig {
@@ -76,7 +60,7 @@ const configHandler = async (req: VercelRequest, res: VercelResponse): Promise<v
       release: process.env['SENTRY_RELEASE'],
       debug: process.env['SENTRY_DEBUG'] === 'true',
     },
-    KitchenHome: getKitchenHomeSettings(),
+    KitchenHome: DEFAULT_KITCHEN_HOME_SETTINGS,
   };
 
   res.status(200).json(responseConfig);
