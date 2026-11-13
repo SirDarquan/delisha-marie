@@ -183,7 +183,14 @@ export class RecipeList {
       (c: { name: string; url: string; children?: RefineByItem[] }) =>
         c.url.endsWith('/' + catSlug) || c.url.includes('/' + catSlug + '/'),
     );
-    return currentCat?.children || [];
+    const children = currentCat?.children || [];
+    return children.filter((sub) => {
+      const subSlug = sub.url.split('/').filter(Boolean).pop()?.toLowerCase();
+      const parentSlug = catSlug?.toLowerCase();
+      const subName = sub.name.trim().toLowerCase();
+      const parentName = currentCat?.name?.trim().toLowerCase();
+      return subSlug !== parentSlug && subName !== parentName;
+    });
   });
 
   readonly displayTitle = computed(() => {

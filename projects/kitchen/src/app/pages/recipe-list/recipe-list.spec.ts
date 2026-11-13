@@ -235,6 +235,36 @@ describe('RecipeList', () => {
     expect(component.subCategories()).toHaveLength(0);
   });
 
+  it('should exclude self-referential subcategories matching parent category (e.g. Lunch on the Lunch menu)', async () => {
+    recipeIndexServiceMock.getData.mockResolvedValueOnce({
+      categoriesList: [
+        {
+          name: 'Lunch',
+          url: '/recipes/lunch',
+          children: [
+            { name: 'Lunch', url: '/recipes/lunch/lunch' },
+            { name: 'Sandwiches', url: '/recipes/lunch/sandwiches' },
+          ],
+        },
+      ],
+      methodsList: [],
+      holidays: [],
+      specialDiets: [],
+      bestRecipes: [],
+      ingredients: [],
+    });
+    fixture = TestBed.createComponent(RecipeList);
+    component = fixture.componentInstance;
+    Object.defineProperty(router, 'url', { value: '/recipes/lunch' });
+    paramsSubject.next({ category: 'lunch' });
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const subcats = component.subCategories();
+    expect(subcats).toHaveLength(1);
+    expect(subcats[0].name).toBe('Sandwiches');
+  });
+
   it('should handle missing data gracefully in subCategories', async () => {
     recipeIndexServiceMock.getData.mockResolvedValueOnce(null);
     fixture = TestBed.createComponent(RecipeList);
