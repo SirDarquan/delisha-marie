@@ -1,4 +1,4 @@
-import { CommonModule, NgOptimizedImage } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -12,34 +12,18 @@ import {
   untracked,
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { MatButtonModule } from '@angular/material/button';
-import { MatCardModule } from '@angular/material/card';
-import { MatChipsModule } from '@angular/material/chips';
-import { MatIconModule } from '@angular/material/icon';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { NgxPaginationModule } from 'ngx-pagination';
+import { ActivatedRoute, Router } from '@angular/router';
 import { BreadcrumbItem, Breadcrumbs } from '../../components/breadcrumbs/breadcrumbs';
 import { RefineBy, RefineByItem } from '../../components/refine-by/refine-by';
 import { Recipe, RecipeService } from '../../services/recipe.service';
 import { deslugify } from '@dm/library';
 import { RecipeIndexService } from '../recipe-index/recipe-index.service';
 import { ColoredHeaderComponent } from '../../components/colored-header/colored-header';
+import { RecipeGrid } from '../../components/recipe-grid/recipe-grid';
 
 @Component({
   selector: 'dm-recipe-list',
-  imports: [
-    CommonModule,
-    MatCardModule,
-    MatButtonModule,
-    MatIconModule,
-    MatChipsModule,
-    NgOptimizedImage,
-    Breadcrumbs,
-    RefineBy,
-    NgxPaginationModule,
-    RouterLink,
-    ColoredHeaderComponent,
-  ],
+  imports: [CommonModule, Breadcrumbs, RefineBy, RecipeGrid, ColoredHeaderComponent],
   template: `
     <div class="into-the-box pt-12 pb-4">
       <!-- Dynamic Breadcrumbs -->
@@ -52,79 +36,16 @@ import { ColoredHeaderComponent } from '../../components/colored-header/colored-
       <dml-refine-by [items]="subCategories()" class="block mb-12" />
 
       <!-- Recipe Grid -->
-      <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
-        @if (isLoading() && displayedRecipes().length === 0) {
-          @for (placeholder of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]; track placeholder) {
-            <mat-card
-              class="!bg-[var(--mat-sys-surface-container)] !rounded-[2.5rem] overflow-hidden border border-[var(--mat-sys-outline-variant)] animate-pulse">
-              <div class="aspect-[4/3] bg-[var(--mat-sys-surface-container-highest)]"></div>
-              <mat-card-content class="!p-6 space-y-3">
-                <div class="h-6 bg-[var(--mat-sys-surface-container-highest)] rounded w-3/4"></div>
-                <div class="space-y-2 pt-2">
-                  <div
-                    class="h-4 bg-[var(--mat-sys-surface-container-highest)] rounded w-full"></div>
-                  <div
-                    class="h-4 bg-[var(--mat-sys-surface-container-highest)] rounded w-5/6"></div>
-                </div>
-              </mat-card-content>
-            </mat-card>
-          }
-        } @else {
-          @for (
-            recipe of displayedRecipes()
-              | paginate
-                : { itemsPerPage: pageSize, currentPage: currentPage(), totalItems: totalItems() };
-            track recipe.slug || $index;
-            let i = $index
-          ) {
-            <a [routerLink]="['/recipe', recipe.slug]" class="block no-underline text-inherit">
-              <mat-card
-                class="!bg-[var(--mat-sys-surface-container)] !rounded-[2.5rem] overflow-hidden shadow-sm hover:shadow-xl transition-all duration-500 group border border-[var(--mat-sys-outline-variant)]"
-                [class.opacity-60]="isLoading()">
-                <div class="aspect-[4/3] overflow-hidden relative">
-                  <img
-                    [ngSrc]="recipe.image"
-                    width="400"
-                    height="300"
-                    [priority]="i < 8"
-                    [alt]="recipe.title"
-                    class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
-                  <div
-                    class="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                </div>
-                <mat-card-content class="!p-6 space-y-3">
-                  <h3
-                    class="text-xl font-bold leading-tight line-clamp-2 group-hover:text-[var(--mat-sys-primary)] transition-colors">
-                    {{ recipe.title }}
-                  </h3>
-                  <p
-                    class="text-sm text-[var(--mat-sys-on-surface-variant)] line-clamp-3 font-medium">
-                    {{ recipe.description }}
-                  </p>
-                </mat-card-content>
-              </mat-card>
-            </a>
-          } @empty {
-            <div class="col-span-full py-20 text-center space-y-4">
-              <mat-icon class="text-6xl h-auto w-auto opacity-20">restaurant_menu</mat-icon>
-              <p class="text-xl text-[var(--mat-sys-outline)]">
-                No recipes found for this selection.
-              </p>
-            </div>
-          }
-        }
-      </section>
-
-      <!-- Paginator -->
-      @if (!isLoading() && totalItems() > pageSize) {
-        <div class="flex justify-center pt-8 pb-4">
-          <pagination-controls
-            (pageChange)="onPageChange($event)"
-            [responsive]="true"
-            class="recipe-pagination">
-          </pagination-controls>
-        </div>
-      }
+      <dm-recipe-grid
+        [recipes]="displayedRecipes()"
+        [columns]="4"
+        [variant]="'card-link'"
+        [pageSize]="pageSize"
+        [currentPage]="currentPage()"
+        [totalItems]="totalItems()"
+        [isLoading]="isLoading()"
+        [showPagination]="true"
+        (pageChange)="onPageChange($event)" />
     </div>
   `,
 

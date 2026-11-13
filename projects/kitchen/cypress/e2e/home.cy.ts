@@ -113,4 +113,17 @@ describe('Home Page', () => {
   it('should display the 3 Featured Recipes sections configured by admin', () => {
     cy.get('dm-featured-recipes', { timeout: 10000 }).should('have.length', 3);
   });
+
+  it('should search using the search bar under category images with enter key', () => {
+    cy.get('dm-category-images input').type('Cake{enter}');
+    cy.url().should('include', 'q=Cake');
+    cy.get('dm-search').should('exist');
+  });
+
+  it('should search using the search button under category images', () => {
+    cy.get('dm-category-images input').type('Soup');
+    cy.get('dm-category-images button').click();
+    cy.url().should('include', 'q=Soup');
+    cy.get('dm-search').should('exist');
+  });
 });
