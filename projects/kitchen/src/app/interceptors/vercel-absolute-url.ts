@@ -30,7 +30,8 @@ function resolveBaseUrl(
     const hasPort = forwardedHost.includes(':');
     const hostWithPort =
       hasPort || !forwardedPort ? forwardedHost : `${forwardedHost}:${forwardedPort}`;
-    const protocol = forwardedProto || (hostWithPort.includes('localhost') ? 'http' : 'https');
+    const isLocal = hostWithPort.includes('localhost') || hostWithPort.includes('127.0.0.1');
+    const protocol = isLocal ? 'http' : forwardedProto || 'https';
     return `${protocol}://${hostWithPort}`;
   }
 
@@ -40,7 +41,8 @@ function resolveBaseUrl(
     !incomingHost.startsWith('127.0.0.1:') &&
     !incomingHost.startsWith('localhost:')
   ) {
-    const protocol = incomingHost.includes('localhost') ? 'http' : 'https';
+    const isLocal = incomingHost.includes('localhost') || incomingHost.includes('127.0.0.1');
+    const protocol = isLocal ? 'http' : 'https';
     return `${protocol}://${incomingHost}`;
   }
 
