@@ -579,5 +579,28 @@ describe('Recipe Index Router API', () => {
       await recipeIndexRouter(mockReqMissingHost as never, mockRes2 as never);
       expect(mockRes2.statusCode).toBe(200);
     });
+
+    it('should exclude self-referential subcategories matching parent category (e.g. Lunch on the Lunch menu)', async () => {
+      clearRecipeIndexCache();
+      mockCategories.push(
+        { name: 'Lunch', url: '/recipes/lunch' },
+        { name: 'Lunch', url: '/recipes/lunch/lunch' },
+        { name: 'Sandwiches', url: '/recipes/lunch/sandwiches' },
+      );
+
+      try {
+        const res = await createRequestMock(recipeIndexRouter)().get('/api/recipe-index');
+        expect(res.status).toBe(200);
+        const lunchCat = res.body.categoriesList.find(
+          (c: { name: string; children?: { name: string }[] }) => c.name === 'Lunch',
+        );
+        expect(lunchCat).toBeDefined();
+        expect(lunchCat?.children).toHaveLength(1);
+        expect(lunchCat?.children?.[0].name).toBe('Sandwiches');
+      } finally {
+        mockCategories.splice(mockCategories.length - 3, 3);
+        clearRecipeIndexCache();
+      }
+    });
   });
 });

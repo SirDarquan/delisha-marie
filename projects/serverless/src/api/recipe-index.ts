@@ -34,10 +34,12 @@ function buildCategoryHierarchyFromParts(
           const parentSlug = parts[2];
           const childSlug = parts[3];
 
-          if (!parentToChildren.has(parentSlug)) {
-            parentToChildren.set(parentSlug, new Map<string, string>());
+          if (childSlug.toLowerCase() !== parentSlug.toLowerCase()) {
+            if (!parentToChildren.has(parentSlug)) {
+              parentToChildren.set(parentSlug, new Map<string, string>());
+            }
+            parentToChildren.get(parentSlug)!.set(childSlug, item.name);
           }
-          parentToChildren.get(parentSlug)!.set(childSlug, item.name);
         }
       }
     }
@@ -51,12 +53,21 @@ function buildCategoryHierarchyFromParts(
       };
       const childrenMap = parentToChildren.get(parentSlug);
       if (childrenMap && childrenMap.size > 0) {
-        item.children = Array.from(childrenMap.entries())
+        const filteredChildren = Array.from(childrenMap.entries())
+          .filter(
+            ([childSlug, childName]) =>
+              childSlug.toLowerCase() !== parentSlug.toLowerCase() &&
+              childName.trim().toLowerCase() !== name.trim().toLowerCase(),
+          )
           .map(([childSlug, childName]) => ({
             name: childName,
             url: `/${mainSegment}/${parentSlug}/${childSlug}`,
           }))
           .sort((a, b) => a.name.localeCompare(b.name));
+
+        if (filteredChildren.length > 0) {
+          item.children = filteredChildren;
+        }
       }
       return item;
     })

@@ -470,6 +470,13 @@ function buildBreadcrumbs(
       const segment = parts[i];
       currentPath += '/' + segment;
       const label = i === parts.length - 1 ? cat.name : formatCategoryLabel(segment);
+      const prev = trail[trail.length - 1];
+      if (
+        prev &&
+        (prev.label.trim().toLowerCase() === label.trim().toLowerCase() || prev.url === currentPath)
+      ) {
+        continue;
+      }
       trail.push({ label, url: currentPath });
     }
 
