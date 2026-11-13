@@ -99,7 +99,7 @@ import { RecipeService } from '../../services/recipe.service';
                   <mat-card-actions class="!p-6 !pt-0 flex justify-between items-center">
                     <button
                       mat-button
-                      [routerLink]="recipe.slug"
+                      [routerLink]="['/recipe', recipe.slug]"
                       class="!text-[var(--mat-sys-primary)] font-bold">
                       Read Full Recipe
                     </button>
