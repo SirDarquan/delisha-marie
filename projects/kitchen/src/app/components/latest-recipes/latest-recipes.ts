@@ -1,4 +1,4 @@
-import { isPlatformBrowser, NgOptimizedImage } from '@angular/common';
+import { isPlatformBrowser } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -12,14 +12,13 @@ import {
   signal,
   ViewEncapsulation,
 } from '@angular/core';
-import { MatCardModule } from '@angular/material/card';
-import { Router, RouterLink } from '@angular/router';
-import { NgxPaginationModule } from 'ngx-pagination';
+import { Router } from '@angular/router';
+import { RecipeGrid } from '../recipe-grid/recipe-grid';
 import { Recipe, RecipeService } from '../../services/recipe.service';
 
 @Component({
   selector: 'dm-latest-recipes',
-  imports: [MatCardModule, NgOptimizedImage, RouterLink, NgxPaginationModule],
+  imports: [RecipeGrid],
   template: `
     <section class="space-y-8" id="latest-recipes">
       @if (showSectionTitle()) {
@@ -36,96 +35,17 @@ import { Recipe, RecipeService } from '../../services/recipe.service';
         </div>
       }
 
-      @if (isInitialLoading()) {
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-          @for (placeholder of [1, 2, 3, 4, 5, 6]; track placeholder) {
-            <mat-card
-              class="!bg-[var(--mat-sys-surface-container)] !rounded-3xl border border-[var(--mat-sys-outline-variant)] overflow-hidden animate-pulse flex flex-col h-full">
-              <div class="aspect-[16/10] bg-[var(--mat-sys-surface-container-highest)]"></div>
-              <mat-card-content class="!p-6 space-y-3 flex-grow">
-                <div class="h-4 bg-[var(--mat-sys-surface-container-highest)] rounded w-1/3"></div>
-                <div class="h-6 bg-[var(--mat-sys-surface-container-highest)] rounded w-3/4"></div>
-                <div class="space-y-2 pt-2">
-                  <div
-                    class="h-4 bg-[var(--mat-sys-surface-container-highest)] rounded w-full"></div>
-                  <div
-                    class="h-4 bg-[var(--mat-sys-surface-container-highest)] rounded w-5/6"></div>
-                </div>
-              </mat-card-content>
-            </mat-card>
-          }
-        </div>
-      } @else {
-        <div
-          class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 transition-opacity duration-200"
-          [class.opacity-60]="isPageChanging()">
-          @for (
-            recipe of recipes()
-              | paginate
-                : {
-                    itemsPerPage: pageSize(),
-                    currentPage: page(),
-                    totalItems: totalItems(),
-                  };
-            track recipe.id || recipe.slug || $index
-          ) {
-            <mat-card
-              class="!bg-[var(--mat-sys-surface-container)] !rounded-3xl border border-[var(--mat-sys-outline-variant)] overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-xl group flex flex-col h-full">
-              <div
-                class="relative aspect-[16/10] overflow-hidden bg-[var(--mat-sys-surface-container-highest)]">
-                <a
-                  [routerLink]="['/recipe', recipe.slug]"
-                  class="block w-full h-full"
-                  [attr.aria-label]="recipe.title">
-                  <img
-                    [ngSrc]="recipe.image"
-                    fill
-                    [priority]="$index < 3"
-                    [alt]="recipe.title"
-                    height="auto"
-                    class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
-                </a>
-              </div>
-
-              <mat-card-content class="!p-6 flex-grow flex flex-col">
-                @if (recipe.location && recipe.locationName) {
-                  <a
-                    [routerLink]="recipe.location"
-                    class="inline-block text-xs font-bold tracking-wider uppercase text-[var(--mat-sys-primary)] hover:underline mb-2">
-                    {{ recipe.locationName }}
-                  </a>
-                }
-
-                <a [routerLink]="['/recipe', recipe.slug]" class="block mb-3">
-                  <h3
-                    class="text-xl font-bold font-serif line-clamp-2 text-[var(--mat-sys-on-surface)] group-hover:text-[var(--mat-sys-primary)] transition-colors leading-snug">
-                    {{ recipe.title }}
-                  </h3>
-                </a>
-
-                <p
-                  class="text-sm text-[var(--mat-sys-on-surface-variant)] line-clamp-3 leading-relaxed flex-grow">
-                  {{ recipe.description }}
-                </p>
-              </mat-card-content>
-            </mat-card>
-          } @empty {
-            <div class="col-span-full py-16 text-center text-[var(--mat-sys-on-surface-variant)]">
-              No recipes found at this time. Check back soon!
-            </div>
-          }
-        </div>
-
-        @if (totalItems() > pageSize()) {
-          <div class="flex justify-center pt-8 pb-4">
-            <pagination-controls
-              (pageChange)="onPageChange($event)"
-              [responsive]="true"
-              class="recipe-pagination">
-            </pagination-controls>
-          </div>
-        }
-      }
+      <dm-recipe-grid
+        [recipes]="recipes()"
+        [columns]="3"
+        [variant]="'individual-links'"
+        [pageSize]="pageSize()"
+        [currentPage]="page()"
+        [totalItems]="totalItems()"
+        [isLoading]="isLoading()"
+        [showPagination]="true"
+        [emptyMessage]="'No recipes found at this time. Check back soon!'"
+        (pageChange)="onPageChange($event)" />
     </section>
   `,
   encapsulation: ViewEncapsulation.None,
