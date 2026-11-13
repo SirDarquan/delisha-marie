@@ -66,7 +66,7 @@ describe('RecipeCard Component', () => {
     expect(rootLink).toBeTruthy();
 
     const locationTag = compiled.querySelector('mat-card-content span');
-    expect(locationTag?.textContent?.trim()).toBe('Desserts');
+    expect(locationTag).toBeNull();
 
     const title = compiled.querySelector('h3');
     expect(title?.textContent?.trim()).toBe('Delicious Lemon Tart');
