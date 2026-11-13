@@ -32,6 +32,12 @@ describe('app routes', () => {
         expect(guard(route, [], snapshotWith({ q: '' }))).toBe(false);
       });
 
+      it('should match or redirect when ng.form or .query key is present', () => {
+        expect(guard(route, [], snapshotWith({ 'ng.form.q': 'soup' }))).toBeTruthy();
+        expect(guard(route, [], snapshotWith({ 'search.query': 'salad' }))).toBeTruthy();
+        expect(guard(route, [], snapshotWith({ 'search.query': '   ' }))).toBe(false);
+      });
+
       it('should lazy load the SearchPage component', async () => {
         const component = await (route.loadComponent as () => Promise<unknown>)();
         expect(component).toBeDefined();

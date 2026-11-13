@@ -1,4 +1,5 @@
-import { PartialMatchRouteSnapshot, Routes } from '@angular/router';
+import { inject } from '@angular/core';
+import { PartialMatchRouteSnapshot, Router, Routes } from '@angular/router';
 import { Home } from './pages/home/home';
 import { dynamicPageResolver } from './resolvers/dynamic-page.resolver';
 import { schemaRecipeResolver } from './resolvers/recipe-schema.resolver';
@@ -17,7 +18,23 @@ import {
 
 function isSearch(snapshot: PartialMatchRouteSnapshot) {
   const query = snapshot.queryParamMap.get('q');
-  return !!query;
+  if (query) {
+    return true;
+  }
+  for (const key of snapshot.queryParamMap.keys) {
+    if (key.includes('ng.form') || key.endsWith('.query') || key.endsWith('.q')) {
+      const val = snapshot.queryParamMap.get(key);
+      if (val?.trim()) {
+        try {
+          const router = inject(Router);
+          return router.createUrlTree(['/'], { queryParams: { q: val.trim() } });
+        } catch {
+          return true;
+        }
+      }
+    }
+  }
+  return false;
 }
 
 export const routes: Routes = [
