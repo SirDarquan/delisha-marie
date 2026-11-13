@@ -299,7 +299,11 @@ export class CategoryBoardComponent implements FormValueControl<CategoryTrails |
         // Subcategory
         const parentUrl = `/${parts[0]}/${parts[1]}`;
         const parent = dbCategories.find((c) => c.url === parentUrl);
-        if (parent) {
+        if (
+          parent &&
+          parts[2].toLowerCase() !== parts[1].toLowerCase() &&
+          cat.name.trim().toLowerCase() !== parent.name.trim().toLowerCase()
+        ) {
           if (!map.has(parent.name)) {
             map.set(parent.name, { url: parent.url, subs: new Map<string, string>() });
           }
@@ -538,6 +542,19 @@ export class CategoryBoardComponent implements FormValueControl<CategoryTrails |
 
     const fullUrl = `${prefix}${urlPart}`;
     const all = this.boardPieces();
+
+    // Prevent adding a subcategory piece that duplicates the parent category
+    const parentPiece = all.find(
+      (p) => p.url.startsWith('/recipes/') && p.url.split('/').filter(Boolean).length === 2,
+    );
+    if (
+      parentPiece &&
+      (name.toLowerCase() === parentPiece.name.toLowerCase() ||
+        urlPart.toLowerCase() === parentPiece.url.split('/').filter(Boolean).pop()?.toLowerCase())
+    ) {
+      return;
+    }
+
     this.updateBoard([...all, { name, url: fullUrl }]);
 
     this.customName.set('');

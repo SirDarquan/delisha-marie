@@ -553,5 +553,31 @@ describe('CategoryBoardComponent', () => {
       await new Promise((r) => setTimeout(r, 0));
       expect(customFixture.componentInstance.boardPiecesList()[0][0].name).toBe('Home');
     });
+
+    it('should exclude subcategories matching parent category name or slug and ignore duplicate custom pieces', () => {
+      fakeRecipeService.categories.set([
+        { id: '1', name: 'Lunch', url: '/recipes/lunch' },
+        { id: '2', name: 'Lunch', url: '/recipes/lunch/lunch' },
+        { id: '3', name: 'Sandwiches', url: '/recipes/lunch/sandwiches' },
+      ]);
+      fixture.detectChanges();
+      const lunchConfig = component.categories().find((c) => c.name === 'Lunch');
+      expect(lunchConfig).toBeDefined();
+      expect(lunchConfig?.children).toHaveLength(1);
+      expect(lunchConfig?.children?.[0].name).toBe('Sandwiches');
+
+      // Test addCustomPiece ignoring piece identical to parent
+      component.boardPiecesList.set([
+        [
+          { name: 'Home', url: '/' },
+          { name: 'Recipes', url: '/recipes' },
+          { name: 'Lunch', url: '/recipes/lunch' },
+        ],
+      ]);
+      component.customName.set('Lunch');
+      component.customUrl.set('lunch');
+      component.addCustomPiece();
+      expect(component.boardPiecesList()[0]).toHaveLength(3); // was not added
+    });
   });
 });

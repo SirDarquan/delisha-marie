@@ -50,20 +50,29 @@ function formatCategoryTrails(recipeCategories: unknown): { trails: CategoryNode
 
   const finalTrails = trails.map((trail) => {
     trail.reverse();
-    const first = trail[0];
+    const rawTrail = trail.map((c: CategoryNode) => ({ name: c.name, url: c.url }));
+    const dedupedTrail: CategoryNode[] = [];
+    for (const node of rawTrail) {
+      const prev = dedupedTrail[dedupedTrail.length - 1];
+      if (
+        prev &&
+        (prev.name.trim().toLowerCase() === node.name.trim().toLowerCase() || prev.url === node.url)
+      ) {
+        continue;
+      }
+      dedupedTrail.push(node);
+    }
+
+    const first = dedupedTrail[0];
     if (first?.url.startsWith('/the-best-recipes')) {
       return [
         { name: 'Home', url: '/' },
         { name: 'The Best Recipes', url: '/the-best-recipes' },
-        ...trail.map((c: CategoryNode) => ({ name: c.name, url: c.url })),
+        ...dedupedTrail,
       ];
     }
 
-    return [
-      { name: 'Home', url: '/' },
-      { name: 'Recipes', url: '/recipes' },
-      ...trail.map((c: CategoryNode) => ({ name: c.name, url: c.url })),
-    ];
+    return [{ name: 'Home', url: '/' }, { name: 'Recipes', url: '/recipes' }, ...dedupedTrail];
   });
 
   return { trails: finalTrails };
