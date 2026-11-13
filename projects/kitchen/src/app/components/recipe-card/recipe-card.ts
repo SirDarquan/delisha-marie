@@ -80,12 +80,6 @@ export type RecipeCardVariant =
                 class="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
             </div>
             <mat-card-content class="!p-6 space-y-3 flex-grow flex flex-col">
-              @if (recipe().locationName) {
-                <span
-                  class="inline-block text-xs font-bold tracking-wider uppercase text-[var(--mat-sys-primary)]">
-                  {{ recipe().locationName }}
-                </span>
-              }
               <h3
                 class="text-xl font-bold leading-tight line-clamp-2 group-hover:text-[var(--mat-sys-primary)] transition-colors">
                 {{ recipe().title }}
