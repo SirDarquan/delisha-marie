@@ -52,7 +52,7 @@ describe('RecipeGrid Component', () => {
     fixture.detectChanges();
 
     const skeletons = fixture.debugElement.queryAll(By.css('.animate-pulse'));
-    expect(skeletons.length).toBe(6);
+    expect(skeletons).toHaveLength(6);
   });
 
   it('should render recipe cards when recipes are provided', () => {
@@ -61,7 +61,7 @@ describe('RecipeGrid Component', () => {
     fixture.detectChanges();
 
     const cards = fixture.debugElement.queryAll(By.css('dm-recipe-card'));
-    expect(cards.length).toBe(6);
+    expect(cards).toHaveLength(6);
   });
 
   it('should render empty state fallback when no recipes exist', () => {
