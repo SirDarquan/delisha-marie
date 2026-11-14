@@ -1,11 +1,11 @@
 import { Routes } from '@angular/router';
-import { Home } from './pages/home/home';
+
 import { dynamicPageResolver } from './resolvers/dynamic-page.resolver';
 
 export const routes: Routes = [
   {
     path: '',
-    component: Home,
+    loadComponent: () => import('./pages/home/home').then((m) => m.Home),
     pathMatch: 'full',
   },
   {

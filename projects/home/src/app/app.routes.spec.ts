@@ -9,7 +9,8 @@ describe('app.routes', () => {
 
     // Home route
     expect(routes[0].path).toBe('');
-    expect(routes[0].component).toBe(Home);
+    const homeComponent = await (routes[0].loadComponent as () => Promise<unknown>)();
+    expect(homeComponent).toBeDefined();
     expect(routes[0].pathMatch).toBe('full');
 
     // Contact route

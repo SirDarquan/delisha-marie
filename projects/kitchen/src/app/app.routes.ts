@@ -1,6 +1,6 @@
 import { inject } from '@angular/core';
 import { PartialMatchRouteSnapshot, Router, Routes } from '@angular/router';
-import { Home } from './pages/home/home';
+
 import { dynamicPageResolver } from './resolvers/dynamic-page.resolver';
 import { schemaRecipeResolver } from './resolvers/recipe-schema.resolver';
 import { seoRecipeResolver } from './resolvers/recipe-seo.resolver';
@@ -71,7 +71,7 @@ export const routes: Routes = [
   },
   {
     path: '',
-    component: Home,
+    loadComponent: () => import('./pages/home/home').then((m) => m.Home),
     title: 'Home',
     resolve: { seo: seoResolver, schema: schemaResolver },
     data: {
