@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+import { DatePipe } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -15,7 +15,7 @@ import { Recipe } from '../../services/recipe.service';
 
 @Component({
   selector: 'dml-recipe-meta',
-  imports: [CommonModule, MatIconModule, MatButtonModule, RouterModule],
+  imports: [MatIconModule, MatButtonModule, RouterModule, DatePipe],
   template: `
     <div
       class="recipe-meta flex flex-wrap items-center gap-y-4 gap-x-8 py-4 opacity-80 text-sm font-bold tracking-tight">

@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+import { NgClass, DatePipe } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -18,7 +18,7 @@ import { UserProfileItem, UsersService } from '../../services/users.service';
 
 @Component({
   selector: 'app-users-page',
-  imports: [CommonModule, FormsModule, MatButtonModule, MatTabsModule],
+  imports: [FormsModule, MatButtonModule, MatTabsModule, DatePipe, NgClass],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: [
     `

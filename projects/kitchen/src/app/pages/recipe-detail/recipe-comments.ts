@@ -1,4 +1,4 @@
-import { CommonModule, isPlatformBrowser } from '@angular/common';
+import { isPlatformBrowser, DatePipe } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -40,7 +40,6 @@ export interface CommentFormValue {
 @Component({
   selector: 'dml-recipe-comments',
   imports: [
-    CommonModule,
     FormsModule,
     ReactiveFormsModule,
     FormField,
@@ -50,6 +49,7 @@ export interface CommentFormValue {
     MatButtonModule,
     Stars,
     RouterLink,
+    DatePipe,
   ],
   template: `
     <div class="recipe-comments mt-20 scroll-mt-28" id="comments">

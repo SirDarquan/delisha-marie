@@ -11,7 +11,7 @@ import {
   DOCUMENT,
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { CommonModule, NgOptimizedImage } from '@angular/common';
+import { NgOptimizedImage, DecimalPipe } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { form, FormField, FormRoot, required } from '@angular/forms/signals';
 import { Router, ActivatedRoute, RouterLink } from '@angular/router';
@@ -28,7 +28,6 @@ interface SearchFormValue {
 @Component({
   selector: 'dm-search',
   imports: [
-    CommonModule,
     MatIconModule,
     NgOptimizedImage,
     FormField,
@@ -36,6 +35,7 @@ interface SearchFormValue {
     RouterLink,
     Sidebar,
     NgxPaginationModule,
+    DecimalPipe,
   ],
   template: `
     <main class="min-h-screen pt-24 pb-16">

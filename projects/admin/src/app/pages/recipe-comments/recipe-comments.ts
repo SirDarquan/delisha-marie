@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+import { DatePipe } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -18,7 +18,6 @@ import { RecipeReplyFormComponent } from './recipe-reply-form';
   selector: 'app-recipe-comments',
   standalone: true,
   imports: [
-    CommonModule,
     FormsModule,
     RouterModule,
     MatCardModule,
@@ -30,6 +29,7 @@ import { RecipeReplyFormComponent } from './recipe-reply-form';
     MatSnackBarModule,
     MatProgressSpinnerModule,
     MatChipsModule,
+    DatePipe,
   ],
   template: `
     <div class="p-6 max-w-4xl mx-auto">
