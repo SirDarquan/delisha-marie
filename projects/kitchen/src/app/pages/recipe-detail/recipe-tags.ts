@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -12,7 +11,7 @@ import { Recipe } from '../../services/recipe.service';
 
 @Component({
   selector: 'dml-recipe-tags',
-  imports: [CommonModule, RouterLink, MatButtonModule],
+  imports: [RouterLink, MatButtonModule],
   template: `
     <div class="recipe-tags-container mt-16 mb-12 flex flex-wrap justify-center gap-4 px-4 sm:px-0">
       @for (tag of allTags(); track tag.url) {

@@ -1,4 +1,4 @@
-import { CommonModule, DOCUMENT, NgOptimizedImage, IMAGE_LOADER } from '@angular/common';
+import { DOCUMENT, NgOptimizedImage, IMAGE_LOADER } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -17,7 +17,6 @@ import { Recipe } from '../../services/recipe.service';
 @Component({
   selector: 'dml-recipe-card',
   imports: [
-    CommonModule,
     NgOptimizedImage,
     MatIconModule,
     MatButtonModule,

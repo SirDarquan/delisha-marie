@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -16,7 +15,7 @@ export interface NavRecipe {
 
 @Component({
   selector: 'dml-recipe-navigation',
-  imports: [CommonModule, RouterLink, MatIconModule],
+  imports: [RouterLink, MatIconModule],
   template: `
     @if (shouldShow()) {
       <div class="recipe-navigation my-12 border-y border-[var(--mat-sys-outline-variant)] py-10">

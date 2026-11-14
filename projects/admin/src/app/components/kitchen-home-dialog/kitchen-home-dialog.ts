@@ -6,7 +6,7 @@ import {
   OnInit,
   signal,
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { disabled, form, FormField, FormRoot } from '@angular/forms/signals';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
@@ -29,7 +29,6 @@ export interface KitchenHomeModel {
 @Component({
   selector: 'app-kitchen-home-dialog',
   imports: [
-    CommonModule,
     FormRoot,
     FormField,
     MatDialogModule,

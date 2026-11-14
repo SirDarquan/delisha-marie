@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -12,7 +11,7 @@ import { MatIconModule } from '@angular/material/icon';
 
 @Component({
   selector: 'dml-stars',
-  imports: [CommonModule, MatIconModule],
+  imports: [MatIconModule],
   template: `
     <div
       class="flex items-center gap-1"

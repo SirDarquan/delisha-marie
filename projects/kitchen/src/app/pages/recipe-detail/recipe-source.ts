@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -12,7 +11,7 @@ import { Recipe } from '../../services/recipe.service';
 
 @Component({
   selector: 'dml-recipe-source',
-  imports: [CommonModule],
+  imports: [],
   template: `
     @if (sanitizedSource()) {
       <div

@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -32,7 +31,7 @@ interface CategoryConfig {
 
 @Component({
   selector: 'app-category-board',
-  imports: [CommonModule, MatButtonModule, MatInputModule, MatFormFieldModule],
+  imports: [MatButtonModule, MatInputModule, MatFormFieldModule],
   template: `
     <div class="flex flex-col gap-6">
       <!-- 1. THE BOARD (Capsules Trail) -->

@@ -1,4 +1,4 @@
-import { CommonModule, NgOptimizedImage } from '@angular/common';
+import { NgOptimizedImage } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -13,7 +13,7 @@ import { Recipe } from '../../services/recipe.service';
 
 @Component({
   selector: 'dm-sidebar-quick-view',
-  imports: [CommonModule, MatIconModule, MatButtonModule, NgOptimizedImage],
+  imports: [MatIconModule, MatButtonModule, NgOptimizedImage],
   template: `
     <div
       class="bg-[var(--mat-sys-surface-container-highest)] rounded-[2.5rem] p-6 shadow-none sm:shadow-xl border-y sm:border-0 border-[var(--mat-sys-outline-variant)] overflow-hidden"

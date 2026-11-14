@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -23,7 +22,7 @@ import { RecipeGrid } from '../../components/recipe-grid/recipe-grid';
 
 @Component({
   selector: 'dm-recipe-list',
-  imports: [CommonModule, Breadcrumbs, RefineBy, RecipeGrid, ColoredHeaderComponent],
+  imports: [Breadcrumbs, RefineBy, RecipeGrid, ColoredHeaderComponent],
   template: `
     <div class="into-the-box pt-12 pb-4">
       <!-- Dynamic Breadcrumbs -->

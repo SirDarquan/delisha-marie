@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { Component, inject, input, output, signal } from '@angular/core';
 import { form, FormField, FormRoot, required } from '@angular/forms/signals';
 import { MatButtonModule } from '@angular/material/button';
@@ -17,7 +16,6 @@ export interface ReplyTexts {
   selector: 'app-recipe-reply-form',
   standalone: true,
   imports: [
-    CommonModule,
     FormRoot,
     FormField,
     MatButtonModule,
