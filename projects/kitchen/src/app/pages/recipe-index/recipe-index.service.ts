@@ -27,6 +27,16 @@ export class RecipeIndexService {
    * for the lifetime of the application.
    */
   readonly indexResource = resource({
-    loader: () => this.getData(),
+    loader: () =>
+      this.getData().catch(() => ({
+        featuredCategories: [],
+        cookingMethods: [],
+        holidays: [],
+        specialDiets: [],
+        bestRecipes: [],
+        categoriesList: [],
+        methodsList: [],
+        ingredients: [],
+      })),
   });
 }

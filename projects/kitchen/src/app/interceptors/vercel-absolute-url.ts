@@ -16,10 +16,17 @@ function resolveBaseUrl(
   incomingRequest?: unknown,
 ): string {
   if (env['VERCEL_URL']) {
-    return `https://${env['VERCEL_URL']}`;
+    const isLocal =
+      env['VERCEL_URL'].includes('localhost') || env['VERCEL_URL'].includes('127.0.0.1');
+    const protocol = isLocal ? 'http' : 'https';
+    return `${protocol}://${env['VERCEL_URL']}`;
   }
   if (env['VERCEL_PROJECT_PRODUCTION_URL']) {
-    return `https://${env['VERCEL_PROJECT_PRODUCTION_URL']}`;
+    const isLocal =
+      env['VERCEL_PROJECT_PRODUCTION_URL'].includes('localhost') ||
+      env['VERCEL_PROJECT_PRODUCTION_URL'].includes('127.0.0.1');
+    const protocol = isLocal ? 'http' : 'https';
+    return `${protocol}://${env['VERCEL_PROJECT_PRODUCTION_URL']}`;
   }
 
   const forwardedHost = getHeaderValue(incomingRequest, 'x-forwarded-host');

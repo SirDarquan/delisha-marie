@@ -62,6 +62,12 @@ describe('vercelAbsoluteUrlInterceptor', () => {
       expectedUrl: 'https://preview-domain.vercel.app/api/test2',
     },
     {
+      description: 'VERCEL_URL with http protocol if localhost',
+      env: { VERCEL_URL: 'localhost:4201' },
+      path: '/api/test-local-vercel',
+      expectedUrl: 'http://localhost:4201/api/test-local-vercel',
+    },
+    {
       description: 'VERCEL_PROJECT_PRODUCTION_URL fallback',
       env: { VERCEL_PROJECT_PRODUCTION_URL: 'prod-domain.vercel.app' },
       path: '/api/test3',

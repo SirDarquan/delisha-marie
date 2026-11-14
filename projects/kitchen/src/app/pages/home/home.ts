@@ -75,7 +75,11 @@ export class Home {
     () => this.homeConfig()?.kitchen_about ?? 'delisha_marie_profile_2.png',
   );
 
-  readonly featuredCategories = computed(
-    () => this.recipeIndexService.indexResource.value()?.featuredCategories || [],
-  );
+  readonly featuredCategories = computed(() => {
+    try {
+      return this.recipeIndexService.indexResource.value()?.featuredCategories || [];
+    } catch {
+      return [];
+    }
+  });
 }

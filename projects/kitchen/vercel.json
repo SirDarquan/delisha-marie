@@ -1,5 +1,5 @@
 {
-  "devCommand": "npx ng serve kitchen --port $PORT",
+  "devCommand": "vercel env pull .env.local && npx ng serve kitchen --port $PORT",
   "rewrites": [
     {
       "source": "/config",
