@@ -1,4 +1,3 @@
-import { NgOptimizedImage } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -9,15 +8,14 @@ import {
   ViewEncapsulation,
 } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
-import { MatCardModule } from '@angular/material/card';
-import { MatIconModule } from '@angular/material/icon';
 import { RouterLink } from '@angular/router';
 import { deslugify } from '@dm/library';
 import { RecipeService } from '../../services/recipe.service';
+import { RecipeCard } from '../recipe-card/recipe-card';
 
 @Component({
   selector: 'dm-featured-recipes',
-  imports: [MatCardModule, MatButtonModule, MatIconModule, NgOptimizedImage, RouterLink],
+  imports: [MatButtonModule, RouterLink, RecipeCard],
   template: `
     @if (title() && (recipes().length === 4 || _recipeResource.isLoading())) {
       <section>
@@ -49,9 +47,8 @@ import { RecipeService } from '../../services/recipe.service';
           @if (_recipeResource.isLoading() && recipes().length === 0) {
             @for (skeleton of [1, 2, 3, 4]; track skeleton) {
               <div
-                data-testid="featured-recipe-skeleton"
                 class="bg-[var(--mat-sys-surface-container)] rounded-3xl overflow-hidden animate-pulse flex flex-col h-full">
-                <div class="h-64 bg-[var(--mat-sys-surface-container-highest)]"></div>
+                <div class="aspect-[4/3] bg-[var(--mat-sys-surface-container-highest)]"></div>
                 <div class="p-6 space-y-3 flex-grow">
                   <div
                     class="h-6 bg-[var(--mat-sys-surface-container-highest)] rounded w-3/4"></div>
@@ -64,48 +61,7 @@ import { RecipeService } from '../../services/recipe.service';
             }
           } @else {
             @for (recipe of recipes(); track recipe.id) {
-              <a [routerLink]="['/recipe', recipe.slug]" class="block no-underline text-inherit">
-                <mat-card
-                  class="!bg-[var(--mat-sys-surface-container)] !rounded-3xl border-none overflow-hidden transition-all hover:-translate-y-2 hover:shadow-xl group">
-                  <div class="relative h-64 overflow-hidden">
-                    <img
-                      [ngSrc]="recipe.image"
-                      width="352"
-                      height="256"
-                      [alt]="recipe.title"
-                      class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
-                    <div
-                      class="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button
-                        mat-mini-fab
-                        color="primary"
-                        [attr.aria-label]="'Save ' + recipe.title + ' to favorites'">
-                        <mat-icon>favorite</mat-icon>
-                      </button>
-                    </div>
-                  </div>
-
-                  <mat-card-content class="!p-6">
-                    <h3
-                      class="text-2xl font-bold mb-3 line-clamp-1 group-hover:text-[var(--mat-sys-primary)] transition-colors">
-                      {{ recipe.title }}
-                    </h3>
-                    <p
-                      class="text-[var(--mat-sys-on-surface-variant)] line-clamp-2 text-sm leading-relaxed">
-                      {{ recipe.description }}
-                    </p>
-                  </mat-card-content>
-
-                  <mat-card-actions class="!p-6 !pt-0 flex justify-between items-center">
-                    <button
-                      mat-button
-                      [routerLink]="['/recipe', recipe.slug]"
-                      class="!text-[var(--mat-sys-primary)] font-bold">
-                      Read Full Recipe
-                    </button>
-                  </mat-card-actions>
-                </mat-card>
-              </a>
+              <dm-recipe-card [recipe]="recipe" variant="card-link" />
             }
           }
         </div>

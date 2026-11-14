@@ -162,9 +162,7 @@ describe('FeaturedRecipes', () => {
 
     // While loading, the value is undefined, so it should return []
     expect(component.recipes()).toEqual([]);
-    const skeletons = fixture.nativeElement.querySelectorAll(
-      '[data-testid="featured-recipe-skeleton"]',
-    );
+    const skeletons = fixture.nativeElement.querySelectorAll('.animate-pulse');
     expect(skeletons).toHaveLength(4);
     resolvePromise({ items: [] }); // Cleanup
   });
