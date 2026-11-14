@@ -349,8 +349,7 @@ export interface CommentFormValue {
             [responsive]="true"
             previousLabel="Oldest"
             nextLabel="Newest"
-            class="recipe-pagination">
-          </pagination-controls>
+            class="recipe-pagination" />
         </div>
       }
     </div>

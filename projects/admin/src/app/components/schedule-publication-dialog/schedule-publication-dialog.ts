@@ -60,9 +60,7 @@ type TimeInfo = 'hour' | 'minute' | 'ampm';
             <!-- Inline calendar -->
             <div
               class="w-full max-w-[320px] bg-slate-800 rounded-xl overflow-hidden p-2 border border-slate-700 shadow-inner">
-              <mat-calendar
-                [selected]="selectedDate()"
-                (selectedChange)="onDateSelected($event)"></mat-calendar>
+              <mat-calendar [selected]="selectedDate()" (selectedChange)="onDateSelected($event)" />
             </div>
           </div>
         }

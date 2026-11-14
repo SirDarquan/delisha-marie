@@ -72,8 +72,7 @@ import { RecipeCard, RecipeCardVariant } from '../recipe-card/recipe-card';
           <pagination-controls
             (pageChange)="pageChange.emit($event)"
             [responsive]="true"
-            class="recipe-pagination">
-          </pagination-controls>
+            class="recipe-pagination" />
         </div>
       }
     }

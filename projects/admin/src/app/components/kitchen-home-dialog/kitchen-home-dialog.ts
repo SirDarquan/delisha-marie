@@ -73,7 +73,7 @@ export interface KitchenHomeModel {
         <div
           class="flex flex-col items-center justify-center py-12 gap-3"
           data-testid="dialog-loading">
-          <mat-spinner diameter="36"></mat-spinner>
+          <mat-spinner diameter="36" />
           <span class="text-xs text-slate-400">Loading settings...</span>
         </div>
       } @else {
@@ -185,7 +185,7 @@ export interface KitchenHomeModel {
               data-testid="btn-save-kitchen-home"
               class="px-5 py-2.5 rounded-xl font-bold text-white bg-gradient-to-r from-purple-500 to-pink-500 hover:brightness-110 transition cursor-pointer disabled:opacity-50 flex items-center gap-2">
               @if (isSaving()) {
-                <mat-spinner diameter="18" class="inline-block"></mat-spinner>
+                <mat-spinner diameter="18" class="inline-block" />
                 <span>Saving...</span>
               } @else {
                 <span>Save Changes</span>

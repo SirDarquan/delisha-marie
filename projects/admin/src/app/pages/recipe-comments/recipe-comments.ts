@@ -42,7 +42,7 @@ import { RecipeReplyFormComponent } from './recipe-reply-form';
 
       @if (loading()) {
         <div class="flex justify-center p-12">
-          <mat-spinner></mat-spinner>
+          <mat-spinner />
         </div>
       } @else if (error()) {
         <div class="bg-red-50 text-red-600 p-4 rounded-lg">
@@ -127,8 +127,7 @@ import { RecipeReplyFormComponent } from './recipe-reply-form';
                       [recipeId]="recipeId()"
                       [parentId]="comment.id"
                       (canceled)="cancelReply(comment.id)"
-                      (success)="onReplySuccess(comment.id, $event)">
-                    </app-recipe-reply-form>
+                      (success)="onReplySuccess(comment.id, $event)" />
                   }
                 </div>
               </mat-card-content>

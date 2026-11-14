@@ -82,7 +82,7 @@ interface PageFormModel {
 
               <app-keywords [formField]="pageForm.keywords" />
 
-              <app-story-html-editor [formField]="pageForm.content"> </app-story-html-editor>
+              <app-story-html-editor [formField]="pageForm.content" />
             </div>
           </div>
 

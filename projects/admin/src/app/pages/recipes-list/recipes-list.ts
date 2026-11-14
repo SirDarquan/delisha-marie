@@ -141,7 +141,7 @@ import { AuthService } from '../../services/auth.service';
                   </div>
 
                   <div role="cell" class="w-56 px-4 text-sm text-slate-300 flex items-center gap-2">
-                    <dml-stars [rating]="recipe.ratingCount || 0" [interactive]="false"></dml-stars>
+                    <dml-stars [rating]="recipe.ratingCount || 0" [interactive]="false" />
                     <span class="text-xs font-medium">({{ recipe.topCommentsCount || 0 }})</span>
                   </div>
 

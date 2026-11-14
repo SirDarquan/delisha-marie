@@ -160,8 +160,7 @@ interface SearchFormValue {
                   <pagination-controls
                     (pageChange)="onPageChange($event)"
                     [responsive]="true"
-                    class="recipe-pagination">
-                  </pagination-controls>
+                    class="recipe-pagination" />
                 </div>
               }
             }

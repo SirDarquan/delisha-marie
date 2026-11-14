@@ -107,8 +107,7 @@ import { SnoozeDialogComponent } from './snooze-dialog';
                 [checked]="selectionState() === 'all'"
                 [indeterminate]="selectionState() === 'some'"
                 (change)="$event.checked ? selectAll() : selectNone()"
-                class="mr-2">
-              </mat-checkbox>
+                class="mr-2" />
 
               <!-- Selection Menu -->
               <button mat-icon-button [matMenuTriggerFor]="selectionMenu" class="text-slate-400">
@@ -232,8 +231,7 @@ import { SnoozeDialogComponent } from './snooze-dialog';
                   [pageSize]="pageSize()"
                   [pageIndex]="currentPage() - 1"
                   [hidePageSize]="true"
-                  (page)="onPageChange($event)">
-                </mat-paginator>
+                  (page)="onPageChange($event)" />
               </div>
             </div>
           </div>
@@ -325,8 +323,7 @@ import { SnoozeDialogComponent } from './snooze-dialog';
                       <mat-checkbox
                         [checked]="isSelected(msg.id)"
                         (change)="$event.checked ? selectItem(msg.id) : deselectItem(msg.id)"
-                        (click)="$event.stopPropagation()">
-                      </mat-checkbox>
+                        (click)="$event.stopPropagation()" />
                     </div>
 
                     <!-- Clickable Row Area -->
