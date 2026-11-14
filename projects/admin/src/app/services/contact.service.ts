@@ -1,5 +1,5 @@
 import { HttpClient } from '@angular/common/http';
-import { Injectable, computed, inject, signal } from '@angular/core';
+import { computed, inject, signal, Service } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
 export interface ContactMessage {
@@ -16,7 +16,7 @@ export interface ContactMessage {
   created_at: string;
 }
 
-@Injectable({ providedIn: 'root' })
+@Service()
 export class ContactService {
   private readonly http = inject(HttpClient);
 

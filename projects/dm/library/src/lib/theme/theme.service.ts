@@ -1,9 +1,7 @@
 import { DOCUMENT, isPlatformBrowser } from '@angular/common';
-import { effect, inject, Injectable, PLATFORM_ID, signal } from '@angular/core';
+import { effect, inject, PLATFORM_ID, signal, Service } from '@angular/core';
 
-@Injectable({
-  providedIn: 'root',
-})
+@Service()
 export class ThemeService {
   readonly platformId = inject(PLATFORM_ID);
   readonly document = inject(DOCUMENT);

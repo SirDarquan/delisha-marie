@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 import { Api } from '../../services/api';
 
 export interface SearchResultRecipe {
@@ -10,9 +10,7 @@ export interface SearchResultRecipe {
   similarity: number;
 }
 
-@Injectable({
-  providedIn: 'root',
-})
+@Service()
 export class SearchService {
   private readonly api = inject(Api);
 

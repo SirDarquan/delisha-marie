@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 import { ApiService } from './api.service';
 
 export interface KitchenHomeSettings {
@@ -7,9 +7,7 @@ export interface KitchenHomeSettings {
   sidebar_about: string;
 }
 
-@Injectable({
-  providedIn: 'root',
-})
+@Service()
 export class SettingsService {
   private readonly api = inject(ApiService);
 

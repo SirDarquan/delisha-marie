@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 import { Api } from './api';
 
 export interface Page {
@@ -11,9 +11,7 @@ export interface Page {
   updated_at: string;
 }
 
-@Injectable({
-  providedIn: 'root',
-})
+@Service()
 export class PagesService {
   private readonly api = inject(Api);
   private readonly pageCache = new Map<string, Promise<Page | null>>();

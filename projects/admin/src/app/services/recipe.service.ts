@@ -1,14 +1,12 @@
 import { DOCUMENT } from '@angular/common';
-import { computed, inject, Injectable, signal } from '@angular/core';
+import { computed, inject, signal, Service } from '@angular/core';
 import { Recipe } from '../models/recipe.model';
 import { ApiService } from './api.service';
 import { AppConfigService } from './config.service';
 
 export type ActiveRecipeId = string | number | null;
 
-@Injectable({
-  providedIn: 'root',
-})
+@Service()
 export class RecipeService {
   private readonly api = inject(ApiService);
   private readonly appConfig = inject(AppConfigService, { optional: true });

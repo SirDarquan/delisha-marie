@@ -1,4 +1,4 @@
-import { inject, Injectable } from '@angular/core';
+import { inject, Service } from '@angular/core';
 import { ApiService } from './api.service';
 import { TenantInfo } from './auth.service';
 
@@ -29,9 +29,7 @@ export interface UpdateTenantPayload {
   isPublic?: boolean;
 }
 
-@Injectable({
-  providedIn: 'root',
-})
+@Service()
 export class UsersService {
   private readonly api = inject(ApiService);
 

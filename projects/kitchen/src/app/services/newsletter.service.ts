@@ -1,9 +1,7 @@
-import { inject, Injectable } from '@angular/core';
+import { inject, Service } from '@angular/core';
 import { Api } from './api';
 
-@Injectable({
-  providedIn: 'root',
-})
+@Service()
 export class NewsletterService {
   private readonly api = inject(Api);
 

@@ -1,9 +1,7 @@
-import { Injectable } from '@angular/core';
+import { Service } from '@angular/core';
 import { RecipeList } from '../../models/seo-content';
 
-@Injectable({
-  providedIn: 'root',
-})
+@Service()
 export class RecipeListService {
   getInfo(variables: {
     url: string;

@@ -1,9 +1,9 @@
 import { DOCUMENT } from '@angular/common';
-import { inject, Injectable } from '@angular/core';
+import { inject, Service } from '@angular/core';
 import { Meta, Title } from '@angular/platform-browser';
 import { SeoContent } from '../models/seo-content';
 
-@Injectable({ providedIn: 'root' })
+@Service()
 export class SeoService {
   private readonly document = inject(DOCUMENT);
   private readonly meta = inject(Meta);

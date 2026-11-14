@@ -1,10 +1,8 @@
-import { Injectable, inject, resource } from '@angular/core';
+import { inject, resource, Service } from '@angular/core';
 import { RecipeIndexResponse } from '../../models/category';
 import { Api } from '../../services/api';
 
-@Injectable({
-  providedIn: 'root',
-})
+@Service()
 export class RecipeIndexService {
   private readonly api = inject(Api);
 

@@ -1,5 +1,5 @@
 import { HttpClient } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
 export interface Page {
@@ -12,9 +12,7 @@ export interface Page {
   updated_at: string;
 }
 
-@Injectable({
-  providedIn: 'root',
-})
+@Service()
 export class PagesService {
   private readonly http = inject(HttpClient);
   private readonly pageCache = new Map<string, Promise<Page | null>>();
