@@ -1,5 +1,4 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -16,7 +15,7 @@ export interface FigureDialogData {
 @Component({
   selector: 'app-figure-dialog',
   standalone: true,
-  imports: [MatDialogModule, MatButtonModule, MatFormFieldModule, MatInputModule, FormsModule],
+  imports: [MatDialogModule, MatButtonModule, MatFormFieldModule, MatInputModule],
   template: `
     <div
       class="bg-slate-900 border border-slate-700/60 rounded-2xl p-5 max-w-md w-full shadow-2xl backdrop-blur-md">
@@ -77,8 +76,8 @@ export interface FigureDialogData {
           <mat-label>Figure CSS Classes</mat-label>
           <input
             matInput
-            [ngModel]="innerFigureClass()"
-            (ngModelChange)="setInnerFigureClass($event)"
+            [value]="innerFigureClass()"
+            (input)="setInnerFigureClass($any($event.target).value)"
             placeholder="e.g. recipe-step-image" />
         </mat-form-field>
 
@@ -86,8 +85,8 @@ export interface FigureDialogData {
           <mat-label>Image CSS Classes</mat-label>
           <input
             matInput
-            [ngModel]="imgClass()"
-            (ngModelChange)="setImgClass($event)"
+            [value]="imgClass()"
+            (input)="setImgClass($any($event.target).value)"
             placeholder="e.g. rounded-xl mx-auto w-full" />
         </mat-form-field>
 
@@ -96,8 +95,8 @@ export interface FigureDialogData {
           <textarea
             matInput
             rows="2"
-            [ngModel]="captionText()"
-            (ngModelChange)="setCaptionText($event)"
+            [value]="captionText()"
+            (input)="setCaptionText($any($event.target).value)"
             placeholder="Optional image caption description..."></textarea>
         </mat-form-field>
 
@@ -105,8 +104,8 @@ export interface FigureDialogData {
           <mat-label>Caption CSS Classes</mat-label>
           <input
             matInput
-            [ngModel]="captionClass()"
-            (ngModelChange)="setCaptionClass($event)"
+            [value]="captionClass()"
+            (input)="setCaptionClass($any($event.target).value)"
             placeholder="e.g. text-sm text-slate-400 mt-2 italic font-sans" />
         </mat-form-field>
       </mat-dialog-content>

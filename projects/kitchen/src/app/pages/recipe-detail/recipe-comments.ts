@@ -15,7 +15,6 @@ import {
   signal,
   untracked,
 } from '@angular/core';
-import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { FormField, FormRoot, email, form, required } from '@angular/forms/signals';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -40,8 +39,6 @@ export interface CommentFormValue {
 @Component({
   selector: 'dml-recipe-comments',
   imports: [
-    FormsModule,
-    ReactiveFormsModule,
     FormField,
     FormRoot,
     NgxPaginationModule,

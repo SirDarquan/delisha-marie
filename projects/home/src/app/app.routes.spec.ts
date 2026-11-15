@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import { routes } from './app.routes';
-import { Home } from './pages/home/home';
 import { dynamicPageResolver } from './resolvers/dynamic-page.resolver';
 
 describe('app.routes', () => {
