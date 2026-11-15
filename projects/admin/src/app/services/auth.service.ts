@@ -1,5 +1,5 @@
 import { isPlatformBrowser } from '@angular/common';
-import { computed, inject, Injectable, Injector, PLATFORM_ID, signal } from '@angular/core';
+import { computed, inject, Injector, PLATFORM_ID, signal, Service } from '@angular/core';
 import { DescopeAuthConfig, DescopeAuthService } from '@descope/angular-sdk';
 import { firstValueFrom } from 'rxjs';
 import { ApiService } from './api.service';
@@ -26,9 +26,7 @@ export interface TenantInfo {
 export type UserRole = 'admin' | 'member' | 'unassigned';
 export type UserStatus = 'pending' | 'active' | 'blocked';
 
-@Injectable({
-  providedIn: 'root',
-})
+@Service()
 export class AuthService {
   private readonly api = inject(ApiService);
   private readonly platformId = inject(PLATFORM_ID);

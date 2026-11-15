@@ -1,4 +1,4 @@
-import { CommonModule, isPlatformBrowser } from '@angular/common';
+import { isPlatformBrowser, DatePipe } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -15,7 +15,6 @@ import {
   signal,
   untracked,
 } from '@angular/core';
-import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { FormField, FormRoot, email, form, required } from '@angular/forms/signals';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -40,9 +39,6 @@ export interface CommentFormValue {
 @Component({
   selector: 'dml-recipe-comments',
   imports: [
-    CommonModule,
-    FormsModule,
-    ReactiveFormsModule,
     FormField,
     FormRoot,
     NgxPaginationModule,
@@ -50,6 +46,7 @@ export interface CommentFormValue {
     MatButtonModule,
     Stars,
     RouterLink,
+    DatePipe,
   ],
   template: `
     <div class="recipe-comments mt-20 scroll-mt-28" id="comments">
@@ -349,8 +346,7 @@ export interface CommentFormValue {
             [responsive]="true"
             previousLabel="Oldest"
             nextLabel="Newest"
-            class="recipe-pagination">
-          </pagination-controls>
+            class="recipe-pagination" />
         </div>
       }
     </div>

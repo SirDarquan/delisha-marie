@@ -1,4 +1,4 @@
-import { Injectable, inject, TransferState, makeStateKey } from '@angular/core';
+import { inject, TransferState, makeStateKey, Service } from '@angular/core';
 import type { BaseRecipe, Breadcrumbs, Comment, Nutrition } from '@dm/library';
 import { Api } from './api';
 export type { Comment };
@@ -54,9 +54,7 @@ export interface NavigationLinks {
   next: NavigationLink | null;
 }
 
-@Injectable({
-  providedIn: 'root',
-})
+@Service()
 export class RecipeService {
   private readonly api = inject(Api);
   private readonly transferState = inject(TransferState);

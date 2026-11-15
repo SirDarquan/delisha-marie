@@ -1,5 +1,5 @@
 import { isPlatformBrowser } from '@angular/common';
-import { Injectable, NgZone, PLATFORM_ID, inject } from '@angular/core';
+import { NgZone, PLATFORM_ID, inject, Service } from '@angular/core';
 import type { Comment } from '@dm/library';
 import { EMPTY, Observable } from 'rxjs';
 
@@ -13,9 +13,7 @@ export interface CommentStreamEvent {
   type?: string;
 }
 
-@Injectable({
-  providedIn: 'root',
-})
+@Service()
 export class CommentStreamService {
   private readonly ngZone = inject(NgZone);
   private readonly platformId = inject(PLATFORM_ID);

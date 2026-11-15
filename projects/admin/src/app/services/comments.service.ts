@@ -1,5 +1,5 @@
 import { HttpClient } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 import { Observable } from 'rxjs';
 
 export interface Comment {
@@ -15,9 +15,7 @@ export interface Comment {
   is_new: boolean;
 }
 
-@Injectable({
-  providedIn: 'root',
-})
+@Service()
 export class CommentsService {
   private readonly http = inject(HttpClient);
   private readonly apiUrl = '/api';

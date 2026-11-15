@@ -106,7 +106,7 @@ import { RecipeService } from '../../services/recipe.service';
         @if (isUploading()) {
           <div
             class="absolute inset-0 bg-slate-900/80 rounded-xl flex flex-col items-center justify-center z-10 backdrop-blur-xs">
-            <mat-spinner diameter="32"></mat-spinner>
+            <mat-spinner diameter="32" />
             <span class="text-xs font-bold text-slate-200 mt-2">Uploading...</span>
           </div>
         }

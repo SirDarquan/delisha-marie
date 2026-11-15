@@ -269,7 +269,7 @@ export interface RecipeFormModel {
               </mat-form-field>
 
               <div class="md:col-span-2">
-                <app-keywords [formField]="recipeForm.keyword"></app-keywords>
+                <app-keywords [formField]="recipeForm.keyword" />
               </div>
 
               <div class="flex flex-col gap-1 md:col-span-2">
@@ -280,8 +280,7 @@ export interface RecipeFormModel {
                   [initialHeight]="recipeModel().imageHeight"
                   [initialType]="recipeModel().imageType"
                   [recipeSlug]="recipeModel().slug"
-                  (imageChange)="onImageUploaded($event)">
-                </app-image-uploader>
+                  (imageChange)="onImageUploaded($event)" />
               </div>
 
               <mat-form-field appearance="outline" class="w-full md:col-span-2">
@@ -296,8 +295,9 @@ export interface RecipeFormModel {
               </mat-form-field>
 
               <div class="md:col-span-2 mb-4">
-                <app-story-html-editor [formField]="recipeForm.content" [hiddenButtons]="['font']">
-                </app-story-html-editor>
+                <app-story-html-editor
+                  [formField]="recipeForm.content"
+                  [hiddenButtons]="['font']" />
               </div>
 
               <mat-form-field appearance="outline" class="w-full md:col-span-2">
@@ -314,8 +314,7 @@ export interface RecipeFormModel {
               <div class="md:col-span-2 mb-2">
                 <app-search-ingredients
                   [formField]="recipeForm.searchIngredients"
-                  (autoDetect)="onAutoDetectIngredients()">
-                </app-search-ingredients>
+                  (autoDetect)="onAutoDetectIngredients()" />
               </div>
 
               <mat-form-field appearance="outline" class="w-full md:col-span-2">
@@ -331,7 +330,7 @@ export interface RecipeFormModel {
 
               <div class="md:col-span-2 mb-4">
                 <h4 class="text-sm font-semibold text-white mb-3">Equipment</h4>
-                <app-equipment-manager [formField]="recipeForm.equipment"></app-equipment-manager>
+                <app-equipment-manager [formField]="recipeForm.equipment" />
               </div>
 
               <mat-form-field appearance="outline" class="w-full md:col-span-2">
@@ -462,8 +461,7 @@ export interface RecipeFormModel {
                   [formField]="recipeForm.category"
                   [recipeTitle]="recipeModel().title"
                   [recipeSlug]="recipeModel().slug"
-                  (categoryChange)="onCategoryChanged($event)">
-                </app-category-board>
+                  (categoryChange)="onCategoryChanged($event)" />
                 @if (recipeForm.category().touched() && recipeForm.category().invalid()) {
                   @for (error of recipeForm.category().errors(); track error) {
                     <div class="text-rose-400 text-xs font-semibold mt-1 px-1">
@@ -486,30 +484,26 @@ export interface RecipeFormModel {
                   <mat-slide-toggle
                     [formField]="recipeForm.theBest"
                     [hideIcon]="true"
-                    aria-label="Mark as The Best slide toggle">
-                  </mat-slide-toggle>
+                    aria-label="Mark as The Best slide toggle" />
                 </div>
               </div>
 
               <div class="flex flex-col gap-1 md:col-span-2">
                 <app-cooking-method-selector
                   [formField]="recipeForm.method"
-                  (methodChange)="onMethodChanged($event)">
-                </app-cooking-method-selector>
+                  (methodChange)="onMethodChanged($event)" />
               </div>
 
               <div class="flex flex-col gap-1 md:col-span-2">
                 <app-holidays-selector
                   [formField]="recipeForm.holidays"
-                  (holidayChange)="onHolidayChanged($event)">
-                </app-holidays-selector>
+                  (holidayChange)="onHolidayChanged($event)" />
               </div>
 
               <div class="flex flex-col gap-1 md:col-span-2">
                 <app-special-diets-selector
                   [formField]="recipeForm.specialDiets"
-                  (dietsChange)="onSpecialDietsChanged($event)">
-                </app-special-diets-selector>
+                  (dietsChange)="onSpecialDietsChanged($event)" />
               </div>
             </div>
           }

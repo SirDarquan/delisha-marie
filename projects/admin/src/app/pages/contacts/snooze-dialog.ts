@@ -24,7 +24,7 @@ import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/materia
           class="bg-slate-900 border border-slate-700 rounded-xl p-4 min-w-[300px] flex items-center">
           <mat-calendar
             [(selected)]="selectedDate"
-            class="custom-calendar text-white w-full !max-w-full scale-105 origin-center"></mat-calendar>
+            class="custom-calendar text-white w-full !max-w-full scale-105 origin-center" />
         </div>
 
         <!-- Inputs (Right) -->
@@ -38,7 +38,7 @@ import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/materia
                 [matDatepicker]="picker"
                 [(ngModel)]="selectedDate"
                 class="w-full bg-slate-900 border border-slate-700 rounded-md p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-lg pr-12" />
-              <mat-datepicker #picker panelClass="custom-calendar"></mat-datepicker>
+              <mat-datepicker #picker panelClass="custom-calendar" />
             </div>
           </div>
 

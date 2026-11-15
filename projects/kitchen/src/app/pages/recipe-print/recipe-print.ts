@@ -1,4 +1,4 @@
-import { CommonModule, DOCUMENT, NgOptimizedImage } from '@angular/common';
+import { DOCUMENT, NgOptimizedImage, NgClass } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -15,7 +15,7 @@ import { Recipe } from '../../services/recipe.service';
 
 @Component({
   selector: 'dm-recipe-print',
-  imports: [CommonModule, MatButtonModule, MatIconModule, NgOptimizedImage, RouterLink],
+  imports: [MatButtonModule, MatIconModule, NgOptimizedImage, RouterLink, NgClass],
   template: `
     <div
       class="print-page w-full min-h-screen bg-white text-black"

@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -21,7 +20,6 @@ interface SearchRecipes {
 @Component({
   selector: 'dm-sidebar-search',
   imports: [
-    CommonModule,
     MatButtonModule,
     MatIconModule,
     MatInputModule,

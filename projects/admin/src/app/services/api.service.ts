@@ -1,11 +1,9 @@
 import { HttpClient } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 import { camelCaseKeys } from '@dm/library';
 import { lastValueFrom, map } from 'rxjs';
 
-@Injectable({
-  providedIn: 'root',
-})
+@Service()
 export class ApiService {
   private readonly http = inject(HttpClient);
 

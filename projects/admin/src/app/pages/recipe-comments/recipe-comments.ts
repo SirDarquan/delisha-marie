@@ -1,6 +1,5 @@
-import { CommonModule } from '@angular/common';
+import { DatePipe } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
-import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatChipsModule } from '@angular/material/chips';
@@ -18,8 +17,6 @@ import { RecipeReplyFormComponent } from './recipe-reply-form';
   selector: 'app-recipe-comments',
   standalone: true,
   imports: [
-    CommonModule,
-    FormsModule,
     RouterModule,
     MatCardModule,
     MatButtonModule,
@@ -30,6 +27,7 @@ import { RecipeReplyFormComponent } from './recipe-reply-form';
     MatSnackBarModule,
     MatProgressSpinnerModule,
     MatChipsModule,
+    DatePipe,
   ],
   template: `
     <div class="p-6 max-w-4xl mx-auto">
@@ -42,7 +40,7 @@ import { RecipeReplyFormComponent } from './recipe-reply-form';
 
       @if (loading()) {
         <div class="flex justify-center p-12">
-          <mat-spinner></mat-spinner>
+          <mat-spinner />
         </div>
       } @else if (error()) {
         <div class="bg-red-50 text-red-600 p-4 rounded-lg">
@@ -127,8 +125,7 @@ import { RecipeReplyFormComponent } from './recipe-reply-form';
                       [recipeId]="recipeId()"
                       [parentId]="comment.id"
                       (canceled)="cancelReply(comment.id)"
-                      (success)="onReplySuccess(comment.id, $event)">
-                    </app-recipe-reply-form>
+                      (success)="onReplySuccess(comment.id, $event)" />
                   }
                 </div>
               </mat-card-content>

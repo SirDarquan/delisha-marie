@@ -1,4 +1,4 @@
-import { inject, Injectable, Provider, Type } from '@angular/core';
+import { inject, Provider, Type, Service } from '@angular/core';
 import { Title } from '@angular/platform-browser';
 import { RouterStateSnapshot, TitleStrategy } from '@angular/router';
 
@@ -6,7 +6,7 @@ export function provideTitleStrategy(strategy: Type<TitleStrategy>): Provider {
   return { provide: TitleStrategy, useClass: strategy };
 }
 
-@Injectable({ providedIn: 'root' })
+@Service()
 export class TemplatePageTitleStrategy extends TitleStrategy {
   private readonly titleService = inject(Title);
 

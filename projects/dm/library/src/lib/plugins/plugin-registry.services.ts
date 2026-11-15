@@ -1,10 +1,8 @@
 import { isPlatformBrowser } from '@angular/common';
-import { inject, Injectable, PLATFORM_ID } from '@angular/core';
+import { inject, PLATFORM_ID, Service } from '@angular/core';
 import { APP_PLUGINS } from './plugin.token';
 
-@Injectable({
-  providedIn: 'root',
-})
+@Service()
 export class PluginRegistry {
   private readonly plugins = inject(APP_PLUGINS, { optional: true }) ?? [];
   private readonly platformId = inject(PLATFORM_ID);

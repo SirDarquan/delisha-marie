@@ -5,8 +5,9 @@ import {
   ViewEncapsulation,
   input,
   inject,
+  signal,
 } from '@angular/core';
-import { FormControl, ReactiveFormsModule } from '@angular/forms';
+import { FormField, form } from '@angular/forms/signals';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
@@ -18,7 +19,7 @@ import { FullCategory } from '../../models/category';
   selector: 'dm-category-images',
   imports: [
     NgOptimizedImage,
-    ReactiveFormsModule,
+    FormField,
     MatButtonModule,
     MatIconModule,
     MatFormFieldModule,
@@ -69,7 +70,7 @@ import { FullCategory } from '../../models/category';
               <mat-icon matPrefix class="opacity-50">search</mat-icon>
               <input
                 matInput
-                [formControl]="searchControl"
+                [formField]="searchForm.query"
                 placeholder="e.g. Chocolate Cake"
                 (keyup.enter)="search()" />
               <button
@@ -91,11 +92,19 @@ import { FullCategory } from '../../models/category';
 })
 export class CategoryImages {
   readonly categories = input.required<FullCategory[]>();
-  readonly searchControl = new FormControl('');
+  readonly searchModel = signal({ query: '' });
+  readonly searchForm = form(this.searchModel);
   private readonly router = inject(Router);
 
+  get searchControl() {
+    return {
+      value: this.searchModel().query,
+      setValue: (val: string) => this.searchModel.set({ query: val }),
+    };
+  }
+
   search() {
-    const query = this.searchControl.value;
+    const query = this.searchModel().query;
     if (query?.trim()) {
       void this.router.navigate(['/'], { queryParams: { q: query.trim() } });
     }

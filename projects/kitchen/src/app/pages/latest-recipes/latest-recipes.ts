@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -14,7 +13,7 @@ import { LatestRecipes } from '../../components/latest-recipes/latest-recipes';
 
 @Component({
   selector: 'dm-latest-recipes-page',
-  imports: [CommonModule, Breadcrumbs, ColoredHeaderComponent, LatestRecipes],
+  imports: [Breadcrumbs, ColoredHeaderComponent, LatestRecipes],
   template: `
     <div class="into-the-box pt-12 pb-4">
       <!-- Breadcrumbs -->

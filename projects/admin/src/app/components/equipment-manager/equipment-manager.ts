@@ -55,7 +55,7 @@ export interface EquipmentItem {
                 [value]="item.image"
                 [required]="true"
                 folder="equipment"
-                (valueChange)="updateImage($index, $event)"></app-image-uploader>
+                (valueChange)="updateImage($index, $event)" />
             </div>
           </div>
         </div>

@@ -17,7 +17,6 @@ import { MatNativeDateModule, provideNativeDateAdapter } from '@angular/material
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { FormsModule } from '@angular/forms';
 import { DatePipe, DecimalPipe } from '@angular/common';
 
 export interface ScheduleDialogData {
@@ -37,7 +36,6 @@ type TimeInfo = 'hour' | 'minute' | 'ampm';
     MatCheckboxModule,
     MatFormFieldModule,
     MatInputModule,
-    FormsModule,
     DatePipe,
     DecimalPipe,
   ],
@@ -60,9 +58,7 @@ type TimeInfo = 'hour' | 'minute' | 'ampm';
             <!-- Inline calendar -->
             <div
               class="w-full max-w-[320px] bg-slate-800 rounded-xl overflow-hidden p-2 border border-slate-700 shadow-inner">
-              <mat-calendar
-                [selected]="selectedDate()"
-                (selectedChange)="onDateSelected($event)"></mat-calendar>
+              <mat-calendar [selected]="selectedDate()" (selectedChange)="onDateSelected($event)" />
             </div>
           </div>
         }
@@ -74,8 +70,8 @@ type TimeInfo = 'hour' | 'minute' | 'ampm';
 
             <div class="w-full flex justify-end mb-2 pr-4">
               <mat-checkbox
-                [ngModel]="is24Hour()"
-                (ngModelChange)="is24Hour.set($event); onTimeFormatChange()"
+                [checked]="is24Hour()"
+                (change)="is24Hour.set($event.checked); onTimeFormatChange()"
                 class="text-xs text-slate-400">
                 24-Hour Clock
               </mat-checkbox>

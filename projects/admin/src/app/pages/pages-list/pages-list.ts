@@ -126,7 +126,7 @@ export interface BlockInfo {
       <!-- Loading Spinner -->
       @if (loading()) {
         <div class="flex justify-center p-12">
-          <mat-spinner diameter="40"></mat-spinner>
+          <mat-spinner diameter="40" />
         </div>
       } @else {
         <!-- Page Cards Grid -->

@@ -1,5 +1,5 @@
 import { HttpClient } from '@angular/common/http';
-import { Injectable, inject, signal } from '@angular/core';
+import { inject, signal, Service } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { AppPlugin } from '@dm/library';
 
@@ -18,9 +18,7 @@ export interface AppConfig {
   KitchenUrl?: string;
 }
 
-@Injectable({
-  providedIn: 'root',
-})
+@Service()
 export class AppConfigService implements AppPlugin {
   private readonly http = inject(HttpClient);
 

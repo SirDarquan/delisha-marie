@@ -1,13 +1,6 @@
 import { isPlatformServer } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
-import {
-  Injectable,
-  inject,
-  makeStateKey,
-  PLATFORM_ID,
-  signal,
-  TransferState,
-} from '@angular/core';
+import { inject, makeStateKey, PLATFORM_ID, signal, TransferState, Service } from '@angular/core';
 import { firstValueFrom, tap } from 'rxjs';
 import { AppPlugin } from '@dm/library';
 
@@ -41,9 +34,7 @@ export interface AppConfig {
   };
 }
 
-@Injectable({
-  providedIn: 'root',
-})
+@Service()
 export class AppConfigService implements AppPlugin {
   private readonly http = inject(HttpClient);
   private readonly transferState = inject(TransferState);

@@ -1,5 +1,5 @@
 import { HttpClient } from '@angular/common/http';
-import { Injectable, TransferState, inject, makeStateKey } from '@angular/core';
+import { TransferState, inject, makeStateKey, Service } from '@angular/core';
 import { camelCaseKeys } from '@dm/library';
 import { lastValueFrom, map, tap } from 'rxjs';
 
@@ -7,9 +7,7 @@ import { lastValueFrom, map, tap } from 'rxjs';
  * A modern, Promise-based API service.
  * Standardizing on lastValueFrom for all HTTP interactions.
  */
-@Injectable({
-  providedIn: 'root',
-})
+@Service()
 export class Api {
   private readonly http = inject(HttpClient);
   private readonly transferState = inject(TransferState);
