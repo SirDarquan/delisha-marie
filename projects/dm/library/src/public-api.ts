@@ -20,3 +20,7 @@ export * from './lib/recipe-grid/recipe-grid';
 export * from './lib/wake-lock/wake-lock';
 export * from './lib/breadcrumbs/breadcrumbs';
 export * from './lib/refine-by/refine-by';
+
+export * from './lib/types/seo';
+export * from './lib/seo/seo.service';
+export * from './lib/schema/schema';
