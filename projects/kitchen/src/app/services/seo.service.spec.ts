@@ -78,7 +78,7 @@ describe('SeoService', () => {
 
     expect(metaService.addTag).toHaveBeenCalledWith({
       property: 'og:title',
-      content: 'From my kitchen to yours | Delisha Marie ',
+      content: 'Site',
     });
     expect(metaService.addTag).toHaveBeenCalledWith({ property: 'og:type', content: 'website' });
     expect(metaService.addTag).toHaveBeenCalledWith({
