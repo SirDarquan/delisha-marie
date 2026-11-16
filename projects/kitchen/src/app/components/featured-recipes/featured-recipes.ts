@@ -9,9 +9,8 @@ import {
 } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { RouterLink } from '@angular/router';
-import { deslugify } from '@dm/library';
+import { deslugify, RecipeCard } from '@dm/library';
 import { RecipeService } from '../../services/recipe.service';
-import { RecipeCard } from '../recipe-card/recipe-card';
 
 @Component({
   selector: 'dm-featured-recipes',
@@ -61,7 +60,7 @@ import { RecipeCard } from '../recipe-card/recipe-card';
             }
           } @else {
             @for (recipe of recipes(); track recipe.id) {
-              <dm-recipe-card [recipe]="recipe" variant="card-link" />
+              <dml-recipe-card [recipe]="recipe" variant="card-link" />
             }
           }
         </div>

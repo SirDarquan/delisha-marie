@@ -10,14 +10,14 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { RouterLink } from '@angular/router';
-import { Stars } from '@dm/library';
-import { Recipe } from '../../services/recipe.service';
+import { Stars } from '../stars/stars';
+import { BaseRecipe } from '../types/recipe';
 
 export type RecipeCardVariant =
   'individual-links' | 'card-link' | 'ranked-stars' | 'destination-link';
 
 @Component({
-  selector: 'dm-recipe-card',
+  selector: 'dml-recipe-card',
   imports: [NgOptimizedImage, MatCardModule, MatButtonModule, MatIconModule, RouterLink, Stars],
   template: `
     @switch (variant()) {
@@ -121,7 +121,7 @@ export type RecipeCardVariant =
                 {{ recipe().title }}
               </h3>
               <div class="flex items-center gap-1">
-                <dml-stars [rating]="recipe().rating" />
+                <dml-stars [rating]="recipe().rating || 0" />
                 <span class="font-bold text-sm">{{ recipe().rating }} stars</span>
                 @if (recipe().reviewCount !== undefined && recipe().reviewCount !== null) {
                   <span class="text-xs text-[var(--mat-sys-on-surface-variant)] ml-1"
@@ -176,7 +176,7 @@ export type RecipeCardVariant =
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RecipeCard {
-  readonly recipe = input.required<Recipe>();
+  readonly recipe = input.required<BaseRecipe>();
   readonly variant = input<RecipeCardVariant>('card-link');
   readonly rank = input<number | null>(null);
   readonly priority = input<boolean>(false);

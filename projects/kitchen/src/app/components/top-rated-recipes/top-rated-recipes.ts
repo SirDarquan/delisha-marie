@@ -6,7 +6,7 @@ import {
   resource,
   ViewEncapsulation,
 } from '@angular/core';
-import { RecipeCard } from '../recipe-card/recipe-card';
+import { RecipeCard } from '@dm/library';
 import { RecipeService } from '../../services/recipe.service';
 
 @Component({
@@ -27,7 +27,7 @@ import { RecipeService } from '../../services/recipe.service';
           </div>
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             @for (recipe of recipes(); track recipe.id; let i = $index) {
-              <dm-recipe-card [recipe]="recipe" variant="ranked-stars" [rank]="i + 1" />
+              <dml-recipe-card [recipe]="recipe" variant="ranked-stars" [rank]="i + 1" />
             }
           </div>
         </div>
