@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
@@ -7,6 +7,7 @@ import defaultRobotsPluginExport, {
   buildRobotsTxtString,
   createRobotsTxtPlugin,
   getBaseUrl,
+  loadEnvFiles,
   parseRobotsConfig,
   resolveOutputPath,
 } from './robots-txt.plugin';
@@ -273,6 +274,88 @@ describe('robots-txt.plugin', () => {
       expect(robots).toContain('User-agent: Googlebot\n');
       expect(robots).toContain('User-agent: Bingbot\n');
       expect(robots).toContain('Sitemap: https://example.com/sitemap.xml\n');
+    });
+
+    it('should test loadEnvFiles with existing env files and edge cases', () => {
+      const testEnvDir = fs.mkdtempSync(path.join(os.tmpdir(), 'env-test-'));
+      const prevCwd = process.cwd();
+      try {
+        process.chdir(testEnvDir);
+        fs.writeFileSync(
+          '.env.local',
+          '# Comment line\n\nROBOTS_TEST_VAR="hello"\nROBOTS_TEST_SINGLE=\x27world\x27\nROBOTS_TEST_RAW=plain\nINVALID_LINE_NO_EQUALS\n',
+        );
+        delete process.env['ROBOTS_TEST_VAR'];
+        delete process.env['ROBOTS_TEST_SINGLE'];
+        delete process.env['ROBOTS_TEST_RAW'];
+
+        loadEnvFiles();
+        expect(process.env['ROBOTS_TEST_VAR']).toBe('hello');
+        expect(process.env['ROBOTS_TEST_SINGLE']).toBe('world');
+        expect(process.env['ROBOTS_TEST_RAW']).toBe('plain');
+
+        // Test already set variable is not overwritten
+        process.env['ROBOTS_TEST_VAR'] = 'existing';
+        loadEnvFiles();
+        expect(process.env['ROBOTS_TEST_VAR']).toBe('existing');
+      } finally {
+        process.chdir(prevCwd);
+        fs.rmSync(testEnvDir, { recursive: true, force: true });
+        delete process.env['ROBOTS_TEST_VAR'];
+        delete process.env['ROBOTS_TEST_SINGLE'];
+        delete process.env['ROBOTS_TEST_RAW'];
+      }
+    });
+
+    it('should handle unreadable file or parse error gracefully in loadEnvFiles', () => {
+      const testEnvDir = fs.mkdtempSync(path.join(os.tmpdir(), 'env-unreadable-'));
+      const prevCwd = process.cwd();
+      try {
+        process.chdir(testEnvDir);
+        const envFile = path.join(testEnvDir, '.env.local');
+        fs.writeFileSync(envFile, 'SECRET=val');
+        try {
+          fs.chmodSync(envFile, 0o000);
+        } catch {
+          // Some filesystems might ignore chmod, continue anyway
+        }
+
+        expect(() => loadEnvFiles()).not.toThrow();
+      } finally {
+        try {
+          fs.chmodSync(path.join(testEnvDir, '.env.local'), 0o666);
+        } catch {
+          // ignore
+        }
+        process.chdir(prevCwd);
+        fs.rmSync(testEnvDir, { recursive: true, force: true });
+      }
+    });
+
+    it('should format contentSignal with all permutations', () => {
+      const robots = buildRobotsTxtString({
+        rules: [
+          {
+            userAgent: '*',
+            contentSignal: {
+              search: 'yes',
+              aiInput: 'no',
+              aiTrain: 'no',
+              use: 'full',
+            },
+            crawlDelay: 5,
+          },
+        ],
+      });
+      expect(robots).toContain('Content-Signal: search=yes, ai-input=no, ai-train=no, use=full\n');
+      expect(robots).toContain('Crawl-delay: 5\n');
+    });
+
+    it('should handle resolveOutputPath with falsy and object combinations', () => {
+      expect(resolveOutputPath(undefined)).toBeUndefined();
+      expect(resolveOutputPath('')).toBe('');
+      expect(resolveOutputPath({ base: 'dist' })).toBe('dist');
+      expect(resolveOutputPath({ base: '', browser: 'browser' })).toBe('browser');
     });
   });
 });
