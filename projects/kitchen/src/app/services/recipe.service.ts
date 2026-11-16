@@ -1,5 +1,5 @@
 import { inject, TransferState, makeStateKey, Service } from '@angular/core';
-import type { BaseRecipe, Breadcrumbs, Comment, Nutrition } from '@dm/library';
+import type { BaseRecipe, RecipeBreadcrumbs, Comment, Nutrition } from '@dm/library';
 import { Api } from './api';
 export type { Comment };
 
@@ -32,7 +32,7 @@ export interface RecipeSeoData {
 }
 
 export interface Recipe extends BaseRecipe {
-  breadcrumbs: Breadcrumbs;
+  breadcrumbs: RecipeBreadcrumbs;
   nutrition: Nutrition;
   comments: Comment[];
   rating: number;

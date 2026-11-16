@@ -9,11 +9,11 @@ import {
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { NgxPaginationModule } from 'ngx-pagination';
-import { Recipe } from '../../services/recipe.service';
 import { RecipeCard, RecipeCardVariant } from '../recipe-card/recipe-card';
+import { BaseRecipe } from '../types/recipe';
 
 @Component({
-  selector: 'dm-recipe-grid',
+  selector: 'dml-recipe-grid',
   imports: [MatCardModule, MatIconModule, NgxPaginationModule, RecipeCard],
   template: `
     @if (isInitialLoading()) {
@@ -51,7 +51,7 @@ import { RecipeCard, RecipeCardVariant } from '../recipe-card/recipe-card';
           track recipe.id || recipe.slug || $index;
           let i = $index
         ) {
-          <dm-recipe-card
+          <dml-recipe-card
             [recipe]="recipe"
             [variant]="variant()"
             [rank]="startRank() + i"
@@ -81,7 +81,7 @@ import { RecipeCard, RecipeCardVariant } from '../recipe-card/recipe-card';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RecipeGrid {
-  readonly recipes = input<Recipe[]>([]);
+  readonly recipes = input<BaseRecipe[]>([]);
   readonly columns = input<2 | 3 | 4>(4);
   readonly variant = input<RecipeCardVariant>('card-link');
   readonly pageSize = input<number>(12);

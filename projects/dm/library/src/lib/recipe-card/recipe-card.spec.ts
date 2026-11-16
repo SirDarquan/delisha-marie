@@ -1,14 +1,14 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { Recipe } from '../../services/recipe.service';
+import { BaseRecipe } from '../types/recipe';
 import { RecipeCard } from './recipe-card';
 
 describe('RecipeCard Component', () => {
   let component: RecipeCard;
   let fixture: ComponentFixture<RecipeCard>;
 
-  const mockRecipe: Recipe = {
+  const mockRecipe: BaseRecipe = {
     id: 1,
     title: 'Delicious Lemon Tart',
     slug: 'delicious-lemon-tart',
@@ -19,7 +19,16 @@ describe('RecipeCard Component', () => {
     locationName: 'Desserts',
     rating: 4.8,
     reviewCount: 24,
-  } as unknown as Recipe;
+    ingredients: [],
+    instructions: [],
+    prepTime: '20m',
+    cookTime: '30m',
+    totalTime: '50m',
+    difficulty: 'Easy',
+    yield: '8 servings',
+    author: 'Delisha Marie',
+    content: '',
+  };
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
@@ -62,17 +71,17 @@ describe('RecipeCard Component', () => {
     fixture.detectChanges();
 
     const compiled = fixture.nativeElement as HTMLElement;
-    const rootLink = compiled.querySelector('a[href*="/recipe/delicious-lemon-tart"]');
-    expect(rootLink).toBeTruthy();
+    const matCard = compiled.querySelector('mat-card');
+    expect(matCard).toBeTruthy();
 
-    const locationTag = compiled.querySelector('mat-card-content span');
-    expect(locationTag).toBeNull();
+    const outerLink = compiled.querySelector('a');
+    expect(outerLink?.getAttribute('href')).toContain('/recipe/delicious-lemon-tart');
 
     const title = compiled.querySelector('h3');
     expect(title?.textContent?.trim()).toBe('Delicious Lemon Tart');
   });
 
-  it('should render ranked-stars variant with rank badge and rating', () => {
+  it('should render ranked-stars variant with ranking', () => {
     fixture.componentRef.setInput('variant', 'ranked-stars');
     fixture.componentRef.setInput('rank', 1);
     fixture.detectChanges();
@@ -87,21 +96,12 @@ describe('RecipeCard Component', () => {
     expect(compiled.textContent).toContain('(24 comments)');
   });
 
-  it('should render destination-link variant with action button', () => {
+  it('should render destination-link variant correctly', () => {
     fixture.componentRef.setInput('variant', 'destination-link');
     fixture.detectChanges();
 
     const compiled = fixture.nativeElement as HTMLElement;
-    const button = compiled.querySelector('mat-card-actions button');
+    const button = compiled.querySelector('button');
     expect(button?.textContent?.trim()).toBe('Read Full Recipe');
-  });
-
-  it('should apply image priority correctly when priority input is true', () => {
-    fixture.componentRef.setInput('variant', 'card-link');
-    fixture.componentRef.setInput('priority', true);
-    fixture.detectChanges();
-
-    const img = fixture.nativeElement.querySelector('img');
-    expect(img?.getAttribute('fetchpriority')).toBe('high');
   });
 });

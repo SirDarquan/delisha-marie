@@ -1,4 +1,4 @@
-import { Breadcrumbs } from '../types/recipe';
+import { RecipeBreadcrumbs } from '../types/recipe';
 
 /**
  * Safely removes leading slashes from a string without using regex (preventing ReDoS).
@@ -121,7 +121,7 @@ export function mapTrailsToBreadcrumbs(
   boardPiecesList: { name: string; url: string }[][],
   recipeTitle: string,
   recipeSlug: string,
-): Breadcrumbs {
+): RecipeBreadcrumbs {
   const mappedItems = boardPiecesList.map((trail) => {
     const title = recipeTitle || 'Untitled';
     let finalTrail = trail;

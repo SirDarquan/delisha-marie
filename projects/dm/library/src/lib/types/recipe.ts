@@ -3,10 +3,11 @@ export interface Breadcrumb {
   url?: string;
 }
 
-export interface Breadcrumbs {
+export interface RecipeBreadcrumbs {
   main?: number;
   items: Breadcrumb[][];
 }
+export type BreadcrumbsData = RecipeBreadcrumbs;
 
 export interface Nutrition {
   calories: string;
@@ -78,7 +79,7 @@ export interface BaseRecipe {
   category?: string | CategoryTrails;
   location?: string;
   locationName?: string;
-  breadcrumbs?: Breadcrumbs | null;
+  breadcrumbs?: RecipeBreadcrumbs | null;
   keywords?: string[];
   specialDiets?: string[];
   holidays?: string[];

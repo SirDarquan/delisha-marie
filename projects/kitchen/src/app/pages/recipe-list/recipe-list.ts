@@ -12,13 +12,17 @@ import {
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
-import { BreadcrumbItem, Breadcrumbs } from '../../components/breadcrumbs/breadcrumbs';
-import { RefineBy, RefineByItem } from '../../components/refine-by/refine-by';
-import { Recipe, RecipeService } from '../../services/recipe.service';
-import { deslugify } from '@dm/library';
-import { RecipeIndexService } from '../recipe-index/recipe-index.service';
+import {
+  BreadcrumbItem,
+  Breadcrumbs,
+  deslugify,
+  RecipeGrid,
+  RefineBy,
+  RefineByItem,
+} from '@dm/library';
 import { ColoredHeaderComponent } from '../../components/colored-header/colored-header';
-import { RecipeGrid } from '../../components/recipe-grid/recipe-grid';
+import { Recipe, RecipeService } from '../../services/recipe.service';
+import { RecipeIndexService } from '../recipe-index/recipe-index.service';
 
 @Component({
   selector: 'dm-recipe-list',
@@ -35,7 +39,7 @@ import { RecipeGrid } from '../../components/recipe-grid/recipe-grid';
       <dml-refine-by [items]="subCategories()" class="block mb-12" />
 
       <!-- Recipe Grid -->
-      <dm-recipe-grid
+      <dml-recipe-grid
         [recipes]="displayedRecipes()"
         [columns]="4"
         [variant]="'card-link'"
