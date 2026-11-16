@@ -7,7 +7,7 @@ import {
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
-import { BreadcrumbItem, Breadcrumbs } from '../../components/breadcrumbs/breadcrumbs';
+import { BreadcrumbItem, Breadcrumbs } from '@dm/library';
 import { ColoredHeaderComponent } from '../../components/colored-header/colored-header';
 import { LatestRecipes } from '../../components/latest-recipes/latest-recipes';
 

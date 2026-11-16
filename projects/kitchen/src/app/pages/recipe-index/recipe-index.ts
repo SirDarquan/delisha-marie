@@ -10,7 +10,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatIconModule } from '@angular/material/icon';
-import { BreadcrumbItem, Breadcrumbs } from '../../components/breadcrumbs/breadcrumbs';
+import { BreadcrumbItem, Breadcrumbs } from '@dm/library';
 import { CategoryImages } from '../../components/category-images/category-images';
 import { RecipeIndexIngredients } from './recipe-index-ingredients';
 import { RecipeIndexLinkList } from './recipe-index-link-list';
