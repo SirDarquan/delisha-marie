@@ -14,3 +14,9 @@ export * from './lib/plugins/plugin.token';
 export * from './lib/plugins/plugin-registry.services';
 
 export * from './lib/theme/theme.service';
+
+export * from './lib/recipe-card/recipe-card';
+export * from './lib/recipe-grid/recipe-grid';
+export * from './lib/wake-lock/wake-lock';
+export * from './lib/breadcrumbs/breadcrumbs';
+export * from './lib/refine-by/refine-by';
