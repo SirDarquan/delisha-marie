@@ -7,9 +7,7 @@ import {
   generateCollectionPageSchema,
   generateContactPageSchema,
   generateFAQPageSchema,
-  generateImageObjectSchema,
   generateOrganizationSchema as dmlGenerateOrganizationSchema,
-  generatePersonSchema,
   generateWebPageSchema,
   generateWebSiteSchema,
   getBaseBreadcrumbs,
@@ -17,7 +15,6 @@ import {
   parseFaqContent,
   SchemaBreadcrumb,
   SchemaObject,
-  stripHtml,
   writeSchema,
 } from '@dm/library';
 import { PagesService } from '../services/pages.service';
@@ -25,15 +22,8 @@ import { PagesService } from '../services/pages.service';
 export type { SchemaBreadcrumb, SchemaObject };
 export type Breadcrumb = SchemaBreadcrumb;
 
-export const DELISHA_MARIE_SITE_NAME = 'Delisha Marie';
-export const DELISHA_MARIE_PROFILE_IMAGE = '/delisha_marie_profile.jpg';
-export const DELISHA_MARIE_SOCIAL_PROFILES = [
-  'https://www.facebook.com/delisha-marie/',
-  'https://x.com/delisha-marie',
-  'https://www.instagram.com/delishamarie_/',
-];
-
 export {
+  convertToIso8601Duration,
   generateAboutPageSchema,
   generateBreadcrumbSchema,
   generateCollectionPageSchema,
@@ -48,7 +38,15 @@ export {
   parseFaqContent,
   stripHtml,
   writeSchema,
-};
+} from '@dm/library';
+
+export const DELISHA_MARIE_SITE_NAME = 'Delisha Marie';
+export const DELISHA_MARIE_PROFILE_IMAGE = '/delisha_marie_profile.jpg';
+export const DELISHA_MARIE_SOCIAL_PROFILES = [
+  'https://www.facebook.com/delisha-marie/',
+  'https://x.com/delisha-marie',
+  'https://www.instagram.com/delishamarie_/',
+];
 
 export const generateOrganizationSchema = (
   url: string,
