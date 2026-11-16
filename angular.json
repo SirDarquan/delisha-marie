@@ -636,8 +636,9 @@
       "prefix": "app",
       "architect": {
         "build": {
-          "builder": "@angular/build:application",
+          "builder": "@angular-builders/custom-esbuild:application",
           "options": {
+            "plugins": ["projects/home/src/plugins/robots-txt.plugin.ts"],
             "browser": "projects/home/src/main.ts",
             "tsConfig": "projects/home/tsconfig.app.json",
             "inlineStyleLanguage": "scss",
@@ -681,10 +682,12 @@
           "defaultConfiguration": "production"
         },
         "serve": {
-          "builder": "@angular/build:dev-server",
+          "builder": "@angular-builders/custom-esbuild:dev-server",
           "options": {
+            "buildTarget": "home:build",
             "host": "0.0.0.0",
-            "allowedHosts": true
+            "allowedHosts": true,
+            "middlewares": ["projects/home/src/plugins/robots-txt.middleware.ts"]
           },
           "configurations": {
             "production": {
@@ -698,8 +701,10 @@
           "defaultConfiguration": "development"
         },
         "test": {
-          "builder": "@angular/build:unit-test",
+          "builder": "@angular-builders/custom-esbuild:unit-test",
           "options": {
+            "buildTarget": "home:build",
+            "tsConfig": "projects/home/tsconfig.spec.json",
             "coverageReporters": [
               "lcov"
             ],

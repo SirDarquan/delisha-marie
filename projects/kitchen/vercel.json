@@ -9,10 +9,7 @@
       "source": "/kitchen/config",
       "destination": "/api/config"
     },
-    {
-      "source": "/robots.txt",
-      "destination": "/api/robots"
-    },
+
     {
       "source": "/:prefix+/sitemap(.*).xml",
       "destination": "/api/sitemap"

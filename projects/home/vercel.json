@@ -1,5 +1,5 @@
 {
-  "devCommand": "env -u PORT ng serve home --host 0.0.0.0 --port $PORT --poll 2000",
+  "devCommand": "vercel env pull --project delisha-marie --environment development --yes && ng serve home --port $PORT",
   "rewrites": [
     {
       "source": "/config",
@@ -8,10 +8,6 @@
     {
       "source": "/kitchen/config",
       "destination": "/api/config"
-    },
-    {
-      "source": "/robots.txt",
-      "destination": "/api/robots"
     },
     {
       "source": "/sitemap(.*).xml",
