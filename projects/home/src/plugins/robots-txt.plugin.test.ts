@@ -1,8 +1,8 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
-import type { PluginBuild } from 'esbuild';
+import type { BuildResult, OutputFile, PluginBuild } from 'esbuild';
 import defaultRobotsPluginExport, {
   buildRobotsTxtString,
   createRobotsTxtPlugin,
@@ -197,7 +197,7 @@ describe('robots-txt.plugin', () => {
 
       const pluginWithAngularOptions = defaultRobotsPluginExport({
         outputPath: { base: 'dist', browser: '' },
-      } as any);
+      });
       expect(pluginWithAngularOptions.name).toBe('generate-robots-txt');
 
       const pluginWithBoth = defaultRobotsPluginExport(
@@ -217,44 +217,52 @@ describe('robots-txt.plugin', () => {
     });
 
     it('should fallback to builderOptions and initialOptions when outputPath is unset', async () => {
-      const plugin = createRobotsTxtPlugin(
-        undefined,
-        { outputPath: { base: tmpDir, browser: 'public' } },
-      );
+      const plugin = createRobotsTxtPlugin(undefined, {
+        outputPath: { base: tmpDir, browser: 'public' },
+      });
 
-      let onEndCallback: ((result: { errors: unknown[]; outputFiles?: unknown[] }) => Promise<void>) | undefined;
+      let onEndCallback: Parameters<PluginBuild['onEnd']>[0] | undefined;
       const buildMock: Partial<PluginBuild> = {
         initialOptions: { outdir: tmpDir },
         onEnd: (callback) => {
-          onEndCallback = callback as any;
+          onEndCallback = callback;
         },
       };
 
       plugin.setup(buildMock as PluginBuild);
-      const mockResult: { errors: unknown[]; outputFiles: any[] } = {
+      const mockResult: BuildResult = {
         errors: [],
-        outputFiles: [],
+        warnings: [],
+        outputFiles: [] as OutputFile[],
+        metafile: undefined,
+        mangleCache: undefined,
       };
       await onEndCallback!(mockResult);
 
-      expect(mockResult.outputFiles.length).toBe(1);
-      expect(mockResult.outputFiles[0].path).toBe('robots.txt');
+      expect(mockResult.outputFiles).toHaveLength(1);
+      expect(mockResult.outputFiles![0].path).toBe('robots.txt');
       expect(fs.existsSync(path.join(tmpDir, 'public', 'robots.txt'))).toBe(true);
     });
 
     it('should fallback to initialOptions.outdir or dist default if builderOptions is undefined', async () => {
       const plugin = createRobotsTxtPlugin();
 
-      let onEndCallback: ((result: { errors: unknown[]; outputFiles?: unknown[] }) => Promise<void>) | undefined;
+      let onEndCallback: Parameters<PluginBuild['onEnd']>[0] | undefined;
       const buildMock: Partial<PluginBuild> = {
         initialOptions: { outdir: tmpDir },
         onEnd: (callback) => {
-          onEndCallback = callback as any;
+          onEndCallback = callback;
         },
       };
 
       plugin.setup(buildMock as PluginBuild);
-      await onEndCallback!({ errors: [] });
+      await onEndCallback!({
+        errors: [],
+        warnings: [],
+        outputFiles: [] as OutputFile[],
+        metafile: undefined,
+        mangleCache: undefined,
+      });
       expect(fs.existsSync(path.join(tmpDir, 'robots.txt'))).toBe(true);
     });
 

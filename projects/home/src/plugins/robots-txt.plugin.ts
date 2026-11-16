@@ -28,39 +28,49 @@ export interface RobotsTxtPluginOptions {
   prefix?: string;
 }
 
+const ENV_LINE_REGEX = /^([^=]+)=(.*)$/;
+
+function parseEnvValue(rawVal: string): string {
+  const trimmed = rawVal.trim();
+  if (
+    (trimmed.startsWith('"') && trimmed.endsWith('"')) ||
+    (trimmed.startsWith("'") && trimmed.endsWith("'"))
+  ) {
+    return trimmed.slice(1, -1);
+  }
+  return trimmed;
+}
+
+function parseEnvLine(line: string): void {
+  const trimmed = line.trim();
+  if (!trimmed || trimmed.startsWith('#')) return;
+
+  const match = ENV_LINE_REGEX.exec(trimmed);
+  if (!match) return;
+
+  const key = match[1].trim();
+  if (!process.env[key]) {
+    process.env[key] = parseEnvValue(match[2]);
+  }
+}
+
+function loadEnvFile(envPath: string): void {
+  if (!fs.existsSync(envPath)) return;
+  try {
+    const content = fs.readFileSync(envPath, 'utf-8');
+    content.split('\n').forEach(parseEnvLine);
+  } catch {
+    // Ignore unreadable env files
+  }
+}
+
 export function loadEnvFiles(): void {
   const envPaths = [
     path.resolve(process.cwd(), '.env.local'),
     path.resolve(process.cwd(), 'projects/home/.env.local'),
     path.resolve(process.cwd(), '.env'),
   ];
-  for (const envPath of envPaths) {
-    if (fs.existsSync(envPath)) {
-      try {
-        const content = fs.readFileSync(envPath, 'utf-8');
-        for (const line of content.split('\n')) {
-          const trimmed = line.trim();
-          if (!trimmed || trimmed.startsWith('#')) continue;
-          const match = trimmed.match(/^([^=]+)=(.*)$/);
-          if (match) {
-            const key = match[1].trim();
-            let val = match[2].trim();
-            if (
-              (val.startsWith('"') && val.endsWith('"')) ||
-              (val.startsWith("'") && val.endsWith("'"))
-            ) {
-              val = val.slice(1, -1);
-            }
-            if (!process.env[key]) {
-              process.env[key] = val;
-            }
-          }
-        }
-      } catch {
-        // Ignore unreadable env files
-      }
-    }
-  }
+  envPaths.forEach(loadEnvFile);
 }
 
 export function parseRobotsConfig(rawConfig?: string): RobotsTxtConfig {
@@ -223,19 +233,14 @@ export function createRobotsTxtPlugin(
   };
 }
 
-export default (
-  firstArg?:
-    | RobotsTxtPluginOptions
-    | { outputPath?: string | { base?: string; browser?: string } },
+export default function robotsTxtPluginFactory(
+  firstArg?: RobotsTxtPluginOptions | { outputPath?: string | { base?: string; browser?: string } },
   secondArg?: { outputPath?: string | { base?: string; browser?: string } },
-): Plugin => {
+): Plugin {
   // When configured as a string in angular.json: loadPlugins calls factory(builderOptions, target)
   // When configured with options: loadPlugins calls factory(options, builderOptions, target)
-  if (firstArg && 'outputPath' in firstArg && typeof (firstArg as any).outputPath === 'object') {
-    return createRobotsTxtPlugin(undefined, firstArg as any);
+  if (firstArg && 'outputPath' in firstArg && typeof firstArg.outputPath === 'object') {
+    return createRobotsTxtPlugin(undefined, firstArg);
   }
-  return createRobotsTxtPlugin(
-    firstArg as RobotsTxtPluginOptions | undefined,
-    secondArg,
-  );
-};
+  return createRobotsTxtPlugin(firstArg as RobotsTxtPluginOptions | undefined, secondArg);
+}

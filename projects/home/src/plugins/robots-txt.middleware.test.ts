@@ -1,10 +1,11 @@
+import type { IncomingMessage, ServerResponse } from 'node:http';
 import { describe, expect, it, vi } from 'vitest';
 import robotsTxtMiddleware from './robots-txt.middleware';
 
 describe('robotsTxtMiddleware', () => {
   it('should call next() for non-robots.txt requests', () => {
-    const req = { url: '/about' } as any;
-    const res = { setHeader: vi.fn(), end: vi.fn() } as any;
+    const req = { url: '/about' } as unknown as IncomingMessage;
+    const res = { setHeader: vi.fn(), end: vi.fn() } as unknown as ServerResponse;
     const next = vi.fn();
 
     robotsTxtMiddleware(req, res, next);
@@ -13,8 +14,8 @@ describe('robotsTxtMiddleware', () => {
   });
 
   it('should call next() when req.url is undefined', () => {
-    const req = {} as any;
-    const res = { setHeader: vi.fn(), end: vi.fn() } as any;
+    const req = {} as unknown as IncomingMessage;
+    const res = { setHeader: vi.fn(), end: vi.fn() } as unknown as ServerResponse;
     const next = vi.fn();
 
     robotsTxtMiddleware(req, res, next);
@@ -22,12 +23,12 @@ describe('robotsTxtMiddleware', () => {
   });
 
   it('should serve robots.txt for /robots.txt request', () => {
-    const req = { url: '/robots.txt?test=1' } as any;
+    const req = { url: '/robots.txt?test=1' } as unknown as IncomingMessage;
     const res = {
       statusCode: 0,
       setHeader: vi.fn(),
       end: vi.fn(),
-    } as any;
+    } as unknown as ServerResponse;
     const next = vi.fn();
 
     robotsTxtMiddleware(req, res, next);

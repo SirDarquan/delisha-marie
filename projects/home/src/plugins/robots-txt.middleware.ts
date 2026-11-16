@@ -1,5 +1,9 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import { buildRobotsTxtString, loadEnvFiles, parseRobotsConfig } from '../plugins/robots-txt.plugin';
+import {
+  buildRobotsTxtString,
+  loadEnvFiles,
+  parseRobotsConfig,
+} from '../plugins/robots-txt.plugin';
 
 export default function robotsTxtMiddleware(
   req: IncomingMessage,
