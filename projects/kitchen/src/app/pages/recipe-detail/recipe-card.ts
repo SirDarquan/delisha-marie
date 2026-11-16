@@ -10,8 +10,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatIconModule } from '@angular/material/icon';
 import { RouterLink } from '@angular/router';
-import { Stars } from '@dm/library';
-import { WakeLock } from '../../components/wake-lock/wake-lock';
+import { Stars, WakeLock } from '@dm/library';
 import { Recipe } from '../../services/recipe.service';
 
 @Component({
