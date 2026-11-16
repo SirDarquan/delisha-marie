@@ -8,10 +8,7 @@
       "source": "/kitchen/config",
       "destination": "/api/config"
     },
-    {
-      "source": "/robots.txt",
-      "destination": "/api/robots?prefix=/kitchen"
-    },
+
     {
       "source": "/:prefix+/sitemap(.*).xml",
       "destination": "/api/sitemap"
