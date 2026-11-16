@@ -13,7 +13,7 @@ import {
   ViewEncapsulation,
 } from '@angular/core';
 import { Router } from '@angular/router';
-import { RecipeGrid } from '../recipe-grid/recipe-grid';
+import { RecipeGrid } from '@dm/library';
 import { Recipe, RecipeService } from '../../services/recipe.service';
 
 @Component({
@@ -35,7 +35,7 @@ import { Recipe, RecipeService } from '../../services/recipe.service';
         </div>
       }
 
-      <dm-recipe-grid
+      <dml-recipe-grid
         [recipes]="recipes()"
         [columns]="3"
         [variant]="'individual-links'"
