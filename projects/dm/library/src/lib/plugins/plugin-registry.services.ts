@@ -1,14 +1,15 @@
 import { isPlatformBrowser } from '@angular/common';
-import { inject, PLATFORM_ID, Service } from '@angular/core';
+import { inject, PLATFORM_ID, REQUEST, Service } from '@angular/core';
 import { APP_PLUGINS } from './plugin.token';
 
 @Service()
 export class PluginRegistry {
   private readonly plugins = inject(APP_PLUGINS, { optional: true }) ?? [];
   private readonly platformId = inject(PLATFORM_ID);
+  private readonly request = inject(REQUEST, { optional: true });
 
-  async initAll(): Promise<void> {
-    if (!isPlatformBrowser(this.platformId)) return; // skip SSR
+  async initAll(isServer = false): Promise<void> {
+    if (!isPlatformBrowser(this.platformId) && (!isServer || !this.request)) return;
 
     const eligible = this.plugins
       .filter((p) => p.isEnabled?.() || true)
