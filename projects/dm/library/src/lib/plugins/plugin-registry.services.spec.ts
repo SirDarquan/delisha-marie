@@ -1,4 +1,4 @@
-import { PLATFORM_ID } from '@angular/core';
+import { PLATFORM_ID, REQUEST } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { describe, expect, it, vi } from 'vitest';
 import { PluginRegistry } from './plugin-registry.services';
@@ -7,7 +7,7 @@ import { APP_PLUGINS, AppPlugin } from './plugin.token';
 describe('PluginRegistry', () => {
   let registry: PluginRegistry;
 
-  it('should do nothing during Server-Side Rendering (SSR)', async () => {
+  it('should do nothing during Server-Side Rendering (SSR) by default', async () => {
     const mockPlugin: AppPlugin = {
       id: 'test-plugin',
       init: vi.fn(),
@@ -26,6 +26,49 @@ describe('PluginRegistry', () => {
     await registry.initAll();
 
     expect(mockPlugin.init).not.toHaveBeenCalled();
+  });
+
+  it('should do nothing during Server-Side Rendering (SSR) if isServer is true but REQUEST is missing (build-time)', async () => {
+    const mockPlugin: AppPlugin = {
+      id: 'test-plugin',
+      init: vi.fn(),
+    };
+
+    TestBed.configureTestingModule({
+      providers: [
+        PluginRegistry,
+        { provide: PLATFORM_ID, useValue: 'server' },
+        { provide: APP_PLUGINS, useValue: mockPlugin, multi: true },
+      ],
+    });
+
+    registry = TestBed.inject(PluginRegistry);
+
+    await registry.initAll(true);
+
+    expect(mockPlugin.init).not.toHaveBeenCalled();
+  });
+
+  it('should execute plugins during Server-Side Rendering (SSR) when isServer is true and REQUEST is present (runtime)', async () => {
+    const mockPlugin: AppPlugin = {
+      id: 'test-plugin',
+      init: vi.fn(),
+    };
+
+    TestBed.configureTestingModule({
+      providers: [
+        PluginRegistry,
+        { provide: PLATFORM_ID, useValue: 'server' },
+        { provide: REQUEST, useValue: new Request('http://localhost:4201/') },
+        { provide: APP_PLUGINS, useValue: mockPlugin, multi: true },
+      ],
+    });
+
+    registry = TestBed.inject(PluginRegistry);
+
+    await registry.initAll(true);
+
+    expect(mockPlugin.init).toHaveBeenCalled();
   });
 
   it('should sort plugins by order and run them sequentially in Browser mode', async () => {
