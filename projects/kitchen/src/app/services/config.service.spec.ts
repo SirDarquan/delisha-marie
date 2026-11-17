@@ -1,27 +1,28 @@
-import { provideHttpClient } from '@angular/common/http';
-import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { APP_PLUGINS } from '@dm/library';
-import { PLATFORM_ID, TransferState } from '@angular/core';
-import { APP_CONFIG_STATE_KEY, AppConfig, AppConfigService } from './config.service';
+import { Api } from './api';
+import { AppConfig, AppConfigService } from './config.service';
 import { provideAppConfig } from '../provider/app-config';
 
 describe('AppConfigService', () => {
   let service: AppConfigService;
-  let httpMock: HttpTestingController;
+  let apiMock: { get: ReturnType<typeof vi.fn> };
 
   beforeEach(() => {
+    apiMock = {
+      get: vi.fn(),
+    };
+
     TestBed.configureTestingModule({
-      providers: [provideHttpClient(), provideHttpClientTesting(), AppConfigService],
+      providers: [AppConfigService, { provide: Api, useValue: apiMock }],
     });
 
     service = TestBed.inject(AppConfigService);
-    httpMock = TestBed.inject(HttpTestingController);
   });
 
   afterEach(() => {
-    httpMock.verify();
+    vi.restoreAllMocks();
   });
 
   it('should be created with default state', () => {
@@ -31,7 +32,7 @@ describe('AppConfigService', () => {
     expect(service.config()).toBeNull();
   });
 
-  it('should fetch configuration from /config and populate signal state', async () => {
+  it('should fetch configuration from /config using Api and populate signal state', async () => {
     const mockConfig: AppConfig = {
       GoogleTagManager: {
         id: 'GTM-M73DF5VL',
@@ -43,95 +44,28 @@ describe('AppConfigService', () => {
       },
     };
 
-    const promise = service.init();
-
-    const req = httpMock.expectOne('/config');
-    expect(req.request.method).toBe('GET');
-    req.flush(mockConfig);
-
-    await promise;
-
-    expect(service.config()).toEqual(mockConfig);
-  });
-
-  it('should use TransferState cached config if available and skip HTTP request', async () => {
-    const transferState = TestBed.inject(TransferState);
-    const mockConfig: AppConfig = {
-      GoogleTagManager: {
-        id: 'GTM-CACHED',
-      },
-    };
-    transferState.set(APP_CONFIG_STATE_KEY, mockConfig);
+    apiMock.get.mockResolvedValue(mockConfig);
 
     await service.init();
 
-    httpMock.expectNone('/config');
+    expect(apiMock.get).toHaveBeenCalledWith('/config');
     expect(service.config()).toEqual(mockConfig);
-    expect(transferState.hasKey(APP_CONFIG_STATE_KEY)).toBe(false);
   });
 
-  it('should initialize config directly from process.env on server platform (SSR)', async () => {
-    TestBed.resetTestingModule();
-    TestBed.configureTestingModule({
-      providers: [
-        provideHttpClient(),
-        provideHttpClientTesting(),
-        AppConfigService,
-        { provide: PLATFORM_ID, useValue: 'server' },
-      ],
-    });
-
-    const serverService = TestBed.inject(AppConfigService);
-    const serverTransferState = TestBed.inject(TransferState);
-    const serverHttpMock = TestBed.inject(HttpTestingController);
-
-    const origGtm = process.env['GTM_ID'];
-    const origSentry = process.env['SENTRY_DSN'];
-    const origFeatured = process.env['KITCHEN_FEATURED_RECIPES'];
-    process.env['GTM_ID'] = 'GTM-SERVER-1';
-    process.env['SENTRY_DSN'] = 'https://sentry-server';
-    process.env['KITCHEN_FEATURED_RECIPES'] = 'recipe-1, recipe-2';
-
-    await serverService.init();
-
-    serverHttpMock.expectNone('/config');
-    expect(serverService.config()?.GoogleTagManager.id).toBe('GTM-SERVER-1');
-    expect(serverService.config()?.Sentry?.dsn).toBe('https://sentry-server');
-    expect(serverService.config()?.KitchenHome?.featuredRecipes).toEqual(['recipe-1', 'recipe-2']);
-    expect(serverTransferState.hasKey(APP_CONFIG_STATE_KEY)).toBe(true);
-
-    if (origGtm !== undefined) {
-      process.env['GTM_ID'] = origGtm;
-    } else {
-      delete process.env['GTM_ID'];
-    }
-    if (origSentry !== undefined) {
-      process.env['SENTRY_DSN'] = origSentry;
-    } else {
-      delete process.env['SENTRY_DSN'];
-    }
-    if (origFeatured !== undefined) {
-      process.env['KITCHEN_FEATURED_RECIPES'] = origFeatured;
-    } else {
-      delete process.env['KITCHEN_FEATURED_RECIPES'];
-    }
-  });
-
-  it('should log and throw a critical error if backend load fails', async () => {
+  it('should log and throw a critical error if Api load fails', async () => {
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(vi.fn());
+    const error = new Error('Network Error');
+    apiMock.get.mockRejectedValue(error);
 
-    const promise = service.init();
+    await expect(service.init()).rejects.toThrow('Network Error');
 
-    const req = httpMock.expectOne('/config');
-    req.flush('Network Error', { status: 500, statusText: 'Server Error' });
-
-    await expect(promise).rejects.toThrow();
-
-    expect(consoleSpy).toHaveBeenCalled();
+    expect(consoleSpy).toHaveBeenCalledWith(
+      'CRITICAL: Failed to fetch application configuration!',
+      error,
+    );
     expect(service.config()).toBeNull();
-
-    consoleSpy.mockRestore();
   });
+
   it('should return GoogleTagManagerConfig', () => {
     service.config.set({ GoogleTagManager: { id: 'GTM-123' } } as AppConfig);
     expect(service.GoogleTagManagerConfig()).toEqual({ id: 'GTM-123' });
@@ -157,6 +91,7 @@ describe('AppConfigService', () => {
     service.config.set(null);
     expect(service.KitchenHomeConfig()).toBeUndefined();
   });
+
   describe('provideAppConfig', () => {
     it('should return valid plugin token provider definition', () => {
       const providers = provideAppConfig();
