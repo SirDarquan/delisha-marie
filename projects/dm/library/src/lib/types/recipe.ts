@@ -43,18 +43,27 @@ export interface CategoryTrails {
   trails: BaseTrail[][];
 }
 
-export interface BaseRecipe {
+export interface RecipeSummary {
   id: string | number;
   title: string;
   slug: string;
   description: string;
-  content: string;
-  ingredients: string[];
-  instructions: string[];
   image: string;
   imageWidth?: string;
   imageHeight?: string;
   imageType?: string;
+  rating?: number;
+  ratingCount?: number;
+  reviewCount?: number;
+  location?: string;
+  locationName?: string;
+  similarity?: number;
+}
+
+export interface BaseRecipe extends RecipeSummary {
+  content: string;
+  ingredients: string[];
+  instructions: string[];
   theBest?: boolean;
   favorite?: boolean;
   prepTime: string;
@@ -87,4 +96,5 @@ export interface BaseRecipe {
   likes?: number;
   source?: string;
   video?: string | null;
+  similarity?: number;
 }
