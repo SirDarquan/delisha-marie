@@ -172,9 +172,10 @@ import { UserProfileItem, UsersService } from '../../services/users.service';
                                 <div class="text-xs text-slate-400 font-mono">
                                   slug: {{ user.tenant.slug }}
                                 </div>
-                                @if (user.tenant.custom_domain) {
+                                @if (user.tenant.customDomain || user.tenant.custom_domain) {
                                   <div class="text-xs text-purple-400 font-mono">
-                                    domain: {{ user.tenant.custom_domain }}
+                                    domain:
+                                    {{ user.tenant.customDomain || user.tenant.custom_domain }}
                                   </div>
                                 }
                               </div>
@@ -607,7 +608,7 @@ export class UsersPageComponent implements OnInit {
     this.editingTenantUser.set(user);
     this.editTenantName = user.tenant.name;
     this.editTenantSlug = user.tenant.slug;
-    this.editTenantDomain = user.tenant.custom_domain || '';
+    this.editTenantDomain = user.tenant.customDomain || user.tenant.custom_domain || '';
   }
 
   async saveTenantChanges(): Promise<void> {

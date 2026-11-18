@@ -19,8 +19,11 @@ export interface TenantInfo {
   name: string;
   slug: string;
   custom_domain?: string | null;
+  customDomain?: string | null;
   is_public?: boolean;
+  isPublic?: boolean;
   owner_id?: string;
+  ownerId?: string;
 }
 
 export type UserRole = 'admin' | 'member' | 'unassigned';
