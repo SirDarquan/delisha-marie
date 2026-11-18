@@ -2,7 +2,15 @@ name: Deploy to Cloud Run
 
 on:
   schedule:
-    - cron: '30 10 * * 2,4' # Tues and Thurs at 10:30 UTC (5:30 AM EST)
+    - cron: '30 10 * * *' # Daily at 10:30 UTC (5:30 AM EST)
+  push:
+    branches:
+      - main
+    paths:
+      - 'projects/admin/**'
+      - 'projects/dm/**'
+      - 'Dockerfile.admin'
+      - '.github/workflows/cloud-run.yml'
   workflow_dispatch: # Enable manual triggers
 
 env:
