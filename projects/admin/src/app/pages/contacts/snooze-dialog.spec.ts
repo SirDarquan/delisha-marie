@@ -95,4 +95,42 @@ describe('SnoozeDialogComponent', () => {
     const invalidFixture = TestBed.createComponent(SnoozeDialogComponent);
     expect(invalidFixture.componentInstance.selectedTime).toBe('08:00');
   });
+
+  it('should apply quick presets correctly and handle preset buttons', () => {
+    // Test 'laterToday'
+    component.setPreset('laterToday');
+    expect(component.selectedDate).toBeInstanceOf(Date);
+    expect(component.selectedTime).toMatch(/^\d{2}:\d{2}$/);
+
+    // Test 'tomorrow'
+    component.setPreset('tomorrow');
+    expect(component.selectedDate).toBeInstanceOf(Date);
+    expect(component.selectedTime).toBe('08:00');
+
+    // Test 'nextWeek' on standard day
+    component.setPreset('nextWeek');
+    expect(component.selectedDate).toBeInstanceOf(Date);
+    expect(component.selectedTime).toBe('08:00');
+
+    // Test 'nextWeek' branch when today is Monday (ensures (1 - now.getDay() + 7) % 7 || 7 evaluates || 7)
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 7, 17, 10, 0, 0)); // Aug 17, 2026 is a Monday (day 1)
+    component.setPreset('nextWeek');
+    expect(component.selectedDate?.getDate()).toBe(24);
+    expect(component.selectedTime).toBe('08:00');
+    vi.useRealTimers();
+
+    // Test clicking preset buttons in template
+    const presetButtons = fixture.debugElement.queryAll(By.css('button[type="button"]'));
+    expect(presetButtons.length).toBeGreaterThanOrEqual(3);
+
+    presetButtons[0].triggerEventHandler('click', null);
+    expect(component.selectedDate).toBeInstanceOf(Date);
+
+    presetButtons[1].triggerEventHandler('click', null);
+    expect(component.selectedTime).toBe('08:00');
+
+    presetButtons[2].triggerEventHandler('click', null);
+    expect(component.selectedTime).toBe('08:00');
+  });
 });
