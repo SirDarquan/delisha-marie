@@ -696,6 +696,10 @@
             "development": {
               "buildTarget": "home:build:development",
               "port": 4200
+            },
+            "e2e": {
+              "buildTarget": "home:build:development",
+              "port": 4210
             }
           },
           "defaultConfiguration": "development"
@@ -732,6 +736,54 @@
             ],
             "eslintConfig": "projects/home/eslint.config.js",
             "fix": true
+          }
+        },
+        "cypress-run": {
+          "builder": "@cypress/schematic:cypress",
+          "options": {
+            "devServerTarget": "home:serve:e2e",
+            "configFile": "projects/home/cypress.config.ts"
+          },
+          "configurations": {
+            "production": {
+              "devServerTarget": "home:serve:production"
+            }
+          }
+        },
+        "cypress-open": {
+          "builder": "@cypress/schematic:cypress",
+          "options": {
+            "watch": true,
+            "headless": false,
+            "configFile": "projects/home/cypress.config.ts"
+          }
+        },
+        "ct": {
+          "builder": "@cypress/schematic:cypress",
+          "options": {
+            "devServerTarget": "home:serve",
+            "watch": true,
+            "headless": false,
+            "testingType": "component"
+          },
+          "configurations": {
+            "development": {
+              "devServerTarget": "home:serve:development"
+            }
+          }
+        },
+        "e2e": {
+          "builder": "@cypress/schematic:cypress",
+          "options": {
+            "devServerTarget": "home:serve:e2e",
+            "watch": true,
+            "headless": false,
+            "configFile": "projects/home/cypress.config.ts"
+          },
+          "configurations": {
+            "production": {
+              "devServerTarget": "home:serve:production"
+            }
           }
         }
       }
