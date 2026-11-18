@@ -50,8 +50,8 @@ interface PageFormModel {
         <button
           type="button"
           (click)="onCancel()"
-          class="text-slate-300 hover:text-purple-400 transition text-sm font-semibold cursor-pointer flex items-center gap-1 bg-transparent border-0 p-0">
-          <span class="material-icons text-sm">arrow_back</span> Back to Pages
+          class="text-slate-300 hover:text-purple-300 bg-slate-800/60 hover:bg-slate-800 border border-slate-700/60 rounded-xl px-3.5 py-1.5 transition text-sm font-semibold cursor-pointer flex items-center gap-1.5">
+          <mat-icon class="!w-4 !h-4 !text-[18px]">arrow_back</mat-icon> Back to Pages
         </button>
       </div>
 

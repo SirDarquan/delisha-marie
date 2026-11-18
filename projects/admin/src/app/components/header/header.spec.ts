@@ -176,4 +176,29 @@ describe('HeaderComponent', () => {
     expect(fakeAuthService.logout).toHaveBeenCalled();
     expect(router.navigate).toHaveBeenCalledWith(['/login']);
   });
+
+  it('should toggle and close mobile menu state', () => {
+    expect(component.isMobileMenuOpen()).toBe(false);
+
+    component.toggleMobileMenu();
+    expect(component.isMobileMenuOpen()).toBe(true);
+
+    component.toggleMobileMenu();
+    expect(component.isMobileMenuOpen()).toBe(false);
+
+    component.toggleMobileMenu();
+    expect(component.isMobileMenuOpen()).toBe(true);
+
+    component.closeMobileMenu();
+    expect(component.isMobileMenuOpen()).toBe(false);
+  });
+
+  it('should render mobile navigation menu when isMobileMenuOpen is true', () => {
+    component.toggleMobileMenu();
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    const mobileNav = compiled.querySelector('nav[aria-label="Mobile Navigation"]');
+    expect(mobileNav).toBeTruthy();
+  });
 });

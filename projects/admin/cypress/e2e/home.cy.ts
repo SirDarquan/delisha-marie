@@ -134,6 +134,34 @@ describe('Admin Home Dashboard - Member / Creator View', () => {
     cy.get('mat-dialog-container').contains('Create New Recipe').should('be.visible');
     cy.get('input#title').should('be.visible');
   });
+
+  it('toggle mobile navigation menu on small screen → opens and closes mobile navigation drawer', () => {
+    cy.intercept('GET', '**/api/home*', {
+      statusCode: 200,
+      body: mockHomeData,
+    }).as('getHomeData');
+
+    cy.viewport('iphone-x');
+    cy.visit('/');
+    cy.wait('@getHomeData');
+
+    // Desktop nav is hidden on mobile
+    cy.get('nav.hidden.md\\:flex').should('not.be.visible');
+
+    // Mobile hamburger menu toggle button is visible
+    cy.get('button[aria-label="Toggle navigation menu"]').should('be.visible').click();
+
+    // Mobile nav drawer is now rendered and visible
+    cy.get('nav[aria-label="Mobile Navigation"]').should('be.visible');
+    cy.get('nav[aria-label="Mobile Navigation"]').contains('a', 'Dashboard').should('be.visible');
+    cy.get('nav[aria-label="Mobile Navigation"]').contains('a', 'Recipes').should('be.visible');
+    cy.get('nav[aria-label="Mobile Navigation"]').contains('a', 'Contacts').should('be.visible');
+    cy.get('nav[aria-label="Mobile Navigation"]').contains('a', 'Other Pages').should('be.visible');
+
+    // Toggle menu closed
+    cy.get('button[aria-label="Toggle navigation menu"]').click();
+    cy.get('nav[aria-label="Mobile Navigation"]').should('not.exist');
+  });
 });
 
 describe('Admin Home Dashboard - Administrator Control Center View', () => {
