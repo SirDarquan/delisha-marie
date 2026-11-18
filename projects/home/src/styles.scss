@@ -1,6 +1,6 @@
 @use '@angular/material' as mat;
 @use 'tailwindcss';
-@use '../../dm/library/src/lib/theme/kitchen';
+@use '../../dm/library/src/lib/styles/kitchen';
 @use '../../dm/library/src/lib/styles/app-theme';
 
 // Light mode is default (:root), dark mode applies with .dark-theme
