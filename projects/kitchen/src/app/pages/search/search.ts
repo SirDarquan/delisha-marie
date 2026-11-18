@@ -11,13 +11,12 @@ import {
   DOCUMENT,
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { NgOptimizedImage, DecimalPipe } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { form, FormField, FormRoot, required } from '@angular/forms/signals';
-import { Router, ActivatedRoute, RouterLink } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 
+import { RecipeGrid } from '@dm/library';
 import { Sidebar } from '../../components/sidebar/sidebar';
-import { NgxPaginationModule } from 'ngx-pagination';
 
 import { SearchService, SearchResultRecipe } from './search.service';
 
@@ -27,16 +26,7 @@ interface SearchFormValue {
 
 @Component({
   selector: 'dm-search',
-  imports: [
-    MatIconModule,
-    NgOptimizedImage,
-    FormField,
-    FormRoot,
-    RouterLink,
-    Sidebar,
-    NgxPaginationModule,
-    DecimalPipe,
-  ],
+  imports: [MatIconModule, FormField, FormRoot, Sidebar, RecipeGrid],
   template: `
     <main class="min-h-screen pt-24 pb-16">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -69,100 +59,21 @@ interface SearchFormValue {
         <div class="grid grid-cols-1 lg:grid-cols-[1fr_350px] gap-8 lg:gap-12">
           <!-- Main Content -->
           <div class="w-full min-w-0">
-            <!-- 2 Column Results -->
-            @if (loading() && displayedRecipes().length === 0) {
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                @for (placeholder of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]; track placeholder) {
-                  <div
-                    class="bg-[var(--mat-sys-surface)] rounded-2xl shadow-sm border border-[var(--mat-sys-outline-variant)] overflow-hidden h-full flex flex-col animate-pulse">
-                    <div
-                      class="aspect-video w-full bg-[var(--mat-sys-surface-container-highest)] relative">
-                      <!-- Match Score Badge Skeleton -->
-                      <div
-                        class="absolute top-4 right-4 bg-[var(--mat-sys-surface)]/50 backdrop-blur-sm w-16 h-6 rounded-md"></div>
-                    </div>
-                    <div class="p-6 flex-1 flex flex-col space-y-3">
-                      <div
-                        class="h-6 bg-[var(--mat-sys-surface-container-highest)] rounded w-3/4"></div>
-                      <div class="space-y-2 pt-2">
-                        <div
-                          class="h-4 bg-[var(--mat-sys-surface-container-highest)] rounded w-full"></div>
-                        <div
-                          class="h-4 bg-[var(--mat-sys-surface-container-highest)] rounded w-5/6"></div>
-                      </div>
-                    </div>
-                  </div>
-                }
+            @if (!hasSearched()) {
+              <div class="text-center text-[var(--mat-sys-on-surface-variant)] py-12">
+                Enter a search term above to find matching recipes.
               </div>
             } @else {
-              <div
-                class="grid grid-cols-1 md:grid-cols-2 gap-8 transition-opacity duration-200"
-                [class.opacity-60]="loading()">
-                @if (displayedRecipes().length === 0 && hasSearched()) {
-                  <div
-                    class="col-span-1 md:col-span-2 text-center text-[var(--mat-sys-on-surface-variant)] py-12">
-                    No matching recipes found. Try a different search term!
-                  </div>
-                } @else if (!hasSearched()) {
-                  <div
-                    class="col-span-1 md:col-span-2 text-center text-[var(--mat-sys-on-surface-variant)] py-12">
-                    Enter a search term above to find matching recipes.
-                  </div>
-                }
-
-                @for (
-                  recipe of displayedRecipes()
-                    | paginate
-                      : {
-                          itemsPerPage: pageSize,
-                          currentPage: currentPage(),
-                          totalItems: totalItems(),
-                        };
-                  track $index
-                ) {
-                  <a
-                    [routerLink]="['/recipe', recipe.slug]"
-                    class="block group cursor-pointer h-full">
-                    <div
-                      class="bg-[var(--mat-sys-surface)] rounded-2xl shadow-sm border border-[var(--mat-sys-outline-variant)] overflow-hidden hover:shadow-md transition-shadow h-full flex flex-col">
-                      <div
-                        class="aspect-video w-full overflow-hidden bg-[var(--mat-sys-surface-container)] relative">
-                        <img
-                          [ngSrc]="recipe.image"
-                          [priority]="$index <= 5"
-                          fill
-                          [alt]="recipe.title"
-                          class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                        <!-- Match Score Badge -->
-                        <div
-                          class="absolute top-4 right-4 bg-[var(--mat-sys-surface)]/90 backdrop-blur-sm text-[var(--mat-sys-on-surface)] text-xs font-bold px-2 py-1 rounded-md shadow-sm">
-                          {{ recipe.similarity * 100 | number: '1.0-0' }}% Match
-                        </div>
-                      </div>
-                      <div class="p-6 flex-1 flex flex-col">
-                        <h3
-                          class="text-xl font-bold text-[var(--mat-sys-on-surface)] mb-2 group-hover:text-[var(--mat-sys-primary)] transition-colors">
-                          {{ recipe.title }}
-                        </h3>
-                        <p
-                          class="text-[var(--mat-sys-on-surface-variant)] line-clamp-2 text-sm flex-1">
-                          {{ recipe.description }}
-                        </p>
-                      </div>
-                    </div>
-                  </a>
-                }
-              </div>
-
-              <!-- Paginator -->
-              @if (totalItems() > pageSize) {
-                <div class="flex justify-center pt-8 pb-4">
-                  <pagination-controls
-                    (pageChange)="onPageChange($event)"
-                    [responsive]="true"
-                    class="recipe-pagination" />
-                </div>
-              }
+              <dml-recipe-grid
+                [recipes]="displayedRecipes()"
+                [columns]="2"
+                [variant]="'card-link'"
+                [pageSize]="pageSize"
+                [currentPage]="currentPage()"
+                [totalItems]="totalItems()"
+                [isLoading]="loading()"
+                [emptyMessage]="'No matching recipes found. Try a different search term!'"
+                (pageChange)="onPageChange($event)" />
             }
           </div>
 

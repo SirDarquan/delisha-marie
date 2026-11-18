@@ -1,4 +1,4 @@
-import { NgOptimizedImage } from '@angular/common';
+import { DecimalPipe, NgOptimizedImage } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -11,14 +11,22 @@ import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { RouterLink } from '@angular/router';
 import { Stars } from '../stars/stars';
-import { BaseRecipe } from '../types/recipe';
+import { RecipeSummary } from '../types/recipe';
 
 export type RecipeCardVariant =
   'individual-links' | 'card-link' | 'ranked-stars' | 'destination-link';
 
 @Component({
   selector: 'dml-recipe-card',
-  imports: [NgOptimizedImage, MatCardModule, MatButtonModule, MatIconModule, RouterLink, Stars],
+  imports: [
+    NgOptimizedImage,
+    DecimalPipe,
+    MatCardModule,
+    MatButtonModule,
+    MatIconModule,
+    RouterLink,
+    Stars,
+  ],
   template: `
     @switch (variant()) {
       @case ('individual-links') {
@@ -38,6 +46,12 @@ export type RecipeCardVariant =
                 height="auto"
                 class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
             </a>
+            @if (recipe().similarity !== undefined && recipe().similarity !== null) {
+              <div
+                class="absolute top-4 right-4 bg-[var(--mat-sys-surface)]/90 backdrop-blur-sm text-[var(--mat-sys-on-surface)] text-xs font-bold px-2 py-1 rounded-md shadow-sm z-10">
+                {{ recipe().similarity! * 100 | number: '1.0-0' }}% Match
+              </div>
+            }
           </div>
 
           <mat-card-content class="!p-6 flex-grow flex flex-col">
@@ -78,6 +92,12 @@ export type RecipeCardVariant =
                 class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
               <div
                 class="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              @if (recipe().similarity !== undefined && recipe().similarity !== null) {
+                <div
+                  class="absolute top-4 right-4 bg-[var(--mat-sys-surface)]/90 backdrop-blur-sm text-[var(--mat-sys-on-surface)] text-xs font-bold px-2 py-1 rounded-md shadow-sm z-10">
+                  {{ recipe().similarity! * 100 | number: '1.0-0' }}% Match
+                </div>
+              }
             </div>
             <mat-card-content class="!p-6 space-y-3 flex-grow flex flex-col">
               <h3
@@ -176,7 +196,7 @@ export type RecipeCardVariant =
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RecipeCard {
-  readonly recipe = input.required<BaseRecipe>();
+  readonly recipe = input.required<RecipeSummary>();
   readonly variant = input<RecipeCardVariant>('card-link');
   readonly rank = input<number | null>(null);
   readonly priority = input<boolean>(false);

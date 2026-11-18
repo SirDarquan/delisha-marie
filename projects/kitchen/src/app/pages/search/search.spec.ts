@@ -96,6 +96,13 @@ describe('SearchPage', () => {
     fixture.detectChanges();
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.querySelectorAll('a').length).toBeGreaterThan(0);
+
+    const recipeGrid = fixture.debugElement.query(By.css('dml-recipe-grid'));
+    expect(recipeGrid).toBeTruthy();
+
+    const recipeCard = fixture.debugElement.query(By.css('dml-recipe-card'));
+    expect(recipeCard).toBeTruthy();
+    expect(compiled.textContent).toContain('99% Match');
   });
 
   it('should handle empty query param by returning empty array and not calling api', async () => {

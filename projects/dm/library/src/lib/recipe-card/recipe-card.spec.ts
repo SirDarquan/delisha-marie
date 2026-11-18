@@ -104,4 +104,13 @@ describe('RecipeCard Component', () => {
     const button = compiled.querySelector('button');
     expect(button?.textContent?.trim()).toBe('Read Full Recipe');
   });
+
+  it('should render similarity percentage badge when similarity is present', () => {
+    fixture.componentRef.setInput('recipe', { ...mockRecipe, similarity: 0.95 });
+    fixture.componentRef.setInput('variant', 'card-link');
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.textContent).toContain('95% Match');
+  });
 });
