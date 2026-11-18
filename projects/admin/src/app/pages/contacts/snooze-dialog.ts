@@ -17,7 +17,29 @@ import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/materia
   providers: [provideNativeDateAdapter()],
   template: `
     <h2 mat-dialog-title>Pick date & time</h2>
-    <mat-dialog-content class="flex flex-col gap-6 pt-4">
+    <mat-dialog-content class="flex flex-col gap-4 pt-4">
+      <!-- Quick Presets -->
+      <div class="flex flex-wrap gap-2">
+        <button
+          type="button"
+          (click)="setPreset('laterToday')"
+          class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white border border-slate-700/60 transition cursor-pointer">
+          Later Today (+3h)
+        </button>
+        <button
+          type="button"
+          (click)="setPreset('tomorrow')"
+          class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white border border-slate-700/60 transition cursor-pointer">
+          Tomorrow 8 AM
+        </button>
+        <button
+          type="button"
+          (click)="setPreset('nextWeek')"
+          class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white border border-slate-700/60 transition cursor-pointer">
+          Next Week
+        </button>
+      </div>
+
       <div class="flex flex-col sm:flex-row gap-6">
         <!-- Inline Calendar (Left) -->
         <div
@@ -37,7 +59,7 @@ import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/materia
                 id="date-input"
                 [matDatepicker]="picker"
                 [(ngModel)]="selectedDate"
-                class="w-full bg-slate-900 border border-slate-700 rounded-md p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-lg pr-12" />
+                class="w-full bg-slate-900 border border-slate-700 rounded-md p-3 text-white focus:outline-none focus:ring-2 focus:ring-purple-500 text-lg pr-12" />
               <mat-datepicker #picker panelClass="custom-calendar" />
             </div>
           </div>
@@ -49,7 +71,7 @@ import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/materia
               id="time-input"
               type="time"
               [(ngModel)]="selectedTime"
-              class="w-full bg-slate-900 border border-slate-700 rounded-md p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-lg" />
+              class="w-full bg-slate-900 border border-slate-700 rounded-md p-3 text-white focus:outline-none focus:ring-2 focus:ring-purple-500 text-lg" />
           </div>
         </div>
       </div>
@@ -81,6 +103,26 @@ export class SnoozeDialogComponent {
         this.selectedDate = d;
         this.selectedTime = `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
       }
+    }
+  }
+
+  setPreset(preset: 'laterToday' | 'tomorrow' | 'nextWeek'): void {
+    const now = new Date();
+    if (preset === 'laterToday') {
+      const later = new Date(now.getTime() + 3 * 3600 * 1000);
+      this.selectedDate = later;
+      this.selectedTime = `${later.getHours().toString().padStart(2, '0')}:${later.getMinutes().toString().padStart(2, '0')}`;
+    } else if (preset === 'tomorrow') {
+      const tomorrow = new Date(now);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      this.selectedDate = tomorrow;
+      this.selectedTime = '08:00';
+    } else if (preset === 'nextWeek') {
+      const nextWeek = new Date(now);
+      const daysUntilMonday = (1 - now.getDay() + 7) % 7 || 7;
+      nextWeek.setDate(now.getDate() + daysUntilMonday);
+      this.selectedDate = nextWeek;
+      this.selectedTime = '08:00';
     }
   }
 

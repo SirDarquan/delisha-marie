@@ -142,6 +142,26 @@ describe('Admin Contacts & Inquiries - Message List & Filtering', () => {
       'Messages that have been in Trash more than 30 days will be automatically deleted.',
     ).should('be.visible');
   });
+
+  it('render contacts mailbox on mobile viewport → renders horizontal folder bar and accessible message items', () => {
+    cy.intercept('GET', '**/api/contacts?folder=inbox*', {
+      statusCode: 200,
+      body: { data: mockInboxMessages, count: 2 },
+    }).as('getInboxMessages');
+
+    cy.viewport('iphone-x');
+    cy.visit('/contacts');
+    cy.wait('@getInboxMessages');
+
+    // Folder navigation bar is rendered horizontally and scrollable
+    cy.get('div.overflow-x-auto').should('exist');
+    cy.contains('button', 'Inbox').should('be.visible');
+    cy.contains('button', 'Snoozed').should('be.visible');
+
+    // Messages list renders cleanly on mobile
+    cy.contains('Alice Walker').should('be.visible');
+    cy.contains('Catering Inquiry for Wedding').should('be.visible');
+  });
 });
 
 describe('Admin Contacts & Inquiries - Message Detail Flow', () => {
