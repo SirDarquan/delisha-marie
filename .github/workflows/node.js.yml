@@ -54,7 +54,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        app: [admin, kitchen]
+        app: [admin, kitchen, home]
     steps:
     - uses: actions/checkout@v6
     - name: Use Node.js
