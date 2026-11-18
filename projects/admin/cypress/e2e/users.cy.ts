@@ -312,8 +312,8 @@ describe('Admin Users & Tenant Management - Impersonation Session', () => {
     cy.wait('@postImpersonate');
     cy.url().should('include', '/recipes');
 
-    // Impersonation banner is visible
-    cy.get('app-impersonation-banner').should('be.visible');
+    // Impersonation banner article is visible (host component uses display: contents)
+    cy.get('[aria-label="Active impersonation session"]').should('be.visible');
     cy.contains('Impersonating Member: delisha@example.com').should('be.visible');
     cy.contains("Tenant: Delisha's Kitchen").should('be.visible');
     cy.contains('button', 'Return to Admin').should('be.visible');
