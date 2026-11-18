@@ -10,8 +10,8 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { RouterLink, RouterLinkActive } from '@angular/router';
-import { ThemeService } from '../theme/theme.service';
-import { MenuLink } from '../types/menu';
+import { ThemeService } from '../../services/theme/theme.service';
+import { MenuLink } from '../../types/menu';
 
 @Component({
   selector: 'dml-header-nav',

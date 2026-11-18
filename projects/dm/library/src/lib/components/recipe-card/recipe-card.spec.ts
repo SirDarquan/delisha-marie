@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { BaseRecipe } from '../types/recipe';
+import { BaseRecipe } from '../../types/recipe';
 import { RecipeCard } from './recipe-card';
 
 describe('RecipeCard Component', () => {

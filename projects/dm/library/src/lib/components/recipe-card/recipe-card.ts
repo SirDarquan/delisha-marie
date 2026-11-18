@@ -11,7 +11,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { RouterLink } from '@angular/router';
 import { Stars } from '../stars/stars';
-import { RecipeSummary } from '../types/recipe';
+import { RecipeSummary } from '../../types/recipe';
 
 export type RecipeCardVariant =
   'individual-links' | 'card-link' | 'ranked-stars' | 'destination-link';

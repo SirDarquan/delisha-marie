@@ -10,7 +10,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { NgxPaginationModule } from 'ngx-pagination';
 import { RecipeCard, RecipeCardVariant } from '../recipe-card/recipe-card';
-import { RecipeSummary } from '../types/recipe';
+import { RecipeSummary } from '../../types/recipe';
 
 @Component({
   selector: 'dml-recipe-grid',
