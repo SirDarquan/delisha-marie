@@ -33,8 +33,20 @@ describe('FavoriteThings', () => {
   it('should render favorite recipes', async () => {
     mockRecipeService['getFavoriteRecipes'].mockResolvedValue({
       items: [
-        { title: 'Recipe 1', slug: 'recipe-1', image: 'image1.jpg' },
-        { title: 'Recipe 2', slug: 'recipe-2', image: 'image2.jpg' },
+        {
+          id: '1',
+          title: 'Recipe 1',
+          slug: 'recipe-1',
+          image: 'image1.jpg',
+          description: 'Desc 1',
+        },
+        {
+          id: '2',
+          title: 'Recipe 2',
+          slug: 'recipe-2',
+          image: 'image2.jpg',
+          description: 'Desc 2',
+        },
       ],
     });
 
@@ -51,6 +63,7 @@ describe('FavoriteThings', () => {
     expect(compiled.textContent).toContain('My favorite things!');
     expect(compiled.textContent).toContain('Recipe 1');
     expect(compiled.textContent).toContain('Recipe 2');
+    expect(compiled.querySelectorAll('dml-recipe-card').length).toBe(2);
   });
 
   it('should handle error gracefully and default to empty array', async () => {
