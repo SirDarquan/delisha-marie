@@ -275,11 +275,11 @@ describe('Admin Contacts & Inquiries - Snooze Dialog', () => {
     // Select the message checkbox
     cy.get('mat-checkbox').first().click();
 
-    // Click Snooze in toolbar
-    cy.get('button[mattooltip="Snooze"]').click();
+    // Click Snooze in toolbar (disambiguate toolbar button from message row button)
+    cy.get('button[mattooltip="Snooze"]').first().click();
 
     // Click custom date & time option in dropdown
-    cy.contains('button', 'Pick date & time').click();
+    cy.contains('button', 'Pick date & time').should('be.visible').click();
 
     // Verify dialog opens
     cy.get('mat-dialog-container').should('be.visible');
