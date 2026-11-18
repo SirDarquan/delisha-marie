@@ -129,6 +129,18 @@ describe('Admin Recipes List Page', () => {
     cy.wait('@deleteRequest');
   });
 
+  it('render table on mobile viewport → provides horizontal scrolling wrapper without clipping columns', () => {
+    cy.viewport('iphone-x');
+    cy.get('div.overflow-x-auto').should('exist');
+    cy.get('div[aria-label="List of all recipes"]').should('have.class', 'min-w-[760px]');
+    cy.get('cdk-virtual-scroll-viewport div[role="row"]')
+      .first()
+      .within(() => {
+        cy.get('[aria-label="Edit recipe"]').should('exist');
+        cy.get('[aria-label="Delete recipe"]').should('exist');
+      });
+  });
+
   it('should allow the administrator to log out safely', () => {
     // Intercept local api signout route
     cy.intercept('POST', '**/api/auth/signout*', {

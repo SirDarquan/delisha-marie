@@ -70,8 +70,11 @@ import { AuthService } from '../../services/auth.service';
           </button>
         </div>
 
-        <div class="border border-slate-800/60 rounded-xl overflow-hidden">
-          <div class="w-full text-left bg-slate-900" role="table" aria-label="List of all recipes">
+        <div class="border border-slate-800/60 rounded-xl overflow-x-auto">
+          <div
+            class="min-w-[760px] w-full text-left bg-slate-900"
+            role="table"
+            aria-label="List of all recipes">
             <!-- Table Header -->
             <div role="row" class="flex bg-slate-800/60 border-b border-slate-800">
               <div
@@ -103,14 +106,14 @@ import { AuthService } from '../../services/auth.service';
 
             <!-- Virtual Scroll Viewport -->
             <cdk-virtual-scroll-viewport
-              itemSize="48"
+              itemSize="56"
               class="h-[calc(100vh-370px)] w-full"
               (scrolledIndexChange)="onScroll()">
               <div class="divide-y divide-slate-800/40">
                 <div
                   *cdkVirtualFor="let recipe of recipes(); trackBy: trackByRecipeId"
                   role="row"
-                  class="flex items-center hover:bg-slate-800/20 transition h-[48px]"
+                  class="flex items-center hover:bg-slate-800/30 transition h-[56px]"
                   [class.bg-purple-900/20]="recipe.id === highlightedRecipeId()">
                   <div role="cell" class="flex-1 px-4 flex items-center gap-3 overflow-hidden">
                     @if (recipe.image) {
@@ -129,20 +132,31 @@ import { AuthService } from '../../services/auth.service';
                   <div role="cell" class="w-32 px-4 text-sm">
                     @let stat = isScheduled(recipe) ? 'scheduled' : recipe.status || 'draft';
                     <span
-                      class="px-2.5 py-1 rounded-full text-xs font-bold tracking-wide capitalize"
-                      [class.bg-slate-950]="stat === 'draft'"
+                      class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold tracking-wide capitalize"
+                      [class.bg-emerald-500/10]="stat === 'published'"
+                      [class.text-emerald-400]="stat === 'published'"
+                      [class.border]="true"
+                      [class.border-emerald-500/20]="stat === 'published'"
+                      [class.bg-amber-500/10]="stat === 'scheduled'"
+                      [class.text-amber-400]="stat === 'scheduled'"
+                      [class.border-amber-500/20]="stat === 'scheduled'"
+                      [class.bg-slate-800/80]="stat === 'draft'"
                       [class.text-slate-300]="stat === 'draft'"
-                      [class.bg-orange-500/10]="stat === 'scheduled'"
-                      [class.text-orange-400]="stat === 'scheduled'"
-                      [class.bg-green-500/10]="stat === 'published'"
-                      [class.text-green-400]="stat === 'published'">
+                      [class.border-slate-700/60]="stat === 'draft'">
+                      <span
+                        class="w-1.5 h-1.5 rounded-full"
+                        [class.bg-emerald-400]="stat === 'published'"
+                        [class.bg-amber-400]="stat === 'scheduled'"
+                        [class.bg-slate-400]="stat === 'draft'"></span>
                       {{ stat }}
                     </span>
                   </div>
 
                   <div role="cell" class="w-56 px-4 text-sm text-slate-300 flex items-center gap-2">
                     <dml-stars [rating]="recipe.ratingCount || 0" [interactive]="false" />
-                    <span class="text-xs font-medium">({{ recipe.topCommentsCount || 0 }})</span>
+                    <span class="text-xs font-medium text-slate-400"
+                      >({{ recipe.topCommentsCount || 0 }})</span
+                    >
                   </div>
 
                   <div role="cell" class="w-32 px-4 text-sm">
@@ -155,22 +169,22 @@ import { AuthService } from '../../services/auth.service';
                       [matBadge]="recipe.newCommentsCount || null"
                       matBadgeColor="accent"
                       [matBadgeHidden]="!recipe.newCommentsCount"
-                      class="px-2 py-1 rounded-md text-[10px] font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
+                      class="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed">
                       Edit Review
                     </button>
                   </div>
 
                   <div role="cell" class="w-40 px-4 text-center">
-                    <div class="flex items-center justify-center gap-1">
+                    <div class="flex items-center justify-center gap-1.5">
                       @if (stat === 'scheduled' && recipe.previewToken && recipe.slug) {
                         <a
                           mat-icon-button
                           [href]="getPreviewUrl(recipe)"
                           target="_blank"
                           rel="noopener noreferrer"
-                          class="!w-7 !h-7 !p-0 flex items-center justify-center !text-white hover:!text-amber-400 hover:drop-shadow-[0_0_8px_rgba(251,191,36,0.8)] transition-all cursor-pointer"
+                          class="!w-8 !h-8 !p-0 flex items-center justify-center text-slate-400 hover:text-amber-400 hover:bg-amber-400/10 rounded-lg transition-colors cursor-pointer"
                           aria-label="Preview scheduled recipe">
-                          <mat-icon class="text-[16px] h-4 w-4 flex items-center justify-center"
+                          <mat-icon class="text-[18px] h-4.5 w-4.5 flex items-center justify-center"
                             >visibility</mat-icon
                           >
                         </a>
@@ -179,9 +193,9 @@ import { AuthService } from '../../services/auth.service';
                         mat-icon-button
                         [routerLink]="['/recipes/edit', recipe.id]"
                         (click)="setLastActiveRecipe(recipe.id)"
-                        class="!w-7 !h-7 !p-0 flex items-center justify-center !text-white hover:!text-purple-400 hover:drop-shadow-[0_0_8px_rgba(168,85,247,0.8)] transition-all cursor-pointer"
+                        class="!w-8 !h-8 !p-0 flex items-center justify-center text-slate-400 hover:text-purple-400 hover:bg-purple-400/10 rounded-lg transition-colors cursor-pointer"
                         aria-label="Edit recipe">
-                        <mat-icon class="text-[16px] h-4 w-4 flex items-center justify-center"
+                        <mat-icon class="text-[18px] h-4.5 w-4.5 flex items-center justify-center"
                           >edit</mat-icon
                         >
                       </a>
@@ -189,9 +203,9 @@ import { AuthService } from '../../services/auth.service';
                         mat-icon-button
                         [disabled]="recipe.status === 'published'"
                         (click)="onDelete(recipe.id)"
-                        class="!w-7 !h-7 !p-0 flex items-center justify-center !text-white hover:!text-rose-400 hover:drop-shadow-[0_0_8px_rgba(244,63,94,0.8)] transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:!text-white disabled:hover:drop-shadow-none"
+                        class="!w-8 !h-8 !p-0 flex items-center justify-center text-slate-400 hover:text-rose-400 hover:bg-rose-400/10 rounded-lg transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:text-slate-400 disabled:hover:bg-transparent"
                         aria-label="Delete recipe">
-                        <mat-icon class="text-[16px] h-4 w-4 flex items-center justify-center"
+                        <mat-icon class="text-[18px] h-4.5 w-4.5 flex items-center justify-center"
                           >delete</mat-icon
                         >
                       </button>
@@ -200,13 +214,15 @@ import { AuthService } from '../../services/auth.service';
                 </div>
 
                 @if (recipes().length === 0 && !isLoading()) {
-                  <div class="p-8 text-center text-slate-400 font-medium text-sm">
+                  <div class="p-8 text-center flex flex-col items-center justify-center">
+                    <mat-icon class="text-slate-600 !w-12 !h-12 !text-[48px] mb-2"
+                      >restaurant</mat-icon
+                    >
                     @if (!tenant() && isAdmin()) {
-                      <span
-                        >You are logged in as an Administrator without an active tenant
-                        sandbox.</span
-                      >
-                      <div class="mt-2">
+                      <p class="text-slate-300 font-semibold text-sm">
+                        You are logged in as an Administrator without an active tenant sandbox.
+                      </p>
+                      <p class="mt-2 text-slate-400 text-xs">
                         <a
                           routerLink="/users"
                           class="text-purple-400 hover:text-purple-300 underline font-semibold">
@@ -214,17 +230,22 @@ import { AuthService } from '../../services/auth.service';
                         </a>
                         to log in as a member (e.g. sirdarquan+dm&#64;gmail.com) and view their
                         recipes.
-                      </div>
+                      </p>
                     } @else {
-                      <span>No recipes found. Try a different search term.</span>
+                      <p class="text-slate-300 font-semibold text-sm">
+                        No recipes found. Try a different search term.
+                      </p>
+                      <p class="text-slate-500 text-xs mt-1">
+                        Or click "+ New Recipe" above to create one.
+                      </p>
                     }
                   </div>
                 }
 
                 @if (isLoading()) {
-                  <div class="p-6 flex items-center justify-center space-x-3 text-slate-400">
+                  <div class="p-8 flex items-center justify-center space-x-3 text-slate-400">
                     <svg
-                      class="animate-spin h-5 w-5 text-indigo-500"
+                      class="animate-spin h-5 w-5 text-purple-400"
                       xmlns="http://www.w3.org/2000/svg"
                       fill="none"
                       viewBox="0 0 24 24">
