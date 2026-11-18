@@ -1,5 +1,5 @@
-import { SchemaBreadcrumb, SchemaObject } from '../types/seo';
-import { deslugify } from '../utils/url-utils';
+import { SchemaBreadcrumb, SchemaObject } from '../../types/seo';
+import { deslugify } from '../url-utils';
 
 export interface ArticleSchemaInput {
   title: string;
