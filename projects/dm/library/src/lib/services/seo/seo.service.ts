@@ -1,7 +1,7 @@
 import { DOCUMENT } from '@angular/common';
 import { inject, Service } from '@angular/core';
 import { Meta } from '@angular/platform-browser';
-import { SeoContent } from '../types/seo';
+import { SeoContent } from '../../types/seo';
 
 @Service()
 export class SeoService {
