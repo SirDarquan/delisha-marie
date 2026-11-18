@@ -42,38 +42,38 @@ import { ContactService, ContactMessage } from '../../services/contact.service';
                 mat-icon-button
                 matTooltip="Back to Inbox"
                 routerLink="/contacts"
-                class="text-slate-400 hover:text-white">
+                class="text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors cursor-pointer">
                 <mat-icon>arrow_back</mat-icon>
               </button>
             </div>
 
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-1.5">
               <button
                 mat-icon-button
                 matTooltip="Mark as unread"
                 (click)="markUnread()"
-                class="text-slate-400 hover:text-white">
+                class="text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors cursor-pointer">
                 <mat-icon>mark_email_unread</mat-icon>
               </button>
               <button
                 mat-icon-button
                 matTooltip="Snooze"
                 (click)="snooze()"
-                class="text-slate-400 hover:text-white">
+                class="text-slate-400 hover:text-amber-400 hover:bg-amber-400/10 rounded-lg transition-colors cursor-pointer">
                 <mat-icon>schedule</mat-icon>
               </button>
               <button
                 mat-icon-button
                 matTooltip="Archive"
                 (click)="archive()"
-                class="text-slate-400 hover:text-white">
+                class="text-slate-400 hover:text-sky-400 hover:bg-sky-400/10 rounded-lg transition-colors cursor-pointer">
                 <mat-icon>archive</mat-icon>
               </button>
               <button
                 mat-icon-button
                 matTooltip="Delete"
                 (click)="deleteMsg()"
-                class="text-rose-400 hover:text-rose-300">
+                class="text-rose-400 hover:text-rose-300 hover:bg-rose-400/10 rounded-lg transition-colors cursor-pointer">
                 <mat-icon>delete</mat-icon>
               </button>
             </div>

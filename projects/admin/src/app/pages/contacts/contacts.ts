@@ -46,52 +46,53 @@ import { SnoozeDialogComponent } from './snooze-dialog';
           <h1 class="text-3xl font-extrabold tracking-tight text-white">Contacts & Inquiries</h1>
         </div>
       </div>
-      <div class="flex gap-6">
+      <div class="flex flex-col md:flex-row gap-6">
         <!-- Left Sidebar (Folders) -->
-        <div class="w-64 flex-shrink-0 flex flex-col gap-2">
+        <div
+          class="w-64 w-full md:w-64 flex-shrink-0 flex flex-row md:flex-col gap-2 overflow-x-auto pb-1 md:pb-0">
           <button
             mat-button
-            class="!justify-start !px-4 !py-6 w-full text-left rounded-xl transition-colors"
+            class="!justify-start !px-4 !py-3 md:!py-5 whitespace-nowrap rounded-xl transition-all"
             [class]="
               currentFolder() === 'inbox'
-                ? 'bg-blue-600/20 text-blue-400 font-bold'
-                : 'text-slate-400 hover:bg-slate-800'
+                ? 'bg-purple-600/20 text-purple-400 font-bold border border-purple-500/30'
+                : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
             "
             (click)="setFolder('inbox')">
-            <mat-icon class="mr-3">inbox</mat-icon> Inbox
+            <mat-icon class="mr-3 text-purple-400">inbox</mat-icon> Inbox
           </button>
           <button
             mat-button
-            class="!justify-start !px-4 !py-6 w-full text-left rounded-xl transition-colors"
+            class="!justify-start !px-4 !py-3 md:!py-5 whitespace-nowrap rounded-xl transition-all"
             [class]="
               currentFolder() === 'snoozed'
-                ? 'bg-blue-600/20 text-blue-400 font-bold'
-                : 'text-slate-400 hover:bg-slate-800'
+                ? 'bg-purple-600/20 text-purple-400 font-bold border border-purple-500/30'
+                : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
             "
             (click)="setFolder('snoozed')">
-            <mat-icon class="mr-3">schedule</mat-icon> Snoozed
+            <mat-icon class="mr-3 text-amber-400">schedule</mat-icon> Snoozed
           </button>
           <button
             mat-button
-            class="!justify-start !px-4 !py-6 w-full text-left rounded-xl transition-colors"
+            class="!justify-start !px-4 !py-3 md:!py-5 whitespace-nowrap rounded-xl transition-all"
             [class]="
               currentFolder() === 'all'
-                ? 'bg-blue-600/20 text-blue-400 font-bold'
-                : 'text-slate-400 hover:bg-slate-800'
+                ? 'bg-purple-600/20 text-purple-400 font-bold border border-purple-500/30'
+                : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
             "
             (click)="setFolder('all')">
-            <mat-icon class="mr-3">all_inbox</mat-icon> All Mail
+            <mat-icon class="mr-3 text-sky-400">all_inbox</mat-icon> All Mail
           </button>
           <button
             mat-button
-            class="!justify-start !px-4 !py-6 w-full text-left rounded-xl transition-colors"
+            class="!justify-start !px-4 !py-3 md:!py-5 whitespace-nowrap rounded-xl transition-all"
             [class]="
               currentFolder() === 'trash'
-                ? 'bg-blue-600/20 text-blue-400 font-bold'
-                : 'text-slate-400 hover:bg-slate-800'
+                ? 'bg-purple-600/20 text-purple-400 font-bold border border-purple-500/30'
+                : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
             "
             (click)="setFolder('trash')">
-            <mat-icon class="mr-3">delete</mat-icon> Trash
+            <mat-icon class="mr-3 text-rose-400">delete</mat-icon> Trash
           </button>
         </div>
 
@@ -246,7 +247,7 @@ import { SnoozeDialogComponent } from './snooze-dialog';
               >
               <button
                 mat-button
-                class="text-blue-400 hover:bg-blue-900/30 font-bold"
+                class="text-rose-400 hover:bg-rose-900/20 font-bold"
                 (click)="emptyTrash()">
                 Empty Trash now
               </button>
@@ -258,7 +259,7 @@ import { SnoozeDialogComponent } from './snooze-dialog';
             @if (contactService.isLoading()) {
               <div class="absolute top-4 left-1/2 -translate-x-1/2 z-10">
                 <div
-                  class="bg-blue-600 text-white rounded-full px-4 py-1.5 shadow-lg flex items-center gap-2 text-sm font-bold shadow-blue-500/20">
+                  class="bg-purple-600 text-white rounded-full px-4 py-1.5 shadow-lg flex items-center gap-2 text-sm font-bold shadow-purple-500/20">
                   Loading messages...
                 </div>
               </div>
@@ -313,7 +314,7 @@ import { SnoozeDialogComponent } from './snooze-dialog';
                   <div
                     class="group flex items-center px-4 py-2 hover:bg-slate-800/50 transition-colors cursor-pointer relative pr-4"
                     [class]="{
-                      'bg-blue-900/20': isSelected(msg.id),
+                      'bg-purple-900/20': isSelected(msg.id),
                       'bg-slate-900': !isSelected(msg.id),
                     }">
                     <!-- Checkbox (visible on hover or if checked) -->
