@@ -2,9 +2,9 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { signal, WritableSignal } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ThemeService } from '../theme/theme.service';
+import { ThemeService } from '../../services/theme/theme.service';
 import { HeaderNav } from './header-nav';
-import { MenuLink } from '../types/menu';
+import { MenuLink } from '../../types/menu';
 
 describe('HeaderNav', () => {
   let fixture: ComponentFixture<HeaderNav>;
