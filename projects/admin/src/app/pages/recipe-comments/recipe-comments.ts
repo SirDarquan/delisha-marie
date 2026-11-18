@@ -32,10 +32,16 @@ import { RecipeReplyFormComponent } from './recipe-reply-form';
   template: `
     <div class="p-6 max-w-4xl mx-auto">
       <div class="flex items-center mb-6">
-        <a mat-icon-button routerLink="/recipes" class="mr-4">
+        <a
+          mat-icon-button
+          routerLink="/recipes"
+          class="mr-3 text-slate-400 hover:text-white"
+          aria-label="Back to Recipes">
           <mat-icon>arrow_back</mat-icon>
         </a>
-        <h1 class="text-3xl font-bold m-0">Review Comments</h1>
+        <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight text-white m-0">
+          Review Comments
+        </h1>
       </div>
 
       @if (loading()) {
@@ -43,11 +49,22 @@ import { RecipeReplyFormComponent } from './recipe-reply-form';
           <mat-spinner />
         </div>
       } @else if (error()) {
-        <div class="bg-red-50 text-red-600 p-4 rounded-lg">
-          {{ error() }}
+        <div
+          class="bg-rose-500/10 border border-rose-500/20 text-rose-300 p-4 rounded-xl flex items-center gap-3">
+          <mat-icon class="text-rose-400">error_outline</mat-icon>
+          <span>{{ error() }}</span>
         </div>
       } @else if (visibleComments().length === 0) {
-        <div class="text-center p-12 text-gray-500">No new comments found for this recipe.</div>
+        <div
+          class="text-center py-16 px-4 bg-slate-900 border border-slate-800 rounded-2xl shadow-xl">
+          <mat-icon class="text-slate-600 !w-12 !h-12 !text-[48px] mb-3"
+            >chat_bubble_outline</mat-icon
+          >
+          <h3 class="text-lg font-bold text-slate-200 mb-1">All Caught Up</h3>
+          <p class="text-slate-400 text-sm max-w-sm mx-auto">
+            No new comments found for this recipe.
+          </p>
+        </div>
       } @else {
         <div class="space-y-6">
           @for (comment of visibleComments(); track comment.id) {
