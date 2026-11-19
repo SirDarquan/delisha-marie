@@ -3,7 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { PLATFORM_ID, REQUEST } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { DEFAULT_SSR_PORT, vercelAbsoluteUrlInterceptor } from './vercel-absolute-url.interceptor';
+import { vercelAbsoluteUrlInterceptor } from './vercel-absolute-url.interceptor';
 
 describe('vercelAbsoluteUrlInterceptor', () => {
   let httpMock: HttpTestingController;
@@ -145,28 +145,6 @@ describe('vercelAbsoluteUrlInterceptor', () => {
     const req3 = httpMock.expectOne('http://localhost:4200/home/config');
     expect(req3.request.method).toBe('GET');
     req3.flush({});
-  });
-});
-
-describe('vercelAbsoluteUrlInterceptor with DEFAULT_SSR_PORT token', () => {
-  it('should respect custom DEFAULT_SSR_PORT (e.g. 4201 for kitchen)', () => {
-    TestBed.configureTestingModule({
-      providers: [
-        provideHttpClient(withInterceptors([vercelAbsoluteUrlInterceptor])),
-        provideHttpClientTesting(),
-        { provide: PLATFORM_ID, useValue: 'server' },
-        { provide: DEFAULT_SSR_PORT, useValue: '4201' },
-      ],
-    });
-
-    const httpMock = TestBed.inject(HttpTestingController);
-    const httpClient = TestBed.inject(HttpClient);
-
-    httpClient.get('/api/custom-port').subscribe();
-    const req = httpMock.expectOne('http://localhost:4201/api/custom-port');
-    expect(req.request.method).toBe('GET');
-    req.flush({});
-    httpMock.verify();
   });
 });
 

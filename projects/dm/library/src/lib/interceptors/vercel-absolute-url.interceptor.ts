@@ -1,10 +1,6 @@
 import { isPlatformServer } from '@angular/common';
 import { HttpHandlerFn, HttpHeaders, HttpInterceptorFn, HttpRequest } from '@angular/common/http';
-import { inject, InjectionToken, PLATFORM_ID, REQUEST } from '@angular/core';
-
-export const DEFAULT_SSR_PORT = new InjectionToken<string>('DEFAULT_SSR_PORT', {
-  factory: () => '4200',
-});
+import { inject, PLATFORM_ID, REQUEST } from '@angular/core';
 
 function isApiRequest(url: string): boolean {
   return (
@@ -20,7 +16,6 @@ function isApiRequest(url: string): boolean {
 function resolveBaseUrl(
   env: Record<string, string | undefined>,
   incomingRequest?: unknown,
-  defaultPort = '4200',
 ): string {
   if (env['VERCEL_URL']) {
     const isLocal =
@@ -60,7 +55,7 @@ function resolveBaseUrl(
     return `${protocol}://${incomingHost}`;
   }
 
-  const port = env['PORT'] || defaultPort;
+  const port = env['PORT'] || '4200';
   return `http://localhost:${port}`;
 }
 
@@ -133,13 +128,12 @@ export const vercelAbsoluteUrlInterceptor: HttpInterceptorFn = (
     return next(req);
   }
 
-  const defaultPort = inject(DEFAULT_SSR_PORT, { optional: true }) ?? '4200';
   const globalProcess = (
     globalThis as unknown as { process?: { env?: Record<string, string | undefined> } }
   ).process;
   const env = globalProcess?.env ?? {};
   const incomingRequest = inject(REQUEST, { optional: true });
-  const baseUrl = resolveBaseUrl(env, incomingRequest, defaultPort);
+  const baseUrl = resolveBaseUrl(env, incomingRequest);
   const headers = enrichHeaders(req.headers, env, incomingRequest);
 
   let newReq = req.clone({
