@@ -6,8 +6,10 @@ function isApiRequest(url: string): boolean {
   return (
     url.startsWith('/api/') ||
     url.startsWith('/kitchen/api/') ||
+    url.startsWith('/home/api/') ||
     url === '/config' ||
-    url === '/kitchen/config'
+    url === '/kitchen/config' ||
+    url === '/home/config'
   );
 }
 
@@ -53,7 +55,7 @@ function resolveBaseUrl(
     return `${protocol}://${incomingHost}`;
   }
 
-  const port = env['PORT'] || '4201';
+  const port = env['PORT'] || '4200';
   return `http://localhost:${port}`;
 }
 
@@ -126,7 +128,10 @@ export const vercelAbsoluteUrlInterceptor: HttpInterceptorFn = (
     return next(req);
   }
 
-  const env = typeof process !== 'undefined' && process.env ? process.env : {};
+  const globalProcess = (
+    globalThis as unknown as { process?: { env?: Record<string, string | undefined> } }
+  ).process;
+  const env = globalProcess?.env ?? {};
   const incomingRequest = inject(REQUEST, { optional: true });
   const baseUrl = resolveBaseUrl(env, incomingRequest);
   const headers = enrichHeaders(req.headers, env, incomingRequest);

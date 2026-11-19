@@ -4,15 +4,24 @@ type SsrModule = {
   reqHandler: (req: VercelRequest, res: VercelResponse) => unknown;
 };
 
-let handlerPromise: Promise<SsrModule> | null = null;
+let kitchenHandlerPromise: Promise<SsrModule> | null = null;
+let homeHandlerPromise: Promise<SsrModule> | null = null;
 
-async function getHandler() {
+async function getKitchenHandler() {
   // Dynamic import evaluated at runtime so TypeScript doesn't require dist/ during build
-  handlerPromise ??= new Function(
+  kitchenHandlerPromise ??= new Function(
     'specifier',
     'return import(specifier)',
   )('../dist/kitchen/server/server.mjs') as Promise<SsrModule>;
-  return (await handlerPromise).reqHandler;
+  return (await kitchenHandlerPromise).reqHandler;
+}
+
+async function getHomeHandler() {
+  homeHandlerPromise ??= new Function(
+    'specifier',
+    'return import(specifier)',
+  )('../dist/home/server/server.mjs') as Promise<SsrModule>;
+  return (await homeHandlerPromise).reqHandler;
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -20,17 +29,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const pathParam = req.query['path'];
   const rawPath = typeof pathParam === 'string' ? pathParam : '';
 
-  if (originalUri?.startsWith('/kitchen')) {
-    req.url = originalUri;
-  } else if (rawPath) {
-    req.url = rawPath;
+  const isKitchen = Boolean(originalUri?.startsWith('/kitchen') || rawPath.startsWith('/kitchen'));
+
+  if (isKitchen) {
+    if (originalUri?.startsWith('/kitchen')) {
+      req.url = originalUri;
+    } else if (rawPath) {
+      req.url = rawPath;
+    } else {
+      req.url = '/kitchen/';
+    }
   } else {
-    req.url = '/kitchen/';
+    req.url = originalUri || rawPath || '/';
   }
+
   (req as unknown as { originalUrl: string }).originalUrl = req.url;
 
   try {
-    const ssrHandler = await getHandler();
+    const ssrHandler = isKitchen ? await getKitchenHandler() : await getHomeHandler();
     return await ssrHandler(req, res);
   } catch (err) {
     console.error('SSR Handler Error:', err);

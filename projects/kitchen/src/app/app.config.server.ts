@@ -6,11 +6,10 @@ import {
   provideAppInitializer,
 } from '@angular/core';
 import { provideServerRendering, withAppShell, withRoutes } from '@angular/ssr';
-import { PluginRegistry } from '@dm/library';
+import { PluginRegistry, vercelAbsoluteUrlInterceptor } from '@dm/library';
 import { AppShell } from './app-shell/app-shell';
 import { appConfig } from './app.config';
 import { serverRoutes } from './app.routes.server';
-import { vercelAbsoluteUrlInterceptor } from './interceptors/vercel-absolute-url';
 
 const serverConfig: ApplicationConfig = {
   providers: [
