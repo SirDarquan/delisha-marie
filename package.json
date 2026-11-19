@@ -18,6 +18,7 @@
     "e2e:home": "ng run home:cypress-run",
     "e2e:kitchen": "ng run kitchen:cypress-run",
     "serve:ssr:kitchen": "node dist/kitchen/server/server.mjs",
+    "serve:ssr:home": "node dist/home/server/server.mjs",
     "serve:ssr:admin": "node dist/admin/server/server.mjs",
     "lint": "ng lint",
     "cypress:open": "cypress open",

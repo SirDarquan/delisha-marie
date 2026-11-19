@@ -652,13 +652,27 @@
               "projects/home/src/tailwind.css",
               "projects/home/src/styles.scss"
             ],
-            "outputPath": {
-              "base": "dist",
-              "browser": ""
+            "server": "projects/home/src/main.server.ts",
+            "outputMode": "server",
+            "security": {
+              "allowedHosts": [
+                "localhost",
+                "127.0.0.1",
+                "[::1]",
+                "*.vercel.app"
+              ]
+            },
+            "ssr": {
+              "entry": "projects/home/src/server.ts"
             }
           },
           "configurations": {
             "production": {
+              "outputPath": {
+                "base": "dist/home",
+                "browser": "browser",
+                "server": "server"
+              },
               "budgets": [
                 {
                   "type": "initial",
@@ -676,17 +690,59 @@
             "development": {
               "optimization": false,
               "extractLicenses": false,
-              "sourceMap": true
+              "sourceMap": {
+                "scripts": true,
+                "styles": false,
+                "vendor": false
+              }
+            },
+            "e2e": {
+              "optimization": false,
+              "extractLicenses": false,
+              "sourceMap": true,
+              "ssr": false,
+              "prerender": false,
+              "outputMode": "static"
             }
           },
           "defaultConfiguration": "production"
         },
+        "build-spa": {
+          "builder": "@angular-builders/custom-esbuild:application",
+          "options": {
+            "plugins": ["projects/home/src/plugins/robots-txt.plugin.ts"],
+            "browser": "projects/home/src/main.ts",
+            "tsConfig": "projects/home/tsconfig.app.json",
+            "inlineStyleLanguage": "scss",
+            "assets": [
+              {
+                "glob": "**/*",
+                "input": "projects/home/public"
+              }
+            ],
+            "styles": [
+              "projects/home/src/tailwind.css",
+              "projects/home/src/styles.scss"
+            ],
+            "outputPath": {
+              "base": "dist/home",
+              "browser": "browser"
+            }
+          },
+          "configurations": {
+            "e2e": {
+              "optimization": false,
+              "extractLicenses": false,
+              "sourceMap": true
+            }
+          }
+        },
         "serve": {
           "builder": "@angular-builders/custom-esbuild:dev-server",
           "options": {
-            "buildTarget": "home:build",
             "host": "0.0.0.0",
             "allowedHosts": true,
+            "port": 4200,
             "middlewares": ["projects/home/src/plugins/robots-txt.middleware.ts"]
           },
           "configurations": {
@@ -694,11 +750,10 @@
               "buildTarget": "home:build:production"
             },
             "development": {
-              "buildTarget": "home:build:development",
-              "port": 4200
+              "buildTarget": "home:build:development"
             },
             "e2e": {
-              "buildTarget": "home:build:development",
+              "buildTarget": "home:build-spa:e2e",
               "port": 4210
             }
           },
