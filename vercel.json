@@ -68,11 +68,23 @@
     {
       "source": "/kitchen/:path*",
       "destination": "/api?path=/kitchen/:path*"
+    },
+    {
+      "source": "/(.*\\.[a-zA-Z0-9]+)",
+      "destination": "/home/browser/$1"
+    },
+    {
+      "source": "/",
+      "destination": "/api?path=/"
+    },
+    {
+      "source": "/:path*",
+      "destination": "/api?path=/:path*"
     }
   ],
   "functions": {
     "api/index.ts": {
-      "includeFiles": "dist/kitchen/**"
+      "includeFiles": "dist/**"
     }
   },
   "headers": [
