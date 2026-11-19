@@ -638,6 +638,11 @@
         "build": {
           "builder": "@angular-builders/custom-esbuild:application",
           "options": {
+            "outputPath": {
+              "base": "dist/home",
+              "browser": "browser",
+              "server": "server"
+            },
             "plugins": ["projects/home/src/plugins/robots-txt.plugin.ts"],
             "browser": "projects/home/src/main.ts",
             "tsConfig": "projects/home/tsconfig.app.json",

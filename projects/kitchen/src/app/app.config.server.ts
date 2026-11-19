@@ -6,16 +6,16 @@ import {
   provideAppInitializer,
 } from '@angular/core';
 import { provideServerRendering, withAppShell, withRoutes } from '@angular/ssr';
-import { PluginRegistry } from '@dm/library';
+import { DEFAULT_SSR_PORT, PluginRegistry, vercelAbsoluteUrlInterceptor } from '@dm/library';
 import { AppShell } from './app-shell/app-shell';
 import { appConfig } from './app.config';
 import { serverRoutes } from './app.routes.server';
-import { vercelAbsoluteUrlInterceptor } from './interceptors/vercel-absolute-url';
 
 const serverConfig: ApplicationConfig = {
   providers: [
     provideServerRendering(withRoutes(serverRoutes), withAppShell(AppShell)),
     provideHttpClient(withInterceptors([vercelAbsoluteUrlInterceptor])),
+    { provide: DEFAULT_SSR_PORT, useValue: '4201' },
     provideAppInitializer(() => inject(PluginRegistry).initAll(true)),
   ],
 };
