@@ -60,6 +60,10 @@ export interface MockResponseBody {
     id: number | string;
     title: string;
     status: string;
+    slug?: string;
+    image?: string;
+    description?: string;
+    similarity?: number;
     location?: string;
     locationName?: string;
     holidays: unknown[];
@@ -69,6 +73,7 @@ export interface MockResponseBody {
       array_field: { deep_key: string }[];
       primitive_field: string;
     };
+    [key: string]: unknown;
   }[];
   total: number;
   id: string;
