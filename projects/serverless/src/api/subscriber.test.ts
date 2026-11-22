@@ -61,7 +61,7 @@ describe('POST /subscriber', () => {
   });
 
   it('returns 500 if SENDER_API_TOKEN is missing', async () => {
-    vi.unstubAllEnvs();
+    vi.stubEnv('SENDER_API_TOKEN', '');
 
     const req = {
       method: 'POST',

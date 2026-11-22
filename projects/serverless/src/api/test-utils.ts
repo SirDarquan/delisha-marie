@@ -60,6 +60,10 @@ export interface MockResponseBody {
     id: number | string;
     title: string;
     status: string;
+    slug?: string;
+    image?: string;
+    description?: string;
+    similarity?: number;
     location?: string;
     locationName?: string;
     holidays: unknown[];
@@ -69,6 +73,7 @@ export interface MockResponseBody {
       array_field: { deep_key: string }[];
       primitive_field: string;
     };
+    [key: string]: unknown;
   }[];
   total: number;
   id: string;
@@ -231,31 +236,28 @@ export function createRequestMock(
     };
   }
 
-  return (app_?: unknown) => {
-    void app_;
+  return (() => {
     return {
       get: (url: string) => {
         const hdrs: Record<string, string> = {};
-        const chain = {
+        let promise: Promise<MockVercelResponse> | null = null;
+        const getPromise = () => {
+          promise ??= simulateRequest('GET', url, { headers: hdrs });
+          return promise;
+        };
+        const basePromise = new Promise<MockVercelResponse>((resolve, reject) => {
+          queueMicrotask(() => {
+            getPromise().then(resolve, reject);
+          });
+        });
+        const chain = Object.assign(basePromise, {
           query: (q: Record<string, string | string[]>) => {
-            return simulateRequest('GET', url, { query: q, headers: hdrs });
+            promise = simulateRequest('GET', url, { query: q, headers: hdrs });
+            return promise;
           },
           set: (k: string, v: string) => {
             hdrs[k] = v;
             return chain;
-          },
-        };
-        Object.defineProperty(chain, 'then', {
-          value: function <TResult1 = MockVercelResponse, TResult2 = never>(
-            onfulfilled?: ((value: MockVercelResponse) => TResult1 | PromiseLike<TResult1>) | null,
-            onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null,
-          ): Promise<TResult1 | TResult2> {
-            return simulateRequest('GET', url, { headers: hdrs }).then(
-              onfulfilled as unknown as (
-                value: MockVercelResponse,
-              ) => TResult1 | PromiseLike<TResult1>,
-              onrejected,
-            ) as unknown as Promise<TResult1 | TResult2>;
           },
         });
         return chain as unknown as GetRequestChain;
@@ -263,7 +265,12 @@ export function createRequestMock(
       post: (url: string) => {
         const hdrs: Record<string, string> = {};
         let b: unknown = null;
-        const chain = {
+        const basePromise = new Promise<MockVercelResponse>((resolve, reject) => {
+          queueMicrotask(() => {
+            simulateRequest('POST', url, { body: b, headers: hdrs }).then(resolve, reject);
+          });
+        });
+        const chain = Object.assign(basePromise, {
           send: (bodyObj?: unknown) => {
             b = bodyObj;
             return chain;
@@ -272,22 +279,12 @@ export function createRequestMock(
             hdrs[k] = v;
             return chain;
           },
-        };
-        Object.defineProperty(chain, 'then', {
-          value: function <TResult1 = MockVercelResponse, TResult2 = never>(
-            onfulfilled?: ((value: MockVercelResponse) => TResult1 | PromiseLike<TResult1>) | null,
-            onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null,
-          ): Promise<TResult1 | TResult2> {
-            return simulateRequest('POST', url, { body: b, headers: hdrs }).then(
-              onfulfilled as unknown as (
-                value: MockVercelResponse,
-              ) => TResult1 | PromiseLike<TResult1>,
-              onrejected,
-            ) as unknown as Promise<TResult1 | TResult2>;
-          },
         });
         return chain as unknown as PostRequestChain;
       },
     };
+  }) as (app?: unknown) => {
+    get: (url: string) => GetRequestChain;
+    post: (url: string) => PostRequestChain;
   };
 }
