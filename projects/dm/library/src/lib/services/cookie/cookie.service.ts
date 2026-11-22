@@ -33,9 +33,14 @@ export class CookieService {
     if (!cookieString) {
       return null;
     }
-    const escapedName = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const match = new RegExp(`(?:^|;\\s*)${escapedName}=([^;]*)`).exec(cookieString);
-    return match?.[1] ?? null;
+    const prefix = `${name}=`;
+    for (const part of cookieString.split(';')) {
+      const trimmed = part.trim();
+      if (trimmed.startsWith(prefix)) {
+        return trimmed.slice(prefix.length);
+      }
+    }
+    return null;
   }
 
   /**
