@@ -1,51 +1,18 @@
-import { PLATFORM_ID } from '@angular/core';
+import { PLATFORM_ID, REQUEST } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ThemeService } from './theme.service';
 
-if (typeof localStorage === 'undefined') {
-  const store: Record<string, string> = {};
-  globalThis.localStorage = {
-    clear: () => {
-      for (const key in store) {
-        delete store[key];
-      }
-    },
-    getItem: (key: string) => store[key] || null,
-    key: (index: number) => Object.keys(store)[index] || null,
-    removeItem: (key: string) => {
-      delete store[key];
-    },
-    setItem: (key: string, value: string) => {
-      store[key] = String(value);
-    },
-    get length() {
-      return Object.keys(store).length;
-    },
-  } as unknown as Storage;
+function clearThemeCookie() {
+  document.cookie = 'theme=; path=/; max-age=0';
 }
 
 describe('ThemeService', () => {
   let service: ThemeService;
 
   beforeEach(() => {
-    // Mock matchMedia
-    Object.defineProperty(window, 'matchMedia', {
-      writable: true,
-      value: vi.fn().mockImplementation((query) => ({
-        matches: false,
-        media: query,
-        onchange: null,
-        addListener: vi.fn(),
-        removeListener: vi.fn(),
-        addEventListener: vi.fn(),
-        removeEventListener: vi.fn(),
-        dispatchEvent: vi.fn(),
-      })),
-    });
-
-    // Clear localStorage
-    localStorage.clear();
+    clearThemeCookie();
+    document.documentElement.classList.remove('dark-theme');
 
     TestBed.configureTestingModule({
       providers: [ThemeService, { provide: PLATFORM_ID, useValue: 'browser' }],
@@ -54,6 +21,8 @@ describe('ThemeService', () => {
   });
 
   afterEach(() => {
+    clearThemeCookie();
+    document.documentElement.classList.remove('dark-theme');
     vi.restoreAllMocks();
   });
 
@@ -61,7 +30,7 @@ describe('ThemeService', () => {
     expect(service).toBeTruthy();
   });
 
-  it('should have initial light theme by default', () => {
+  it('should always have initial light theme by default when no cookie is present', () => {
     expect(service.isDark()).toBe(false);
   });
 
@@ -72,84 +41,94 @@ describe('ThemeService', () => {
     expect(service.isDark()).toBe(false);
   });
 
-  it('should sync with localStorage and document class', () => {
+  it('should sync with document.cookie and document class', () => {
     service.toggle();
     TestBed.flushEffects();
-    expect(localStorage.getItem('theme')).toBe('dark');
+    expect(document.cookie).toContain('theme=dark');
     expect(document.documentElement.classList.contains('dark-theme')).toBe(true);
 
     service.toggle();
     TestBed.flushEffects();
-    expect(localStorage.getItem('theme')).toBe('light');
+    expect(document.cookie).toContain('theme=light');
     expect(document.documentElement.classList.contains('dark-theme')).toBe(false);
   });
 
-  it('should load initial theme from localStorage', () => {
-    localStorage.setItem('theme', 'dark');
-    // Re-inject service to trigger constructor logic
+  it('should load initial dark theme from document.cookie', () => {
+    document.cookie = 'theme=dark; path=/';
     const newService = TestBed.runInInjectionContext(() => new ThemeService());
     expect(newService.isDark()).toBe(true);
   });
 
-  it('should load initial theme from system preference if localStorage is empty', () => {
-    // Mock matchMedia to return dark mode
-    Object.defineProperty(window, 'matchMedia', {
-      writable: true,
-      value: vi.fn().mockImplementation((query) => ({
-        matches: true,
-        media: query,
-        onchange: null,
-        addListener: vi.fn(),
-        removeListener: vi.fn(),
-        addEventListener: vi.fn(),
-        removeEventListener: vi.fn(),
-        dispatchEvent: vi.fn(),
-      })),
-    });
-
+  it('should load initial light theme when document.cookie is theme=light', () => {
+    document.cookie = 'theme=light; path=/';
     const newService = TestBed.runInInjectionContext(() => new ThemeService());
-    expect(newService.isDark()).toBe(true);
+    expect(newService.isDark()).toBe(false);
   });
 
-  describe('Non-browser platform', () => {
+  describe('Non-browser platform (SSR)', () => {
     beforeEach(() => {
       TestBed.resetTestingModule();
+    });
+
+    it('should return false for initial theme when REQUEST is not provided', () => {
       TestBed.configureTestingModule({
         providers: [ThemeService, { provide: PLATFORM_ID, useValue: 'server' }],
       });
-    });
-
-    it('should return false for initial theme when not on browser platform', () => {
       const serverService = TestBed.inject(ThemeService);
       expect(serverService.isDark()).toBe(false);
     });
 
-    it('should not sync with localStorage or document class when not on browser platform', () => {
-      const spySetItem = vi.spyOn(Storage.prototype, 'setItem');
+    it('should read dark theme from Web Request cookie header and update documentElement without setting document.cookie', () => {
+      const mockReq = new Request('http://localhost:4200/', {
+        headers: { cookie: 'other=1; theme=dark; foo=bar' },
+      });
+      TestBed.configureTestingModule({
+        providers: [
+          ThemeService,
+          { provide: PLATFORM_ID, useValue: 'server' },
+          { provide: REQUEST, useValue: mockReq },
+        ],
+      });
+      const cookieSetterSpy = vi.spyOn(document, 'cookie', 'set');
       const serverService = TestBed.inject(ThemeService);
-
-      serverService.toggle();
       TestBed.flushEffects();
 
-      expect(spySetItem).not.toHaveBeenCalled();
-      expect(document.documentElement.classList.contains('dark-theme')).toBe(false);
+      expect(serverService.isDark()).toBe(true);
+      expect(document.documentElement.classList.contains('dark-theme')).toBe(true);
+      expect(cookieSetterSpy).not.toHaveBeenCalled();
     });
-  });
 
-  it('should handle missing window.matchMedia and null document.defaultView gracefully', () => {
-    Object.defineProperty(window, 'matchMedia', {
-      writable: true,
-      value: undefined,
+    it('should read theme from Node/Express-style request headers (string and array)', () => {
+      TestBed.configureTestingModule({
+        providers: [
+          ThemeService,
+          { provide: PLATFORM_ID, useValue: 'server' },
+          { provide: REQUEST, useValue: { headers: { Cookie: ['a=1', 'theme=dark'] } } },
+        ],
+      });
+      const serverService = TestBed.inject(ThemeService);
+      expect(serverService.isDark()).toBe(true);
     });
-    const noMediaService = TestBed.runInInjectionContext(() => new ThemeService());
-    expect(noMediaService.isDark()).toBe(false);
 
-    const origDefaultView = document.defaultView;
-    Object.defineProperty(document, 'defaultView', { value: null, configurable: true });
-    const noWinService = TestBed.runInInjectionContext(() => new ThemeService());
-    expect(noWinService.isDark()).toBe(false);
-    noWinService.toggle();
-    TestBed.flushEffects();
-    Object.defineProperty(document, 'defaultView', { value: origDefaultView, configurable: true });
+    it('should handle REQUEST object without headers or empty cookie header gracefully', () => {
+      TestBed.configureTestingModule({
+        providers: [
+          ThemeService,
+          { provide: PLATFORM_ID, useValue: 'server' },
+          { provide: REQUEST, useValue: {} },
+        ],
+      });
+      expect(TestBed.inject(ThemeService).isDark()).toBe(false);
+
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({
+        providers: [
+          ThemeService,
+          { provide: PLATFORM_ID, useValue: 'server' },
+          { provide: REQUEST, useValue: { headers: {} } },
+        ],
+      });
+      expect(TestBed.inject(ThemeService).isDark()).toBe(false);
+    });
   });
 });
