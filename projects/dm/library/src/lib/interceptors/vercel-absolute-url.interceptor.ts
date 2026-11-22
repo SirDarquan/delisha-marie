@@ -1,6 +1,7 @@
 import { isPlatformServer } from '@angular/common';
 import { HttpHandlerFn, HttpHeaders, HttpInterceptorFn, HttpRequest } from '@angular/common/http';
 import { inject, PLATFORM_ID, REQUEST } from '@angular/core';
+import { CookieService } from '../services/cookie/cookie.service';
 
 function isApiRequest(url: string): boolean {
   return (
@@ -95,6 +96,7 @@ function enrichHeaders(
   reqHeaders: HttpHeaders,
   env: Record<string, string | undefined>,
   incomingRequest: unknown,
+  cookieHeader: string | null,
 ): HttpHeaders {
   let headers = forwardHeaderIfMissing(
     reqHeaders,
@@ -102,8 +104,9 @@ function enrichHeaders(
     env['VERCEL_AUTOMATION_BYPASS_SECRET'],
   );
 
+  headers = forwardHeaderIfMissing(headers, 'cookie', cookieHeader);
+
   if (incomingRequest) {
-    headers = forwardHeaderIfMissing(headers, 'cookie', getHeaderValue(incomingRequest, 'cookie'));
     headers = forwardHeaderIfMissing(
       headers,
       'x-vercel-protection-bypass',
@@ -133,8 +136,14 @@ export const vercelAbsoluteUrlInterceptor: HttpInterceptorFn = (
   ).process;
   const env = globalProcess?.env ?? {};
   const incomingRequest = inject(REQUEST, { optional: true });
+  const cookieService = inject(CookieService);
   const baseUrl = resolveBaseUrl(env, incomingRequest);
-  const headers = enrichHeaders(req.headers, env, incomingRequest);
+  const headers = enrichHeaders(
+    req.headers,
+    env,
+    incomingRequest,
+    cookieService.getRawCookieString(),
+  );
 
   let newReq = req.clone({
     url: `${baseUrl}${req.url}`,
