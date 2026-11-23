@@ -82,4 +82,13 @@ describe('RecipeGrid Component', () => {
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.textContent).toContain('Custom empty message');
   });
+
+  it('should forward maxDescriptionLength to dml-recipe-card', () => {
+    fixture.componentRef.setInput('recipes', mockRecipes);
+    fixture.componentRef.setInput('maxDescriptionLength', 100);
+    fixture.detectChanges();
+
+    const card = fixture.debugElement.query(By.css('dml-recipe-card'));
+    expect(card.componentInstance.maxDescriptionLength()).toBe(100);
+  });
 });
