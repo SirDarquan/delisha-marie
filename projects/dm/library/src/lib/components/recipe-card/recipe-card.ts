@@ -72,7 +72,7 @@ export type RecipeCardVariant =
 
             <p
               class="text-sm text-[var(--mat-sys-on-surface-variant)] line-clamp-3 leading-relaxed flex-grow">
-              {{ recipe().description }}
+              {{ truncatedDescription() }}
             </p>
           </mat-card-content>
         </mat-card>
@@ -106,7 +106,7 @@ export type RecipeCardVariant =
               </h3>
               <p
                 class="text-sm text-[var(--mat-sys-on-surface-variant)] line-clamp-3 font-medium flex-grow">
-                {{ recipe().description }}
+                {{ truncatedDescription() }}
               </p>
             </mat-card-content>
           </mat-card>
@@ -175,7 +175,7 @@ export type RecipeCardVariant =
               </h3>
               <p
                 class="text-[var(--mat-sys-on-surface-variant)] line-clamp-2 text-sm leading-relaxed flex-grow">
-                {{ recipe().description }}
+                {{ truncatedDescription() }}
               </p>
             </mat-card-content>
 
@@ -201,6 +201,19 @@ export class RecipeCard {
   readonly rank = input<number | null>(null);
   readonly priority = input<boolean>(false);
   readonly aspectRatio = input<'16/10' | '4/3' | 'h-64'>('16/10');
+  readonly maxDescriptionLength = input<number>(140);
+
+  readonly truncatedDescription = computed(() => {
+    const desc = this.recipe()?.description;
+    if (!desc) {
+      return '';
+    }
+    const maxLength = this.maxDescriptionLength();
+    if (desc.length <= maxLength) {
+      return desc;
+    }
+    return `${desc.slice(0, maxLength)}...`;
+  });
 
   readonly shouldShowLocation = computed(() => {
     return (
