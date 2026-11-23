@@ -55,7 +55,8 @@ import { RecipeSummary } from '../../types/recipe';
             [recipe]="recipe"
             [variant]="variant()"
             [rank]="startRank() + i"
-            [priority]="i < (columns() === 4 ? 8 : 3)" />
+            [priority]="i < (columns() === 4 ? 8 : 3)"
+            [maxDescriptionLength]="maxDescriptionLength()" />
         } @empty {
           <div
             class="col-span-full py-16 text-center space-y-4 text-[var(--mat-sys-on-surface-variant)]">
@@ -91,6 +92,7 @@ export class RecipeGrid {
   readonly showPagination = input<boolean>(true);
   readonly emptyMessage = input<string>('No recipes found for this selection.');
   readonly startRank = input<number>(1);
+  readonly maxDescriptionLength = input<number>(140);
 
   readonly pageChange = output<number>();
 
