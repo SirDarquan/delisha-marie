@@ -113,4 +113,59 @@ describe('RecipeCard Component', () => {
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.textContent).toContain('95% Match');
   });
+
+  it('should truncate description to 140 characters and append an ellipsis when length exceeds 140', () => {
+    const longDescription = 'A'.repeat(150);
+    fixture.componentRef.setInput('recipe', { ...mockRecipe, description: longDescription });
+    fixture.componentRef.setInput('variant', 'card-link');
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    const desc = compiled.querySelector('p');
+    expect(desc?.textContent?.trim()).toBe(`${'A'.repeat(140)}...`);
+  });
+
+  it('should not append an ellipsis when description is exactly 140 characters', () => {
+    const exact140Description = 'B'.repeat(140);
+    fixture.componentRef.setInput('recipe', { ...mockRecipe, description: exact140Description });
+    fixture.componentRef.setInput('variant', 'card-link');
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    const desc = compiled.querySelector('p');
+    expect(desc?.textContent?.trim()).toBe('B'.repeat(140));
+  });
+
+  it('should not append an ellipsis when description is less than 140 characters', () => {
+    const shortDescription = 'Short delicious recipe.';
+    fixture.componentRef.setInput('recipe', { ...mockRecipe, description: shortDescription });
+    fixture.componentRef.setInput('variant', 'card-link');
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    const desc = compiled.querySelector('p');
+    expect(desc?.textContent?.trim()).toBe(shortDescription);
+  });
+
+  it('should handle empty or undefined description gracefully', () => {
+    fixture.componentRef.setInput('recipe', { ...mockRecipe, description: '' });
+    fixture.componentRef.setInput('variant', 'card-link');
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    const desc = compiled.querySelector('p');
+    expect(desc?.textContent?.trim()).toBe('');
+  });
+
+  it('should respect custom maxDescriptionLength input', () => {
+    const text = '12345678901234567890';
+    fixture.componentRef.setInput('maxDescriptionLength', 10);
+    fixture.componentRef.setInput('recipe', { ...mockRecipe, description: text });
+    fixture.componentRef.setInput('variant', 'card-link');
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    const desc = compiled.querySelector('p');
+    expect(desc?.textContent?.trim()).toBe('1234567890...');
+  });
 });
