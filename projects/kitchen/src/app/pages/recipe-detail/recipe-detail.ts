@@ -1,13 +1,16 @@
 import {
+  afterRenderEffect,
   ChangeDetectionStrategy,
   Component,
   computed,
   DOCUMENT,
   effect,
+  ElementRef,
   inject,
   input,
   resource,
   signal,
+  viewChild,
   ViewEncapsulation,
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -19,7 +22,9 @@ import { BreadcrumbItem, Breadcrumbs, extractYouTubeVideoId } from '@dm/library'
 import { RecipeEquipment } from '../../components/recipe-equipment/recipe-equipment';
 import { Sidebar } from '../../components/sidebar/sidebar';
 import { PinterestHoverDirective } from '../../directives/pinterest-hover.directive';
+import { RecipeEmailService } from '../../services/recipe-email.service';
 import { RecipeService } from '../../services/recipe.service';
+import { mountEmailRecipe, SendRecipeEventDetail } from '../../utils/mount-email-recipe';
 import { useOptimizedContent } from '../../utils/optimized-content';
 import { RecipeCard } from './recipe-card';
 import { RecipeComments } from './recipe-comments';
@@ -102,9 +107,11 @@ import { SidebarQuickView } from './sidebar-quick-view';
               <section
                 class="order-1 lg:order-none prose prose-lg max-w-none px-4 sm:px-0 py-8 sm:py-0 min-w-0">
                 <div
+                  #storyContainer
                   class="story text-lg md:text-xl text-[var(--mat-sys-on-surface-variant)] leading-relaxed font-serif first-letter:text-6xl first-letter:font-black first-letter:mr-1 first-letter:text-[var(--mat-sys-primary)]"
                   [innerHTML]="optimizedContent()"
-                  [dmPinterestHover]="r"></div>
+                  [dmPinterestHover]="r"
+                  (sendRecipe)="onSendRecipe($event)"></div>
 
                 @if (videoId()) {
                   <div
@@ -169,6 +176,7 @@ export class RecipeDetail {
 
   private readonly route = inject(ActivatedRoute);
   private readonly recipeService = inject(RecipeService);
+  private readonly recipeEmailService = inject(RecipeEmailService);
   private readonly _params = toSignal(this.route.params);
   private readonly _queryParams = toSignal(this.route.queryParams);
   readonly router = inject(Router);
@@ -239,6 +247,15 @@ export class RecipeDetail {
     }
   }
 
+  onSendRecipe(event: Event) {
+    if (event instanceof CustomEvent) {
+      event.stopPropagation();
+      void this.recipeEmailService.handleSendRecipeEvent(
+        event as CustomEvent<SendRecipeEventDetail>,
+      );
+    }
+  }
+
   readonly videoId = computed(() => extractYouTubeVideoId(this.recipe()?.video));
 
   readonly breadcrumbItems = computed((): BreadcrumbItem[] => {
@@ -258,6 +275,17 @@ export class RecipeDetail {
   });
 
   readonly optimizedContent = useOptimizedContent(computed(() => this.recipe()?.content));
+  readonly storyContainer = viewChild<ElementRef<HTMLDivElement>>('storyContainer');
+
+  private readonly _mountEmailRecipeEffect = afterRenderEffect(() => {
+    const recipe = this.recipe();
+    this.optimizedContent();
+    const container = this.storyContainer()?.nativeElement;
+
+    if (!recipe || !container) return;
+
+    mountEmailRecipe(container, recipe);
+  });
 
   private readonly document = inject(DOCUMENT);
 

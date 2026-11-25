@@ -5,6 +5,7 @@ import { ActivatedRoute, provideRouter, Router } from '@angular/router';
 import { BehaviorSubject } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Recipe, RecipeService } from '../../services/recipe.service';
+import { RecipeEmailService } from '../../services/recipe-email.service';
 import { createMockRecipe } from '../../utils/test-recipe';
 import { RecipeDetail } from './recipe-detail';
 import { By } from '@angular/platform-browser';
@@ -93,6 +94,10 @@ describe('RecipeDetail', () => {
           },
         },
         { provide: RecipeService, useValue: recipeServiceMock },
+        {
+          provide: RecipeEmailService,
+          useValue: { handleSendRecipeEvent: vi.fn(), sendRecipe: vi.fn() },
+        },
       ],
     }).compileComponents();
 
@@ -112,6 +117,21 @@ describe('RecipeDetail', () => {
 
   it('should create', () => {
     expect(component).toBeTruthy();
+  });
+
+  it('should forward sendRecipe custom event to RecipeEmailService', () => {
+    const recipeEmailService = TestBed.inject(RecipeEmailService);
+    const event = new CustomEvent('sendRecipe', {
+      detail: { email: 'chef@example.com' },
+    });
+    component.onSendRecipe(event);
+    expect(recipeEmailService.handleSendRecipeEvent).toHaveBeenCalledWith(event);
+  });
+
+  it('should ignore non-CustomEvent in onSendRecipe', () => {
+    const recipeEmailService = TestBed.inject(RecipeEmailService);
+    component.onSendRecipe(new Event('sendRecipe'));
+    expect(recipeEmailService.handleSendRecipeEvent).not.toHaveBeenCalled();
   });
 
   it('should render skeleton loader when recipe is loading', () => {
@@ -135,6 +155,7 @@ describe('RecipeDetail', () => {
     expect(compiled.querySelector('dml-recipe-card')).toBeTruthy();
     expect(compiled.querySelector('dml-recipe-navigation')).toBeTruthy();
     expect(compiled.querySelector('dml-recipe-comments')).toBeTruthy();
+    expect(compiled.querySelector('.email-recipe-mount')).toBeTruthy();
   }, 30000);
 
   it('should navigate to 404 when recipe is null', async () => {
@@ -439,6 +460,63 @@ describe('RecipeDetail', () => {
       fixture.detectChanges();
 
       expect(component.isScheduledPreview()).toBe(false);
+    });
+
+    it('should insert email recipe widget after the second paragraph when multiple paragraphs exist', async () => {
+      const multiParagraphRecipe = {
+        ...mockRecipe,
+        slug: 'multi-para',
+        content: '<p>Paragraph 1</p><p>Paragraph 2</p><p>Paragraph 3</p>',
+      };
+      await loadRecipe(multiParagraphRecipe);
+
+      const compiled = fixture.nativeElement as HTMLElement;
+      const story = compiled.querySelector('.story') as HTMLElement;
+      expect(story).toBeTruthy();
+
+      const emailWidget = story.querySelector('.email-recipe-mount');
+      expect(emailWidget).toBeTruthy();
+
+      // Check that the previous element sibling of emailWidget is the second paragraph
+      const prev = emailWidget?.previousElementSibling as HTMLElement | null;
+      expect(prev?.tagName.toLowerCase()).toBe('p');
+      expect(prev?.textContent).toBe('Paragraph 2');
+    });
+
+    it('should insert email recipe widget after the first paragraph when only one paragraph exists', async () => {
+      const singleParagraphRecipe = {
+        ...mockRecipe,
+        slug: 'single-para',
+        content: '<p>Only paragraph</p>',
+      };
+      await loadRecipe(singleParagraphRecipe);
+
+      const compiled = fixture.nativeElement as HTMLElement;
+      const story = compiled.querySelector('.story') as HTMLElement;
+      expect(story).toBeTruthy();
+
+      const emailWidget = story.querySelector('.email-recipe-mount');
+      expect(emailWidget).toBeTruthy();
+
+      const prev = emailWidget?.previousElementSibling as HTMLElement | null;
+      expect(prev?.tagName.toLowerCase()).toBe('p');
+      expect(prev?.textContent).toBe('Only paragraph');
+    });
+
+    it('should insert email recipe widget into story when no paragraph elements exist', async () => {
+      const noParagraphRecipe = {
+        ...mockRecipe,
+        slug: 'no-para',
+        content: '<div>Heading Block</div>',
+      };
+      await loadRecipe(noParagraphRecipe);
+
+      const compiled = fixture.nativeElement as HTMLElement;
+      const story = compiled.querySelector('.story') as HTMLElement;
+      expect(story).toBeTruthy();
+
+      const emailWidget = story.querySelector('.email-recipe-mount');
+      expect(emailWidget).toBeTruthy();
     });
   });
 });
