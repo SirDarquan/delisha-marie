@@ -18,6 +18,10 @@ initBotId({
       path: '/api/recipes/*/comments',
       method: 'POST',
     },
+    {
+      path: '/api/send-recipe',
+      method: 'POST',
+    },
   ],
 });
 
