@@ -1,6 +1,32 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { checkBotId } from 'botid/server';
 
+export async function enrollNewsletterSubscriber(
+  email: string,
+  automation = true,
+  token = process.env.SENDER_API_TOKEN,
+): Promise<Response> {
+  const url = `https://api.sender.net/v2/subscribers`;
+  const headers = {
+    Authorization: `Bearer ${token}`,
+    'Content-Type': 'application/json',
+    Accept: 'application/json',
+  };
+  const body = {
+    email,
+    groups: [
+      'e97Q3x', // New subscribers
+    ],
+    trigger_automation: automation,
+  };
+
+  return fetch(url, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(body),
+  });
+}
+
 type ProviderHandler = (
   req: VercelRequest,
   res: VercelResponse,
@@ -16,25 +42,7 @@ const providerRouter: Record<string, ProviderHandler> = {
       return res.status(500).json({ error: 'Server configuration error' });
     }
 
-    const url = `https://api.sender.net/v2/subscribers`;
-    const headers = {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
-      Accept: 'application/json',
-    };
-    const body = {
-      email,
-      groups: [
-        'e97Q3x', //New subscribers
-      ],
-      trigger_automation: automation,
-    };
-
-    const response = await fetch(url, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(body),
-    });
+    const response = await enrollNewsletterSubscriber(email, automation, token);
 
     if (!response.ok) {
       const errorData = await response.text();
