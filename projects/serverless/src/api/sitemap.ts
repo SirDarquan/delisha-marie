@@ -29,7 +29,7 @@ function escapeXml(unsafe: string): string {
     .replaceAll("'", '&apos;');
 }
 
-function getBaseUrl(req: VercelRequest): string {
+export function getBaseUrl(req: VercelRequest): string {
   let base: string;
   const vercelEnv = process.env['VERCEL_ENV'];
   if (process.env['SITE_URL']) {

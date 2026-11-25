@@ -5,7 +5,11 @@ const { mockCheckBotId } = vi.hoisted(() => ({
 }));
 
 vi.mock('botid/server', () => ({
-  checkBotId: mockCheckBotId,
+  checkBotId: (...args: unknown[]) => {
+    const fn = (globalThis as unknown as { __sharedCheckBotId?: (...a: unknown[]) => unknown })
+      .__sharedCheckBotId;
+    return fn ? fn(...args) : mockCheckBotId(...args);
+  },
 }));
 
 import subscriberHandler from './subscriber';
@@ -15,6 +19,8 @@ describe('POST /subscriber', () => {
     vi.unstubAllEnvs();
     vi.stubEnv('SENDER_API_TOKEN', 'fake_token');
     vi.restoreAllMocks();
+    (globalThis as unknown as { __sharedCheckBotId: typeof mockCheckBotId }).__sharedCheckBotId =
+      mockCheckBotId;
     mockCheckBotId.mockResolvedValue({ isBot: false });
   });
 
