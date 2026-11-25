@@ -42,7 +42,7 @@ export const DEFAULT_DIM_SPOTLIGHT_CONFIG: DimSpotlightConfig = {
   fadeOutDurationMs: 500,
 };
 
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const EMAIL_REGEX = /^[^\s@]+@[^\s@.]+(\.[^\s@.]+)+$/;
 
 export function triggerSpotlightDim(
   mountEl: HTMLElement,
@@ -159,7 +159,7 @@ export function mountEmailRecipe(
 
   // Preserve existing widget if already mounted for this recipe
   const existing = container.querySelector<HTMLElement>('.email-recipe-mount');
-  if (existing && existing.dataset['recipeSlug'] === recipeSlug) {
+  if (existing?.dataset['recipeSlug'] === recipeSlug) {
     return existing;
   }
 
@@ -170,12 +170,14 @@ export function mountEmailRecipe(
 
   // Locate paragraphs within the story
   const paragraphs = container.querySelectorAll('p');
-  const target =
-    paragraphs.length >= 2
-      ? paragraphs[1] // Right after the 2nd paragraph
-      : paragraphs.length === 1
-        ? paragraphs[0] // Right after the 1st paragraph
-        : container.firstElementChild || container;
+  let target: Element;
+  if (paragraphs.length >= 2) {
+    target = paragraphs[1]; // Right after the 2nd paragraph
+  } else if (paragraphs.length === 1) {
+    target = paragraphs[0]; // Right after the 1st paragraph
+  } else {
+    target = container.firstElementChild || container;
+  }
 
   // Create wrapper container
   const mountEl = document.createElement('div');
@@ -241,7 +243,7 @@ export function mountEmailRecipe(
   if (target === container) {
     container.appendChild(mountEl);
   } else {
-    target.insertAdjacentElement('afterend', mountEl);
+    target.after(mountEl);
   }
 
   // Attach scroll spotlight dim observer (triggers once when near middle of screen)

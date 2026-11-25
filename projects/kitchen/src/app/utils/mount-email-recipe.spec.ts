@@ -69,7 +69,7 @@ describe('mountEmailRecipe', () => {
 
     const widget2 = mountEmailRecipe(container, mockRecipe);
     expect(widget2).toBe(widget1);
-    expect(container.querySelectorAll('.email-recipe-mount').length).toBe(1);
+    expect(container.querySelectorAll('.email-recipe-mount')).toHaveLength(1);
   });
 
   it('should replace widget if recipe slug changes', () => {
@@ -85,7 +85,7 @@ describe('mountEmailRecipe', () => {
 
     expect(widget2).not.toBe(widget1);
     expect(widget2?.dataset['recipeSlug']).toBe('lemon-herb-chicken');
-    expect(container.querySelectorAll('.email-recipe-mount').length).toBe(1);
+    expect(container.querySelectorAll('.email-recipe-mount')).toHaveLength(1);
   });
 
   it('should initialize spotlight IntersectionObserver and trigger spotlight when intersecting', () => {
@@ -264,10 +264,10 @@ describe('mountEmailRecipe', () => {
       document.body.appendChild(mountEl);
 
       triggerSpotlightDim(mountEl);
-      expect(document.querySelectorAll('.email-recipe-spotlight-backdrop').length).toBe(1);
+      expect(document.querySelectorAll('.email-recipe-spotlight-backdrop')).toHaveLength(1);
 
       triggerSpotlightDim(mountEl);
-      expect(document.querySelectorAll('.email-recipe-spotlight-backdrop').length).toBe(1);
+      expect(document.querySelectorAll('.email-recipe-spotlight-backdrop')).toHaveLength(1);
 
       mountEl.remove();
     });
