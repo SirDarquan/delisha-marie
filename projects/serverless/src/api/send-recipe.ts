@@ -56,6 +56,55 @@ async function dispatchSenderEmail(options: DispatchOptions): Promise<Response> 
   });
 }
 
+function isValidEmail(email: unknown): email is string {
+  return typeof email === 'string' && email.includes('@');
+}
+
+function buildRecipeUrl(cleanBase: string, recipeSlug?: string, inputUrl?: string): string {
+  if (recipeSlug) {
+    return `${cleanBase}/kitchen/recipe/${recipeSlug}`;
+  }
+  if (inputUrl?.startsWith('http')) {
+    return inputUrl;
+  }
+  const path = inputUrl?.startsWith('/') ? inputUrl : `/${inputUrl || ''}`;
+  return path.startsWith('/kitchen') ? `${cleanBase}${path}` : `${cleanBase}/kitchen${path}`;
+}
+
+async function resolveRecipeDetails(
+  recipeSlug?: string,
+  inputTitle?: string,
+  inputImage?: string,
+  inputDescription?: string,
+) {
+  let title = inputTitle;
+  let image = inputImage;
+  let description = inputDescription;
+
+  if (!recipeSlug || (title && image && description)) {
+    return { title, image, description };
+  }
+
+  try {
+    const supabase = await getSupabaseClient();
+    const { data: dbRecipe } = await supabase
+      .from('recipes')
+      .select('title, slug, image, description')
+      .eq('slug', recipeSlug)
+      .maybeSingle();
+
+    if (dbRecipe) {
+      title ||= dbRecipe.title;
+      image ||= dbRecipe.image;
+      description ||= dbRecipe.description;
+    }
+  } catch (dbErr) {
+    console.warn('Could not fetch fallback recipe details from Supabase:', dbErr);
+  }
+
+  return { title, image, description };
+}
+
 export default async function sendRecipeHandler(req: VercelRequest, res: VercelResponse) {
   try {
     if (req.method !== 'POST') {
@@ -77,7 +126,7 @@ export default async function sendRecipeHandler(req: VercelRequest, res: VercelR
       subscribeNewsletter,
     }: SendRecipeBody = req.body || {};
 
-    if (!email || typeof email !== 'string' || !email.includes('@')) {
+    if (!isValidEmail(email)) {
       return res.status(400).json({ error: 'Valid email is required' });
     }
 
@@ -87,49 +136,22 @@ export default async function sendRecipeHandler(req: VercelRequest, res: VercelR
       return res.status(500).json({ error: 'Server configuration error' });
     }
 
-    let recipeTitle = inputTitle;
-    let recipeImage = inputImage;
-    let recipeDescription = inputDescription;
-
-    if (recipeSlug && (!recipeTitle || !recipeImage || !recipeDescription)) {
-      try {
-        const supabase = await getSupabaseClient();
-        const { data: dbRecipe } = await supabase
-          .from('recipes')
-          .select('title, slug, image, description')
-          .eq('slug', recipeSlug)
-          .maybeSingle();
-
-        if (dbRecipe) {
-          recipeTitle ||= dbRecipe.title;
-          recipeImage ||= dbRecipe.image;
-          recipeDescription ||= dbRecipe.description;
-        }
-      } catch (dbErr) {
-        console.warn('Could not fetch fallback recipe details from Supabase:', dbErr);
-      }
-    }
+    const { title, image, description } = await resolveRecipeDetails(
+      recipeSlug,
+      inputTitle,
+      inputImage,
+      inputDescription,
+    );
 
     const baseUrl = getBaseUrl(req);
     const cleanBase = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
-    let recipeUrl: string;
-    if (recipeSlug) {
-      recipeUrl = `${cleanBase}/kitchen/recipe/${recipeSlug}`;
-    } else if (inputUrl?.startsWith('http')) {
-      recipeUrl = inputUrl;
-    } else {
-      const path = inputUrl?.startsWith('/') ? inputUrl : `/${inputUrl || ''}`;
-      recipeUrl = path.startsWith('/kitchen')
-        ? `${cleanBase}${path}`
-        : `${cleanBase}/kitchen${path}`;
-    }
-
-    const resolvedImage = resolveRecipeImageUrl(recipeImage);
+    const recipeUrl = buildRecipeUrl(cleanBase, recipeSlug, inputUrl);
+    const resolvedImage = resolveRecipeImageUrl(image);
 
     const variables: Record<string, unknown> = {
       url: recipeUrl,
-      title: recipeTitle || 'Featured Recipe',
-      description: recipeDescription || '',
+      title: title || 'Featured Recipe',
+      description: description || '',
       image: resolvedImage,
     };
 
