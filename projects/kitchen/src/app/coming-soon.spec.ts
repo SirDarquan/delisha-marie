@@ -160,72 +160,122 @@ describe('coming-soon', () => {
   });
 
   describe('isLive', () => {
-    it('should return true when hostname ends with vercel.app', async () => {
-      const originalLocation = window.location;
-      Object.defineProperty(window, 'location', {
-        value: { hostname: 'delisha-preview.vercel.app' },
-        writable: true,
-        configurable: true,
-      });
+    it('should return true on server when VERCEL_ENV is not set (local)', async () => {
+      const originalWindow = globalThis.window;
+      // @ts-expect-error simulating server
+      delete globalThis.window;
+      delete process.env['VERCEL_ENV'];
 
-      const result = await isLive();
+      const mockFetch = vi.fn();
+      const result = await isLive(mockFetch as unknown as typeof fetch);
       expect(result).toBe(true);
+      expect(mockFetch).not.toHaveBeenCalled();
 
-      Object.defineProperty(window, 'location', {
-        value: originalLocation,
-        writable: true,
-        configurable: true,
-      });
+      globalThis.window = originalWindow;
     });
 
-    it('should return true when process.env.VERCEL_ENV is preview', async () => {
+    it('should return true on server when VERCEL_ENV is preview', async () => {
       const originalWindow = globalThis.window;
-      // Temporarily simulate server environment (window undefined)
       // @ts-expect-error simulating server
       delete globalThis.window;
       process.env['VERCEL_ENV'] = 'preview';
 
-      const result = await isLive();
+      const mockFetch = vi.fn();
+      const result = await isLive(mockFetch as unknown as typeof fetch);
       expect(result).toBe(true);
+      expect(mockFetch).not.toHaveBeenCalled();
 
       delete process.env['VERCEL_ENV'];
       globalThis.window = originalWindow;
     });
 
-    it('should return true when isKitchenReleased is true', async () => {
-      vi.spyOn(globalThis, 'fetch').mockResolvedValue({
-        headers: new Headers({ date: 'Wed, 02 Dec 2026 15:00:01 GMT' }),
-      } as Response);
-
-      const result = await isLive();
-      expect(result).toBe(true);
-    });
-
-    it('should return true when isDevMode is true', async () => {
-      const result = await isLive(() => true);
-      expect(result).toBe(true);
-    });
-
-    it('should return false when not preview, not in dev mode, and kitchen is not released', async () => {
-      const originalLocation = window.location;
-      Object.defineProperty(window, 'location', {
-        value: { hostname: 'delisha-marie.com' },
-        writable: true,
-        configurable: true,
-      });
+    it('should return false on server when VERCEL_ENV is production (live) and before release', async () => {
+      const originalWindow = globalThis.window;
+      // @ts-expect-error simulating server
+      delete globalThis.window;
+      process.env['VERCEL_ENV'] = 'production';
+      process.env['VERCEL_PROJECT_PRODUCTION_URL'] = 'delishamarie.com';
 
       const mockFetch = vi.fn().mockResolvedValue({
         headers: new Headers({ date: 'Wed, 02 Dec 2026 09:00:00 GMT' }),
       } as Response);
 
-      const result = await isLive(() => false, mockFetch as unknown as typeof fetch);
+      const result = await isLive(mockFetch as unknown as typeof fetch);
       expect(result).toBe(false);
+      expect(mockFetch).toHaveBeenCalledWith('https://delishamarie.com/config', { method: 'HEAD' });
 
-      Object.defineProperty(window, 'location', {
-        value: originalLocation,
-        writable: true,
-        configurable: true,
-      });
+      delete process.env['VERCEL_ENV'];
+      delete process.env['VERCEL_PROJECT_PRODUCTION_URL'];
+      globalThis.window = originalWindow;
+    });
+
+    it('should return true on server when VERCEL_ENV is production (live) and released', async () => {
+      const originalWindow = globalThis.window;
+      // @ts-expect-error simulating server
+      delete globalThis.window;
+      process.env['VERCEL_ENV'] = 'production';
+      process.env['VERCEL_PROJECT_PRODUCTION_URL'] = 'delishamarie.com';
+
+      const mockFetch = vi.fn().mockResolvedValue({
+        headers: new Headers({ date: 'Wed, 02 Dec 2026 15:00:01 GMT' }),
+      } as Response);
+
+      const result = await isLive(mockFetch as unknown as typeof fetch);
+      expect(result).toBe(true);
+
+      delete process.env['VERCEL_ENV'];
+      delete process.env['VERCEL_PROJECT_PRODUCTION_URL'];
+      globalThis.window = originalWindow;
+    });
+
+    it('should return true in browser when x-app-environment header is preview or local', async () => {
+      const mockFetchPreview = vi.fn().mockResolvedValue({
+        headers: new Headers({
+          'x-app-environment': 'preview',
+          date: 'Wed, 02 Dec 2026 09:00:00 GMT',
+        }),
+      } as Response);
+
+      expect(await isLive(mockFetchPreview as unknown as typeof fetch)).toBe(true);
+
+      const mockFetchLocal = vi.fn().mockResolvedValue({
+        headers: new Headers({ 'x-app-environment': 'local' }),
+      } as Response);
+
+      expect(await isLive(mockFetchLocal as unknown as typeof fetch)).toBe(true);
+    });
+
+    it('should return true in browser when live and kitchen is released', async () => {
+      const mockFetch = vi.fn().mockResolvedValue({
+        headers: new Headers({
+          'x-app-environment': 'live',
+          date: 'Wed, 02 Dec 2026 15:00:01 GMT',
+        }),
+      } as Response);
+
+      const result = await isLive(mockFetch as unknown as typeof fetch);
+      expect(result).toBe(true);
+    });
+
+    it('should return false in browser when live and kitchen is not released', async () => {
+      const mockFetch = vi.fn().mockResolvedValue({
+        headers: new Headers({
+          'x-app-environment': 'live',
+          date: 'Wed, 02 Dec 2026 09:00:00 GMT',
+        }),
+      } as Response);
+
+      const result = await isLive(mockFetch as unknown as typeof fetch);
+      expect(result).toBe(false);
+    });
+
+    it('should return false in browser when live and server time cannot be synchronized', async () => {
+      const mockFetch = vi.fn().mockResolvedValue({
+        headers: new Headers({ 'x-app-environment': 'live' }),
+      } as Response);
+
+      const result = await isLive(mockFetch as unknown as typeof fetch);
+      expect(result).toBe(false);
     });
   });
 

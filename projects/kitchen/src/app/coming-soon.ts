@@ -6,13 +6,13 @@ import {
   computed,
   DestroyRef,
   inject,
-  isDevMode,
   OnInit,
   PLATFORM_ID,
   provideBrowserGlobalErrorListeners,
   provideZonelessChangeDetection,
   signal,
 } from '@angular/core';
+import { type AppEnvironment, getAppBaseUrl, getAppEnvironment } from '@dm/library';
 import { provideBaseHref } from './provider/base-href';
 import { getHomeUrl } from './utils/navigation';
 
@@ -31,6 +31,7 @@ export interface TimeSyncState {
   initialServerTime: number;
   initialPerfTime: number;
   synchronized: boolean;
+  environment?: AppEnvironment;
 }
 
 export interface CountdownBreakdown {
@@ -42,10 +43,19 @@ export interface CountdownBreakdown {
   isReleased: boolean;
 }
 
+function parseAppEnvironment(value: string | null): AppEnvironment | undefined {
+  if (value === 'local' || value === 'preview' || value === 'live') {
+    return value;
+  }
+  return undefined;
+}
+
 export async function syncServerTime(fetchFn: typeof fetch = fetch): Promise<TimeSyncState> {
   const perfNow = typeof performance !== 'undefined' ? performance.now() : 0;
+  const configUrl = typeof window === 'undefined' ? `${getAppBaseUrl()}/config` : '/config';
   try {
-    const res = await fetchFn('/config', { method: 'HEAD' });
+    const res = await fetchFn(configUrl, { method: 'HEAD' });
+    const environment = parseAppEnvironment(res.headers.get('x-app-environment'));
     const serverDateHeader = res.headers.get('date');
     if (serverDateHeader) {
       const serverTime = new Date(serverDateHeader).getTime();
@@ -54,9 +64,16 @@ export async function syncServerTime(fetchFn: typeof fetch = fetch): Promise<Tim
           initialServerTime: serverTime,
           initialPerfTime: perfNow,
           synchronized: true,
+          environment,
         };
       }
     }
+    return {
+      initialServerTime: Date.now(),
+      initialPerfTime: perfNow,
+      synchronized: false,
+      environment,
+    };
   } catch {
     // Network or server error - gracefully fallback to local time with unverified state
   }
@@ -109,17 +126,22 @@ export async function isKitchenReleased(fetchFn: typeof fetch = fetch): Promise<
   }
 }
 
-export async function isLive(
-  isDevFn: typeof isDevMode = isDevMode,
-  fetchFn: typeof fetch = fetch,
-): Promise<boolean> {
-  let preview = false;
-  if (typeof window !== 'undefined') {
-    preview = window.location.hostname.endsWith('vercel.app');
-  } else if (typeof process !== 'undefined' && process.env) {
-    preview = process.env['VERCEL_ENV'] === 'preview';
+export async function isLive(fetchFn: typeof fetch = fetch): Promise<boolean> {
+  if (typeof window === 'undefined') {
+    if (getAppEnvironment() !== 'live') {
+      return true;
+    }
+    return isKitchenReleased(fetchFn);
   }
-  return preview || isDevFn() || (await isKitchenReleased(fetchFn));
+
+  const state = await syncServerTime(fetchFn);
+  if (state.environment === 'local' || state.environment === 'preview') {
+    return true;
+  }
+  if (!state.synchronized) {
+    return false;
+  }
+  return getAuthoritativeTime(state) >= KITCHEN_RELEASE_TIMESTAMP;
 }
 
 @Component({

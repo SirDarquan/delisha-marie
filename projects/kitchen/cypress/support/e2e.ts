@@ -17,12 +17,23 @@
 // import './commands';
 
 beforeEach(() => {
+  cy.intercept('HEAD', '/config', {
+    statusCode: 200,
+    headers: {
+      'x-app-environment': 'local',
+    },
+  }).as('headConfig');
+
   cy.intercept('GET', '/config', {
     statusCode: 200,
+    headers: {
+      'x-app-environment': 'local',
+    },
     body: {
       supabaseUrl: 'http://localhost:54321',
       supabaseAnonKey: 'mock-key',
       imagekitUrlEndpoint: 'https://ik.imagekit.io/mock',
+      environment: 'local',
     },
   }).as('getConfig');
 
