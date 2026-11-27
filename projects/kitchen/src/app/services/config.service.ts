@@ -1,5 +1,5 @@
 import { inject, signal, Service } from '@angular/core';
-import { AppPlugin } from '@dm/library';
+import { type AppEnvironment, AppPlugin } from '@dm/library';
 import { Api } from './api';
 
 export interface AppConfig {
@@ -28,6 +28,8 @@ export interface AppConfig {
     kitchen_about: string;
     sidebar_about: string;
   };
+
+  environment?: AppEnvironment;
 }
 
 @Service()

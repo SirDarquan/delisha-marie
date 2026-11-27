@@ -1,6 +1,7 @@
 import type { Plugin, PluginBuild } from 'esbuild';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
+import { getAppBaseUrl } from '../../../dm/library/src/lib/utils/environment';
 
 export interface Rule {
   userAgent: string | string[];
@@ -83,23 +84,8 @@ export function parseRobotsConfig(rawConfig?: string): RobotsTxtConfig {
   }
 }
 
-export function getBaseUrl(): string {
-  const vercelEnv = process.env['VERCEL_ENV'];
-  let base: string;
-  if (process.env['SITE_URL']) {
-    base = process.env['SITE_URL'];
-  } else if (vercelEnv === 'preview' && process.env['VERCEL_URL']) {
-    base = `https://${process.env['VERCEL_URL']}`;
-  } else if (vercelEnv === 'production' && process.env['VERCEL_PROJECT_PRODUCTION_URL']) {
-    base = `https://${process.env['VERCEL_PROJECT_PRODUCTION_URL']}`;
-  } else {
-    base = 'https://localhost';
-  }
-  return base.endsWith('/') ? base.slice(0, -1) : base;
-}
-
 export function buildRobotsTxtString(config: RobotsTxtConfig, prefix = ''): string {
-  const baseUrl = getBaseUrl();
+  const baseUrl = getAppBaseUrl();
   let robots = '# https://www.robotstxt.org/robotstxt.html\n';
 
   config.rules?.forEach((rule) => {

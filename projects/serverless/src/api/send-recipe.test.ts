@@ -29,7 +29,8 @@ describe('POST /send-recipe', () => {
   beforeEach(() => {
     process.env['SENDER_API_TOKEN'] = 'fake_token';
     process.env['OPTIMIZE_IMAGE'] = 'https://ik.imagekit.io/delishamarie';
-    process.env['SITE_URL'] = 'https://delishamarie.com';
+    process.env['VERCEL_ENV'] = 'production';
+    process.env['VERCEL_PROJECT_PRODUCTION_URL'] = 'delishamarie.com';
     process.env['SUPABASE_URL'] = 'https://example.supabase.co';
     process.env['SUPABASE_KEY'] = 'fake_supabase_key';
     resetSupabaseClient();

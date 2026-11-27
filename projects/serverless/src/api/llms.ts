@@ -1,4 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { getAppBaseUrl, getAppEnvironment } from '../../../dm/library/src/lib/utils/environment';
 import { getSupabaseClient } from './supabase';
 
 export interface LlmsRecipe {
@@ -36,23 +37,6 @@ export interface LlmsCategoryCounts {
   hasTheBest?: boolean;
 }
 
-export function getBaseUrl(req: VercelRequest): string {
-  let base: string;
-  const vercelEnv = process.env['VERCEL_ENV'];
-  if (process.env['SITE_URL']) {
-    base = process.env['SITE_URL'];
-  } else if (vercelEnv === 'preview') {
-    base = `https://${process.env['VERCEL_URL']}`;
-  } else if (vercelEnv === 'production') {
-    base = `https://${process.env['VERCEL_PROJECT_PRODUCTION_URL']}`;
-  } else {
-    const proto = req.headers?.['x-forwarded-proto'] || 'https';
-    const host = req.headers?.['host'] || 'localhost';
-    base = `${proto}://${host}`;
-  }
-  return base.endsWith('/') ? base.slice(0, -1) : base;
-}
-
 export function hasKitchenPrefix(
   rawPath?: string,
   baseUrl?: string,
@@ -62,9 +46,6 @@ export function hasKitchenPrefix(
     return true;
   }
   if (baseUrl?.includes('/kitchen')) {
-    return true;
-  }
-  if (process.env['SITE_URL']?.includes('/kitchen')) {
     return true;
   }
   const robotsEnv = robotsTxtEnv ?? process.env['ROBOTS_TXT'] ?? '';
@@ -201,20 +182,8 @@ export function htmlToMarkdown(html?: unknown): string {
 }
 
 export function getHomeUrl(path = '', req?: VercelRequest, fallbackBaseUrl?: string): string {
-  const host = req?.headers?.['host'] || '';
-  const isLocal = host.includes('localhost') || host.includes('127.0.0.1');
-  const isProd =
-    process.env['VERCEL_ENV'] === 'production' ||
-    process.env['VERCEL_ENV'] === 'preview' ||
-    Boolean(process.env['SITE_URL']);
-
   const cleanPath = path.startsWith('/') ? path : `/${path}`;
-
-  if (isLocal && !isProd) {
-    return `http://localhost:4220${cleanPath}`;
-  }
-
-  const base = fallbackBaseUrl || (req ? getBaseUrl(req) : '');
+  const base = fallbackBaseUrl || (req ? getAppBaseUrl() : '');
   return `${base}${cleanPath}`;
 }
 
@@ -437,7 +406,7 @@ export default async function llmsHandler(req: VercelRequest, res: VercelRespons
   let prefix = prefixMatch?.[1] ?? '';
 
   res.setHeader('Content-Type', 'text/markdown; charset=utf-8');
-  const isDev = !process.env['VERCEL_ENV'] && !process.env['SITE_URL'];
+  const isDev = getAppEnvironment() === 'local';
   res.setHeader(
     'Cache-Control',
     isDev
@@ -446,7 +415,7 @@ export default async function llmsHandler(req: VercelRequest, res: VercelRespons
   );
 
   try {
-    const rawBaseUrl = getBaseUrl(req);
+    const rawBaseUrl = getAppBaseUrl();
     if (!prefix && hasKitchenPrefix(rawPath, rawBaseUrl)) {
       prefix = '/kitchen';
     }

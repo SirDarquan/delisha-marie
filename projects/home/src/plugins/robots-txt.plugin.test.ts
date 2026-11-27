@@ -6,7 +6,6 @@ import type { BuildResult, OutputFile, PluginBuild } from 'esbuild';
 import defaultRobotsPluginExport, {
   buildRobotsTxtString,
   createRobotsTxtPlugin,
-  getBaseUrl,
   loadEnvFiles,
   parseRobotsConfig,
   resolveOutputPath,
@@ -42,35 +41,6 @@ describe('robots-txt.plugin', () => {
       const parsed = parseRobotsConfig(valid);
       expect(parsed.rules[0].userAgent).toBe('Googlebot');
       expect(parsed.sitemap).toBe('/sitemap.xml');
-    });
-  });
-
-  describe('getBaseUrl', () => {
-    it('should prioritize SITE_URL', () => {
-      process.env['SITE_URL'] = 'https://delishamarie.com/';
-      expect(getBaseUrl()).toBe('https://delishamarie.com');
-    });
-
-    it('should use VERCEL_PROJECT_PRODUCTION_URL in production', () => {
-      delete process.env['SITE_URL'];
-      process.env['VERCEL_ENV'] = 'production';
-      process.env['VERCEL_PROJECT_PRODUCTION_URL'] = 'delishamarie.vercel.app';
-      expect(getBaseUrl()).toBe('https://delishamarie.vercel.app');
-    });
-
-    it('should use VERCEL_URL in preview', () => {
-      delete process.env['SITE_URL'];
-      process.env['VERCEL_ENV'] = 'preview';
-      process.env['VERCEL_URL'] = 'delisha-preview.vercel.app';
-      expect(getBaseUrl()).toBe('https://delisha-preview.vercel.app');
-    });
-
-    it('should fallback to localhost if no env vars present', () => {
-      delete process.env['SITE_URL'];
-      delete process.env['VERCEL_ENV'];
-      delete process.env['VERCEL_URL'];
-      delete process.env['VERCEL_PROJECT_PRODUCTION_URL'];
-      expect(getBaseUrl()).toBe('https://localhost');
     });
   });
 
@@ -114,7 +84,8 @@ describe('robots-txt.plugin', () => {
     });
 
     it('should append allowLlm rule and sitemap array', () => {
-      process.env['SITE_URL'] = 'https://delishamarie.com';
+      process.env['VERCEL_ENV'] = 'production';
+      process.env['VERCEL_PROJECT_PRODUCTION_URL'] = 'delishamarie.com';
       const robots = buildRobotsTxtString(
         {
           rules: [{ userAgent: '*' }],
@@ -146,7 +117,8 @@ describe('robots-txt.plugin', () => {
         rules: [{ userAgent: '*', allow: ['/'] }],
         sitemap: '/sitemap.xml',
       });
-      process.env['SITE_URL'] = 'https://example.com';
+      process.env['VERCEL_ENV'] = 'production';
+      process.env['VERCEL_PROJECT_PRODUCTION_URL'] = 'example.com';
 
       const plugin = createRobotsTxtPlugin({ outputPath: tmpDir });
       expect(plugin.name).toBe('generate-robots-txt');
@@ -267,7 +239,8 @@ describe('robots-txt.plugin', () => {
     });
 
     it('should format multiple userAgent array and single sitemap string', () => {
-      process.env['SITE_URL'] = 'https://example.com';
+      process.env['VERCEL_ENV'] = 'production';
+      process.env['VERCEL_PROJECT_PRODUCTION_URL'] = 'example.com';
       const robots = buildRobotsTxtString({
         rules: [
           {
