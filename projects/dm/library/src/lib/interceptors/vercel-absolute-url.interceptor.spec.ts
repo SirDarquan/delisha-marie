@@ -43,38 +43,36 @@ describe('vercelAbsoluteUrlInterceptor', () => {
 
   it.each([
     {
-      description: 'localhost:4200 by default',
+      description: 'localhost:4200 when VERCEL_ENV is not set (local)',
       env: {},
       path: '/api/test',
       expectedUrl: 'http://localhost:4200/api/test',
     },
     {
-      description: 'PORT env variable if set',
-      env: { PORT: '5000' },
-      path: '/api/test-port',
-      expectedUrl: 'http://localhost:5000/api/test-port',
-    },
-    {
-      description: 'VERCEL_URL if available',
-      env: { VERCEL_URL: 'preview-domain.vercel.app' },
+      description: 'VERCEL_URL when VERCEL_ENV is preview',
+      env: { VERCEL_ENV: 'preview', VERCEL_URL: 'preview-domain.vercel.app' },
       path: '/api/test2',
       expectedUrl: 'https://preview-domain.vercel.app/api/test2',
     },
     {
-      description: 'VERCEL_URL with http protocol if localhost',
-      env: { VERCEL_URL: 'localhost:4200' },
+      description: 'VERCEL_URL with http protocol if localhost in preview',
+      env: { VERCEL_ENV: 'preview', VERCEL_URL: 'localhost:4200' },
       path: '/api/test-local-vercel',
       expectedUrl: 'http://localhost:4200/api/test-local-vercel',
     },
     {
-      description: 'VERCEL_PROJECT_PRODUCTION_URL fallback',
-      env: { VERCEL_PROJECT_PRODUCTION_URL: 'prod-domain.vercel.app' },
+      description: 'VERCEL_PROJECT_PRODUCTION_URL when VERCEL_ENV is production (live)',
+      env: {
+        VERCEL_ENV: 'production',
+        VERCEL_URL: 'ignored-preview.vercel.app',
+        VERCEL_PROJECT_PRODUCTION_URL: 'prod-domain.vercel.app',
+      },
       path: '/api/test3',
       expectedUrl: 'https://prod-domain.vercel.app/api/test3',
     },
     {
-      description: 'VERCEL_PROJECT_PRODUCTION_URL with http protocol if localhost',
-      env: { VERCEL_PROJECT_PRODUCTION_URL: 'localhost:4200' },
+      description: 'VERCEL_PROJECT_PRODUCTION_URL with http protocol if localhost in production',
+      env: { VERCEL_ENV: 'production', VERCEL_PROJECT_PRODUCTION_URL: 'localhost:4200' },
       path: '/api/test4',
       expectedUrl: 'http://localhost:4200/api/test4',
     },
@@ -293,60 +291,5 @@ describe('vercelAbsoluteUrlInterceptor with REQUEST token', () => {
     expect(req2.request.headers.has('cookie')).toBe(false);
     req2.flush({});
     httpMock2.verify();
-  });
-
-  it('should resolve base URL from x-forwarded-host and x-forwarded-proto/port', () => {
-    const mockRequest = {
-      headers: {
-        'x-forwarded-host': 'custom-domain.com',
-        'x-forwarded-proto': 'https',
-      },
-    };
-
-    TestBed.configureTestingModule({
-      providers: [
-        provideHttpClient(withInterceptors([vercelAbsoluteUrlInterceptor])),
-        provideHttpClientTesting(),
-        { provide: PLATFORM_ID, useValue: 'server' },
-        { provide: REQUEST, useValue: mockRequest },
-      ],
-    });
-
-    const httpMock = TestBed.inject(HttpTestingController);
-    const httpClient = TestBed.inject(HttpClient);
-
-    httpClient.get('/api/forwarded').subscribe();
-    const req = httpMock.expectOne('https://custom-domain.com/api/forwarded');
-    expect(req.request.method).toBe('GET');
-    expect(req.request.url).toBe('https://custom-domain.com/api/forwarded');
-    req.flush({});
-    httpMock.verify();
-  });
-
-  it('should resolve base URL from non-localhost incoming host header', () => {
-    const mockRequest = {
-      headers: {
-        host: 'recipes.delishamarie.com',
-      },
-    };
-
-    TestBed.configureTestingModule({
-      providers: [
-        provideHttpClient(withInterceptors([vercelAbsoluteUrlInterceptor])),
-        provideHttpClientTesting(),
-        { provide: PLATFORM_ID, useValue: 'server' },
-        { provide: REQUEST, useValue: mockRequest },
-      ],
-    });
-
-    const httpMock = TestBed.inject(HttpTestingController);
-    const httpClient = TestBed.inject(HttpClient);
-
-    httpClient.get('/api/host-header').subscribe();
-    const req = httpMock.expectOne('https://recipes.delishamarie.com/api/host-header');
-    expect(req.request.method).toBe('GET');
-    expect(req.request.url).toBe('https://recipes.delishamarie.com/api/host-header');
-    req.flush({});
-    httpMock.verify();
   });
 });

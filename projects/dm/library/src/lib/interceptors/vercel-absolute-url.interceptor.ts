@@ -2,6 +2,7 @@ import { isPlatformServer } from '@angular/common';
 import { HttpHandlerFn, HttpHeaders, HttpInterceptorFn, HttpRequest } from '@angular/common/http';
 import { inject, PLATFORM_ID, REQUEST } from '@angular/core';
 import { CookieService } from '../services/cookie/cookie.service';
+import { getAppBaseUrl } from '../utils/environment';
 
 function isApiRequest(url: string): boolean {
   return (
@@ -12,52 +13,6 @@ function isApiRequest(url: string): boolean {
     url === '/kitchen/config' ||
     url === '/home/config'
   );
-}
-
-function resolveBaseUrl(
-  env: Record<string, string | undefined>,
-  incomingRequest?: unknown,
-): string {
-  if (env['VERCEL_URL']) {
-    const isLocal =
-      env['VERCEL_URL'].includes('localhost') || env['VERCEL_URL'].includes('127.0.0.1');
-    const protocol = isLocal ? 'http' : 'https';
-    return `${protocol}://${env['VERCEL_URL']}`;
-  }
-  if (env['VERCEL_PROJECT_PRODUCTION_URL']) {
-    const isLocal =
-      env['VERCEL_PROJECT_PRODUCTION_URL'].includes('localhost') ||
-      env['VERCEL_PROJECT_PRODUCTION_URL'].includes('127.0.0.1');
-    const protocol = isLocal ? 'http' : 'https';
-    return `${protocol}://${env['VERCEL_PROJECT_PRODUCTION_URL']}`;
-  }
-
-  const forwardedHost = getHeaderValue(incomingRequest, 'x-forwarded-host');
-  const forwardedPort = getHeaderValue(incomingRequest, 'x-forwarded-port');
-  const forwardedProto = getHeaderValue(incomingRequest, 'x-forwarded-proto');
-
-  if (forwardedHost) {
-    const hasPort = forwardedHost.includes(':');
-    const hostWithPort =
-      hasPort || !forwardedPort ? forwardedHost : `${forwardedHost}:${forwardedPort}`;
-    const isLocal = hostWithPort.includes('localhost') || hostWithPort.includes('127.0.0.1');
-    const protocol = isLocal ? 'http' : forwardedProto || 'https';
-    return `${protocol}://${hostWithPort}`;
-  }
-
-  const incomingHost = getHeaderValue(incomingRequest, 'host');
-  if (
-    incomingHost &&
-    !incomingHost.startsWith('127.0.0.1:') &&
-    !incomingHost.startsWith('localhost:')
-  ) {
-    const isLocal = incomingHost.includes('localhost') || incomingHost.includes('127.0.0.1');
-    const protocol = isLocal ? 'http' : 'https';
-    return `${protocol}://${incomingHost}`;
-  }
-
-  const port = env['PORT'] || '4200';
-  return `http://localhost:${port}`;
 }
 
 function getHeaderValue(incomingRequest: unknown, name: string): string | null {
@@ -137,7 +92,7 @@ export const vercelAbsoluteUrlInterceptor: HttpInterceptorFn = (
   const env = globalProcess?.env ?? {};
   const incomingRequest = inject(REQUEST, { optional: true });
   const cookieService = inject(CookieService);
-  const baseUrl = resolveBaseUrl(env, incomingRequest);
+  const baseUrl = getAppBaseUrl(env);
   const headers = enrichHeaders(
     req.headers,
     env,
