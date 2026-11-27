@@ -13,7 +13,6 @@ vi.mock('@supabase/supabase-js', () => ({
 
 import { createRequestMock } from './test-utils';
 import llmsHandler, {
-  getBaseUrl,
   getHomeUrl,
   hasKitchenPrefix,
   htmlToMarkdown,
@@ -108,7 +107,9 @@ describe('llms endpoint', () => {
     process.env = { ...originalEnv };
     process.env['SUPABASE_URL'] = 'https://example.supabase.co';
     process.env['SUPABASE_KEY'] = 'test-key';
-    delete process.env['SITE_URL'];
+    delete process.env['VERCEL_ENV'];
+    delete process.env['VERCEL_URL'];
+    delete process.env['VERCEL_PROJECT_PRODUCTION_URL'];
     resetSupabaseClient();
 
     request = createRequestMock(llmsHandler);
@@ -161,7 +162,8 @@ describe('llms endpoint', () => {
 
   describe('GET /llms.txt', () => {
     it('should return concise llms.txt markdown with links and headers', async () => {
-      process.env['SITE_URL'] = 'https://delishamarie.com';
+      process.env['VERCEL_ENV'] = 'production';
+      process.env['VERCEL_PROJECT_PRODUCTION_URL'] = 'delishamarie.com';
       const res = await request().get('/llms.txt');
 
       expect(res.status).toBe(200);
@@ -188,7 +190,8 @@ describe('llms endpoint', () => {
     });
 
     it('should support /kitchen prefix in urls via path query param', async () => {
-      process.env['SITE_URL'] = 'https://delishamarie.com';
+      process.env['VERCEL_ENV'] = 'production';
+      process.env['VERCEL_PROJECT_PRODUCTION_URL'] = 'delishamarie.com';
       const res = await request().get('/api/llms?path=/kitchen/llms.txt');
 
       expect(res.status).toBe(200);
@@ -201,7 +204,8 @@ describe('llms endpoint', () => {
     });
 
     it('should bend links with /kitchen when ROBOTS_TXT contains /kitchen even if requested at /llms.txt', async () => {
-      process.env['SITE_URL'] = 'https://delishamarie.com';
+      process.env['VERCEL_ENV'] = 'production';
+      process.env['VERCEL_PROJECT_PRODUCTION_URL'] = 'delishamarie.com';
       process.env['ROBOTS_TXT'] = JSON.stringify({
         sitemap: ['/kitchen/sitemap-pages.xml'],
       });
@@ -217,7 +221,8 @@ describe('llms endpoint', () => {
     });
 
     it('should bend links with /kitchen in llms-full.txt when requested with /kitchen prefix', async () => {
-      process.env['SITE_URL'] = 'https://delishamarie.com';
+      process.env['VERCEL_ENV'] = 'production';
+      process.env['VERCEL_PROJECT_PRODUCTION_URL'] = 'delishamarie.com';
       const res = await request().get('/api/llms?full=true&path=/kitchen/llms-full.txt');
 
       expect(res.status).toBe(200);
@@ -249,7 +254,8 @@ describe('llms endpoint', () => {
 
   describe('GET /llms-full.txt', () => {
     it('should return complete llms-full.txt with ingredients, instructions, and pages in correct order', async () => {
-      process.env['SITE_URL'] = 'https://delishamarie.com';
+      process.env['VERCEL_ENV'] = 'production';
+      process.env['VERCEL_PROJECT_PRODUCTION_URL'] = 'delishamarie.com';
       const res = await request().get('/llms-full.txt');
 
       expect(res.status).toBe(200);
@@ -314,7 +320,8 @@ describe('llms endpoint', () => {
     });
 
     it('should trigger full mode when ?full=true is in query', async () => {
-      process.env['SITE_URL'] = 'https://delishamarie.com';
+      process.env['VERCEL_ENV'] = 'production';
+      process.env['VERCEL_PROJECT_PRODUCTION_URL'] = 'delishamarie.com';
       const res = await request().get('/api/llms?full=true');
 
       expect(res.status).toBe(200);
@@ -322,7 +329,8 @@ describe('llms endpoint', () => {
     });
 
     it('should trigger full mode when ?full=1 is in query', async () => {
-      process.env['SITE_URL'] = 'https://delishamarie.com';
+      process.env['VERCEL_ENV'] = 'production';
+      process.env['VERCEL_PROJECT_PRODUCTION_URL'] = 'delishamarie.com';
       const res = await request().get('/api/llms?full=1');
 
       expect(res.status).toBe(200);
@@ -431,38 +439,6 @@ describe('llms endpoint', () => {
       ]);
     });
 
-    it('getBaseUrl should respect different environment variables and headers', () => {
-      // 1. SITE_URL with trailing slash
-      process.env['SITE_URL'] = 'https://mysite.com/';
-      expect(getBaseUrl({ headers: {} } as VercelRequest)).toBe('https://mysite.com');
-
-      // 2. Preview env
-      delete process.env['SITE_URL'];
-      process.env['VERCEL_ENV'] = 'preview';
-      process.env['VERCEL_URL'] = 'preview-branch.vercel.app';
-      expect(getBaseUrl({ headers: {} } as VercelRequest)).toBe(
-        'https://preview-branch.vercel.app',
-      );
-
-      // 3. Production env
-      process.env['VERCEL_ENV'] = 'production';
-      process.env['VERCEL_PROJECT_PRODUCTION_URL'] = 'prod-domain.com';
-      expect(getBaseUrl({ headers: {} } as VercelRequest)).toBe('https://prod-domain.com');
-
-      // 4. Custom headers
-      delete process.env['VERCEL_ENV'];
-      const req = {
-        headers: {
-          'x-forwarded-proto': 'http',
-          host: 'custom-domain.local:3000',
-        },
-      } as unknown as VercelRequest;
-      expect(getBaseUrl(req)).toBe('http://custom-domain.local:3000');
-
-      // 5. Default localhost fallback
-      expect(getBaseUrl({ headers: {} } as VercelRequest)).toBe('https://localhost');
-    });
-
     it('generateLlmsFullTxt should provide defaults when about or faq pages are missing', () => {
       const fullText = generateLlmsFullTxt(
         'https://example.com',
@@ -547,9 +523,9 @@ describe('llms endpoint', () => {
       expect(htmlToMarkdown(['valid note', 12345, null, false])).toBe('valid note');
     });
 
-    it('getHomeUrl should route to port 4220 on localhost in development', () => {
-      delete process.env['SITE_URL'];
+    it('getHomeUrl should use http://localhost:4200 locally and VERCEL_PROJECT_PRODUCTION_URL in production', () => {
       delete process.env['VERCEL_ENV'];
+      delete process.env['VERCEL_PROJECT_PRODUCTION_URL'];
 
       const localReq = {
         headers: {
@@ -557,18 +533,18 @@ describe('llms endpoint', () => {
         },
       } as unknown as VercelRequest;
 
-      expect(getHomeUrl('/about', localReq)).toBe('http://localhost:4220/about');
-      expect(getHomeUrl('contact', localReq)).toBe('http://localhost:4220/contact');
+      expect(getHomeUrl('/about', localReq)).toBe('http://localhost:4200/about');
+      expect(getHomeUrl('contact', localReq)).toBe('http://localhost:4200/contact');
 
-      // In production/preview or when SITE_URL is set, uses production base
-      process.env['SITE_URL'] = 'https://delishamarie.com';
+      process.env['VERCEL_ENV'] = 'production';
+      process.env['VERCEL_PROJECT_PRODUCTION_URL'] = 'delishamarie.com';
       expect(getHomeUrl('/about', localReq)).toBe('https://delishamarie.com/about');
       expect(getHomeUrl('/contact', localReq)).toBe('https://delishamarie.com/contact');
     });
 
-    it('llmsHandler should use http://localhost:4220 for About and Contact when running locally', async () => {
-      delete process.env['SITE_URL'];
+    it('llmsHandler should use http://localhost:4200 for About and Contact when running locally', async () => {
       delete process.env['VERCEL_ENV'];
+      delete process.env['VERCEL_PROJECT_PRODUCTION_URL'];
 
       const localReqHandler = createRequestMock(llmsHandler);
       const res = await localReqHandler({
@@ -578,17 +554,14 @@ describe('llms endpoint', () => {
       }).get('/llms.txt');
 
       expect(res.status).toBe(200);
-      expect(res.text).toContain('- [About Delisha Marie](http://localhost:4220/about)');
-      expect(res.text).toContain('- [Contact](http://localhost:4220/contact)');
+      expect(res.text).toContain('- [About Delisha Marie](http://localhost:4200/about)');
+      expect(res.text).toContain('- [Contact](http://localhost:4200/contact)');
     });
 
     it('hasKitchenPrefix should detect kitchen prefix across paths, baseUrls and ROBOTS_TXT', () => {
       expect(hasKitchenPrefix('/kitchen/llms.txt')).toBe(true);
       expect(hasKitchenPrefix('/api/kitchen/extra')).toBe(true);
       expect(hasKitchenPrefix('/llms.txt', 'https://delishamarie.com/kitchen')).toBe(true);
-      process.env['SITE_URL'] = 'https://delishamarie.com/kitchen';
-      expect(hasKitchenPrefix('/llms.txt')).toBe(true);
-      delete process.env['SITE_URL'];
       expect(
         hasKitchenPrefix(
           '/llms.txt',
@@ -664,7 +637,8 @@ describe('llms endpoint', () => {
     });
 
     it('handles rawBaseUrl ending with /kitchen', async () => {
-      process.env['SITE_URL'] = 'https://example.com/kitchen';
+      process.env['VERCEL_ENV'] = 'production';
+      process.env['VERCEL_PROJECT_PRODUCTION_URL'] = 'example.com/kitchen';
       const res = await request().get('/llms.txt');
       expect(res.status).toBe(200);
       expect(res.text).toContain('# Delisha Marie');

@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { checkBotId } from 'botid/server';
-import { getBaseUrl } from './sitemap';
+import { getAppBaseUrl } from '../../../dm/library/src/lib/utils/environment';
 import { enrollNewsletterSubscriber } from './subscriber';
 import { getSupabaseClient } from './supabase';
 
@@ -143,9 +143,8 @@ export default async function sendRecipeHandler(req: VercelRequest, res: VercelR
       inputDescription,
     );
 
-    const baseUrl = getBaseUrl(req);
-    const cleanBase = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
-    const recipeUrl = buildRecipeUrl(cleanBase, recipeSlug, inputUrl);
+    const baseUrl = getAppBaseUrl();
+    const recipeUrl = buildRecipeUrl(baseUrl, recipeSlug, inputUrl);
     const resolvedImage = resolveRecipeImageUrl(image);
 
     const variables: Record<string, unknown> = {

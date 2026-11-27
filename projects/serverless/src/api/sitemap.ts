@@ -1,4 +1,5 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
+import { getAppBaseUrl } from '../../../dm/library/src/lib/utils/environment';
 import { getSupabaseClient } from './supabase';
 
 interface SitemapRecipe {
@@ -27,23 +28,6 @@ function escapeXml(unsafe: string): string {
     .replaceAll('>', '&gt;')
     .replaceAll('"', '&quot;')
     .replaceAll("'", '&apos;');
-}
-
-export function getBaseUrl(req: VercelRequest): string {
-  let base: string;
-  const vercelEnv = process.env['VERCEL_ENV'];
-  if (process.env['SITE_URL']) {
-    base = process.env['SITE_URL'];
-  } else if (vercelEnv === 'preview') {
-    base = `https://${process.env['VERCEL_URL']}`;
-  } else if (vercelEnv === 'production') {
-    base = `https://${process.env['VERCEL_PROJECT_PRODUCTION_URL']}`;
-  } else {
-    const proto = req.headers?.['x-forwarded-proto'] || 'https';
-    const host = req.headers?.['host'] || 'localhost';
-    base = `${proto}://${host}`;
-  }
-  return base.endsWith('/') ? base.slice(0, -1) : base;
 }
 
 // 1. Define the Interface
@@ -405,7 +389,7 @@ export default async function sitemap(req: VercelRequest, res: VercelResponse): 
   res.setHeader('Content-Type', 'application/xml; charset=utf-8');
   res.setHeader('Cache-Control', 'public, max-age=3600, s-maxage=86400');
 
-  const rawBaseUrl = getBaseUrl(req);
+  const rawBaseUrl = getAppBaseUrl();
   const baseUrl = `${rawBaseUrl}${prefix}`;
 
   const queryPage = req.query?.['page'] ? Number(req.query['page']) : undefined;

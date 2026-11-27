@@ -33,7 +33,9 @@ describe('sitemap', () => {
     process.env['SUPABASE_URL'] = 'https://example.supabase.co';
     process.env['SUPABASE_KEY'] = 'test-key';
     process.env['OPTIMIZE_IMAGE'] = 'https://ik.imagekit.io/delishamarie';
-    delete process.env['SITE_URL'];
+    delete process.env['VERCEL_ENV'];
+    delete process.env['VERCEL_URL'];
+    delete process.env['VERCEL_PROJECT_PRODUCTION_URL'];
     resetSupabaseClient();
 
     request = createRequestMock(sitemapRouter);
@@ -121,7 +123,8 @@ describe('sitemap', () => {
 
   describe('GET /sitemap.xml', () => {
     it('should return master sitemap index XML', async () => {
-      process.env['SITE_URL'] = 'https://custom-domain.com';
+      process.env['VERCEL_ENV'] = 'production';
+      process.env['VERCEL_PROJECT_PRODUCTION_URL'] = 'custom-domain.com';
       const res = await request(app).get('/sitemap.xml');
 
       expect(res.status).toBe(200);
@@ -135,72 +138,33 @@ describe('sitemap', () => {
       expect(res.text).toContain('<loc>https://custom-domain.com/sitemap-recipes.xml</loc>');
     });
 
-    it('should use VERCEL_PROJECT_PRODUCTION_URL in production if SITE_URL is not set', async () => {
-      delete process.env['SITE_URL'];
+    it('should use VERCEL_PROJECT_PRODUCTION_URL in production', async () => {
       process.env['VERCEL_ENV'] = 'production';
       process.env['VERCEL_PROJECT_PRODUCTION_URL'] = 'vercel-app.com';
       const res = await request(app).get('/sitemap.xml');
       expect(res.text).toContain('<loc>https://vercel-app.com/sitemap-pages.xml</loc>');
     });
 
-    it('should use VERCEL_URL in preview if SITE_URL is not set', async () => {
-      delete process.env['SITE_URL'];
+    it('should use VERCEL_URL in preview', async () => {
       process.env['VERCEL_ENV'] = 'preview';
       process.env['VERCEL_URL'] = 'preview-app.vercel.app';
       const res = await request(app).get('/sitemap.xml');
       expect(res.text).toContain('<loc>https://preview-app.vercel.app/sitemap-pages.xml</loc>');
     });
 
-    it('should fallback to req.headers if no env vars are set', async () => {
-      delete process.env['SITE_URL'];
-      delete process.env['VERCEL_PROJECT_PRODUCTION_URL'];
-      const res = await request(app)
-        .get('/sitemap.xml')
-        .set('x-forwarded-proto', 'http')
-        .set('host', 'my-host:3000');
-      expect(res.text).toContain('<loc>http://my-host:3000/sitemap-pages.xml</loc>');
-    });
-
-    it('should fallback to defaults if headers are not provided', async () => {
-      delete process.env['SITE_URL'];
-      delete process.env['VERCEL_PROJECT_PRODUCTION_URL'];
-      const res = await request(app).get('/sitemap.xml');
-      expect(res.text).toContain('<loc>https://');
-    });
-
-    it('should fallback host to localhost when req.headers has no host', async () => {
-      delete process.env['SITE_URL'];
+    it('should use http://localhost:4200 when VERCEL_ENV is not set (local)', async () => {
+      delete process.env['VERCEL_ENV'];
       delete process.env['VERCEL_PROJECT_PRODUCTION_URL'];
       delete process.env['VERCEL_URL'];
-      const req = {
-        url: '/sitemap.xml',
-        headers: { 'x-forwarded-proto': 'http' },
-      } as unknown as VercelRequest;
-      let sentBody = '';
-      const res = {
-        setHeader: vi.fn(),
-        status: vi.fn().mockReturnThis(),
-        send: vi.fn().mockImplementation((body: string) => {
-          sentBody = body;
-        }),
-      } as unknown as VercelResponse;
-
-      await sitemapRouter(req, res);
-      expect(sentBody).toContain('<loc>http://localhost/sitemap-pages.xml</loc>');
-    });
-
-    it('should respect custom SITE_URL env variable', async () => {
-      process.env['SITE_URL'] = 'https://custom-domain.com';
       const res = await request(app).get('/sitemap.xml');
-
-      expect(res.status).toBe(200);
-      expect(res.text).toContain('<loc>https://custom-domain.com/sitemap-pages.xml</loc>');
+      expect(res.text).toContain('<loc>http://localhost:4200/sitemap-pages.xml</loc>');
     });
   });
 
   describe('GET /sitemap-pages.xml', () => {
     it('should return static pages XML with change frequencies and priorities', async () => {
-      process.env['SITE_URL'] = 'https://custom-domain.com';
+      process.env['VERCEL_ENV'] = 'production';
+      process.env['VERCEL_PROJECT_PRODUCTION_URL'] = 'custom-domain.com';
       const res = await request(app).get('/sitemap-pages.xml');
 
       expect(res.status).toBe(200);
@@ -219,7 +183,8 @@ describe('sitemap', () => {
 
   describe('GET /sitemap-categories.xml', () => {
     it('should return category hub and child pages XML for populated taxonomies', async () => {
-      process.env['SITE_URL'] = 'https://custom-domain.com';
+      process.env['VERCEL_ENV'] = 'production';
+      process.env['VERCEL_PROJECT_PRODUCTION_URL'] = 'custom-domain.com';
       const res = await request(app).get('/sitemap-categories.xml');
 
       expect(res.status).toBe(200);
@@ -250,7 +215,8 @@ describe('sitemap', () => {
         return builder;
       });
 
-      process.env['SITE_URL'] = 'https://custom-domain.com';
+      process.env['VERCEL_ENV'] = 'production';
+      process.env['VERCEL_PROJECT_PRODUCTION_URL'] = 'custom-domain.com';
       const res = await request(app).get('/sitemap-categories.xml');
 
       expect(res.status).toBe(200);
@@ -272,7 +238,8 @@ describe('sitemap', () => {
         return builder;
       });
 
-      process.env['SITE_URL'] = 'https://custom-domain.com';
+      process.env['VERCEL_ENV'] = 'production';
+      process.env['VERCEL_PROJECT_PRODUCTION_URL'] = 'custom-domain.com';
       const res = await request(app).get('/sitemap-categories.xml');
 
       expect(res.status).toBe(200);
@@ -308,7 +275,8 @@ describe('sitemap', () => {
         error: null,
       });
 
-      process.env['SITE_URL'] = 'https://custom-domain.com';
+      process.env['VERCEL_ENV'] = 'production';
+      process.env['VERCEL_PROJECT_PRODUCTION_URL'] = 'custom-domain.com';
       const res = await request(app).get('/sitemap-recipes.xml');
 
       expect(res.status).toBe(200);
@@ -331,7 +299,8 @@ describe('sitemap', () => {
         ],
         error: null,
       });
-      process.env['SITE_URL'] = 'https://custom-domain.com';
+      process.env['VERCEL_ENV'] = 'production';
+      process.env['VERCEL_PROJECT_PRODUCTION_URL'] = 'custom-domain.com';
       const res = await request(app).get('/sitemap-recipes.xml');
       expect(res.text).toContain(
         '<loc>https://custom-domain.com/recipe/weird-slug-&lt;&gt;&quot;&apos;&amp;</loc>',
@@ -344,7 +313,8 @@ describe('sitemap', () => {
         error: null,
       });
 
-      process.env['SITE_URL'] = 'https://custom-domain.com';
+      process.env['VERCEL_ENV'] = 'production';
+      process.env['VERCEL_PROJECT_PRODUCTION_URL'] = 'custom-domain.com';
       const res = await request(app).get('/sitemap-recipes.xml');
 
       expect(res.status).toBe(200);
@@ -355,7 +325,8 @@ describe('sitemap', () => {
     it('should handle database exception gracefully', async () => {
       mockLte.mockRejectedValueOnce(new Error('Database error'));
 
-      process.env['SITE_URL'] = 'https://custom-domain.com';
+      process.env['VERCEL_ENV'] = 'production';
+      process.env['VERCEL_PROJECT_PRODUCTION_URL'] = 'custom-domain.com';
       const res = await request(app).get('/sitemap-recipes.xml');
 
       expect(res.status).toBe(200);
@@ -402,7 +373,8 @@ describe('sitemap', () => {
         error: null,
       });
 
-      process.env['SITE_URL'] = 'https://custom-domain.com';
+      process.env['VERCEL_ENV'] = 'production';
+      process.env['VERCEL_PROJECT_PRODUCTION_URL'] = 'custom-domain.com';
       process.env['OPTIMIZE_IMAGE'] = 'https://ik.imagekit.io/delishamarie';
       const res = await request(app).get('/sitemap-recipes.xml');
 
@@ -415,7 +387,8 @@ describe('sitemap', () => {
 
   describe('dynamic prefix and rewrite support', () => {
     it('should support /kitchen prefix on master sitemap', async () => {
-      process.env['SITE_URL'] = 'https://custom-domain.com';
+      process.env['VERCEL_ENV'] = 'production';
+      process.env['VERCEL_PROJECT_PRODUCTION_URL'] = 'custom-domain.com';
       const res = await request(app).get('/kitchen/sitemap.xml');
 
       expect(res.status).toBe(200);
@@ -429,7 +402,8 @@ describe('sitemap', () => {
     });
 
     it('should support arbitrary prefix on master sitemap', async () => {
-      process.env['SITE_URL'] = 'https://custom-domain.com';
+      process.env['VERCEL_ENV'] = 'production';
+      process.env['VERCEL_PROJECT_PRODUCTION_URL'] = 'custom-domain.com';
       const res = await request(app).get('/blog/v2/sitemap.xml');
 
       expect(res.status).toBe(200);
@@ -449,7 +423,8 @@ describe('sitemap', () => {
         error: null,
       });
 
-      process.env['SITE_URL'] = 'https://custom-domain.com';
+      process.env['VERCEL_ENV'] = 'production';
+      process.env['VERCEL_PROJECT_PRODUCTION_URL'] = 'custom-domain.com';
       process.env['OPTIMIZE_IMAGE'] = 'https://ik.imagekit.io/delishamarie';
       const res = await request(app).get('/kitchen/sitemap-recipes.xml');
 
@@ -463,7 +438,8 @@ describe('sitemap', () => {
     });
 
     it('should support rewrite via query param ?path=', async () => {
-      process.env['SITE_URL'] = 'https://custom-domain.com';
+      process.env['VERCEL_ENV'] = 'production';
+      process.env['VERCEL_PROJECT_PRODUCTION_URL'] = 'custom-domain.com';
       const res = await request(app).get('/api/sitemap?path=/kitchen/sitemap-pages.xml');
 
       expect(res.status).toBe(200);
@@ -485,24 +461,21 @@ describe('sitemap', () => {
     expect(res.statusCode).toBe(404);
   });
 
-  it('should trim trailing slash from SITE_URL', async () => {
-    process.env['SITE_URL'] = 'https://custom-domain.com/';
+  it('should trim trailing slash from VERCEL_PROJECT_PRODUCTION_URL', async () => {
+    process.env['VERCEL_ENV'] = 'production';
+    process.env['VERCEL_PROJECT_PRODUCTION_URL'] = 'https://custom-domain.com/';
     const res = await request(app).get('/sitemap.xml');
     expect(res.status).toBe(200);
     expect(res.text).toContain('<loc>https://custom-domain.com/sitemap-pages.xml</loc>');
   });
 
-  it('should use request host and proto when SITE_URL and VERCEL envs are not set', async () => {
-    delete process.env['SITE_URL'];
+  it('should use http://localhost:4200 when VERCEL_ENV is not set', async () => {
     delete process.env['VERCEL_ENV'];
     delete process.env['VERCEL_PROJECT_PRODUCTION_URL'];
     delete process.env['VERCEL_URL'];
-    const res = await request(app)
-      .get('/sitemap.xml')
-      .set('host', 'my-custom-host:3000')
-      .set('x-forwarded-proto', 'http');
+    const res = await request(app).get('/sitemap.xml');
     expect(res.status).toBe(200);
-    expect(res.text).toContain('<loc>http://my-custom-host:3000/sitemap-pages.xml</loc>');
+    expect(res.text).toContain('<loc>http://localhost:4200/sitemap-pages.xml</loc>');
   });
 
   describe('scalable recipe pagination and limits', () => {
@@ -526,7 +499,8 @@ describe('sitemap', () => {
     });
 
     it('should dynamically list multiple recipe chunks in master sitemap when count exceeds limit', async () => {
-      process.env['SITE_URL'] = 'https://custom-domain.com';
+      process.env['VERCEL_ENV'] = 'production';
+      process.env['VERCEL_PROJECT_PRODUCTION_URL'] = 'custom-domain.com';
       process.env['RECIPES_PER_SITEMAP'] = '1000';
       mockLte.mockResolvedValueOnce({ count: 2500, data: [], error: null });
 
@@ -541,7 +515,8 @@ describe('sitemap', () => {
     });
 
     it('should list single sitemap-recipes.xml in master sitemap when count is within limit', async () => {
-      process.env['SITE_URL'] = 'https://custom-domain.com';
+      process.env['VERCEL_ENV'] = 'production';
+      process.env['VERCEL_PROJECT_PRODUCTION_URL'] = 'custom-domain.com';
       process.env['RECIPES_PER_SITEMAP'] = '1000';
       mockLte.mockResolvedValueOnce({ count: 500, data: [], error: null });
 
@@ -553,7 +528,8 @@ describe('sitemap', () => {
     });
 
     it('should handle master sitemap count error gracefully', async () => {
-      process.env['SITE_URL'] = 'https://custom-domain.com';
+      process.env['VERCEL_ENV'] = 'production';
+      process.env['VERCEL_PROJECT_PRODUCTION_URL'] = 'custom-domain.com';
       mockLte.mockRejectedValueOnce(new Error('Count query failure'));
 
       const res = await request(app).get('/sitemap.xml');
@@ -563,7 +539,8 @@ describe('sitemap', () => {
     });
 
     it('should support requesting /sitemap-recipes.xml as page 1 and /sitemap-recipes-2.xml as page 2', async () => {
-      process.env['SITE_URL'] = 'https://custom-domain.com';
+      process.env['VERCEL_ENV'] = 'production';
+      process.env['VERCEL_PROJECT_PRODUCTION_URL'] = 'custom-domain.com';
       process.env['RECIPES_PER_SITEMAP'] = '2';
 
       mockLte.mockResolvedValueOnce({
@@ -605,7 +582,8 @@ describe('sitemap', () => {
     });
 
     it('should support pagination via ?page= query parameter', async () => {
-      process.env['SITE_URL'] = 'https://custom-domain.com';
+      process.env['VERCEL_ENV'] = 'production';
+      process.env['VERCEL_PROJECT_PRODUCTION_URL'] = 'custom-domain.com';
       process.env['RECIPES_PER_SITEMAP'] = '2';
 
       mockLte.mockResolvedValueOnce({
@@ -627,7 +605,8 @@ describe('sitemap', () => {
     });
 
     it('should invoke order and range when provided on query builder', async () => {
-      process.env['SITE_URL'] = 'https://custom-domain.com';
+      process.env['VERCEL_ENV'] = 'production';
+      process.env['VERCEL_PROJECT_PRODUCTION_URL'] = 'custom-domain.com';
       const mockRange = vi.fn().mockResolvedValue({
         data: [{ slug: 'ranged-cake' }],
         error: null,
@@ -648,7 +627,8 @@ describe('sitemap', () => {
     });
 
     it('should return 404 when page requested is beyond total recipes', async () => {
-      process.env['SITE_URL'] = 'https://custom-domain.com';
+      process.env['VERCEL_ENV'] = 'production';
+      process.env['VERCEL_PROJECT_PRODUCTION_URL'] = 'custom-domain.com';
       mockLte.mockResolvedValueOnce({
         data: [],
         error: null,
@@ -659,7 +639,8 @@ describe('sitemap', () => {
     });
 
     it('should support kitchen prefix with paginated chunks', async () => {
-      process.env['SITE_URL'] = 'https://custom-domain.com';
+      process.env['VERCEL_ENV'] = 'production';
+      process.env['VERCEL_PROJECT_PRODUCTION_URL'] = 'custom-domain.com';
       mockLte.mockResolvedValueOnce({
         data: [{ slug: 'kitchen-pie' }],
         error: null,
@@ -671,7 +652,8 @@ describe('sitemap', () => {
     });
 
     it('should support page 10 and beyond when requesting /sitemap-recipes-10.xml', async () => {
-      process.env['SITE_URL'] = 'https://custom-domain.com';
+      process.env['VERCEL_ENV'] = 'production';
+      process.env['VERCEL_PROJECT_PRODUCTION_URL'] = 'custom-domain.com';
       const mockRange = vi.fn().mockResolvedValue({
         data: [{ slug: 'recipe-page-10' }],
         error: null,
@@ -689,7 +671,8 @@ describe('sitemap', () => {
     });
 
     it('should list all chunks in master sitemap when there are 10 or more pages', async () => {
-      process.env['SITE_URL'] = 'https://custom-domain.com';
+      process.env['VERCEL_ENV'] = 'production';
+      process.env['VERCEL_PROJECT_PRODUCTION_URL'] = 'custom-domain.com';
       process.env['RECIPES_PER_SITEMAP'] = '1000';
       mockLte.mockResolvedValueOnce({ count: 12000, data: [], error: null });
 
@@ -706,7 +689,8 @@ describe('sitemap', () => {
     });
 
     it('should omit sitemap-recipes.xml in master sitemap when recipe count is 0', async () => {
-      process.env['SITE_URL'] = 'https://custom-domain.com';
+      process.env['VERCEL_ENV'] = 'production';
+      process.env['VERCEL_PROJECT_PRODUCTION_URL'] = 'custom-domain.com';
       mockLte.mockResolvedValueOnce({ count: 0, data: [], error: null });
 
       const res = await request(app).get('/sitemap.xml');
@@ -741,7 +725,8 @@ describe('sitemap', () => {
         return builder;
       });
 
-      process.env['SITE_URL'] = 'https://custom-domain.com';
+      process.env['VERCEL_ENV'] = 'production';
+      process.env['VERCEL_PROJECT_PRODUCTION_URL'] = 'custom-domain.com';
       const res = await request(app).get('/sitemap-categories.xml');
 
       expect(res.status).toBe(200);
@@ -752,13 +737,15 @@ describe('sitemap', () => {
     it('should return 404 when database query fails for page >= 2', async () => {
       mockLte.mockRejectedValueOnce(new Error('Pagination DB failure'));
 
-      process.env['SITE_URL'] = 'https://custom-domain.com';
+      process.env['VERCEL_ENV'] = 'production';
+      process.env['VERCEL_PROJECT_PRODUCTION_URL'] = 'custom-domain.com';
       const res = await request(app).get('/sitemap-recipes-2.xml');
       expect(res.status).toBe(404);
     });
 
     it('should handle query builder when order does not return second order function', async () => {
-      process.env['SITE_URL'] = 'https://custom-domain.com';
+      process.env['VERCEL_ENV'] = 'production';
+      process.env['VERCEL_PROJECT_PRODUCTION_URL'] = 'custom-domain.com';
       const mockOrderDate = vi.fn().mockReturnValue({
         range: vi.fn().mockResolvedValue({
           data: [{ slug: 'single-order-cake' }],
@@ -788,7 +775,8 @@ describe('sitemap', () => {
         error: null,
       });
 
-      process.env['SITE_URL'] = 'https://custom-domain.com';
+      process.env['VERCEL_ENV'] = 'production';
+      process.env['VERCEL_PROJECT_PRODUCTION_URL'] = 'custom-domain.com';
       process.env['OPTIMIZE_IMAGE'] = 'https://ik.imagekit.io/delishamarie';
       const res = await request(app).get('/sitemap-recipes.xml');
       expect(res.status).toBe(200);
@@ -798,7 +786,8 @@ describe('sitemap', () => {
     });
 
     it('should handle query builder without range function', async () => {
-      process.env['SITE_URL'] = 'https://custom-domain.com';
+      process.env['VERCEL_ENV'] = 'production';
+      process.env['VERCEL_PROJECT_PRODUCTION_URL'] = 'custom-domain.com';
       mockLte.mockReturnValueOnce({
         order: vi.fn().mockReturnValue({
           order: vi.fn().mockResolvedValue({

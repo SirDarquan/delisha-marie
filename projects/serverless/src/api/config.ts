@@ -1,4 +1,8 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
+import {
+  type AppEnvironment,
+  getAppEnvironment,
+} from '../../../dm/library/src/lib/utils/environment';
 
 export interface GoogleTagManagerSettings {
   id?: string;
@@ -25,6 +29,7 @@ export interface AppConfig {
   GoogleTagManager: GoogleTagManagerSettings;
   Sentry?: SentrySettings;
   KitchenHome: KitchenHomeSettings;
+  environment?: AppEnvironment;
 }
 
 export const DEFAULT_KITCHEN_HOME_SETTINGS: KitchenHomeSettings = {
@@ -71,12 +76,15 @@ const configHandler = async (req: VercelRequest, res: VercelResponse): Promise<v
     return;
   }
 
+  const environment = getAppEnvironment();
+  res.setHeader('X-App-Environment', environment);
+
   if (req.method === 'HEAD') {
     res.status(200).end();
     return;
   }
 
-  res.status(200).json(CONFIG);
+  res.status(200).json({ ...CONFIG, environment });
 };
 
 export default configHandler;
